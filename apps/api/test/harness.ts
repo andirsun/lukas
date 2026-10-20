@@ -12,8 +12,10 @@ export const TEST_CONFIG = {
   WEB_URL: "http://localhost:5173",
   MAIL_FROM: "Lukas <test@lukas.test>",
   PORT: 3000,
-  NODE_ENV: "test",
-} as const;
+  NODE_ENV: "test" as const,
+  CLIENT_IP_HEADER: "x-forwarded-for",
+  TRUSTED_PROXIES: ["10.0.0.0/8"],
+};
 
 export function codeFrom(subject: string): string {
   const match = /(\d{6})$/.exec(subject);
@@ -34,9 +36,10 @@ export async function createTestApp() {
   };
   const app = createApp({ config, db: app$.db, mailer });
 
-  // Distinct fake client IPs keep the per-IP auth rate limit out of unrelated tests.
+  // Distinct fake client IPs (behind a trusted 10.x proxy) keep the per-IP auth rate limit out of
+  // unrelated tests.
   let ipCounter = 0;
-  const nextIp = () => `10.0.${Math.floor(++ipCounter / 250)}.${ipCounter % 250}`;
+  const nextIp = () => `198.51.${Math.floor(++ipCounter / 250)}.${ipCounter % 250}, 10.0.0.1`;
 
   async function request(
     method: string,

@@ -12,6 +12,8 @@ export const auth = createAuth({
     MAIL_FROM: "x@x",
     PORT: 3000,
     NODE_ENV: "test",
+    CLIENT_IP_HEADER: "x-forwarded-for",
+    TRUSTED_PROXIES: [],
   },
   db: {} as never,
   mailer: { send: async () => {} },

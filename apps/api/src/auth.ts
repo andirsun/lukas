@@ -59,7 +59,10 @@ export function createAuth(deps: AppDeps) {
       },
     },
     advanced: {
-      ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
+      ipAddress: {
+        ipAddressHeaders: [config.CLIENT_IP_HEADER],
+        trustedProxies: config.TRUSTED_PROXIES,
+      },
     },
     rateLimit: {
       enabled: true,

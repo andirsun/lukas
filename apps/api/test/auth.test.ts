@@ -81,6 +81,15 @@ describe("email code + magic link", () => {
     expect(statuses[5]).toBe(429);
   });
 
+  test("spoofed leftmost X-Forwarded-For entries do not dodge the per-IP limit", async () => {
+    const statuses: number[] = [];
+    for (let i = 0; i < 6; i++) {
+      const xff = { "x-forwarded-for": `${i}.${i}.${i}.${i}, 203.0.113.9, 10.0.0.1` };
+      statuses.push((await sendCode(`spoof${i}@lukas.test`, xff)).status);
+    }
+    expect(statuses[5]).toBe(429);
+  });
+
   test("a new user gets one default account", async () => {
     const { userId } = await t.signIn("g@lukas.test");
     const rows = await withUser(t.db, userId, (tx) =>
