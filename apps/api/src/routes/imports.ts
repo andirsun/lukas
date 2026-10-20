@@ -1,0 +1,266 @@
+import { createHash } from "node:crypto";
+import { createRoute, z } from "@hono/zod-openapi";
+import { categories, imports, type Tx, transactions, withUser } from "@lukas/db";
+import { and, eq, inArray, ne } from "@lukas/db/orm";
+import {
+  averageMonthlySpending,
+  type BudgeRow,
+  categoryStyle,
+  inferCategoryKinds,
+  normalizeName,
+  parseBudgeCsv,
+  rowHashes,
+  UnrecognizedFormatError,
+} from "@lukas/importers";
+import type { AppDeps } from "../deps.ts";
+import { jsonResponse, problems } from "../http/openapi.ts";
+import { ApiError } from "../http/problem.ts";
+import { router } from "../http/router.ts";
+import { defaultAccount } from "../services/transactions.ts";
+
+const MAX_BYTES = 5 * 1024 * 1024;
+const INSERT_CHUNK = 500;
+const idParam = z.object({ id: z.uuid() });
+
+type ImportRow = typeof imports.$inferSelect;
+type PayloadRow = BudgeRow & { hash: string };
+
+const statsSchema = z.object({
+  transactions: z.number().int(),
+  duplicates: z.number().int(),
+  newCategories: z.array(z.string()),
+  rejected: z.array(z.object({ line: z.number().int(), reason: z.string() })),
+  from: z.string().nullable(),
+  to: z.string().nullable(),
+  averageMonthlySpending: z.array(z.object({ category: z.string(), amount: z.number().int() })),
+  inserted: z.number().int().optional(),
+});
+type ImportStats = z.infer<typeof statsSchema>;
+const importDto = z.object({
+  id: z.uuid(),
+  status: z.enum(["preview", "confirmed", "reverted"]),
+  stats: statsSchema,
+});
+const toDto = (row: ImportRow) => ({
+  id: row.id,
+  status: row.status,
+  stats: row.stats as ImportStats,
+});
+
+async function existingHashes(tx: Tx, hashes: string[]): Promise<Set<string>> {
+  const found = new Set<string>();
+  for (let i = 0; i < hashes.length; i += INSERT_CHUNK) {
+    const rows = await tx
+      .select({ hash: transactions.externalHash })
+      .from(transactions)
+      .where(inArray(transactions.externalHash, hashes.slice(i, i + INSERT_CHUNK)));
+    for (const r of rows) if (r.hash) found.add(r.hash);
+  }
+  return found;
+}
+
+async function assertFileNotImported(tx: Tx, fileHash: string, exceptId?: string) {
+  const [dup] = await tx
+    .select({ id: imports.id })
+    .from(imports)
+    .where(
+      and(
+        eq(imports.fileHash, fileHash),
+        eq(imports.status, "confirmed"),
+        exceptId ? ne(imports.id, exceptId) : undefined,
+      ),
+    );
+  if (dup) throw new ApiError(409, "import_duplicate_file", "This file was already imported");
+}
+
+async function findImport(tx: Tx, id: string): Promise<ImportRow> {
+  const [row] = await tx.select().from(imports).where(eq(imports.id, id));
+  if (!row) throw new ApiError(404, "not_found", "Import not found");
+  return row;
+}
+
+export function importRoutes(deps: AppDeps) {
+  const app = router();
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/v1/imports",
+      request: {
+        body: {
+          content: {
+            "multipart/form-data": {
+              schema: z.object({ source: z.literal("budge"), file: z.instanceof(File) }),
+            },
+          },
+          required: true,
+        },
+      },
+      responses: { 201: jsonResponse(importDto, "Preview"), ...problems(409, 413, 422) },
+    }),
+    async (c) => {
+      const { file } = c.req.valid("form");
+      if (file.size > MAX_BYTES)
+        throw new ApiError(413, "import_too_large", "Files are limited to 5 MB");
+      const text = await file.text();
+      const fileHash = createHash("sha256").update(text).digest("hex");
+      let parsed: ReturnType<typeof parseBudgeCsv>;
+      try {
+        parsed = parseBudgeCsv(text);
+      } catch (error) {
+        if (error instanceof UnrecognizedFormatError) {
+          throw new ApiError(
+            422,
+            "import_unrecognized_format",
+            "This does not look like a Budge export",
+          );
+        }
+        throw error;
+      }
+
+      const userId = c.get("userId");
+      const row = await withUser(deps.db, userId, async (tx) => {
+        await assertFileNotImported(tx, fileHash);
+        const account = await defaultAccount(tx);
+        const rejected: ImportStats["rejected"] = [...parsed.rejected];
+        const rows = parsed.rows.filter((r) => {
+          if (r.currency === account.currency) return true;
+          rejected.push({ line: r.line, reason: "currency_mismatch" });
+          return false;
+        });
+        rejected.sort((x, y) => x.line - y.line);
+        const hashes = rowHashes(rows);
+        const known = await existingHashes(tx, hashes);
+        const existingNames = new Set(
+          (await tx.select({ name: categories.name }).from(categories)).map((cat) =>
+            normalizeName(cat.name),
+          ),
+        );
+        const newCategories = [
+          ...new Map(
+            rows
+              .filter((r) => !existingNames.has(normalizeName(r.category)))
+              .map((r) => [normalizeName(r.category), r.category]),
+          ).values(),
+        ];
+        const dates = rows.map((r) => r.date).sort();
+        const stats: ImportStats = {
+          transactions: rows.length,
+          duplicates: hashes.filter((h) => known.has(h)).length,
+          newCategories,
+          rejected,
+          from: dates[0] ?? null,
+          to: dates.at(-1) ?? null,
+          averageMonthlySpending: averageMonthlySpending(rows),
+        };
+        const payload: PayloadRow[] = rows.map((r, i) => ({ ...r, hash: hashes[i] as string }));
+        const [created] = await tx
+          .insert(imports)
+          .values({ userId, source: "budge", fileHash, stats, payload })
+          .returning();
+        return created as ImportRow;
+      });
+      return c.json(toDto(row), 201);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/v1/imports/{id}/confirm",
+      request: { params: idParam },
+      responses: { 200: jsonResponse(importDto, "Imported"), ...problems(404, 409) },
+    }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const userId = c.get("userId");
+      const row = await withUser(deps.db, userId, async (tx) => {
+        const imp = await findImport(tx, id);
+        if (imp.status !== "preview")
+          throw new ApiError(409, "import_not_in_preview", "This import is not a preview");
+        await assertFileNotImported(tx, imp.fileHash, imp.id);
+        const rows = (imp.payload ?? []) as PayloadRow[];
+        const account = await defaultAccount(tx);
+
+        const categoryIds = new Map(
+          (await tx.select().from(categories)).map((cat) => [normalizeName(cat.name), cat.id]),
+        );
+        const kinds = inferCategoryKinds(rows);
+        for (const r of rows) {
+          const key = normalizeName(r.category);
+          if (categoryIds.has(key)) continue;
+          const [created] = await tx
+            .insert(categories)
+            .values({
+              userId,
+              name: r.category,
+              kind: kinds.get(key) ?? "expense",
+              ...categoryStyle(r.category),
+            })
+            .returning({ id: categories.id });
+          if (created) categoryIds.set(key, created.id);
+        }
+
+        let inserted = 0;
+        for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
+          const values = rows.slice(i, i + INSERT_CHUNK).map((r) => ({
+            userId,
+            accountId: account.id,
+            categoryId: categoryIds.get(normalizeName(r.category)) as string,
+            name: r.name,
+            amount: r.amount,
+            currency: r.currency,
+            date: r.date,
+            status: r.status,
+            note: r.note,
+            source: "import" as const,
+            importId: imp.id,
+            externalHash: r.hash,
+          }));
+          const result = await tx
+            .insert(transactions)
+            .values(values)
+            .onConflictDoNothing()
+            .returning({ id: transactions.id });
+          inserted += result.length;
+        }
+
+        const [updated] = await tx
+          .update(imports)
+          .set({
+            status: "confirmed",
+            payload: null,
+            stats: { ...(imp.stats as ImportStats), inserted },
+          })
+          .where(eq(imports.id, imp.id))
+          .returning();
+        return updated as ImportRow;
+      });
+      return c.json(toDto(row), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "delete",
+      path: "/v1/imports/{id}",
+      request: { params: idParam },
+      responses: { 204: { description: "Reverted" }, ...problems(404) },
+    }),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      await withUser(deps.db, c.get("userId"), async (tx) => {
+        const imp = await findImport(tx, id);
+        if (imp.status === "confirmed")
+          await tx.delete(transactions).where(eq(transactions.importId, imp.id));
+        await tx
+          .update(imports)
+          .set({ status: "reverted", payload: null })
+          .where(eq(imports.id, imp.id));
+      });
+      return c.body(null, 204);
+    },
+  );
+
+  return app;
+}

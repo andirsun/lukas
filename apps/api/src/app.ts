@@ -6,6 +6,7 @@ import type { AppEnv } from "./env.ts";
 import { notFound, onError, validationHook } from "./http/problem.ts";
 import { requireUser } from "./http/session.ts";
 import { categoryRoutes } from "./routes/categories.ts";
+import { importRoutes } from "./routes/imports.ts";
 import { recurrenceRoutes } from "./routes/recurrences.ts";
 import { reportRoutes } from "./routes/reports.ts";
 import { summaryRoutes } from "./routes/summary.ts";
@@ -33,6 +34,7 @@ export function createApp(deps: AppDeps) {
   app.route("/", recurrenceRoutes(deps));
   app.route("/", summaryRoutes(deps));
   app.route("/", reportRoutes(deps));
+  app.route("/", importRoutes(deps));
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",
