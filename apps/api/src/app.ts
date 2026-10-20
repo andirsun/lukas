@@ -6,6 +6,7 @@ import type { AppEnv } from "./env.ts";
 import { notFound, onError, validationHook } from "./http/problem.ts";
 import { requireUser } from "./http/session.ts";
 import { categoryRoutes } from "./routes/categories.ts";
+import { transactionRoutes } from "./routes/transactions.ts";
 
 export type { AppDeps } from "./deps.ts";
 
@@ -25,6 +26,7 @@ export function createApp(deps: AppDeps) {
   app.use("/v1/*", requireUser(auth));
   app.get("/v1/me", (c) => c.json(c.get("user")));
   app.route("/", categoryRoutes(deps));
+  app.route("/", transactionRoutes(deps));
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",
