@@ -13,6 +13,15 @@ beforeAll(async () => {
     calls++;
     return c.json({ call: calls, echo: await c.req.json() }, 201);
   });
+  t.app.post("/v1/test/slow", idempotent(t.db), async (c) => {
+    calls++;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return c.json({ call: calls }, 201);
+  });
+  let failsOnce = 0;
+  t.app.post("/v1/test/fails-once", idempotent(t.db), async (c) =>
+    ++failsOnce === 1 ? c.json({ code: "nope" }, 500) : c.json({ ok: true }, 201),
+  );
   a = (await t.signIn("a@lukas.test")).headers;
   b = (await t.signIn("b@lukas.test")).headers;
 }, 120_000);
@@ -63,4 +72,36 @@ test("keys expire after 24 hours", async () => {
   vi.setSystemTime(new Date("2026-10-21T11:00:00Z"));
   await post(a, "k4", { x: 1 });
   expect(calls - before).toBe(2);
+});
+
+test("concurrent retries with the same key run the handler once", async () => {
+  const before = calls;
+  const responses = await Promise.all(
+    [1, 2, 3].map(() =>
+      t.request("POST", "/v1/test/slow", {
+        headers: { ...a, "idempotency-key": "race-1" },
+        body: { x: 1 },
+      }),
+    ),
+  );
+  expect(calls - before).toBe(1);
+  const statuses = responses.map((r) => r.status).sort();
+  expect(statuses.filter((s) => s === 201).length).toBeGreaterThanOrEqual(1);
+  for (const r of responses.filter((r) => r.status !== 201)) {
+    expect(r.status).toBe(409);
+    expect(await r.json()).toMatchObject({ code: "idempotency_in_progress" });
+  }
+});
+
+test("a failed request releases its key so the client can retry", async () => {
+  const first = await t.request("POST", "/v1/test/fails-once", {
+    headers: { ...a, "idempotency-key": "retry-1" },
+    body: {},
+  });
+  expect(first.status).toBe(500);
+  const second = await t.request("POST", "/v1/test/fails-once", {
+    headers: { ...a, "idempotency-key": "retry-1" },
+    body: {},
+  });
+  expect(second.status).toBe(201);
 });
