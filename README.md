@@ -20,7 +20,7 @@ In Colombia we call money **lucas**. One *luca* is a thousand pesos, and from th
 
 ## Status
 
-🚧 In development. The design is in [`docs/superpowers/specs/2026-10-20-lukas-design.md`](docs/superpowers/specs/2026-10-20-lukas-design.md).
+🚧 In development. Stage 1 (backend: API, auth, Budge import) is built; web, mobile, MCP and gamification come next. The design is in [`docs/superpowers/specs/2026-10-20-lukas-design.md`](docs/superpowers/specs/2026-10-20-lukas-design.md).
 
 ## Architecture
 
@@ -31,6 +31,44 @@ A monorepo with:
 - `apps/mcp`: remote MCP server
 - `apps/mobile`: Flutter (Android; iOS later), with a native Kotlin + Glance widget
 - `packages/core`, `packages/db`, `packages/importers`: business rules, schema and migrations, importers
+
+## Local development
+
+Requirements: Node 22, pnpm 12 and Docker.
+
+```bash
+pnpm install
+cp .env.example .env
+docker compose up -d          # Postgres, Mailpit and the API on http://localhost:3000
+pnpm --filter @lukas/api seed # creates dev@lukas.test with sample data
+```
+
+Sign in without a password: request a code, then open Mailpit at http://localhost:8025 to read it.
+
+```bash
+curl -X POST localhost:3000/auth/email-otp/send-verification-otp \
+  -H 'content-type: application/json' -d '{"email":"dev@lukas.test","type":"sign-in"}'
+curl -i -X POST localhost:3000/auth/sign-in/email-otp \
+  -H 'content-type: application/json' -d '{"email":"dev@lukas.test","otp":"<code>"}'
+# use the set-auth-token response header as a bearer token:
+curl localhost:3000/v1/summary -H 'authorization: Bearer <token>'
+```
+
+The API is documented at http://localhost:3000/openapi.json.
+
+To run the API outside Docker, start only the services with `docker compose up -d postgres mailpit` and run `pnpm --filter @lukas/api dev`.
+
+### Tests
+
+```bash
+pnpm lint && pnpm typecheck && pnpm test
+```
+
+Integration tests start a throwaway Postgres in Docker (testcontainers). Without Docker, use the Postgres binaries on your PATH instead:
+
+```bash
+LUKAS_TEST_DB=local pnpm test
+```
 
 ## Self-hosting
 

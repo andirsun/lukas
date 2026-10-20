@@ -22,5 +22,22 @@ services:
       - "1025:1025" # SMTP
       - "8025:8025" # Web UI
 
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://lukas_app:lukas_app@postgres:5432/lukas
+      DATABASE_ADMIN_URL: postgres://lukas:lukas@postgres:5432/lukas
+      SMTP_URL: smtp://mailpit:1025
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
 volumes:
   postgres-data:
