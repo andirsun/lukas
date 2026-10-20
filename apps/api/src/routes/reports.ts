@@ -16,9 +16,10 @@ import { router } from "../http/router.ts";
 
 const MAX_MONTHS = 36;
 
-const rangeQuery = z
-  .object({ from: monthSchema, to: monthSchema })
-  .refine((q) => q.from <= q.to, { message: "from must not be after to", path: ["from"] });
+const rangeFields = z.object({ from: monthSchema, to: monthSchema });
+const fromBeforeTo = (q: { from: Month; to: Month }) => q.from <= q.to;
+const FROM_AFTER_TO = { message: "from must not be after to", path: ["from"] };
+const rangeQuery = rangeFields.refine(fromBeforeTo, FROM_AFTER_TO);
 
 function checkRange(from: Month, to: Month): Month[] {
   const months = monthsBetween(from, to);
@@ -43,12 +44,12 @@ export function reportRoutes(deps: AppDeps) {
       method: "get",
       path: "/v1/reports/by-category",
       request: {
-        query: rangeQuery.and(
-          z.object({
+        query: rangeFields
+          .extend({
             kind: z.enum(["expense", "income"]).default("expense"),
             status: z.enum(["paid", "pending"]).optional(),
-          }),
-        ),
+          })
+          .refine(fromBeforeTo, FROM_AFTER_TO),
       },
       responses: {
         200: jsonResponse(
