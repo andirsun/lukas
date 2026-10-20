@@ -145,6 +145,8 @@ export const transactions = pgTable(
     status: transactionStatus("status").notNull().default("paid"),
     note: text("note"),
     recurrenceId: uuid("recurrence_id").references(() => recurrences.id, { onDelete: "set null" }),
+    /** First day of the month a recurrence occurrence belongs to; stays put if the user moves its date. */
+    occurrenceMonth: date("occurrence_month"),
     importId: uuid("import_id").references(() => imports.id, { onDelete: "set null" }),
     source: transactionSource("source").notNull(),
     externalHash: text("external_hash"),
@@ -154,8 +156,8 @@ export const transactions = pgTable(
   (t) => [
     index("transactions_user_date").on(t.userId, t.date),
     index("transactions_user_category_date").on(t.userId, t.categoryId, t.date),
-    uniqueIndex("transactions_recurrence_date")
-      .on(t.recurrenceId, t.date)
+    uniqueIndex("transactions_recurrence_month")
+      .on(t.recurrenceId, t.occurrenceMonth)
       .where(sql`${t.recurrenceId} is not null`),
     uniqueIndex("transactions_external_hash").on(t.userId, t.externalHash),
   ],

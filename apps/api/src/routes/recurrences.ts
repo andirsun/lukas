@@ -1,16 +1,18 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import {
   createRecurrenceSchema,
+  firstDay,
   type RecurrenceDto,
   recurrenceDto,
   updateRecurrenceSchema,
 } from "@lukas/core";
-import { recurrences, type Tx, withUser } from "@lukas/db";
-import { asc, eq } from "@lukas/db/orm";
+import { recurrences, type Tx, transactions, withUser } from "@lukas/db";
+import { and, asc, eq, gte, isNull } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { currentMonth } from "../services/time.ts";
 import { defaultAccount, requireActiveCategory } from "../services/transactions.ts";
 
 type RecurrenceRow = typeof recurrences.$inferSelect;
@@ -108,6 +110,18 @@ export function recurrenceRoutes(deps: AppDeps) {
           .set(input)
           .where(eq(recurrences.id, id))
           .returning();
+        // Pending occurrences from this month on follow the new rule: drop them so the next read
+        // regenerates them. Paid and soft-deleted (dismissed) occurrences are kept.
+        await tx
+          .delete(transactions)
+          .where(
+            and(
+              eq(transactions.recurrenceId, id),
+              eq(transactions.status, "pending"),
+              isNull(transactions.deletedAt),
+              gte(transactions.occurrenceMonth, firstDay(currentMonth(c.get("user")))),
+            ),
+          );
         return updated as RecurrenceRow;
       });
       return c.json(toDto(row), 200);

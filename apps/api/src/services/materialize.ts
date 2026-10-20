@@ -1,10 +1,10 @@
-import { addMonths, type Month, occurrences } from "@lukas/core";
+import { addMonths, firstDay, type Month, occurrences } from "@lukas/core";
 import { accounts, recurrences, type Tx, transactions } from "@lukas/db";
 
 /**
  * Inserts the missing pending occurrences of the user's recurrences for `month`. Existing rows
- * (including edited or soft-deleted ones) win thanks to the unique (recurrence_id, date) index,
- * so this is idempotent. Months more than one ahead of `current` are left alone.
+ * (including edited, moved or soft-deleted ones) win thanks to the unique
+ * (recurrence_id, occurrence_month) index, so this is idempotent. Months more than one ahead of `current` are left alone.
  */
 export async function materializeRecurrences(
   tx: Tx,
@@ -28,6 +28,7 @@ export async function materializeRecurrences(
       amount: rule.amount,
       currency: currencyByAccount.get(rule.accountId) ?? "EUR",
       date,
+      occurrenceMonth: firstDay(month),
       status: "pending" as const,
       source: "recurrence" as const,
     })),

@@ -22,6 +22,13 @@
       "when": 1792531561920,
       "tag": "0002_auth_plugins",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792532793295,
+      "tag": "0003_recurrence_occurrence_month",
+      "breakpoints": true
     }
   ]
 }

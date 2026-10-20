@@ -121,4 +121,47 @@ describe("recurrences", () => {
     });
     expect(res.status).toBe(422);
   });
+
+  describe("schedule edits never duplicate a month's charge", () => {
+    let gym: string;
+    const gymIn = async (m: string) => (await listMonth(m)).filter((i) => i.name === "Gym");
+
+    test("setup: a monthly gym membership on the 10th", async () => {
+      const res = await t.request("POST", "/v1/recurrences", {
+        headers: a,
+        body: {
+          name: "Gym",
+          amount: -3000,
+          categoryId: subscriptions,
+          frequency: "monthly",
+          dayOfMonth: 10,
+          startDate: `${addMonths(month, -1)}-01`,
+        },
+      });
+      gym = ((await res.json()) as { id: string }).id;
+      expect(await gymIn(month)).toHaveLength(1);
+      expect(await gymIn(addMonths(month, 1))).toHaveLength(1);
+    });
+
+    test("moving one occurrence to another day keeps a single charge that month", async () => {
+      const [occurrence] = await gymIn(month);
+      await t.request("PATCH", `/v1/transactions/${occurrence?.id}`, {
+        headers: a,
+        body: { date: `${month}-20` },
+      });
+      await t.request("GET", `/v1/summary?month=${month}`, { headers: a });
+      const rows = (await gymIn(month)) as (Tx & { date?: string })[];
+      expect(rows).toHaveLength(1);
+    });
+
+    test("changing the day of month moves already generated future pending charges", async () => {
+      const patched = await t.request("PATCH", `/v1/recurrences/${gym}`, {
+        headers: a,
+        body: { dayOfMonth: 25 },
+      });
+      expect(patched.status, await patched.clone().text()).toBe(200);
+      const next = (await gymIn(addMonths(month, 1))) as (Tx & { date: string })[];
+      expect(next.map((g) => g.date)).toEqual([`${addMonths(month, 1)}-25`]);
+    });
+  });
 });
