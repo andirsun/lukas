@@ -5,11 +5,9 @@ import type { AppDeps } from "./deps.ts";
 import type { AppEnv } from "./env.ts";
 import { notFound, onError, validationHook } from "./http/problem.ts";
 import { requireUser } from "./http/session.ts";
+import { categoryRoutes } from "./routes/categories.ts";
 
 export type { AppDeps } from "./deps.ts";
-
-/** A router for `/v1` feature routes; validation failures become 422 problems. */
-export const router = () => new OpenAPIHono<AppEnv>({ defaultHook: validationHook });
 
 export function createApp(deps: AppDeps) {
   const auth = createAuth(deps);
@@ -26,6 +24,7 @@ export function createApp(deps: AppDeps) {
 
   app.use("/v1/*", requireUser(auth));
   app.get("/v1/me", (c) => c.json(c.get("user")));
+  app.route("/", categoryRoutes(deps));
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",
