@@ -14,6 +14,8 @@ import { idempotent } from "../http/idempotency.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { materializeRecurrences } from "../services/materialize.ts";
+import { currentMonth } from "../services/time.ts";
 import {
   defaultAccount,
   requireActiveCategory,
@@ -84,14 +86,15 @@ export function transactionRoutes(deps: AppDeps) {
           sql`(${transactions.date}, ${transactions.id}) < (${date}::date, ${id}::uuid)`,
         );
       }
-      const rows = await withUser(deps.db, user.id, (tx) =>
-        tx
+      const rows = await withUser(deps.db, user.id, async (tx) => {
+        if (q.month) await materializeRecurrences(tx, user.id, q.month, currentMonth(user));
+        return tx
           .select()
           .from(transactions)
           .where(and(...filters))
           .orderBy(desc(transactions.date), desc(transactions.id))
-          .limit(q.limit + 1),
-      );
+          .limit(q.limit + 1);
+      });
       const items = rows.slice(0, q.limit);
       const last = items.at(-1);
       return c.json(
