@@ -6,7 +6,7 @@
 
 ## 1. Contexto y objetivo
 
-Lukas es una app de finanzas personales gamificada ("lukas" = dinero en Colombia). Nace para reemplazar a Budge, que el autor usa desde 2023, con un UX mucho más simple y divertido.
+Lukas es una app de finanzas personales gamificada ("lukas" = dinero en Colombia). **Lukas es también la mascota del proyecto** y protagoniza el feedback de juego (celebraciones, avisos de límite, cierre de mes). Nace para reemplazar a Budge, que el autor usa desde 2023, con un UX mucho más simple y divertido.
 
 **Objetivo de la primera versión:** reproducir lo que hoy se hace en Budge (registrar movimientos, ver el saldo del mes, seguir un presupuesto mensual por categoría y analizar los gastos por categoría) con una interfaz más clara y que se sienta como un juego.
 
