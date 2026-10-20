@@ -1,305 +1,306 @@
-# Lukas — Diseño general y Etapa 1 (Núcleo y cuentas)
+# Lukas — Overall Design and Stage 1 (Core & Accounts)
 
-- **Fecha:** 2026-10-20
-- **Estado:** borrador para revisión
-- **Licencia del proyecto:** AGPL-3.0
+- **Date:** 2026-10-20
+- **Status:** approved
+- **Project license:** AGPL-3.0
+- **Repository language:** everything in the repo (code, docs, commits, UI copy keys) is English. The product UI is localized; Spanish (`es`) is the first locale.
 
-## 1. Contexto y objetivo
+## 1. Context and goal
 
-Lukas es una app de finanzas personales gamificada ("lukas" = dinero en Colombia). **Lukas es también la mascota del proyecto** y protagoniza el feedback de juego (celebraciones, avisos de límite, cierre de mes). Nace para reemplazar a Budge, que el autor usa desde 2023, con un UX mucho más simple y divertido.
+Lukas is a gamified personal finance app. "Lukas" is how Colombians call money, and **Lukas is also the project's mascot**, the star of the game-like feedback (celebrations, limit warnings, month close). It is built to replace Budge, which the author has used since 2023, with a much simpler and more fun UX.
 
-**Objetivo de la primera versión:** reproducir lo que hoy se hace en Budge (registrar movimientos, ver el saldo del mes, seguir un presupuesto mensual por categoría y analizar los gastos por categoría) con una interfaz más clara y que se sienta como un juego.
+**Goal of the first version:** reproduce what the author does today in Budge (record transactions, see the month balance, follow a monthly budget per category, analyze spending by category) with a clearer interface that feels like a game.
 
-**Modelo de producto:** servicio alojado por el autor con cuentas de usuario abiertas al público. El código es open source (AGPL-3.0) para recibir contribuciones. Por ahora no se ofrece self-hosting; el README lo menciona como posible trabajo futuro según el interés.
+**Product model:** a service hosted by the author with public sign-up. The code is open source (AGPL-3.0) to welcome contributions. Self-hosting is not offered for now; the README mentions it as possible future work depending on interest.
 
-### Criterios de éxito
+### Success criteria
 
-1. El autor importa su historial de Budge (CSV) y ve sus datos desde 2023 sin pérdida.
-2. Al abrir la app o mirar el widget se ve en un segundo **cuánto le queda para gastar este mes**.
-3. Registrar un gasto desde el widget o la app toma menos de 5 segundos y da feedback satisfactorio (animación, vibración, sonido).
-4. Un agente de IA (Claude, ChatGPT) conectado vía MCP puede leer, crear y editar movimientos, pedir reportes y ajustar presupuestos.
+1. The author imports their Budge history (CSV) and sees their data since 2023 with no loss.
+2. Opening the app or glancing at the widget shows, within one second, **how much is left to spend this month**.
+3. Recording an expense from the widget or the app takes under 5 seconds and gives satisfying feedback (animation, haptics, sound).
+4. An AI agent (Claude, ChatGPT) connected via MCP can read, create and edit transactions, request reports, and adjust budgets.
 
-### Fuera de alcance (v1)
+### Out of scope (v1)
 
-- Varias cuentas y varias monedas. El modelo ya tiene `account` y `currency`, pero la UI muestra una sola cuenta en EUR.
-- Pagos en cuotas.
-- Presupuesto con arrastre de saldo entre meses.
-- Inicio de sesión con Google o Apple.
-- App de iOS. Se hará después con el mismo código Flutter, más un widget nativo en WidgetKit.
-- Self-hosting documentado.
+- Multiple accounts and multiple currencies. The model already has `account` and `currency`, but the UI shows a single EUR account.
+- Installment payments.
+- Budget rollover between months.
+- Google or Apple sign-in.
+- iOS app. It will come later from the same Flutter code, plus a native WidgetKit widget.
+- Documented self-hosting.
 
-## 2. Producto
+## 2. Product
 
-### 2.1 Lo que se reproduce de Budge
+### 2.1 What is reproduced from Budge
 
-Según las capturas y el export del autor:
+Based on the author's screenshots and export:
 
-| Vista en Budge | En Lukas |
+| Budge view | In Lukas |
 |---|---|
-| Saldo del mes + pestañas de meses + ingresos/gastos | Pantalla principal: **lo que queda del presupuesto** en grande y el saldo del mes como dato secundario |
-| Lista de movimientos por día, con estado pagado/pendiente | Lista diaria con estado y total del día |
-| Presupuesto total y por categoría (%, restante) | Presupuesto con visualización inequívoca de **gastado vs. disponible** (ver 2.3) |
-| Análisis: dona por categoría (gastos/ingresos), filtro pagado/pendiente | Dona + lista de categorías + evolución mes a mes (web) |
-| Botón "+" | Botón grande de agregar, en la app y en el widget |
+| Month balance + month tabs + income/expenses | Home screen: **remaining budget** big, month balance as secondary figure |
+| Daily list of transactions with paid/pending status | Daily list with status and day total |
+| Total and per-category budget (%, remaining) | Budget with an unambiguous **spent vs. available** visualization (see 2.3) |
+| Analysis: donut by category (expenses/income), paid/pending filter | Donut + category list + month-over-month trend (web) |
+| "+" button | Big add button in the app and the widget |
 
-### 2.2 Definiciones de cifras
+### 2.2 Figure definitions
 
-- **Lo que queda este mes** (número principal) = Σ presupuestos vigentes de las categorías de gasto del mes − Σ gastos del mes (pagados **y** pendientes). Las categorías de gasto sin presupuesto también restan.
-  - Caso de referencia (octubre 2026): 2.800,00 € − 2.237,08 € = **562,92 €**.
-- **Saldo del mes** (número secundario) = Σ ingresos del mes − Σ gastos del mes.
-- **Gastado en una categoría** = −Σ montos de la categoría en el mes. Un monto positivo en una categoría de gasto (devolución) reduce lo gastado.
+- **Remaining this month** (headline figure) = Σ effective budgets of the month's expense categories − Σ the month's expenses (paid **and** pending). Expense categories without a budget still count against it.
+  - Reference case (October 2026): 2,800.00 € − 2,237.08 € = **562.92 €**.
+- **Month balance** (secondary figure) = Σ month income − Σ month expenses.
+- **Spent in a category** = −Σ the category's amounts in the month. A positive amount in an expense category (a refund) reduces spending.
 
-### 2.3 Lenguaje de diseño
+### 2.3 Design language
 
-Lo que se señala de Budge: la barra de presupuesto muestra lo *restante*, y "100 %" en azul significa "no gastado". Se lee al revés.
+Problem observed in Budge: the budget bar shows what is *left*, so "100 %" in blue means "nothing spent". It reads backwards.
 
-Principios para Lukas:
+Principles for Lukas:
 
-- **Una cifra protagonista por pantalla.** Lo demás es secundario.
-- **Las barras siempre se llenan con lo gastado** y cambian de color al acercarse al límite (verde → ámbar → rojo). Si te pasas, se muestra explícitamente "te pasaste X €" y no un porcentaje negativo.
-- **Botones grandes con relieve** (sombra inferior sólida, al estilo Duolingo/Buddy) que se hunden al tocarlos.
-- **Feedback multisensorial por eventos semánticos:** cada acción importante combina animación, vibración háptica y sonido corto. Por ejemplo, `expenseSaved`, `nearLimit`, `overBudget` y `streak`.
-- **Deshacer siempre disponible** en lugar de confirmaciones bloqueantes. Los borrados son suaves.
-- La gamificación avanzada (rachas, logros) es la Etapa 5, pero el tono de juego está presente desde la Etapa 2.
+- **One hero figure per screen.** Everything else is secondary.
+- **Bars always fill with what was spent** and change color as they approach the limit (green → amber → red). When over budget, show "X € over" explicitly, never a negative percentage.
+- **Big buttons with depth** (solid bottom shadow, Duolingo/Buddy style) that press down when tapped.
+- **Multi-sensory feedback through semantic events:** every important action combines animation, haptics and a short sound, e.g. `expenseSaved`, `nearLimit`, `overBudget`, `streak`.
+- **Undo is always available** instead of blocking confirmations. Deletes are soft.
+- Advanced gamification (streaks, achievements) is Stage 5, but the game-like tone is present from Stage 2.
 
 ### 2.4 Onboarding
 
-Web y móvil comparten el flujo:
+Shared by web and mobile:
 
-1. Pantallas cortas y animadas sobre qué hace Lukas.
-2. Crear cuenta / entrar con email (enlace mágico + código).
-3. Ofrecer crear una passkey ("¿Entrar con tu huella la próxima vez?").
-4. Configuración inicial: elegir categorías sugeridas, fijar el presupuesto por categoría y, si se quiere, importar un CSV de Budge. Con un import, los presupuestos se sugieren según el gasto promedio.
+1. Short animated screens about what Lukas does.
+2. Create an account / sign in with email (magic link + code).
+3. Offer to create a passkey ("Sign in with your fingerprint next time?").
+4. Initial setup: pick suggested categories, set a budget per category and optionally import a Budge CSV. With an import, budgets are suggested from average spending.
 
-### 2.5 "Conecta tu asistente"
+### 2.5 "Connect your assistant"
 
-Sección en la web y en el móvil:
+Section in web and mobile:
 
-- URL del servidor MCP con botón de copiar. Es única para todos; OAuth identifica al usuario.
-- Pasos por cliente (Claude, ChatGPT, Claude Code y otros). Los pasos exactos se verifican al construir la Etapa 4, porque esos menús cambian.
-- Pantalla de consentimiento OAuth: "Claude quiere acceder a tus finanzas: leer, crear y editar movimientos".
-- Lista de asistentes conectados con botón para revocar cada uno.
-- Ejemplos de peticiones.
+- MCP server URL with a copy button. It is the same for everyone; OAuth identifies the user.
+- Steps per client (Claude, ChatGPT, Claude Code and others). The exact steps are verified when building Stage 4, since those menus change.
+- OAuth consent screen: "Claude wants to access your finances: read, create and edit transactions".
+- List of connected assistants with a revoke button for each.
+- Example requests.
 
-## 3. Arquitectura
+## 3. Architecture
 
 ### 3.1 Monorepo
 
 ```
 /
 ├── apps/
-│   ├── api/          # Backend TypeScript (Hono) + Better Auth
+│   ├── api/          # TypeScript backend (Hono) + Better Auth
 │   ├── web/          # React + Vite
-│   ├── mcp/          # Servidor MCP remoto (TypeScript)
-│   └── mobile/       # Flutter (Android; iOS después)
-│       └── android/…/widget/   # Widget nativo Kotlin + Jetpack Glance
+│   ├── mcp/          # Remote MCP server (TypeScript)
+│   └── mobile/       # Flutter (Android; iOS later)
+│       └── android/…/widget/   # Native widget, Kotlin + Jetpack Glance
 ├── packages/
-│   ├── core/         # Reglas de negocio puras + esquemas zod
-│   ├── db/           # Esquema Drizzle + migraciones (Postgres)
-│   └── importers/    # Importadores (primero: Budge CSV)
-├── docker-compose.yml   # Postgres + Mailpit + api + mcp
+│   ├── core/         # Pure business rules + zod schemas
+│   ├── db/           # Drizzle schema + migrations (Postgres)
+│   └── importers/    # Importers (first: Budge CSV)
+├── docker-compose.yml   # Postgres + Mailpit + api (+ mcp from Stage 4)
 └── docs/
 ```
 
-- **Herramientas:** pnpm workspaces y Turborepo para TypeScript. Flutter usa su propio toolchain dentro de `apps/mobile`.
-- **Fuente de verdad:** la API. El MCP, la web, el móvil y el widget hablan con la API; **ninguno accede a la base de datos directamente**.
-- **Contrato:** OpenAPI generado desde los esquemas zod de `core`. A partir de él se generan el cliente Dart (Flutter) y los tipos de la web.
-- **Cálculos en el servidor:** la API devuelve las cifras ya calculadas, así que Flutter y el widget no duplican reglas de negocio.
+- **Tooling:** pnpm workspaces and Turborepo for TypeScript. Flutter uses its own toolchain inside `apps/mobile`.
+- **Source of truth:** the API. MCP, web, mobile and widget talk to the API; **none of them accesses the database directly**.
+- **Contract:** OpenAPI generated from the zod schemas in `core`. The Dart client (Flutter) and the web types are generated from it.
+- **Server-side calculations:** the API returns figures already computed, so Flutter and the widget do not duplicate business rules.
 
-### 3.2 Decisiones y motivos
+### 3.2 Decisions and rationale
 
-| Decisión | Motivo |
+| Decision | Rationale |
 |---|---|
-| TypeScript para api/web/mcp/core | El SDK de MCP más maduro, código compartido y facilidad para contribuidores |
-| Flutter para móvil | Una sola base para Android e iOS (iOS futuro); su motor propio de renderizado facilita la UI de juego (Rive, Lottie, `flutter_animate`) |
-| Widget nativo (Kotlin + Glance) | Ningún framework multiplataforma dibuja widgets de pantalla de inicio. El widget comparte datos con la app vía `home_widget` y llama a la API para registrar gastos |
-| Hápticos nativos vía platform channel | Patrones tipo Duolingo: `VibrationEffect.Composition` en Android y Core Haptics en iOS. La calidad depende del motor de vibración de cada teléfono |
-| Better Auth | Open source, guarda los datos en el Postgres propio, sin dependencia de proveedores ni costo por usuario; soporta enlace mágico, OTP por email, passkeys y servidor OAuth (requerido por MCP remoto) |
-| React (no Flutter Web) para la web | Mejor para dashboards y gráficas, para el rendimiento en navegador y para recibir contribuciones |
+| TypeScript for api/web/mcp/core | Most mature MCP SDK, shared code, contributor-friendly |
+| Flutter for mobile | One codebase for Android and iOS (future); its own rendering engine suits a game-like UI (Rive, Lottie, `flutter_animate`) |
+| Native widget (Kotlin + Glance) | No cross-platform framework draws home-screen widgets. The widget shares data with the app via `home_widget` and calls the API to record expenses |
+| Native haptics via platform channel | Duolingo-style patterns: `VibrationEffect.Composition` on Android, Core Haptics on iOS. Quality depends on each phone's vibration motor |
+| Better Auth | Open source, stores data in our own Postgres, no vendor lock-in or per-user cost; supports email OTP, passkeys and an OAuth server (required for remote MCP) |
+| React (not Flutter Web) for web | Better for dashboards and charts, browser performance and contributions |
 
-### 3.3 Etapas
+### 3.3 Stages
 
-Cada etapa tiene su propio spec → plan → implementación.
+Each stage gets its own spec → plan → implementation.
 
-1. **Núcleo y cuentas** (detallado en este documento, §4–§8).
-2. **Web v1:** onboarding, pantalla principal, movimientos, presupuesto, análisis, importación y "Conecta tu asistente".
-3. **Móvil + widget:** onboarding, registro rápido, lo que queda, módulo de feedback (hápticos, sonido, animación) y widget Android.
-4. **MCP:** servidor remoto con OAuth; herramientas para leer, crear y editar movimientos, generar reportes y ajustar presupuestos.
-5. **Gamificación avanzada:** rachas, logros y recompensas.
+1. **Core & accounts** (detailed in this document, §4–§10).
+2. **Web v1:** onboarding, home, transactions, budget, analysis, import, "Connect your assistant".
+3. **Mobile + widget:** onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget.
+4. **MCP:** remote server with OAuth; tools to read, create and edit transactions, generate reports and adjust budgets.
+5. **Advanced gamification:** streaks, achievements, rewards.
 
-## 4. Modelo de datos (Etapa 1)
+## 4. Data model (Stage 1)
 
-### 4.1 Principios
+### 4.1 Principles
 
-- Dinero como **entero en unidades menores** (céntimos) más código ISO de moneda. Nunca decimales en punto flotante.
-- **Monto con signo:** gastos negativos e ingresos positivos.
-- **Toda tabla de dominio tiene `user_id`**. El aislamiento se aplica en la capa de consultas y además con **Row-Level Security** de Postgres.
-- Fechas de movimientos como `date`, sin hora ni zona horaria. El usuario tiene una `timezone` que define qué es "hoy" y "este mes".
-- Borrado suave (`deleted_at`) en movimientos, para poder deshacer. Borrar la cuenta elimina todo de forma definitiva.
-- Todos los ids son UUID v7. `created_at` y `updated_at` están en todas las tablas de dominio.
+- Money as an **integer in minor units** (cents) plus an ISO currency code. Never floating-point decimals.
+- **Signed amount:** expenses negative, income positive.
+- **Every domain table has `user_id`**. Isolation is enforced in the query layer and additionally by Postgres **Row-Level Security**.
+- Transaction dates are `date`, with no time or time zone. The user has a `timezone` that defines "today" and "this month".
+- Soft delete (`deleted_at`) on transactions, to support undo. Deleting the account removes everything permanently.
+- All ids are UUID v7. `created_at` and `updated_at` on every domain table.
 
-### 4.2 Tablas
+### 4.2 Tables
 
-**Better Auth** (gestionadas por la librería): `user`, `session`, `verification`, `passkey` y las tablas del plugin OAuth. Al usuario se le añaden `timezone` (IANA, por ejemplo `Europe/Lisbon`) y `locale` (por ejemplo `es`).
+**Better Auth** (managed by the library): `user`, `session`, `verification`, `passkey` and the OAuth plugin tables. The user gets extra fields `timezone` (IANA, e.g. `Europe/Lisbon`) and `locale` (e.g. `es`).
 
 **`accounts`**
-| Campo | Tipo | Notas |
+| Field | Type | Notes |
 |---|---|---|
 | id, user_id | uuid | |
-| name | text | "Principal" |
+| name | text | "Main" |
 | currency | char(3) | `EUR` |
-| is_default | bool | Exactamente una por usuario. Se crea al registrarse |
+| is_default | bool | Exactly one per user, created at sign-up |
 
 **`categories`**
-| Campo | Tipo | Notas |
+| Field | Type | Notes |
 |---|---|---|
 | id, user_id | uuid | |
-| name | text | Único por usuario entre las no archivadas |
+| name | text | Unique per user among non-archived |
 | kind | enum `expense` \| `income` | |
-| icon | text | Clave del set de iconos de la app |
-| color | text | Token de color de la paleta de la app |
+| icon | text | Key into the app's icon set |
+| color | text | Token from the app's palette |
 | sort_order | int | |
-| archived_at | timestamptz? | Las archivadas no aparecen en la UI, pero conservan su historial |
+| archived_at | timestamptz? | Archived categories are hidden in the UI but keep their history |
 
-**`category_budgets`**: historial del presupuesto base.
-| Campo | Tipo | Notas |
+**`category_budgets`**: base budget history.
+| Field | Type | Notes |
 |---|---|---|
-| id, user_id, category_id | uuid | Solo categorías `expense` |
-| amount | bigint | Céntimos, ≥ 0 |
-| effective_from | date | Siempre el día 1 de un mes. Único por (category_id, effective_from) |
+| id, user_id, category_id | uuid | `expense` categories only |
+| amount | bigint | Cents, ≥ 0 |
+| effective_from | date | Always the 1st of a month. Unique per (category_id, effective_from) |
 
-El presupuesto vigente de una categoría en el mes M es la fila con el mayor `effective_from` ≤ M. Si no hay ninguna, la categoría no tiene presupuesto ese mes.
+A category's effective budget in month M is the row with the greatest `effective_from` ≤ M. If none exists, the category has no budget that month.
 
 **`transactions`**
-| Campo | Tipo | Notas |
+| Field | Type | Notes |
 |---|---|---|
 | id, user_id, account_id, category_id | uuid | |
-| name | text | Por ejemplo "continente" |
-| amount | bigint | Céntimos con signo, ≠ 0 |
-| currency | char(3) | Igual a la de la cuenta |
+| name | text | e.g. "continente" |
+| amount | bigint | Signed cents, ≠ 0 |
+| currency | char(3) | Same as the account's |
 | date | date | |
 | status | enum `paid` \| `pending` | |
 | note | text? | |
 | recurrence_id | uuid? | |
 | import_id | uuid? | |
 | source | enum `app` \| `web` \| `widget` \| `mcp` \| `import` \| `recurrence` | |
-| external_hash | text? | Solo en importaciones; único por (user_id, external_hash) |
+| external_hash | text? | Imports only; unique per (user_id, external_hash) |
 | deleted_at | timestamptz? | |
 
-Índices: (user_id, date), (user_id, category_id, date). Restricción única parcial (recurrence_id, date) donde recurrence_id no es nulo.
+Indexes: (user_id, date), (user_id, category_id, date). Partial unique constraint (recurrence_id, date) where recurrence_id is not null.
 
 **`recurrences`**
-| Campo | Tipo | Notas |
+| Field | Type | Notes |
 |---|---|---|
 | id, user_id, account_id, category_id | uuid | |
-| name, amount | text, bigint | Plantilla del movimiento |
+| name, amount | text, bigint | Transaction template |
 | frequency | enum `monthly` \| `yearly` | |
-| day_of_month | int 1–31 | Si el mes es más corto, se usa el último día |
-| month_of_year | int 1–12? | Solo para `yearly` |
+| day_of_month | int 1–31 | If the month is shorter, the last day is used |
+| month_of_year | int 1–12? | `yearly` only |
 | start_date | date | |
 | end_date | date? | |
 
 **`imports`**
-| Campo | Tipo | Notas |
+| Field | Type | Notes |
 |---|---|---|
 | id, user_id | uuid | |
 | source | enum `budge` | |
-| file_hash | text | SHA-256 del archivo; único por usuario entre las importaciones confirmadas |
+| file_hash | text | SHA-256 of the file; unique per user among confirmed imports |
 | status | enum `preview` \| `confirmed` \| `reverted` | |
-| stats | jsonb | Movimientos, categorías nuevas, duplicados omitidos y rango de fechas |
-| payload | jsonb? | Filas parseadas, guardadas solo mientras la importación está en `preview`. Se borra al confirmar |
+| stats | jsonb | Transactions, new categories, skipped duplicates, date range |
+| payload | jsonb? | Parsed rows, kept only while in `preview`. Cleared on confirm |
 
-**`idempotency_keys`**: (user_id, key, response, created_at). Se purgan a las 24 h.
+**`idempotency_keys`**: (user_id, key, response, created_at). Purged after 24 h.
 
-## 5. Reglas de negocio (`packages/core`)
+## 5. Business rules (`packages/core`)
 
-Son funciones puras, sin I/O, probadas de forma exhaustiva:
+Pure functions, no I/O, thoroughly tested:
 
-- `monthSummary(month, budgets, transactions)` devuelve `{ budgetTotal, spent, remaining, income, balance, categories[] }`. Cada categoría incluye `{ budget, spent, remaining, ratio, state }`, donde `state` es `ok` \| `near` (≥ 80 %) \| `over` (> 100 %).
+- `monthSummary(month, budgets, transactions)` returns `{ budgetTotal, spent, remaining, income, balance, categories[] }`. Each category has `{ budget, spent, remaining, ratio, state }`, with `state` = `ok` \| `near` (≥ 80 %) \| `over` (> 100 %).
 - `effectiveBudget(categoryBudgets, month)`.
-- `occurrences(recurrence, month)` devuelve las fechas en que ocurre una recurrencia dentro de un mes, incluyendo el ajuste al último día del mes.
-- Esquemas zod de cada entidad y de cada entrada de la API, con reglas como: el signo del monto debe ser coherente con el tipo de categoría, salvo en devoluciones (positivo en `expense`) y correcciones (negativo en `income`), que se permiten.
+- `occurrences(recurrence, month)` returns the dates a recurrence falls on within a month, including the clamp to the month's last day.
+- zod schemas for every entity and API input, with rules such as: the amount sign must match the category kind, except refunds (positive in `expense`) and corrections (negative in `income`), which are allowed.
 
-**Materialización de recurrentes:** cuando la API calcula el resumen o lista los movimientos de un mes M ≤ mes actual + 1, primero inserta las ocurrencias de M que falten como `pending`, con `source = recurrence`. Usa `ON CONFLICT DO NOTHING` sobre (recurrence_id, date). Una ocurrencia que el usuario borró (borrado suave) no se regenera, porque la fila sigue existiendo. No hace falta un cron.
+**Recurrence materialization:** when the API computes the summary or lists transactions for a month M ≤ current month + 1, it first inserts the missing occurrences of M as `pending` with `source = recurrence`, using `ON CONFLICT DO NOTHING` on (recurrence_id, date). An occurrence the user deleted (soft) is not regenerated, because the row still exists. No cron required.
 
-## 6. Autenticación y seguridad
+## 6. Authentication and security
 
-- **Inicio de sesión sin contraseña:**
-  - **Email:** un solo correo con un **enlace mágico y un código de 6 dígitos**. El enlace abre la app en Android vía App Links; el código sirve cuando se abre el correo en otro dispositivo. Ambos caducan a los 10 minutos y son de un solo uso.
-  - **Passkeys (WebAuthn):** se ofrecen tras el primer inicio de sesión. Se puede tener varias por usuario.
-  - El registro y el inicio de sesión son el mismo flujo: si el email no existe, se crea la cuenta.
-- **Sesiones:** cookie `httpOnly` + `SameSite=Lax` en la web; token *bearer* guardado en el almacenamiento seguro en Flutter y en el widget.
-- **OAuth (servidor):** Better Auth actúa como servidor de autorización para clientes MCP, con registro dinámico de clientes y PKCE, como exige la especificación de MCP. Los scopes de la v1 son `finance:read` y `finance:write`.
-- **Rate limiting** en `/auth/*`, por IP y por email.
-- **Envío de correos:** Resend en producción (detrás de una interfaz `Mailer` intercambiable) y Mailpit en local.
-- **RGPD:** exportación completa (JSON + CSV), borrado de cuenta definitivo y política de privacidad mínima.
+- **Passwordless sign-in:**
+  - **Email:** one email carrying a **6-digit code and a magic link**. The link is `{WEB_URL}/auth/verify?email=…&code=…`; the page (and the Android app via App Links) submits that same code automatically, so there is a single one-time secret per email. The code is used manually when the email is opened on another device. Valid for 10 minutes, single use, at most 3 attempts.
+  - **Passkeys (WebAuthn):** offered after the first sign-in. Multiple per user.
+  - Sign-up and sign-in are the same flow: an unknown email creates the account.
+- **Sessions:** `httpOnly` + `SameSite=Lax` cookie on the web; *bearer* token in secure storage on Flutter and the widget.
+- **OAuth (server):** Better Auth acts as the authorization server for MCP clients, with dynamic client registration and PKCE, as the MCP spec requires. v1 scopes: `finance:read` and `finance:write`.
+- **Rate limiting** on `/auth/*`, per IP and per email.
+- **Email delivery:** Resend in production (behind a swappable `Mailer` interface), Mailpit locally.
+- **GDPR:** full export (JSON + CSV), permanent account deletion, minimal privacy policy.
 
-## 7. API (Etapa 1)
+## 7. API (Stage 1)
 
-REST en `/v1`, JSON y OpenAPI generado. Todas las rutas requieren sesión, salvo `/auth/*` y `/health`.
+REST under `/v1`, JSON, generated OpenAPI at `GET /openapi.json`. Every route requires a session except `/auth/*`, `/health` and `/openapi.json`.
 
-| Método y ruta | Descripción |
+| Method and path | Description |
 |---|---|
-| `GET /health` | Estado del servicio |
-| `GET /v1/me` · `PATCH /v1/me` | Perfil (timezone, locale) |
-| `GET /v1/summary?month=YYYY-MM` | Resumen del mes (§5); por defecto, el mes actual según la timezone |
-| `GET /v1/transactions?month=&category=&status=&cursor=` | Lista paginada, ordenada por fecha descendente |
-| `POST /v1/transactions` | Crear. Acepta `Idempotency-Key` |
-| `PATCH /v1/transactions/:id` · `DELETE /v1/transactions/:id` · `POST /v1/transactions/:id/restore` | Editar, borrar (suave) y restaurar |
-| `GET/POST /v1/categories` · `PATCH /v1/categories/:id` | Gestión de categorías (archivar = `PATCH archived: true`) |
+| `GET /health` | Service status |
+| `GET /v1/me` · `PATCH /v1/me` | Profile (timezone, locale) |
+| `GET /v1/summary?month=YYYY-MM` | Month summary (§5); defaults to the current month in the user's timezone |
+| `GET /v1/transactions?month=&category=&status=&cursor=` | Paginated list, date descending |
+| `POST /v1/transactions` | Create. Accepts `Idempotency-Key` |
+| `PATCH /v1/transactions/:id` · `DELETE /v1/transactions/:id` · `POST /v1/transactions/:id/restore` | Edit, soft delete, restore |
+| `GET/POST /v1/categories` · `PATCH /v1/categories/:id` | Category management (archive = `PATCH archived: true`) |
 | `PUT /v1/categories/:id/budget` | Body `{ amount, effectiveFrom: "YYYY-MM" }` |
-| `GET/POST /v1/recurrences` · `PATCH/DELETE /v1/recurrences/:id` | Recurrentes. Borrar una recurrencia no borra los movimientos ya generados |
-| `GET /v1/reports/by-category?from=&to=&kind=&status=` | Totales y porcentajes por categoría (alimenta la dona) |
-| `GET /v1/reports/trend?from=&to=` | Ingresos, gastos y presupuesto por mes |
-| `POST /v1/imports` (multipart, `source=budge`) | Parsea el archivo y devuelve la vista previa con sus estadísticas |
-| `POST /v1/imports/:id/confirm` · `DELETE /v1/imports/:id` | Confirmar, o revertir (borra los movimientos de esa importación) |
-| `GET /v1/me/export` · `DELETE /v1/me` | Exportar datos y borrar la cuenta |
+| `GET/POST /v1/recurrences` · `PATCH/DELETE /v1/recurrences/:id` | Recurrences. Deleting one keeps the transactions already generated |
+| `GET /v1/reports/by-category?from=&to=&kind=&status=` | Totals and percentages per category (feeds the donut) |
+| `GET /v1/reports/trend?from=&to=` | Income, expenses and budget per month |
+| `POST /v1/imports` (multipart, `source=budge`) | Parses the file and returns a preview with stats |
+| `POST /v1/imports/:id/confirm` · `DELETE /v1/imports/:id` | Confirm, or revert (deletes that import's transactions) |
+| `GET /v1/me/export` · `DELETE /v1/me` | Export data, delete account |
 
-**Errores:** `application/problem+json` (RFC 9457) con un `code` estable, por ejemplo `validation_failed`, `not_found`, `import_duplicate_file` o `budget_category_not_expense`. Para `validation_failed` se incluyen los errores por campo.
+**Errors:** `application/problem+json` (RFC 9457) with a stable `code`, e.g. `validation_failed`, `not_found`, `import_duplicate_file`, `budget_category_not_expense`. `validation_failed` includes per-field errors.
 
-## 8. Importador de Budge (`packages/importers/budge`)
+## 8. Budge importer (`packages/importers/budge`)
 
-**Formato observado** (export "Format version 1"): bloques separados por `###`.
+**Observed format** (export "Format version 1"): blocks separated by `###`.
 
-1. Metadatos: `Format version,Period,User ID`.
-2. Movimientos: `Date` (DD-MM-YYYY), `Payment`, `Is paid`, `Amount` (decimal con punto, con signo), `Currency`, `Account`, `Category`, `Subcategory`, `Goal`, `Description`.
-3. Cuentas: `Account, Account Balance, Available Balance, Credit Limit, Currency, Is savings, Description`.
+1. Metadata: `Format version,Period,User ID`.
+2. Transactions: `Date` (DD-MM-YYYY), `Payment`, `Is paid`, `Amount` (dot decimal, signed), `Currency`, `Account`, `Category`, `Subcategory`, `Goal`, `Description`.
+3. Accounts: `Account, Account Balance, Available Balance, Credit Limit, Currency, Is savings, Description`.
 
-**Mapeo:**
+**Mapping:**
 
 | Budge | Lukas |
 |---|---|
 | Date | `date` |
-| Payment (con trim) | `name` |
+| Payment (trimmed) | `name` |
 | Is paid | `status` (`true` → `paid`) |
-| Amount | `amount` en céntimos, con un parseo decimal exacto (sin `float`) |
-| Currency | `currency`. Si no es la moneda de la cuenta por defecto, la fila se rechaza en la v1 y se informa en la vista previa |
-| Account | Se ignora en la v1; todo va a la cuenta por defecto |
-| Category | Se busca o se crea una categoría con ese nombre (sin distinguir mayúsculas). `kind` = signo mayoritario de sus movimientos; el ícono y el color se asignan con un diccionario de nombres comunes (supermercado → carrito, restaurante → cubiertos, casa, transporte, salario…) y, si no hay coincidencia, con un valor por defecto |
-| Subcategory, Goal | Se ignoran (vacíos en los datos observados) |
+| Amount | `amount` in cents, exact decimal parsing (no `float`) |
+| Currency | `currency`. If it differs from the default account's currency, the row is rejected in v1 and reported in the preview |
+| Account | Ignored in v1; everything goes to the default account |
+| Category | Find or create a category by name (case-insensitive). `kind` = majority sign of its transactions; icon and color come from a dictionary of common names (supermercado → cart, restaurante → cutlery, casa, transporte, salário…) with a default fallback |
+| Subcategory, Goal | Ignored (empty in observed data) |
 | Description | `note` |
-| — | `source = import`, `import_id`, `external_hash = sha256(date‖name‖amount‖category)` |
+| — | `source = import`, `import_id`, `external_hash = sha256(date‖name‖amount‖category‖ordinal)` |
 
-- **Duplicados:** las filas cuyo `external_hash` ya existe para el usuario se omiten y se cuentan en la vista previa. Filas idénticas dentro del mismo archivo (por ejemplo, dos cafés iguales el mismo día) se distinguen añadiendo su ordinal al hash.
-- **El bloque de cuentas y el `User ID`** se ignoran y no se guardan.
-- **Presupuestos:** Budge no los exporta. La vista previa incluye el gasto mensual promedio por categoría para sugerirlos en el onboarding.
-- **Robustez:** pueden faltar bloques; se aceptan finales de línea `\r\n`; el BOM se ignora. Si el formato no se reconoce, se responde `import_unrecognized_format`.
+- **Duplicates:** rows whose `external_hash` already exists for the user are skipped and counted in the preview. Identical rows within one file (e.g. two identical coffees on the same day) are told apart by their ordinal among identical rows, so overlapping exports still deduplicate.
+- **The accounts block and the `User ID`** are ignored and never stored.
+- **Budgets:** Budge does not export them. The preview includes the average monthly spending per category to suggest budgets during onboarding.
+- **Robustness:** missing blocks tolerated; `\r\n` line endings accepted; BOM ignored. If the format is not recognized, respond `import_unrecognized_format`.
 
-## 9. Desarrollo local y CI
+## 9. Local development and CI
 
-- `docker compose up` levanta Postgres, Mailpit, `api` y `mcp`. La web corre con `pnpm dev`.
-- Las migraciones de Drizzle se aplican al arrancar `api` en desarrollo.
-- Un seed de desarrollo crea un usuario de prueba con los datos del CSV de ejemplo anonimizado.
-- **CI (GitHub Actions):** lint, typecheck, pruebas unitarias e integración (con un Postgres de servicio) en cada PR.
-- Repositorio: README (qué es, cómo correrlo, cómo contribuir), CONTRIBUTING, licencia AGPL-3.0 y Conventional Commits.
+- `docker compose up` starts Postgres, Mailpit and `api`. The web runs with `pnpm dev`.
+- Drizzle migrations are applied on `api` startup in development.
+- A development seed creates a test user with the anonymized sample CSV data.
+- **CI (GitHub Actions):** lint, typecheck, unit and integration tests (against a real Postgres) on every PR.
+- Repository: README (what it is, how to run it, how to contribute), CONTRIBUTING, AGPL-3.0 license, Conventional Commits.
 
-## 10. Pruebas (Etapa 1)
+## 10. Testing (Stage 1)
 
-- **`core` (Vitest):** `monthSummary`, con el caso real de octubre 2026 (562,92 €), devoluciones, categorías sin presupuesto, cambios de presupuesto entre meses, `occurrences` con días 29–31 y años bisiestos, y validaciones de signo.
-- **`importers/budge`:** fixture anonimizado con la misma estructura que el export real (bloques, comillas, comas en nombres, `Is paid=false`, filas positivas en categorías de gasto). Se prueba el parseo exacto de montos, la deduplicación y los formatos inválidos. **El CSV real del autor nunca entra al repo.**
-- **`api` (integración, Postgres real):** flujos CRUD, resumen, materialización de recurrentes (idempotente), idempotencia de `POST /transactions`, importación preview → confirm → revert y **aislamiento entre usuarios** (A no puede leer ni modificar los datos de B, incluso con ids válidos de B).
-- **Auth:** enlace o código inválido o caducado, de un solo uso, y rate limiting.
+- **`core` (Vitest):** `monthSummary` with the real October 2026 case (562.92 €), refunds, categories without budget, budget changes across months, `occurrences` on days 29–31 and leap years, sign validation.
+- **`importers/budge`:** anonymized fixture with the same structure as the real export (blocks, quotes, commas in names, `Is paid=false`, positive rows in expense categories). Exact amount parsing, deduplication and invalid formats. **The author's real CSV never enters the repo.**
+- **`api` (integration, real Postgres):** CRUD flows, summary, recurrence materialization (idempotent), `POST /transactions` idempotency, import preview → confirm → revert, and **cross-user isolation** (A cannot read or modify B's data, even with valid ids of B).
+- **Auth:** invalid or expired code, single use, rate limiting.
 
-## 11. Fuera de esta etapa
+## 11. Beyond this stage
 
-Las Etapas 2–5 se especificarán por separado. Este documento solo fija lo que necesitan de la Etapa 1: `GET /v1/summary` como única llamada para la pantalla principal y el widget, OAuth listo para MCP y la importación usable desde el onboarding.
+Stages 2–5 will be specified separately. This document only fixes what they need from Stage 1: `GET /v1/summary` as the single call for the home screen and widget, OAuth ready for MCP, and imports usable from onboarding.

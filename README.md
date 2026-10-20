@@ -1,41 +1,41 @@
 # Lukas
 
-**Finanzas personales que se sienten como un juego.** Presupuesto mensual, una app Android con widgets para registrar gastos en segundos, una web con gráficas y un servidor MCP para que tu asistente de IA (Claude, ChatGPT…) te ayude con tus cuentas.
+**Personal finance that feels like a game.** A monthly budget, an Android app with widgets to log expenses in seconds, a web dashboard with charts, and an MCP server so your AI assistant (Claude, ChatGPT…) can help you with your money.
 
-## ¿Por qué "Lukas"?
+## Why "Lukas"?
 
-En Colombia, al dinero le decimos **lucas**. Una *luca* son mil pesos, y de ahí se pasa a cualquier plata: "¿cuántas lukas te costó?", "estoy sin lukas", "me faltan unas lukas para fin de mes". Es una palabra cercana y de todos los días, justo como queremos que se sienta manejar tus finanzas.
+In Colombia we call money **lucas**. One *luca* is a thousand pesos, and from there it means money in general: "¿cuántas lukas te costó?" (how much did it cost you?), "estoy sin lukas" (I'm broke), "me faltan unas lukas para fin de mes" (I'm a few bucks short until the end of the month). It's a warm, everyday word, which is exactly how we want managing your finances to feel.
 
-**Lukas también es la mascota del proyecto.** Te acompaña en la app: celebra cuando registras un gasto, te avisa cuando una categoría se acerca al límite y festeja cuando cierras el mes dentro del presupuesto. La idea es que ser ordenado con tu dinero sea divertido, casi adictivo.
+**Lukas is also the project's mascot.** It keeps you company in the app: it cheers when you log an expense, warns you when a category is getting close to its limit, and celebrates when you close the month within budget. The goal is to make being organized with your money fun, almost addictive.
 
-## Qué hace
+## What it does
 
-- **Lo que te queda este mes**, en grande y siempre visible, en la app y en el widget.
-- **Presupuesto mensual por categoría**, con barras que se llenan con lo gastado y cambian de color al acercarse al límite.
-- **Movimientos por día**, pagados o pendientes, con recurrentes automáticos (arriendo, suscripciones, salario…).
-- **Análisis** por categoría y evolución mes a mes.
-- **Importación desde Budge** (CSV).
-- **Conecta tu asistente:** un servidor MCP para pedirle a tu IA que registre gastos, prepare reportes o ajuste tu presupuesto.
-- **Sin contraseñas:** entras con un enlace mágico o un código enviado a tu correo, o con una passkey.
+- **What's left to spend this month**, big and always visible, in the app and on the widget.
+- **Monthly budget per category**, with bars that fill up with what you've spent and change color as you approach the limit.
+- **Daily transactions**, paid or pending, with automatic recurring ones (rent, subscriptions, salary…).
+- **Analysis** by category and month-over-month trends.
+- **Import from Budge** (CSV).
+- **Connect your assistant:** an MCP server so you can ask your AI to log expenses, prepare reports, or adjust your budget.
+- **No passwords:** sign in with a magic link or a code sent to your email, or with a passkey.
 
-## Estado
+## Status
 
-🚧 En diseño. La especificación está en [`docs/superpowers/specs/2026-10-20-lukas-design.md`](docs/superpowers/specs/2026-10-20-lukas-design.md).
+🚧 In development. The design is in [`docs/superpowers/specs/2026-10-20-lukas-design.md`](docs/superpowers/specs/2026-10-20-lukas-design.md).
 
-## Arquitectura
+## Architecture
 
-Monorepo con:
+A monorepo with:
 
-- `apps/api`: backend en TypeScript (Hono), Postgres y Better Auth
+- `apps/api`: TypeScript backend (Hono), Postgres and Better Auth
 - `apps/web`: React + Vite
-- `apps/mcp`: servidor MCP remoto
-- `apps/mobile`: Flutter (Android; iOS más adelante), con widget nativo en Kotlin + Glance
-- `packages/core`, `packages/db`, `packages/importers`: reglas de negocio, esquema y migraciones, importadores
+- `apps/mcp`: remote MCP server
+- `apps/mobile`: Flutter (Android; iOS later), with a native Kotlin + Glance widget
+- `packages/core`, `packages/db`, `packages/importers`: business rules, schema and migrations, importers
 
 ## Self-hosting
 
-Por ahora Lukas se ofrece como servicio alojado y no hay documentación para instalarlo por tu cuenta. Si te interesa, abre un issue y lo tendremos en cuenta.
+For now Lukas is offered as a hosted service, and there are no docs for running your own instance. If you're interested, open an issue and we'll take it into account.
 
-## Licencia
+## License
 
-[AGPL-3.0](LICENSE). Si ofreces Lukas modificado como servicio, debes publicar tus cambios.
+[AGPL-3.0](LICENSE). If you offer a modified Lukas as a service, you must publish your changes.
