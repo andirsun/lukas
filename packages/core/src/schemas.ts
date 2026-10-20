@@ -1,0 +1,190 @@
+import { z } from "zod";
+import { isIsoDate, isMonth, isValidTimeZone } from "./dates.ts";
+
+export const monthSchema = z.string().refine(isMonth, "Expected a month as YYYY-MM");
+export const isoDateSchema = z.string().refine(isIsoDate, "Expected a date as YYYY-MM-DD");
+export const amountSchema = z
+  .number()
+  .int()
+  .refine(Number.isSafeInteger, "Amount is too large")
+  .refine((n) => n !== 0, "Amount cannot be zero");
+export const budgetAmountSchema = z.number().int().nonnegative().refine(Number.isSafeInteger);
+
+const kindSchema = z.enum(["expense", "income"]);
+const statusSchema = z.enum(["paid", "pending"]);
+const frequencySchema = z.enum(["monthly", "yearly"]);
+const nameSchema = z.string().trim().min(1).max(120);
+const noteSchema = z.string().max(1000).nullable();
+
+const atLeastOne = (value: object) => Object.keys(value).length > 0;
+const AT_LEAST_ONE = "Provide at least one field";
+
+export const createTransactionSchema = z.object({
+  name: nameSchema,
+  amount: amountSchema,
+  categoryId: z.uuid(),
+  date: isoDateSchema,
+  status: statusSchema.default("paid"),
+  note: noteSchema.optional(),
+  source: z.enum(["app", "web", "widget", "mcp"]).default("app"),
+});
+export type CreateTransaction = z.infer<typeof createTransactionSchema>;
+
+export const updateTransactionSchema = z
+  .object({
+    name: nameSchema,
+    amount: amountSchema,
+    categoryId: z.uuid(),
+    date: isoDateSchema,
+    status: statusSchema,
+    note: noteSchema,
+  })
+  .partial()
+  .refine(atLeastOne, AT_LEAST_ONE);
+export type UpdateTransaction = z.infer<typeof updateTransactionSchema>;
+
+const categoryFields = {
+  name: z.string().trim().min(1).max(40),
+  icon: z.string().min(1).max(40),
+  color: z.string().min(1).max(40),
+  sortOrder: z.number().int(),
+};
+
+export const createCategorySchema = z.object({
+  ...categoryFields,
+  kind: kindSchema,
+  sortOrder: categoryFields.sortOrder.optional(),
+});
+export type CreateCategory = z.infer<typeof createCategorySchema>;
+
+export const updateCategorySchema = z
+  .object({ ...categoryFields, archived: z.boolean() })
+  .partial()
+  .refine(atLeastOne, AT_LEAST_ONE);
+export type UpdateCategory = z.infer<typeof updateCategorySchema>;
+
+export const setBudgetSchema = z.object({
+  amount: budgetAmountSchema,
+  effectiveFrom: monthSchema,
+});
+export type SetBudget = z.infer<typeof setBudgetSchema>;
+
+const recurrenceFields = z.object({
+  name: nameSchema,
+  amount: amountSchema,
+  categoryId: z.uuid(),
+  frequency: frequencySchema,
+  dayOfMonth: z.number().int().min(1).max(31),
+  monthOfYear: z.number().int().min(1).max(12).nullable().optional(),
+  startDate: isoDateSchema,
+  endDate: isoDateSchema.nullable().optional(),
+});
+
+type RecurrenceShape = Partial<z.infer<typeof recurrenceFields>>;
+
+function checkRecurrence(value: RecurrenceShape, ctx: z.RefinementCtx) {
+  if (value.frequency === "yearly" && value.monthOfYear == null) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["monthOfYear"],
+      message: "Yearly recurrences need monthOfYear",
+    });
+  }
+  if (value.startDate && value.endDate && value.endDate < value.startDate) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["endDate"],
+      message: "endDate must be on or after startDate",
+    });
+  }
+}
+
+export const createRecurrenceSchema = recurrenceFields.superRefine(checkRecurrence);
+export type CreateRecurrence = z.infer<typeof createRecurrenceSchema>;
+
+export const updateRecurrenceSchema = recurrenceFields
+  .partial()
+  .refine(atLeastOne, AT_LEAST_ONE)
+  .superRefine(checkRecurrence);
+export type UpdateRecurrence = z.infer<typeof updateRecurrenceSchema>;
+
+export const updateProfileSchema = z
+  .object({
+    timezone: z.string().refine(isValidTimeZone, "Unknown time zone"),
+    locale: z.enum(["es", "en"]),
+  })
+  .partial()
+  .refine(atLeastOne, AT_LEAST_ONE);
+export type UpdateProfile = z.infer<typeof updateProfileSchema>;
+
+// Response DTOs (used to document the API in OpenAPI).
+
+export const transactionDto = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  amount: z.number().int(),
+  currency: z.string(),
+  date: z.string(),
+  status: statusSchema,
+  note: z.string().nullable(),
+  categoryId: z.uuid(),
+  recurrenceId: z.uuid().nullable(),
+  importId: z.uuid().nullable(),
+  source: z.enum(["app", "web", "widget", "mcp", "import", "recurrence"]),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type TransactionDto = z.infer<typeof transactionDto>;
+
+export const categoryDto = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  kind: kindSchema,
+  icon: z.string(),
+  color: z.string(),
+  sortOrder: z.number().int(),
+  archived: z.boolean(),
+  currentBudget: z.number().int().nullable(),
+});
+export type CategoryDto = z.infer<typeof categoryDto>;
+
+export const recurrenceDto = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  amount: z.number().int(),
+  categoryId: z.uuid(),
+  frequency: frequencySchema,
+  dayOfMonth: z.number().int(),
+  monthOfYear: z.number().int().nullable(),
+  startDate: z.string(),
+  endDate: z.string().nullable(),
+});
+export type RecurrenceDto = z.infer<typeof recurrenceDto>;
+
+export const monthSummaryDto = z.object({
+  month: z.string(),
+  budgetTotal: z.number().int(),
+  spent: z.number().int(),
+  remaining: z.number().int(),
+  income: z.number().int(),
+  balance: z.number().int(),
+  categories: z.array(
+    z.object({
+      categoryId: z.string(),
+      budget: z.number().int().nullable(),
+      spent: z.number().int(),
+      remaining: z.number().int().nullable(),
+      ratio: z.number().nullable(),
+      state: z.enum(["ok", "near", "over"]),
+    }),
+  ),
+});
+
+export const problemDto = z.object({
+  type: z.string(),
+  title: z.string(),
+  status: z.number().int(),
+  code: z.string(),
+  detail: z.string().optional(),
+  errors: z.array(z.object({ path: z.string(), message: z.string() })).optional(),
+});
