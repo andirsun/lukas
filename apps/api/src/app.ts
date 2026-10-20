@@ -7,6 +7,7 @@ import { notFound, onError, validationHook } from "./http/problem.ts";
 import { requireUser } from "./http/session.ts";
 import { categoryRoutes } from "./routes/categories.ts";
 import { importRoutes } from "./routes/imports.ts";
+import { meRoutes } from "./routes/me.ts";
 import { recurrenceRoutes } from "./routes/recurrences.ts";
 import { reportRoutes } from "./routes/reports.ts";
 import { summaryRoutes } from "./routes/summary.ts";
@@ -28,7 +29,7 @@ export function createApp(deps: AppDeps) {
   );
 
   app.use("/v1/*", requireUser(auth));
-  app.get("/v1/me", (c) => c.json(c.get("user")));
+  app.route("/", meRoutes(deps));
   app.route("/", categoryRoutes(deps));
   app.route("/", transactionRoutes(deps));
   app.route("/", recurrenceRoutes(deps));

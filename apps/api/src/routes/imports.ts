@@ -90,7 +90,10 @@ export function importRoutes(deps: AppDeps) {
         body: {
           content: {
             "multipart/form-data": {
-              schema: z.object({ source: z.literal("budge"), file: z.instanceof(File) }),
+              schema: z.object({
+                source: z.literal("budge"),
+                file: z.instanceof(File).openapi({ type: "string", format: "binary" }),
+              }),
             },
           },
           required: true,

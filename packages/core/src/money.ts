@@ -16,3 +16,9 @@ export function parseDecimalToMinor(input: string): number {
   if (!Number.isSafeInteger(minor)) throw new InvalidAmountError(input);
   return sign === "-" ? -minor : minor;
 }
+
+/** Formats minor units as a dot-decimal string with two decimals (-3070 → "-30.70"). */
+export function formatMinorAsDecimal(minor: number): string {
+  const abs = Math.abs(minor);
+  return `${minor < 0 ? "-" : ""}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`;
+}
