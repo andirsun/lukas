@@ -1,0 +1,36 @@
+﻿Format version,Period,User ID
+1,01-09-2026..31-10-2026,FAKEuserID000000000000000000
+
+###
+
+Date,Payment,Is paid,Amount,Currency,Account,Category,Subcategory,Goal,Description
+01-09-2026,Salary,true,3000,EUR,main,Salário,,,
+02-09-2026,groceries ,true,-30.70,EUR,main,Supermercado,,,
+03-09-2026,electricity,true,-16,EUR,main,Casa,,,
+04-09-2026,metro,true,-4.6,EUR,main,Transporte,,,
+05-09-2026,cinema,true,-9.50,EUR,main,Ocio,,,
+10-09-2026,coffee,true,-1.20,EUR,main,Restaurante,,,
+10-09-2026,coffee,true,-1.20,EUR,main,Restaurante,,,
+12-09-2026,"vitamins C, Zinc",true,-59,EUR,main,Vida,,,
+15-09-2026,music streaming,true,-3.53,EUR,main,suscripciones,,,
+18-09-2026,sold old lamp,true,5,EUR,main,Ocio,,,
+20-09-2026,lunch,true,-12.40,EUR,main,Restaurante,,,
+25-09-2026,dividends,true,14.25,EUR,main,Investimento,,,
+31-02-2026,broken date,true,-1,EUR,main,Ocio,,,
+01-10-2026,Salary,true,3000,EUR,main,Salário,,,
+02-10-2026,flights (1/3),true,-120,EUR,main,Ocio,,,split in three payments
+05-10-2026,groceries,true,-41.08,EUR,main,Supermercado,,,
+08-10-2026,bus,true,-2,EUR,main,Transporte,,,
+12-10-2026,dinner,true,-35,EUR,main,Restaurante,,,
+15-10-2026,music streaming,true,-3.53,EUR,main,suscripciones,,,
+20-10-2026,accountant,true,-61.50,EUR,main,Taxes,,,
+23-10-2026,video streaming,false,-7.99,EUR,main,suscripciones,,,
+28-10-2026,internet,false,-39.90,EUR,main,Casa,,,
+30-10-2026,desk lamp,true,-24.99,EUR,main,Things,,,
+
+###
+
+Account,Account Balance,Available Balance,Credit Limit,Currency,Is savings,Description
+main,1234.56,1234.56,0,EUR,false,
+
+###
