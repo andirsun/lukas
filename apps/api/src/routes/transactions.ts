@@ -33,6 +33,12 @@ const listQuery = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
+const suggestionsQuery = z.object({
+  q: z.string().trim().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(20).default(8),
+});
+const suggestionDto = z.object({ name: z.string(), categoryId: z.uuid() });
+
 const encodeCursor = (row: TransactionRow) =>
   Buffer.from(`${row.date}|${row.id}`).toString("base64url");
 function decodeCursor(cursor: string): { date: string; id: string } {
@@ -105,6 +111,62 @@ export function transactionRoutes(deps: AppDeps) {
         },
         200,
       );
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/v1/transactions/suggestions",
+      request: { query: suggestionsQuery },
+      responses: {
+        200: jsonResponse(
+          z.object({ items: z.array(suggestionDto) }),
+          "Recently used transaction names with the category they usually go in, most recent first",
+        ),
+        ...problems(422),
+      },
+    }),
+    async (c) => {
+      const { q, limit } = c.req.valid("query");
+      const needle = (q ?? "").toLowerCase();
+      // A name that equals its category's name is the default, not a shortcut, so it is skipped.
+      // `position` (not LIKE) keeps `%` and `_` in the search text literal.
+      const rows = await withUser(deps.db, c.get("userId"), (tx) =>
+        tx.execute<{ name: string; category_id: string }>(sql`
+          with used as (
+            select lower(t.name) as key, t.name, t.category_id, t.date, t.created_at
+            from transactions t
+            join categories c on c.id = t.category_id
+            where t.deleted_at is null
+              and c.archived_at is null
+              and lower(t.name) <> lower(c.name)
+          ),
+          latest as (
+            select distinct on (key) key, name, date, created_at
+            from used
+            order by key, date desc, created_at desc
+          ),
+          usual as (
+            select distinct on (key) key, category_id
+            from (
+              select key, category_id, count(*) as uses, max(date) as last_date,
+                max(created_at) as last_created
+              from used
+              group by key, category_id
+            ) per_category
+            order by key, uses desc, last_date desc, last_created desc
+          )
+          select latest.name, usual.category_id
+          from latest
+          join usual using (key)
+          where ${needle} = '' or position(${needle} in latest.key) > 0
+          order by (position(${needle} in latest.key) = 1) desc,
+            latest.date desc, latest.created_at desc
+          limit ${limit}
+        `),
+      );
+      return c.json({ items: rows.map((r) => ({ name: r.name, categoryId: r.category_id })) }, 200);
     },
   );
 
