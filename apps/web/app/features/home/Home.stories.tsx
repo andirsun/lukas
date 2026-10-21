@@ -582,7 +582,14 @@ export const PesosKeyboardAndPaste: Story = {
     await expect(sheet.queryByRole("button", { name: "Coma decimal" })).toBeNull();
     await userEvent.keyboard("15.000,5");
     const amount = sheet.getByTestId("amount");
-    await expect(amount).toHaveTextContent("$150.005 (150 lukas)");
+    // The comma ends a peso amount: the 5 after it does not count.
+    await expect(amount).toHaveTextContent("$15.000 (15 lukas)");
+    // Screen readers hear the amount once typing pauses.
+    await waitFor(() =>
+      expect(
+        sheet.getByText("−$15.000 (15 lukas)", { selector: "[aria-live]" }),
+      ).toBeInTheDocument(),
+    );
     for (let i = 0; i < 6; i += 1) await userEvent.keyboard("{Backspace}");
     const clipboard = new DataTransfer();
     clipboard.setData("text/plain", "$4.300.000");

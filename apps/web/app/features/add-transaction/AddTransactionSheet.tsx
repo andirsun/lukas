@@ -7,13 +7,26 @@ import { CategoryChip } from "../../ui/CategoryChip.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
 import { cx } from "../../ui/cx.ts";
 import { Keypad } from "../../ui/Keypad.tsx";
-import { pasteAmount, typeOnKeypad } from "../../ui/keypad-input.ts";
+import { pasteAmount, typeOnKeypad, wholeAmount } from "../../ui/keypad-input.ts";
 import { NameField } from "../../ui/NameField.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
 import { Sheet } from "../../ui/Sheet.tsx";
 import { useTransactionSheet } from "./TransactionSheetProvider.tsx";
 import { type Kind, type NameChoice, useTransactionForm } from "./use-add-transaction.ts";
+
+/** How long typing must pause before the amount is announced. */
+const ANNOUNCE_AFTER_MS = 500;
+
+/** `value` once it has stopped changing for `ms` (the first value right away). */
+function useSettled<T>(value: T, ms: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(timer);
+  }, [value, ms]);
+  return settled;
+}
 
 export interface AddTransactionSheetProps {
   open: boolean;
@@ -125,6 +138,9 @@ export function AddTransactionSheet({
       : t("title_expense");
   const hint = lukasHint(form.cents, currency, locale);
   const sign = form.cents > 0 ? (form.kind === "expense" ? "−" : "+") : "";
+  const amountText = `${sign}${formatAmountInput(wholeAmount(form.raw, { locale, currency }), currency, locale)}`;
+  // Screen readers hear the amount (with its hint) once typing pauses, not on every key.
+  const announced = useSettled(hint ? `${amountText} (${hint})` : amountText, ANNOUNCE_AFTER_MS);
   const dateText =
     form.date === form.today ? t("today") : form.date ? formatDay(form.date, locale) : "";
   const statusText = form.pending ? tRoot("common.pending") : tRoot("common.paid");
@@ -144,20 +160,22 @@ export function AddTransactionSheet({
 
         <p
           data-testid="amount"
-          aria-live="polite"
+          aria-hidden="true"
           className={cx(
             "lk-amount-display lk-sheet-amount",
             form.kind === "expense" ? "is-expense" : "is-income",
           )}
         >
-          {sign}
-          {formatAmountInput(form.raw, currency, locale)}
+          {amountText}
           {hint && " "}
           {hint && (
             <span className="align-middle font-text text-[14px] font-bold text-ink-muted">
               ({hint})
             </span>
           )}
+        </p>
+        <p className="sr-only" aria-live="polite">
+          {announced}
         </p>
 
         <NameField<NameChoice>

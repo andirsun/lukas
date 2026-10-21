@@ -1152,6 +1152,13 @@
     cursor: pointer;
     text-align: left;
   }
+  /*
+   * A sheet with the pinned amount and footer: focusing a control scrolls it clear of both
+   * (WCAG 2.4.11), not behind them.
+   */
+  .lk-sheet:has(.lk-sheet-footer) {
+    scroll-padding-block: 72px 96px;
+  }
   /* The amount in the sheet stays in view at the top while the keypad is scrolled to. */
   .lk-sheet-amount {
     position: sticky;

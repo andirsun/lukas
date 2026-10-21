@@ -31,6 +31,7 @@ import {
   parseAmountInput,
 } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
+import { wholeAmount } from "../../ui/keypad-input.ts";
 import { useToast } from "../../ui/Toast.tsx";
 import { feedbackForSave, orderByUse } from "../home/home-model.ts";
 
@@ -323,7 +324,8 @@ export function useTransactionForm({
       : [];
   });
 
-  const cents = centsOf(raw, locale);
+  // Pesos: a typed separator only ends the amount; what comes before it is the amount.
+  const cents = centsOf(wholeAmount(raw, { locale, currency }), locale);
   const valid = cents > 0 && selected !== undefined && date !== "";
 
   /** What a new transaction would be: unnamed, it takes its category's name. */

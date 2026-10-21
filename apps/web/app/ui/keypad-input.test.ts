@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Locale } from "../i18n/format.ts";
-import { type AmountFormat, pasteAmount, pressKey, typeOnKeypad } from "./keypad-input.ts";
+import {
+  type AmountFormat,
+  pasteAmount,
+  pressKey,
+  typeOnKeypad,
+  wholeAmount,
+} from "./keypad-input.ts";
 
 /** Types `keys` (as `KeyboardEvent.key` values) from an empty amount; ignored keys change nothing. */
 function type(keys: string[], format: AmountFormat): string {
@@ -15,11 +21,15 @@ describe("typing an amount", () => {
   const cases: [Locale, string, string, string][] = [
     // locale, currency, keys typed, raw value
     ["es", "COP", "15.000", "15000"],
-    ["es", "COP", "50000,5", "500005"],
+    // Pesos: the decimal separator ends the amount; what follows it does not count.
+    ["es", "COP", "15.000,5", "15000,"],
+    ["es", "COP", "50.000,50", "50000,"],
+    ["es", "COP", "50000,5", "50000,"],
     ["es", "COP", "999999999", "999999999"],
     ["es", "COP", "1000000000", "100000000"],
     ["en", "COP", "15,000", "15000"],
-    ["en", "COP", "50000.5", "500005"],
+    ["en", "COP", "50000.5", "50000."],
+    ["en", "COP", "50,000.75", "50000."],
     ["es", "EUR", "6,08", "6,08"],
     ["es", "EUR", "15.000", "15000"],
     ["es", "EUR", "6,089", "6,08"],
@@ -45,38 +55,79 @@ describe("typing an amount", () => {
     for (const key of ["a", "Enter", "Tab", " ", "-"]) {
       expect(typeOnKeypad("6", key, { locale: "es", currency: "EUR" })).toBeNull();
     }
-    expect(typeOnKeypad("6", ",", { locale: "es", currency: "COP" })).toBeNull();
     expect(typeOnKeypad("6", ".", { locale: "es", currency: "EUR" })).toBeNull();
+    expect(typeOnKeypad("6", ".", { locale: "es", currency: "COP" })).toBeNull();
   });
 
-  it("the keypad's decimal key does nothing for whole-unit currencies", () => {
-    expect(pressKey("50", { kind: "decimal" }, { locale: "es", currency: "COP" })).toBe("50");
+  it("in pesos, the amount is what comes before the separator, and Backspace undoes it", () => {
+    const cop = { locale: "es", currency: "COP" } as const;
+    let value = type(chars("15.000,5"), cop);
+    expect(wholeAmount(value, cop)).toBe("15000");
+    value = typeOnKeypad(value, "Backspace", cop) ?? value;
+    expect(value).toBe("15000");
+    expect(typeOnKeypad(value, "7", cop)).toBe("150007");
+    // A separator with nothing before it is ignored.
+    expect(typeOnKeypad("", ",", cop)).toBe("");
+    expect(wholeAmount("6,08", { locale: "es", currency: "EUR" })).toBe("6,08");
+  });
+
+  it("a decimal key ends a peso amount and starts euro decimals", () => {
+    expect(pressKey("50", { kind: "decimal" }, { locale: "es", currency: "COP" })).toBe("50,");
+    expect(pressKey("50,", { kind: "digit", digit: "5" }, { locale: "es", currency: "COP" })).toBe(
+      "50,",
+    );
     expect(pressKey("50", { kind: "decimal" }, { locale: "es", currency: "EUR" })).toBe("50,");
   });
 });
 
 describe("pasting an amount", () => {
   const cases: [Locale, string, string, string | null][] = [
+    // Decimal currencies: a single separator followed by exactly 1–2 digits is the decimal one;
+    // otherwise "." and "," are thousands separators. The same in either language.
+    ["es", "EUR", "6.08", "6,08"],
+    ["en", "EUR", "6.08", "6.08"],
+    ["es", "USD", "$6.08", "6,08"],
+    ["es", "EUR", "1.234", "1234"],
+    ["en", "USD", "1.234", "1234"],
+    ["es", "EUR", "1.234,56", "1234,56"],
+    ["en", "EUR", "1.234,56", "1234.56"],
+    ["es", "EUR", "1,234.56", "1234,56"],
+    ["en", "USD", "€1,234.56", "1234.56"],
+    ["es", "EUR", "$ 50.000", "50000"],
+    ["en", "USD", "$ 50.000", "50000"],
+    ["es", "EUR", "1.5", "1,5"],
+    ["es", "EUR", "6,08 €", "6,08"],
+    ["es", "EUR", "−6,08", "6,08"],
+    ["es", "EUR", "6,089", "6089"],
+    ["es", "USD", "US$ 1.250,75", "1250,75"],
+    ["en", "USD", "1,000,000.50", "1000000.50"],
+    ["en", "USD", "999,999,999.99", "999999999.99"],
+    ["es", "EUR", "007", "7"],
+    // Not one clear amount: nothing is pasted.
+    ["es", "EUR", "1,2,3", null],
+    ["es", "EUR", "1234,567", null],
+    ["en", "USD", "lunch", null],
+    ["es", "EUR", "2024-10-21", null],
+    ["es", "EUR", "Total 2 items 50.000", null],
+    // Pesos: the locale's decimal separator ends the amount; the other one is thousands.
     ["es", "COP", "$50.000", "50000"],
     ["es", "COP", "15.000", "15000"],
-    ["es", "COP", "4.300.000", "4300000"],
+    ["es", "COP", "15.000,5", "15000"],
     ["es", "COP", "50.000,50", "50000"],
+    ["es", "COP", "4.300.000", "4300000"],
     ["en", "COP", "COP 50,000", "50000"],
     ["en", "COP", "50,000.75", "50000"],
+    ["es", "COP", "$6.08", null],
     ["es", "COP", "1.000.000.000", null],
-    ["es", "EUR", "6,08 €", "6,08"],
-    ["es", "EUR", "1.234,56", "1234,56"],
-    ["es", "EUR", "−6,08", "6,08"],
-    ["es", "EUR", "6,089", null],
-    ["es", "EUR", "1,2,3", null],
-    ["en", "EUR", "€1,234.56", "1234.56"],
-    ["en", "USD", "$6.08", "6.08"],
-    ["es", "USD", "US$ 1.250,75", "1250,75"],
-    ["en", "USD", "999,999,999.99", "999999999.99"],
-    ["en", "USD", "lunch", null],
-    ["es", "EUR", "007", "7"],
   ];
   it.each(cases)("%s %s: pasting %j gives %j", (locale, currency, text, raw) => {
     expect(pasteAmount(text, { locale, currency })).toBe(raw);
+  });
+
+  it("typing and pasting the same peso text give the same amount", () => {
+    const cop = { locale: "es", currency: "COP" } as const;
+    for (const text of ["15.000,5", "50.000,50", "4.300.000"]) {
+      expect(wholeAmount(type(chars(text), cop), cop)).toBe(pasteAmount(text, cop));
+    }
   });
 });
