@@ -106,6 +106,16 @@ describe("transaction name suggestions", () => {
     expect((await suggest("?q=lidl")).items).toEqual([{ name: "lidl", categoryId: supermercado }]);
   });
 
+  test("the most used category wins over a more recent one", async () => {
+    await seed(a, restaurante, "padaria", "2026-12-01");
+    await seed(a, restaurante, "padaria", "2026-12-02");
+    await seed(a, restaurante, "padaria", "2026-12-03");
+    await seed(a, supermercado, "padaria", "2026-12-04"); // newest, but used only once
+    expect((await suggest("?q=padaria")).items).toEqual([
+      { name: "padaria", categoryId: restaurante },
+    ]);
+  });
+
   test("users never see each other's names", async () => {
     expect(await names("", b)).toEqual([]);
     const mine = await category(b, "Casa");
