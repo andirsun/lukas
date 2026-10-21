@@ -3,22 +3,17 @@ import { createTranslator } from "use-intl/core";
 import type { Locale } from "../../i18n/format.ts";
 import en from "../../i18n/messages/en.json" with { type: "json" };
 import es from "../../i18n/messages/es.json" with { type: "json" };
+import { SITE_ORIGIN } from "../../site/config.ts";
+import { LANDING_PATH } from "../../site/paths.ts";
 
-/**
- * The public origin used in absolute URLs (canonical, hreflang, Open Graph, sitemap). A
- * placeholder until the production domain is settled; `public/robots.txt` and
- * `public/sitemap.xml` repeat it.
- */
-export const SITE_ORIGIN = "https://lukas.app";
-
-/** Each locale's landing page. Spanish is the default (and `x-default`). */
-export const LANDING_PATH: Record<Locale, string> = { es: "/", en: "/en" };
+export { LANDING_PATH };
 
 /** The 1200×630 share images rendered by `scripts/og/render.ts`. */
 const OG_IMAGE = { width: 1200, height: 630 };
 
 const CATALOGS = { es, en } as const;
 
+/** Absolute URLs use the site's origin (`VITE_SITE_URL`, see `app/site/config.ts`). */
 function absolute(path: string): string {
   return `${SITE_ORIGIN}${path}`;
 }

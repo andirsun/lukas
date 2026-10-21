@@ -581,6 +581,50 @@
     line-height: 1.5;
   }
 
+  /* Landing-only release: the coming-soon labels are long, so they wrap (down to 320px). */
+  .lk-landing .lk-btn.is-soon {
+    white-space: normal;
+    text-align: center;
+    max-width: 100%;
+    padding-inline: var(--space-4);
+  }
+
+  /* The 404 page: Lukas looking for the page, then the message in each language. */
+  .lk-landing-notfound {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-4);
+    text-align: center;
+    padding-block: var(--space-4) var(--space-6);
+  }
+  .lk-landing-notfound-lukas {
+    width: 160px;
+    height: 160px;
+  }
+  .lk-landing-notfound-message {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    max-width: 30rem;
+  }
+  .lk-landing .lk-landing-notfound-message :is(h1, h2) {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .lk-landing-notfound-message p {
+    color: var(--ink-muted);
+    line-height: 1.5;
+  }
+  .lk-landing-notfound-message + .lk-landing-notfound-message {
+    margin-top: var(--space-4);
+    padding-top: var(--space-5);
+    border-top: 2px solid var(--stroke);
+    width: 100%;
+  }
+
   /* Footer */
   .lk-landing-footer {
     display: flex;

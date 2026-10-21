@@ -4,13 +4,15 @@ import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { Lukas } from "../../lukas/Lukas.tsx";
 import { LiveLukasBoundary, useLiveLukasReady } from "../../lukas/live-support.tsx";
 import { TravelingLukas as TravelingLukas2D } from "../../lukas/TravelingLukas.tsx";
+import { LANDING_ONLY } from "../../site/config.ts";
+import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
 import { Faq } from "./Faq.tsx";
 import { Footer } from "./Footer.tsx";
 import { Hero } from "./Hero.tsx";
 import { HowItWorks } from "./HowItWorks.tsx";
-import { signInHref } from "./links.ts";
+import { appLinkProps } from "./links.ts";
 import { OpenSource } from "./OpenSource.tsx";
 import { LANDING_PATH } from "./seo.ts";
 import { UseItYourWay } from "./UseItYourWay.tsx";
@@ -33,8 +35,8 @@ function Header() {
           <a href="#faq" className="lk-landing-link lk-landing-nav-section">
             {t("faq")}
           </a>
-          <PressLink to={signInHref(locale)} variant="secondary" size="sm">
-            {t("sign_in")}
+          <PressLink {...appLinkProps(locale)} variant="secondary" size="sm">
+            {t(LANDING_ONLY ? "sign_in_soon" : "sign_in")}
           </PressLink>
           <ThemeToggle />
         </nav>
@@ -77,8 +79,10 @@ function Closing() {
           <Lukas mood="celebrating" size="100%" decorative deferUntilNear />
         </span>
         <h2 id="closing-title">{t("closing.title")}</h2>
-        <p>{t("closing.body")}</p>
-        <PressLink to={signInHref(locale)}>{t("hero.cta")}</PressLink>
+        <p>{t(LANDING_ONLY ? "closing.body_soon" : "closing.body")}</p>
+        <PressLink {...appLinkProps(locale)} className={cx(LANDING_ONLY && "is-soon")}>
+          {t(LANDING_ONLY ? "hero.cta_soon" : "hero.cta")}
+        </PressLink>
       </div>
     </section>
   );

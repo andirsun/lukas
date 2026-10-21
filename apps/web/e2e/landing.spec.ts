@@ -550,6 +550,7 @@ test.describe("static files", () => {
   test("robots.txt, sitemap.xml and the Open Graph images are served", async ({ request }) => {
     const robots = await (await request.get("/robots.txt")).text();
     expect(robots).toContain("Sitemap: https://lukas.app/sitemap.xml");
+    expect(robots).toContain("Disallow: /app");
 
     const sitemap = await (await request.get("/sitemap.xml")).text();
     expect(sitemap).toContain("<loc>https://lukas.app/</loc>");

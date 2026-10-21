@@ -1,7 +1,9 @@
 /**
  * Serves the built site (`build/client`) the way a static host does, for the e2e tests that check
  * the prerendered pages: `/en` → `en/index.html`, real files as they are, and every other path the
- * SPA fallback (`__spa-fallback.html`). No dependencies, no caching, GET and HEAD only.
+ * SPA fallback (`__spa-fallback.html`) or, when the build has a top-level `404.html` (the
+ * landing-only release), that page with a 404 status, as Cloudflare Pages does. No dependencies, no
+ * caching, GET and HEAD only.
  *
  *   tsx scripts/serve-build.ts [port]   (default 4180)
  */
@@ -59,9 +61,11 @@ createServer((req, res) => {
   } catch {
     file = null;
   }
-  const path = file ?? join(ROOT, "__spa-fallback.html");
+  const notFound = join(ROOT, "404.html");
+  const missing = file === null && isFile(notFound);
+  const path = file ?? (missing ? notFound : join(ROOT, "__spa-fallback.html"));
   const body = readFileSync(path);
-  res.writeHead(200, {
+  res.writeHead(missing ? 404 : 200, {
     "content-type": TYPES[extname(path)] ?? "application/octet-stream",
     "content-length": body.length,
     "cache-control": "no-store",

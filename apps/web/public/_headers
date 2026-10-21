@@ -1,0 +1,22 @@
+# Cloudflare Pages response headers (https://developers.cloudflare.com/pages/configuration/headers/).
+# Harmless on any other static host. When several rules match, Pages adds their values together,
+# so each header is set by exactly one rule here, except the security headers (every page).
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()
+
+# The HTML pages: always revalidate soon, so a new deploy shows up within minutes.
+/
+  Cache-Control: public, max-age=300, must-revalidate
+/en
+  Cache-Control: public, max-age=300, must-revalidate
+/en/
+  Cache-Control: public, max-age=300, must-revalidate
+/404.html
+  Cache-Control: public, max-age=300, must-revalidate
+
+# Built files are named after their content: cache them for good.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

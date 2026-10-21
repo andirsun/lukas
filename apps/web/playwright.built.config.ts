@@ -6,13 +6,19 @@ import { defineConfig, devices } from "@playwright/test";
  * builds first; the server reads files on every request, so a server left running from an earlier
  * run still serves the fresh build. App flows against the dev server use playwright.config.ts.
  */
+/**
+ * `E2E_LANDING_ONLY=true` runs the landing-only suite instead (`pnpm e2e:landing-only`), against a
+ * build made with VITE_LANDING_ONLY=true; the default suites need the default build.
+ */
+const landingOnly = process.env.E2E_LANDING_ONLY === "true";
+
 /** `E2E_BUILT_PORT` picks another port, e.g. to run beside a server another checkout reuses. */
 const port = Number(process.env.E2E_BUILT_PORT ?? 4180);
 const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: /landing(-lukas)?\.spec\.ts$/,
+  testMatch: landingOnly ? /landing-only\.spec\.ts$/ : /landing(-lukas)?\.spec\.ts$/,
   outputDir: "test-results/built",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

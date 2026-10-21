@@ -1,8 +1,10 @@
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
+import { LANDING_ONLY } from "../../site/config.ts";
+import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { HeroMascot } from "./HeroMascot.tsx";
-import { DEMO_PATH, signInHref } from "./links.ts";
+import { appLinkProps, DEMO_PATH } from "./links.ts";
 import { CodeLink } from "./OpenSource.tsx";
 
 export type HeroProps = {
@@ -36,7 +38,9 @@ export function Hero({ secondaryCta = false }: HeroProps) {
         </p>
         <div className="lk-landing-cta">
           <div className="lk-landing-cta-actions">
-            <PressLink to={signInHref(locale)}>{t("cta")}</PressLink>
+            <PressLink {...appLinkProps(locale)} className={cx(LANDING_ONLY && "is-soon")}>
+              {t(LANDING_ONLY ? "cta_soon" : "cta")}
+            </PressLink>
             {secondaryCta && (
               <PressLink to={DEMO_PATH} variant="secondary">
                 {t("cta_demo")}

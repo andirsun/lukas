@@ -145,13 +145,15 @@
       "home": "Lukas, home",
       "how": "How it works",
       "faq": "Questions",
-      "sign_in": "Sign in"
+      "sign_in": "Sign in",
+      "sign_in_soon": "Coming soon"
     },
     "hero": {
       "annotation": "Free, and it always will be!",
       "headline": "Your <mark>money</mark>, finally clear.",
       "description": "<lead>Lukas is your budget, and you'll actually enjoy looking after it.</lead> Log an expense in seconds and see where every buck goes.",
       "cta": "Get started",
+      "cta_soon": "Coming soon · Follow on GitHub",
       "cta_demo": "Try it without an account",
       "perks": "Free forever · <github>Open source</github> · No passwords",
       "mascot": "Lukas, a smiling gold coin, waves at you"
@@ -239,12 +241,19 @@
     },
     "closing": {
       "title": "Ready when you are.",
-      "body": "Create your account with your email in under a minute. Lukas takes care of making it fun."
+      "body": "Create your account with your email in under a minute. Lukas takes care of making it fun.",
+      "body_soon": "Lukas is being built in the open. Follow its progress on GitHub and try the app as soon as it opens."
     },
     "footer": {
       "language": "Language",
       "privacy": "Privacy",
       "copyright": "© {year} Lukas"
+    },
+    "not_found": {
+      "title": "This page doesn't exist",
+      "body": "The link may be broken, or the page may have moved. Lukas already looked everywhere.",
+      "home": "Back to home",
+      "mascot": "Lukas, a worried gold coin, looks for the page"
     }
   }
 }

@@ -13,7 +13,9 @@
     "storybook": "storybook dev --port 6006",
     "test": "vitest run",
     "e2e": "playwright test",
-    "e2e:landing": "react-router build && playwright test -c playwright.built.config.ts"
+    "build:landing": "tsx scripts/build-landing.ts",
+    "e2e:landing": "react-router build && playwright test -c playwright.built.config.ts",
+    "e2e:landing-only": "VITE_SITE_URL=https://landing-only.example.test tsx scripts/build-landing.ts && E2E_LANDING_ONLY=true VITE_SITE_URL=https://landing-only.example.test playwright test -c playwright.built.config.ts"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.7.11",
