@@ -134,8 +134,8 @@
   "landing": {
     "meta": {
       "title": "Lukas · Tus lukas, por fin claras",
-      "description": "Lukas es el presupuesto que se juega: anota un gasto en segundos, mira en qué se va tu plata y entérate antes de pasarte. Gratis y sin contraseñas.",
-      "image_alt": "Lukas, una moneda de oro sonriente, saluda junto al título: Tus lukas, por fin claras."
+      "description": "Tu presupuesto, y te va a dar gusto cuidarlo: anota un gasto en segundos y mira en qué se va tu plata. Gratis para siempre, de código abierto y sin contraseñas.",
+      "image_alt": "Lukas, una moneda de oro sonriente, saluda junto al título: Tus lukas, por fin claras. Arriba, a mano: ¡Gratis, y siempre lo será!"
     },
     "nav": {
       "label": "Principal",
@@ -145,13 +145,12 @@
       "sign_in": "Entrar"
     },
     "hero": {
-      "question_spend": "¿En qué se me va la plata?",
-      "question_living": "¿Cuánto me cuesta vivir?",
-      "headline": "Tus lukas, por fin claras.",
-      "tagline": "Tu presupuesto, tu mejor amigo.",
-      "description": "Lukas convierte tu presupuesto en un juego que da gusto jugar: anota un gasto en segundos y mira en qué se va cada luka.",
-      "cta": "Empieza gratis",
-      "perks": "Sin contraseñas · Importa tu historial de Budge",
+      "annotation": "¡Gratis, y siempre lo será!",
+      "headline": "Tus <mark>lukas</mark>, por fin claras.",
+      "description": "<lead>Lukas es tu presupuesto, y te va a dar gusto cuidarlo.</lead> Anota un gasto en segundos y mira en qué se va cada luka.",
+      "cta": "Empieza ahora",
+      "cta_demo": "Pruébalo sin cuenta",
+      "perks": "Gratis para siempre · <github>Código abierto</github> · Sin contraseñas",
       "mascot": "Lukas, una moneda de oro sonriente, te saluda"
     },
     "ways": {
@@ -162,8 +161,8 @@
         "body": "Desde el navegador de tu teléfono o tu computadora. Nada que instalar.",
         "cta": "Empezar"
       },
-      "android": {
-        "title": "App Android",
+      "mobile": {
+        "title": "App para Android y iOS",
         "body": "Con un widget para anotar un gasto sin abrir la app."
       },
       "ai": {
@@ -196,12 +195,17 @@
         "body": "Ponle un tope a cada categoría. Las barras se llenan con lo que gastas y cambian de color antes de que te pases, no después.",
         "demo_remaining": "Quedan {amount}"
       },
-      "budge": {
-        "title": "Trae tu historial de Budge",
-        "body": "Sube el CSV que exportas de Budge, revisa la vista previa y confirma. Arrancas con tus meses de historia ya ordenados.",
+      "import": {
+        "title": "Trae tu historial",
+        "body": "Importa tus movimientos desde otras apps de finanzas: hoy desde Budge, y pronto desde Buddy y otras.",
         "demo_file": "budge.csv",
         "demo_rows": "{count, plural, one {# movimiento listo} other {# movimientos listos}}"
       }
+    },
+    "open_source": {
+      "title": "Código abierto",
+      "body": "Cualquiera puede leer el código de Lukas: no hay nada escondido en él. Es software libre, con licencia AGPL-3.0.",
+      "cta": "Ver el código en GitHub"
     },
     "faq": {
       "title": "Preguntas frecuentes",
@@ -209,21 +213,21 @@
         "q": "¿Qué es Lukas?",
         "a": "Una app para llevar tu presupuesto del mes sin que se sienta como tarea. Anotas lo que gastas, ves cuánto te queda en cada categoría y Lukas, una moneda de oro con mucha personalidad, te acompaña: celebra cuando anotas y te avisa cuando algo se está llenando."
       },
-      "budge": {
-        "q": "¿Puedo traer mi historial de Budge?",
-        "a": "Sí. Exporta tus movimientos de Budge como CSV y súbelo al crear tu cuenta o después, desde Ajustes. Antes de importar ves una vista previa: cuántos movimientos entran, cuáles están repetidos y qué categorías se van a crear."
+      "import": {
+        "q": "¿Puedo traer mi historial de otras apps?",
+        "a": "Sí. Hoy puedes importar desde Budge: exporta tus movimientos como CSV y súbelo al crear tu cuenta o después, desde Ajustes. Pronto también desde Buddy y otras apps. Antes de importar ves una vista previa: cuántos movimientos entran, cuáles están repetidos y qué categorías se van a crear."
       },
       "passwords": {
         "q": "¿Por qué no me pide contraseña?",
-        "a": "Porque no la necesitas. Entras con un código de 6 dígitos o un enlace que te llega al correo y, si quieres, con una passkey: tu huella, tu cara o el bloqueo de tu teléfono. Nada que recordar ni que se pueda filtrar."
+        "a": "Porque no la necesitas. Entras con un código de 6 dígitos o un enlace que te llega al correo y, si quieres, con una passkey: tu huella, tu cara o el bloqueo de tu teléfono. No hay contraseña que recordar."
       },
       "privacy": {
         "q": "¿Qué hacen con mis datos?",
-        "a": "Usarlos para mostrarte tus números, y nada más. No vendemos tus datos ni los compartimos con anunciantes. Puedes exportarlo todo (JSON o CSV) o borrar tu cuenta cuando quieras desde Ajustes."
+        "a": "Tus datos viajan cifrados y nunca los vendemos ni los compartimos con anunciantes. Puedes exportarlos o borrar tu cuenta cuando quieras. Y como el código es abierto, cualquiera puede comprobar qué hacemos con ellos."
       },
       "free": {
-        "q": "¿Cuánto cuesta?",
-        "a": "Nada. Crear tu cuenta y usar Lukas es gratis, y no te pedimos tarjeta."
+        "q": "¿Es gratis?",
+        "a": "Sí, y lo será siempre. Lukas es gratis y de código abierto: todo el código está en <github>GitHub</github> y cualquiera puede revisarlo. No te pedimos tarjeta."
       },
       "languages": {
         "q": "¿En qué idiomas está?",

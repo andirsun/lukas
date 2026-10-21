@@ -2,13 +2,15 @@
 
 # Lukas
 
-**Personal finance that feels like a game.** A monthly budget, an Android app with widgets to log expenses in seconds, a web dashboard with charts, and an MCP server so your AI assistant (Claude, ChatGPT…) can help you with your money.
+**Your budget, and you'll actually enjoy looking after it.** Log an expense in seconds and see where your money goes: a monthly budget on the web, an Android and iOS app with widgets (soon), and an MCP server so your AI assistant (Claude, ChatGPT…) can help you with your money (soon).
+
+Lukas is **free forever and open source** ([AGPL-3.0](LICENSE)): anyone can read the code and check what it does with your data.
 
 ## Why "Lukas"?
 
 In Colombia we call money **lucas**. One *luca* is a thousand pesos, and from there it means money in general: "¿cuántas lukas te costó?" (how much did it cost you?), "estoy sin lukas" (I'm broke), "me faltan unas lukas para fin de mes" (I'm a few bucks short until the end of the month). It's a warm, everyday word, which is exactly how we want managing your finances to feel.
 
-**Lukas is also the project's mascot.** It keeps you company in the app: it cheers when you log an expense, warns you when a category is getting close to its limit, and celebrates when you close the month within budget. The goal is to make being organized with your money fun, almost addictive.
+**Lukas is also the project's mascot.** It keeps you company in the app: it cheers when you log an expense, warns you when a category is getting close to its limit, and celebrates when you close the month within budget. The goal is for looking after your money to feel good, not like homework.
 
 ## What it does
 
@@ -16,13 +18,13 @@ In Colombia we call money **lucas**. One *luca* is a thousand pesos, and from th
 - **Monthly budget per category**, with bars that fill up with what you've spent and change color as you approach the limit.
 - **Daily transactions**, paid or pending, with automatic recurring ones (rent, subscriptions, salary…).
 - **Analysis** by category and month-over-month trends.
-- **Import from Budge** (CSV).
+- **Import your history from other apps:** Budge today (CSV); Buddy and others soon.
 - **Connect your assistant:** an MCP server so you can ask your AI to log expenses, prepare reports, or adjust your budget.
 - **No passwords:** sign in with a magic link or a code sent to your email, or with a passkey.
 
 ## Status
 
-🚧 In development. Stage 1 (backend: API, auth, Budge import) is built; web, mobile, MCP and gamification come next. The design is in [`docs/superpowers/specs/2026-10-20-lukas-design.md`](docs/superpowers/specs/2026-10-20-lukas-design.md).
+🚧 In development. Stage 1 (backend: API, auth, Budge import) is built; web, mobile (Android and iOS), MCP and celebrations (streaks, achievements) come next. The design is in [`docs/superpowers/specs/2026-10-20-lukas-design.md`](docs/superpowers/specs/2026-10-20-lukas-design.md).
 
 ## Architecture
 

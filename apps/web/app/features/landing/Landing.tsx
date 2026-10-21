@@ -10,6 +10,7 @@ import { Footer } from "./Footer.tsx";
 import { Hero } from "./Hero.tsx";
 import { HowItWorks } from "./HowItWorks.tsx";
 import { signInHref } from "./links.ts";
+import { OpenSource } from "./OpenSource.tsx";
 import { LANDING_PATH } from "./seo.ts";
 import { UseItYourWay } from "./UseItYourWay.tsx";
 import "./landing.css";
@@ -95,6 +96,7 @@ export function Landing() {
         <Hero />
         <UseItYourWay />
         <HowItWorks />
+        <OpenSource />
         <Faq />
         <Closing />
       </main>

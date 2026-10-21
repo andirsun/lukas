@@ -41,6 +41,11 @@ function icuArguments(message: string): string[] {
   return [...names].sort();
 }
 
+/** Sorted rich-text tag names of a message (`<mark>lukas</mark>` → `mark`), for `t.rich`. */
+function richTags(message: string): string[] {
+  return [...message.matchAll(/<([A-Za-z_]\w*)>/g)].map((match) => match[1] as string).sort();
+}
+
 function apiErrorCodes(): string[] {
   const root = fileURLToPath(new URL("../../../api/src", import.meta.url));
   const codes = new Set<string>();
@@ -70,6 +75,12 @@ describe("message catalogs", () => {
       expect(icuArguments(catalogs.en[key] ?? ""), key).toEqual(
         icuArguments(catalogs.es[key] ?? ""),
       );
+    }
+  });
+
+  it("uses the same rich-text tags in es and en for every key", () => {
+    for (const key of Object.keys(catalogs.es)) {
+      expect(richTags(catalogs.en[key] ?? ""), key).toEqual(richTags(catalogs.es[key] ?? ""));
     }
   });
 

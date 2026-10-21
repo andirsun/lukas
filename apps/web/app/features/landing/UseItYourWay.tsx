@@ -15,8 +15,8 @@ function Icon({ tone, children }: { tone: "gold" | "candy" | "good"; children: R
 }
 
 /**
- * Where Lukas lives: the web app today ("Empezar"), the Android app and your AI assistant (Claude
- * or ChatGPT, through MCP) marked as coming soon.
+ * Where Lukas lives: the web app today ("Empezar"), the Android and iOS app and your AI assistant
+ * (Claude or ChatGPT, through MCP) marked as coming soon.
  */
 export function UseItYourWay() {
   const t = useTranslations("landing.ways");
@@ -49,9 +49,9 @@ export function UseItYourWay() {
               <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
               <path d="M11 18h2" />
             </Icon>
-            <h3>{t("android.title")}</h3>
+            <h3>{t("mobile.title")}</h3>
           </div>
-          <p>{t("android.body")}</p>
+          <p>{t("mobile.body")}</p>
           <div className="lk-landing-card-foot">
             <span className="lk-landing-soon">{t("soon")}</span>
           </div>

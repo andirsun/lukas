@@ -7,6 +7,7 @@ import { Footer } from "./Footer.tsx";
 import { Hero } from "./Hero.tsx";
 import { HowItWorks } from "./HowItWorks.tsx";
 import { Landing } from "./Landing.tsx";
+import { OpenSource } from "./OpenSource.tsx";
 import { UseItYourWay } from "./UseItYourWay.tsx";
 
 const meta = {
@@ -34,7 +35,7 @@ export const Page: Story = {
     await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Tus lukas, por fin claras.",
     );
-    const ctas = canvas.getAllByRole("link", { name: "Empieza gratis" });
+    const ctas = canvas.getAllByRole("link", { name: "Empieza ahora" });
     await expect(ctas.map((link) => link.getAttribute("href"))).toEqual([
       "/sign-in?lang=es",
       "/sign-in?lang=es",
@@ -54,25 +55,32 @@ export const PageDayEnglish: Story = {
     await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Your money, finally clear.",
     );
-    await expect(canvas.getAllByRole("link", { name: "Start free" })[0]).toHaveAttribute(
+    await expect(canvas.getAllByRole("link", { name: "Get started" })[0]).toHaveAttribute(
       "href",
       "/sign-in?lang=en",
     );
   },
 };
 
-/** Hero: crossed-out questions, the headline, one primary action on its edge, Lukas waving. */
+/**
+ * Hero: the handwritten promise, the headline with "lukas" on the gold marker, one primary action
+ * on its edge with the perks (open source links to GitHub), Lukas waving.
+ */
 export const HeroSection: Story = {
   render: () => <Hero />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const questions = canvasElement.querySelectorAll(".lk-landing-questions s");
-    await expect([...questions].map((q) => q.textContent)).toEqual([
-      "¿En qué se me va la plata?",
-      "¿Cuánto me cuesta vivir?",
-    ]);
-    await expect(canvas.getByText("Tu presupuesto, tu mejor amigo.")).toBeVisible();
-    const cta = canvas.getByRole("link", { name: "Empieza gratis" });
+    await expect(canvasElement.querySelectorAll("s")).toHaveLength(0);
+    await expect(canvas.getByText("¡Gratis, y siempre lo será!")).toBeVisible();
+    const headline = canvas.getByRole("heading", { level: 1 });
+    await expect(headline).toHaveTextContent("Tus lukas, por fin claras.");
+    await expect(headline.querySelector(".lk-landing-marker")).toHaveTextContent("lukas");
+    await expect(canvas.getByRole("link", { name: "Código abierto" })).toHaveAttribute(
+      "href",
+      "https://github.com/andirsun/lukas",
+    );
+    await expect(canvas.queryByRole("link", { name: "Pruébalo sin cuenta" })).toBeNull();
+    const cta = canvas.getByRole("link", { name: "Empieza ahora" });
     await expectEdge(cta, 6);
     await expectTarget(cta);
     await userEvent.tab();
@@ -80,6 +88,20 @@ export const HeroSection: Story = {
     const mascot = canvas.getByRole("img", { name: /Lukas/ });
     await expect(mascot).toHaveAttribute("data-slot", "hero-mascot");
     await expect(mascot.querySelector(".lk-lukas")).toHaveAttribute("aria-hidden", "true");
+  },
+};
+
+/** Hero in English by day, with the demo as a second action (the seam Task 18a turns on). */
+export const HeroWithDemoDayEnglish: Story = {
+  render: () => <Hero secondaryCta />,
+  globals: { theme: "day", locale: "en" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByText("Free, and it always will be!")).toBeVisible();
+    const demo = canvas.getByRole("link", { name: "Try it without an account" });
+    await expect(demo).toHaveAttribute("href", "/demo");
+    await expect(demo).toHaveClass("lk-btn-secondary");
+    await expectTarget(demo);
   },
 };
 
@@ -93,7 +115,7 @@ export const HeroReducedMotion: Story = {
   },
 };
 
-/** Web is live; Android and the AI assistants are coming soon. */
+/** Web is live; the Android and iOS app and the AI assistants are coming soon. */
 export const UseItYourWaySection: Story = {
   render: () => <UseItYourWay />,
   globals: { theme: "day" },
@@ -105,6 +127,7 @@ export const UseItYourWaySection: Story = {
     await expectTarget(start);
     await expect(canvas.getAllByText("Pronto")).toHaveLength(2);
     await expect(canvas.getByText("Claude / ChatGPT")).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "App para Android y iOS" })).toBeVisible();
   },
 };
 
@@ -118,13 +141,29 @@ export const HowItWorksSection: Story = {
       "Log it in seconds",
       "See where it goes",
       "Budgets that give you a heads-up",
-      "Bring your Budge history",
+      "Bring your history",
     ]);
     for (const demo of canvasElement.querySelectorAll(".lk-landing-demo")) {
       await expect(demo).toHaveAttribute("aria-hidden", "true");
     }
     await expect(canvasElement).toHaveTextContent("€46.33 left");
     await expect(canvasElement).toHaveTextContent("1,248 transactions ready");
+    await expect(canvasElement).toHaveTextContent("Budge today, Buddy and others soon.");
+  },
+};
+
+/** Open source: the code icon, one short paragraph and the repository, in a new tab. */
+export const OpenSourceSection: Story = {
+  render: () => <OpenSource />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { level: 2 })).toHaveTextContent("Código abierto");
+    await expect(canvasElement).toHaveTextContent("AGPL-3.0");
+    const code = canvas.getByRole("link", { name: "Ver el código en GitHub" });
+    await expect(code).toHaveAttribute("href", "https://github.com/andirsun/lukas");
+    await expect(code).toHaveAttribute("target", "_blank");
+    await expectEdge(code, 3);
+    await expectTarget(code);
   },
 };
 
