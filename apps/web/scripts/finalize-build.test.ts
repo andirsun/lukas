@@ -23,6 +23,19 @@ describe("finalizeBuild", () => {
     expect(readFileSync(join(dir, "sitemap.xml"), "utf8")).toContain(`<loc>${ORIGIN}/en</loc>`);
   });
 
+  it("lists the roadmap pages in sitemap.xml, in both modes", () => {
+    for (const landingOnly of [false, true]) {
+      if (landingOnly) {
+        mkdirSync(join(dir, "404"));
+        writeFileSync(join(dir, "404", "index.html"), "<html>not found</html>");
+      }
+      finalizeBuild(dir, { origin: ORIGIN, landingOnly });
+      const sitemap = readFileSync(join(dir, "sitemap.xml"), "utf8");
+      expect(sitemap).toContain(`<loc>${ORIGIN}/roadmap</loc>`);
+      expect(sitemap).toContain(`<loc>${ORIGIN}/en/roadmap</loc>`);
+    }
+  });
+
   it("keeps the SPA fallback when the app exists", () => {
     finalizeBuild(dir, { origin: ORIGIN, landingOnly: false });
     expect(existsSync(join(dir, "__spa-fallback.html"))).toBe(true);

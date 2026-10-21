@@ -1,7 +1,7 @@
 # Deploying the landing page (Cloudflare)
 
-Until the app exists, Lukitas can ship as the landing page alone: the two prerendered pages (`/` in
-Spanish, `/en` in English), a 404 page and the static files. Every call to action reads "Coming
+Until the app exists, Lukitas can ship as the landing page alone: the prerendered pages (`/` in
+Spanish, `/en` in English, and the roadmap at `/roadmap` and `/en/roadmap`), a 404 page and the static files. Every call to action reads "Coming
 soon · Follow on GitHub" and links to the repository; nothing leads to the app.
 
 ## Build
@@ -15,7 +15,7 @@ VITE_SITE_URL=https://lukitas.andersonlaverde.com pnpm --filter @lukas/web build
   and `hreflang` links, the Open Graph tags, `sitemap.xml` and `robots.txt`, which are generated at
   build time.
 - The script builds with `VITE_LANDING_ONLY=true`. The output is `apps/web/build/client`:
-  `index.html`, `en/index.html`, `404.html`, `assets/`, `lukas/`, `og-*.png`, `robots.txt`,
+  `index.html`, `en/index.html`, `roadmap/index.html`, `en/roadmap/index.html`, `404.html`, `assets/`, `lukas/`, `og-*.png`, `robots.txt`,
   `sitemap.xml` and `_headers`.
 - There is no `__spa-fallback.html`, and `404.html` is at the top level, so Cloudflare serves
   it (with a 404 status) for any other path instead of treating the site as a single-page app.

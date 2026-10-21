@@ -6,10 +6,26 @@ const ORIGIN = "https://lukitas.andersonlaverde.com";
 describe("sitemapXml", () => {
   const xml = sitemapXml(ORIGIN);
 
-  it("lists both landing pages from the origin", () => {
+  it("lists both landing pages and both roadmap pages from the origin", () => {
     expect(xml).toContain(`<loc>${ORIGIN}/</loc>`);
     expect(xml).toContain(`<loc>${ORIGIN}/en</loc>`);
-    expect(xml.match(/<url>/g)).toHaveLength(2);
+    expect(xml).toContain(`<loc>${ORIGIN}/roadmap</loc>`);
+    expect(xml).toContain(`<loc>${ORIGIN}/en/roadmap</loc>`);
+    expect(xml.match(/<url>/g)).toHaveLength(4);
+  });
+
+  it("gives each roadmap page its own alternates, not the landing's", () => {
+    const entry = (loc: string) => {
+      const start = xml.indexOf(`<loc>${loc}</loc>`);
+      return xml.slice(start, xml.indexOf("</url>", start));
+    };
+    for (const loc of [`${ORIGIN}/roadmap`, `${ORIGIN}/en/roadmap`]) {
+      const block = entry(loc);
+      expect(block).toContain(`hreflang="es" href="${ORIGIN}/roadmap"`);
+      expect(block).toContain(`hreflang="en" href="${ORIGIN}/en/roadmap"`);
+      expect(block).toContain(`hreflang="x-default" href="${ORIGIN}/roadmap"`);
+      expect(block).not.toContain(`href="${ORIGIN}/en"`);
+    }
   });
 
   it("gives each page every language, itself included, plus x-default to Spanish", () => {

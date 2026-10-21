@@ -64,6 +64,21 @@
     width: var(--lk-spot);
     height: var(--lk-spot);
   }
+  /* A section head without a spot for Lukas (what's next): the text may use the full width. */
+  .lk-landing-section-head.is-plain {
+    padding-inline-end: 0;
+  }
+  .lk-landing-lede {
+    margin-top: var(--space-2);
+    max-width: 40rem;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+  }
+  /* The button under a section's cards. */
+  .lk-landing-more {
+    margin-top: var(--space-4);
+  }
   .lk-landing-spot.is-closing {
     width: 128px;
     height: 128px;
@@ -334,6 +349,11 @@
     stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
+  }
+  /* A planned feature's emoji in the icon box (the roadmap cards): decorative. */
+  .lk-landing-icon.is-glyph {
+    font-size: 26px;
+    line-height: 1;
   }
   .lk-landing-icon.is-gold {
     color: var(--gold);
@@ -656,7 +676,8 @@
   }
 
   @media (min-width: 640px) {
-    .lk-landing-cards.is-ways {
+    .lk-landing-cards.is-ways,
+    .lk-landing-cards.is-next {
       grid-template-columns: repeat(3, 1fr);
     }
     .lk-landing-cards.is-how {

@@ -52,6 +52,26 @@ const LOCALES = [
   },
 ] as const;
 
+/** The roadmap pages, per language, as the landing-only release ships them. */
+const ROADMAP = {
+  es: {
+    path: "/roadmap",
+    title: "Lo que viene",
+    columns: ["En construcción", "Próximo", "Más adelante"],
+    cta: "Ver el roadmap",
+    navLink: "Lo que viene",
+    toggleToDay: "Cambiar a modo día",
+  },
+  en: {
+    path: "/en/roadmap",
+    title: "What's next",
+    columns: ["Being built", "Next", "Later"],
+    cta: "See the roadmap",
+    navLink: "What's next",
+    toggleToDay: "Switch to day mode",
+  },
+} as const;
+
 /** Axe with the WCAG A/AA rule sets (2.0 to 2.2) plus best practices. */
 async function expectNoA11yViolations(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -343,6 +363,121 @@ for (const l of LOCALES) {
   });
 }
 
+for (const l of LOCALES) {
+  const r = ROADMAP[l.locale];
+
+  test.describe(`landing-only roadmap (${l.locale})`, () => {
+    test("is prerendered, 200, with its columns and the configured origin", async ({
+      page,
+      request,
+    }) => {
+      const response = await request.get(r.path);
+      expect(response.status()).toBe(200);
+      expect(await response.text()).toContain(`<html lang="${l.locale}"`);
+      await page.goto(r.path);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(r.title);
+      await expect(page.getByRole("main").getByRole("heading", { level: 2 })).toHaveText(r.columns);
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}${r.path}`,
+      );
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+        "content",
+        `${ORIGIN}${r.path}`,
+      );
+      await expect(page.locator('link[rel="alternate"][hreflang="es"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/roadmap`,
+      );
+      await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/en/roadmap`,
+      );
+    });
+
+    test("leads nowhere near the app, and is called Lukitas", async ({ page, request }) => {
+      await page.goto(r.path);
+      const hrefs = await page
+        .locator("a[href]")
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") ?? ""));
+      expect(hrefs.length).toBeGreaterThan(4);
+      expect(hrefs.filter((href) => APP_PATH.test(new URL(href, "http://x").pathname))).toEqual([]);
+      const html = await (await request.get(r.path)).text();
+      expect(html).not.toMatch(/href="[^"]*\/(sign-in|app|welcome)(["/?#])/);
+      const text = await page.locator("body").evaluate((body) => body.textContent ?? "");
+      expect(text).toContain("Lukitas");
+      expect(text).not.toMatch(/\bLukas\b/);
+      for (const pattern of l.banned) expect(text).not.toMatch(pattern);
+      await expect(page).toHaveTitle(/^Lukitas · /);
+    });
+
+    test("the header's coming-soon link to GitHub is the only call to action", async ({ page }) => {
+      await page.goto(r.path);
+      const nav = page.getByRole("banner").getByRole("navigation");
+      await expectGithubLink(
+        nav.getByRole("link", { name: `${l.navCta} ${l.newTab}`, exact: true }),
+        l.newTab,
+      );
+      await expect(nav.getByRole("button", { name: r.toggleToDay })).toBeVisible();
+    });
+
+    test("the landing links to it from its section and from the footer", async ({ page }) => {
+      await page.goto(l.path);
+      await expect(
+        page.locator("#whats-next").getByRole("link", { name: r.cta, exact: true }),
+      ).toHaveAttribute("href", r.path);
+      await expect(
+        page.getByRole("contentinfo").getByRole("link", { name: r.navLink }),
+      ).toHaveAttribute("href", r.path);
+    });
+
+    test("fits the viewport and keeps every target at 44px", async ({ page }) => {
+      await page.goto(r.path);
+      await expectFitsTheViewport(page);
+    });
+
+    test.describe("at 320px", () => {
+      test.use({ viewport: { width: 320, height: 700 } });
+
+      test("nothing overflows, on the roadmap and in the landing's section", async ({ page }) => {
+        await page.goto(r.path);
+        await expectFitsTheViewport(page);
+        await page.goto(l.path);
+        await expectFitsTheViewport(page);
+      });
+    });
+
+    test.describe(() => {
+      test.use({ javaScriptEnabled: true, colorScheme: "dark" });
+
+      test("the prerendered page is accessible (axe, night theme)", async ({ page }) => {
+        await page.route("**/assets/*.js", (route) => route.abort());
+        await page.goto(r.path);
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "night");
+        await expectNoA11yViolations(page);
+      });
+    });
+
+    test.describe("with JavaScript", () => {
+      test.use({ javaScriptEnabled: true });
+
+      test("is accessible in the day theme and hydrates cleanly", async ({ page }) => {
+        const errors: string[] = [];
+        page.on("console", (message) => {
+          if (message.type() === "error") errors.push(message.text());
+        });
+        page.on("pageerror", (error) => errors.push(error.message));
+        await page.addInitScript(() => localStorage.setItem("lukas.theme", "day"));
+        await page.goto(r.path);
+        await page.waitForLoadState("networkidle");
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "day");
+        await expectNoA11yViolations(page);
+        expect(errors).toEqual([]);
+      });
+    });
+  });
+}
+
 test.describe("landing-only build output", () => {
   test("ships only the landing, a 404 page and the static files", () => {
     expect(readdirSync(CLIENT).sort()).toEqual(
@@ -356,10 +491,13 @@ test.describe("landing-only build output", () => {
         "og-en.png",
         "og-es.png",
         "robots.txt",
+        "roadmap",
         "sitemap.xml",
       ].sort(),
     );
-    expect(readdirSync(`${CLIENT}en`)).toEqual(["index.html"]);
+    expect(readdirSync(`${CLIENT}en`).sort()).toEqual(["index.html", "roadmap"]);
+    expect(readdirSync(`${CLIENT}roadmap`)).toEqual(["index.html"]);
+    expect(readdirSync(`${CLIENT}en/roadmap`)).toEqual(["index.html"]);
     expect(existsSync(`${CLIENT}__spa-fallback.html`)).toBe(false);
   });
 
@@ -371,6 +509,9 @@ test.describe("landing-only build output", () => {
     const sitemap = await (await request.get("/sitemap.xml")).text();
     expect(sitemap).toContain(`<loc>${ORIGIN}/</loc>`);
     expect(sitemap).toContain(`<loc>${ORIGIN}/en</loc>`);
+    expect(sitemap).toContain(`<loc>${ORIGIN}/roadmap</loc>`);
+    expect(sitemap).toContain(`<loc>${ORIGIN}/en/roadmap</loc>`);
+    expect(sitemap).toContain(`hreflang="en" href="${ORIGIN}/en/roadmap"`);
     expect(sitemap).not.toContain("lukas.app");
   });
 

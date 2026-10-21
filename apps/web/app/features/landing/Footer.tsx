@@ -2,13 +2,17 @@ import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import type { Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
+import { LANDING_PATH, PAGE_PATH, ROADMAP_PATH, type SitePage } from "../../site/paths.ts";
 import { COPYRIGHT_YEAR, PRIVACY_HREF } from "./links.ts";
-import { LANDING_PATH } from "./seo.ts";
 
 const LOCALES: Locale[] = ["es", "en"];
 
-/** Language switch (the same page in the other language), the privacy link and the copyright. */
-export function Footer() {
+/**
+ * Language switch (the same page in the other language), the roadmap and privacy links and the
+ * copyright. `page` is the page it sits on (the landing by default): the language switch keeps it,
+ * and on the roadmap the privacy link leads to the landing's answer.
+ */
+export function Footer({ page = "landing" }: { page?: SitePage }) {
   const t = useTranslations();
   const { locale } = useLocale();
   return (
@@ -21,7 +25,7 @@ export function Footer() {
               {LOCALES.map((option) => (
                 <li key={option}>
                   <Link
-                    to={LANDING_PATH[option]}
+                    to={PAGE_PATH[page][option]}
                     className="lk-landing-link"
                     lang={option}
                     hrefLang={option}
@@ -33,7 +37,17 @@ export function Footer() {
               ))}
             </ul>
           </nav>
-          <a href={PRIVACY_HREF} className="lk-landing-link">
+          <Link
+            to={ROADMAP_PATH[locale]}
+            className="lk-landing-link"
+            aria-current={page === "roadmap" ? "page" : undefined}
+          >
+            {t("landing.footer.roadmap")}
+          </Link>
+          <a
+            href={page === "landing" ? PRIVACY_HREF : `${LANDING_PATH[locale]}${PRIVACY_HREF}`}
+            className="lk-landing-link"
+          >
             {t("landing.footer.privacy")}
           </a>
         </div>

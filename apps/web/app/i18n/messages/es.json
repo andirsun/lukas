@@ -169,6 +169,66 @@
     "failed_title": "No pudimos hacerte entrar",
     "send_new_code": "Enviar un código nuevo"
   },
+  "roadmap": {
+    "meta": {
+      "title": "Lukitas · Lo que viene",
+      "description": "Lo que tenemos planeado para Lukitas: la web, el widget con micrófono para Android, varios gastos en una frase, tu IA conectada y más. Sin fechas, y puede cambiar."
+    },
+    "title": "Lo que viene",
+    "intro": "Esto es lo que tenemos planeado. Puede cambiar según lo que nos cuentes.",
+    "status": {
+      "done": "Ya está",
+      "building": "En construcción",
+      "next": "Próximo",
+      "later": "Más adelante"
+    },
+    "landing": {
+      "title": "Lo que viene",
+      "cta": "Ver el roadmap"
+    },
+    "items": {
+      "web_app": {
+        "title": "App web",
+        "body": "Presupuestos por categoría, movimientos, análisis y cuánto te cuesta vivir."
+      },
+      "import_budge": {
+        "title": "Importa tu historial de Budge",
+        "body": "Sube tu archivo CSV y mira una vista previa antes de traer nada."
+      },
+      "demo": {
+        "title": "Pruébalo sin cuenta",
+        "body": "Una demo con datos inventados, para usar la app antes de registrarte."
+      },
+      "widget_mic": {
+        "title": "Android: widget con micrófono",
+        "body": "Di en qué gastaste y queda anotado."
+      },
+      "multi_expense": {
+        "title": "Varios gastos en una frase",
+        "body": "«Gasté 15 mil en almuerzo y 3 mil en Uber» y quedan los dos anotados."
+      },
+      "connect_ai": {
+        "title": "Conecta tu IA",
+        "body": "Usa Claude o ChatGPT para consultar y anotar tus gastos."
+      },
+      "iphone_app": {
+        "title": "App para iPhone",
+        "body": "La misma app, también en iOS."
+      },
+      "bank_alerts": {
+        "title": "Captura automática de las alertas de tu banco",
+        "body": "Bancolombia, Nequi y más: las alertas se vuelven movimientos para que los revises."
+      },
+      "import_others": {
+        "title": "Importa desde Buddy y otras apps",
+        "body": "Más formas de traer tu historial."
+      },
+      "streaks": {
+        "title": "Rachas y logros",
+        "body": "Un empujón para que anotar se vuelva hábito."
+      }
+    }
+  },
   "landing": {
     "new_tab": "(se abre en una pestaña nueva)",
     "meta": {
@@ -180,6 +240,7 @@
       "label": "Principal",
       "home": "Lukitas, inicio",
       "how": "Cómo funciona",
+      "roadmap": "Lo que viene",
       "faq": "Preguntas",
       "sign_in": "Entrar",
       "sign_in_soon": "Muy pronto"
@@ -283,7 +344,8 @@
     "footer": {
       "language": "Idioma",
       "privacy": "Privacidad",
-      "copyright": "© {year} Lukitas"
+      "copyright": "© {year} Lukitas",
+      "roadmap": "Lo que viene"
     },
     "not_found": {
       "title": "Esta página no existe",

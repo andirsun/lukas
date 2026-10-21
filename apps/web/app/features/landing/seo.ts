@@ -4,7 +4,7 @@ import type { Locale } from "../../i18n/format.ts";
 import en from "../../i18n/messages/en.json" with { type: "json" };
 import es from "../../i18n/messages/es.json" with { type: "json" };
 import { SITE_ORIGIN } from "../../site/config.ts";
-import { LANDING_PATH } from "../../site/paths.ts";
+import { LANDING_PATH, PAGE_PATH, ROADMAP_PATH, type SitePage } from "../../site/paths.ts";
 
 export { LANDING_PATH };
 
@@ -18,12 +18,17 @@ function absolute(path: string): string {
   return `${SITE_ORIGIN}${path}`;
 }
 
-/** Title, description and Open Graph / Twitter tags for a landing page. */
-export function landingMeta(locale: Locale): MetaDescriptor[] {
-  const t = createTranslator({ locale, messages: CATALOGS[locale], namespace: "landing.meta" });
-  const title = t("title");
-  const description = t("description");
-  const url = absolute(LANDING_PATH[locale]);
+interface PageTags {
+  locale: Locale;
+  path: string;
+  title: string;
+  description: string;
+  imageAlt: string;
+}
+
+/** Title, description and Open Graph / Twitter tags of a public page. */
+function pageMeta({ locale, path, title, description, imageAlt }: PageTags): MetaDescriptor[] {
+  const url = absolute(path);
   const image = absolute(`/og-${locale}.png`);
   return [
     { title },
@@ -36,9 +41,32 @@ export function landingMeta(locale: Locale): MetaDescriptor[] {
     { property: "og:image", content: image },
     { property: "og:image:width", content: String(OG_IMAGE.width) },
     { property: "og:image:height", content: String(OG_IMAGE.height) },
-    { property: "og:image:alt", content: t("image_alt") },
+    { property: "og:image:alt", content: imageAlt },
     { name: "twitter:card", content: "summary_large_image" },
   ];
+}
+
+/** Canonical and `hreflang` alternates of a public page: every language, itself included, plus `x-default` → Spanish. */
+function pageLinks(page: SitePage, locale: Locale): LinkDescriptor[] {
+  const paths = PAGE_PATH[page];
+  return [
+    { rel: "canonical", href: absolute(paths[locale]) },
+    { rel: "alternate", hrefLang: "es", href: absolute(paths.es) },
+    { rel: "alternate", hrefLang: "en", href: absolute(paths.en) },
+    { rel: "alternate", hrefLang: "x-default", href: absolute(paths.es) },
+  ];
+}
+
+/** Title, description and Open Graph / Twitter tags for a landing page. */
+export function landingMeta(locale: Locale): MetaDescriptor[] {
+  const t = createTranslator({ locale, messages: CATALOGS[locale], namespace: "landing.meta" });
+  return pageMeta({
+    locale,
+    path: LANDING_PATH[locale],
+    title: t("title"),
+    description: t("description"),
+    imageAlt: t("image_alt"),
+  });
 }
 
 /**
@@ -48,10 +76,29 @@ export function landingMeta(locale: Locale): MetaDescriptor[] {
  */
 export function landingLinks(locale: Locale): LinkDescriptor[] {
   return [
-    { rel: "canonical", href: absolute(LANDING_PATH[locale]) },
-    { rel: "alternate", hrefLang: "es", href: absolute(LANDING_PATH.es) },
-    { rel: "alternate", hrefLang: "en", href: absolute(LANDING_PATH.en) },
-    { rel: "alternate", hrefLang: "x-default", href: absolute(LANDING_PATH.es) },
+    ...pageLinks("landing", locale),
     { rel: "preload", as: "image", href: "/lukas/wave.webp", type: "image/webp" },
   ];
+}
+
+/**
+ * The roadmap page's own title and description. It shares the landing's 1200×630 share image (and
+ * its alt text, which describes that image).
+ */
+export function roadmapMeta(locale: Locale): MetaDescriptor[] {
+  const messages = CATALOGS[locale];
+  const t = createTranslator({ locale, messages, namespace: "roadmap.meta" });
+  const image = createTranslator({ locale, messages, namespace: "landing.meta" });
+  return pageMeta({
+    locale,
+    path: ROADMAP_PATH[locale],
+    title: t("title"),
+    description: t("description"),
+    imageAlt: image("image_alt"),
+  });
+}
+
+/** Canonical and `hreflang` alternates of the roadmap page. */
+export function roadmapLinks(locale: Locale): LinkDescriptor[] {
+  return pageLinks("roadmap", locale);
 }

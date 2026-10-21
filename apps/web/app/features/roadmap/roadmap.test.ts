@@ -1,0 +1,107 @@
+import { describe, expect, it } from "vitest";
+import en from "../../i18n/messages/en.json" with { type: "json" };
+import es from "../../i18n/messages/es.json" with { type: "json" };
+import {
+  LANDING_ROADMAP_IDS,
+  ROADMAP_ITEMS,
+  ROADMAP_STATUSES,
+  roadmapColumns,
+  roadmapItem,
+} from "./roadmap.ts";
+
+type Tree = { [key: string]: string | Tree };
+
+function flatten(tree: Tree, prefix = ""): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(tree)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (typeof value === "string") out[path] = value;
+    else Object.assign(out, flatten(value, path));
+  }
+  return out;
+}
+
+const catalogs = { es: flatten(es), en: flatten(en) } as const;
+
+describe("roadmap items", () => {
+  it("has unique ids", () => {
+    const ids = ROADMAP_ITEMS.map((item) => item.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.length).toBeGreaterThan(0);
+  });
+
+  it("only uses known statuses", () => {
+    for (const item of ROADMAP_ITEMS) expect(ROADMAP_STATUSES, item.id).toContain(item.status);
+  });
+
+  it("gives every item a glyph", () => {
+    for (const item of ROADMAP_ITEMS) expect(item.glyph.trim(), item.id).not.toBe("");
+  });
+
+  it("has every catalog key in both languages", () => {
+    const keys = [
+      ...ROADMAP_ITEMS.flatMap((item) => [item.title, item.body]),
+      ...ROADMAP_STATUSES.map((status) => `roadmap.status.${status}`),
+      "roadmap.title",
+      "roadmap.intro",
+      "roadmap.meta.title",
+      "roadmap.meta.description",
+      "roadmap.landing.title",
+      "roadmap.landing.cta",
+    ];
+    for (const locale of ["es", "en"] as const) {
+      for (const key of keys) expect(catalogs[locale], `${locale}:${key}`).toHaveProperty([key]);
+    }
+  });
+
+  it("promises no dates and no call to propose or vote", () => {
+    const datePattern =
+      /\b(20\d\d|Q[1-4]|T[1-4])\b|\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|january|february|march|april|june|july|august|september|october|november|december)\b/i;
+    const votePattern = /discussions|\bvot(a|o|e|ar|ing|es)\b|\bpropon(e|er|ga)\b|\bpropose\b/i;
+    for (const locale of ["es", "en"] as const) {
+      for (const [key, value] of Object.entries(catalogs[locale])) {
+        if (!key.startsWith("roadmap.")) continue;
+        expect(value, `${locale}:${key}`).not.toMatch(datePattern);
+        expect(value, `${locale}:${key}`).not.toMatch(votePattern);
+      }
+    }
+  });
+
+  it("never calls Lukitas a game", () => {
+    for (const locale of ["es", "en"] as const) {
+      for (const [key, value] of Object.entries(catalogs[locale])) {
+        if (!key.startsWith("roadmap.")) continue;
+        expect(value, `${locale}:${key}`).not.toMatch(/\bjueg(o|a)s?\b|\bgames?\b/i);
+      }
+    }
+  });
+});
+
+describe("roadmapColumns", () => {
+  it("groups the items by status, in the order done, building, next, later", () => {
+    const columns = roadmapColumns([
+      { id: "a", status: "later", glyph: "x", title: "t", body: "b" },
+      { id: "b", status: "building", glyph: "x", title: "t", body: "b" },
+      { id: "c", status: "later", glyph: "x", title: "t", body: "b" },
+    ]);
+    expect(columns.map((column) => [column.status, column.items.map((i) => i.id)])).toEqual([
+      ["building", ["b"]],
+      ["later", ["a", "c"]],
+    ]);
+  });
+
+  it("leaves out the statuses that have no items", () => {
+    const columns = roadmapColumns();
+    expect(columns.length).toBeGreaterThan(0);
+    for (const column of columns) expect(column.items.length).toBeGreaterThan(0);
+    // Nothing is done yet, so that column does not render.
+    expect(columns.map((column) => column.status)).toEqual(["building", "next", "later"]);
+  });
+});
+
+describe("the landing's what's-next items", () => {
+  it("are the widget microphone, several expenses in one sentence, and connect your AI", () => {
+    expect(LANDING_ROADMAP_IDS).toEqual(["widget_mic", "multi_expense", "connect_ai"]);
+    for (const id of LANDING_ROADMAP_IDS) expect(roadmapItem(id).id).toBe(id);
+  });
+});

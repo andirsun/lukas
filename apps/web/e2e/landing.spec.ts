@@ -85,6 +85,82 @@ const LOCALES = [
   },
 ] as const;
 
+/** The roadmap page and the landing's what's-next section, per language. */
+const ROADMAP = {
+  es: {
+    path: "/roadmap",
+    otherPath: "/en/roadmap",
+    title: "Lo que viene",
+    titlePart: "Lo que viene",
+    intro: "Esto es lo que tenemos planeado. Puede cambiar según lo que nos cuentes.",
+    columns: [
+      {
+        label: "En construcción",
+        items: ["App web", "Importa tu historial de Budge", "Pruébalo sin cuenta"],
+      },
+      {
+        label: "Próximo",
+        items: ["Android: widget con micrófono", "Varios gastos en una frase", "Conecta tu IA"],
+      },
+      {
+        label: "Más adelante",
+        items: [
+          "App para iPhone",
+          "Captura automática de las alertas de tu banco",
+          "Importa desde Buddy y otras apps",
+          "Rachas y logros",
+        ],
+      },
+    ],
+    emptyLabel: "Ya está",
+    landingItems: ["Android: widget con micrófono", "Varios gastos en una frase", "Conecta tu IA"],
+    cta: "Ver el roadmap",
+    navLink: "Lo que viene",
+    description: /Lo que tenemos planeado para Lukitas/,
+    logo: "Lukitas, inicio",
+  },
+  en: {
+    path: "/en/roadmap",
+    otherPath: "/roadmap",
+    title: "What's next",
+    titlePart: "What's next",
+    intro: "This is what we have planned. It may change depending on what you tell us.",
+    columns: [
+      {
+        label: "Being built",
+        items: ["Web app", "Import your history from Budge", "Try it without an account"],
+      },
+      {
+        label: "Next",
+        items: [
+          "Android: widget with a microphone",
+          "Several expenses in one sentence",
+          "Connect your AI",
+        ],
+      },
+      {
+        label: "Later",
+        items: [
+          "iPhone app",
+          "Automatic capture of your bank's alerts",
+          "Import from Buddy and other apps",
+          "Streaks and achievements",
+        ],
+      },
+    ],
+    emptyLabel: "Live",
+    landingItems: [
+      "Android: widget with a microphone",
+      "Several expenses in one sentence",
+      "Connect your AI",
+    ],
+    cta: "See the roadmap",
+    navLink: "What's next",
+    description: /What we have planned for Lukitas/,
+    logo: "Lukitas, home",
+  },
+} as const;
+
 type Rgba = { rgb: [number, number, number]; alpha: number };
 
 /** A computed color: `rgb(…)`, `rgba(…)` or `color(srgb r g b / a)` (what `color-mix` gives). */
@@ -161,6 +237,36 @@ async function expectNoA11yViolations(page: Page) {
   expect(
     results.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target.join(" ")) })),
   ).toEqual([]);
+}
+
+/**
+ * Nothing sticks out of the viewport and every target is at least 44px. `.lk-landing` clips
+ * horizontal overflow, so the document never scrolls sideways: check every rendered element
+ * instead, so content that would be cut off fails here. Nothing on the page is meant to be
+ * clipped (no exceptions).
+ */
+async function expectFitsTheViewport(page: Page) {
+  const overflowing = await page.evaluate(() => {
+    const width = document.documentElement.clientWidth;
+    return [...document.querySelectorAll(".lk-landing *")]
+      .filter((el) => {
+        const box = el.getBoundingClientRect();
+        if (box.width === 0 && box.height === 0) return false;
+        return box.left < -0.5 || box.right > width + 0.5;
+      })
+      .map((el) => `${el.tagName.toLowerCase()}.${el.className} "${el.textContent?.slice(0, 30)}"`);
+  });
+  expect(overflowing).toEqual([]);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    ),
+  ).toBeLessThanOrEqual(0);
+  for (const target of await page.locator("a:visible, button:visible, summary").all()) {
+    const box = await target.boundingBox();
+    expect(box?.height, await target.innerText()).toBeGreaterThanOrEqual(44);
+    expect(box?.width, await target.innerText()).toBeGreaterThanOrEqual(44);
+  }
 }
 
 /**
@@ -447,8 +553,62 @@ for (const l of LOCALES) {
       await expect(code).toHaveAttribute("target", "_blank");
       await expect(code).toHaveAttribute("rel", "noopener");
       await expect(code.locator(".sr-only")).toHaveText(l.newTab);
-      // Right before the FAQ.
+      // Then "what's next", and the FAQ after it.
+      expect(await section.evaluate((el) => el.nextElementSibling?.id)).toBe("whats-next");
+    });
+
+    test("what's next: three planned items and a button to the roadmap", async ({ page }) => {
+      const r = ROADMAP[l.locale];
+      await page.goto(l.path);
+      const section = page.locator("#whats-next");
+      await expect(section.getByRole("heading", { level: 2 })).toHaveText(r.title);
+      await expect(section).toContainText(r.intro);
+      const cards = section.getByRole("listitem");
+      await expect(cards).toHaveCount(3);
+      for (const [index, title] of r.landingItems.entries()) {
+        await expect(cards.nth(index).getByRole("heading", { level: 3 })).toHaveText(title);
+      }
+      // The same card look as "use it your way".
+      await expect(cards.first()).toHaveClass(/lk-landing-card/);
+      const button = section.getByRole("link", { name: r.cta });
+      await expect(button).toHaveAttribute("href", r.path);
+      await expect(button).not.toHaveAttribute("target", /.+/);
+      await expect(button).toHaveClass(/lk-btn-secondary/);
+      // After "open source", before the FAQ.
+      expect(await section.evaluate((el) => el.previousElementSibling?.id)).toBe("open-source");
       expect(await section.evaluate((el) => el.nextElementSibling?.id)).toBe("faq");
+      // No call to propose or vote.
+      await expect(section.getByRole("link")).toHaveCount(1);
+    });
+
+    test("the footer links to the roadmap, and the header does on a wide screen", async ({
+      page,
+    }) => {
+      const r = ROADMAP[l.locale];
+      await page.goto(l.path);
+      const footerLink = page.getByRole("contentinfo").getByRole("link", { name: r.navLink });
+      await expect(footerLink).toHaveAttribute("href", r.path);
+      await expect(footerLink).not.toHaveAttribute("aria-current", /.+/);
+      const headerLink = page.getByRole("banner").getByRole("link", { name: r.navLink });
+      // The phone header has no room for it (hidden, so not in the accessibility tree); from
+      // 900px it sits among the section links.
+      if ((page.viewportSize()?.width ?? 0) >= 900) {
+        await expect(headerLink).toHaveAttribute("href", r.path);
+        await expect(headerLink).toBeVisible();
+        const names = await page
+          .getByRole("banner")
+          .getByRole("navigation")
+          .getByRole("link")
+          .allInnerTexts();
+        expect(names.slice(0, 3)).toEqual([
+          l.locale === "es" ? "Cómo funciona" : "How it works",
+          r.navLink,
+          l.locale === "es" ? "Preguntas" : "Questions",
+        ]);
+      } else {
+        await expect(headerLink).toHaveCount(0);
+        await expect(page.locator("header a[href='" + r.path + "']")).toBeHidden();
+      }
     });
 
     test("the FAQ opens without JavaScript", async ({ page }) => {
@@ -547,32 +707,7 @@ for (const l of LOCALES) {
 
     test("fits the viewport and keeps every target at 44px", async ({ page }) => {
       await page.goto(l.path);
-      // `.lk-landing` clips horizontal overflow, so the document never scrolls sideways: check
-      // every rendered element instead, so content that would be cut off fails here. Nothing on
-      // the page is meant to be clipped (no exceptions).
-      const overflowing = await page.evaluate(() => {
-        const width = document.documentElement.clientWidth;
-        return [...document.querySelectorAll(".lk-landing *")]
-          .filter((el) => {
-            const box = el.getBoundingClientRect();
-            if (box.width === 0 && box.height === 0) return false;
-            return box.left < -0.5 || box.right > width + 0.5;
-          })
-          .map(
-            (el) => `${el.tagName.toLowerCase()}.${el.className} "${el.textContent?.slice(0, 30)}"`,
-          );
-      });
-      expect(overflowing).toEqual([]);
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        ),
-      ).toBeLessThanOrEqual(0);
-      for (const target of await page.locator("a:visible, button:visible, summary").all()) {
-        const box = await target.boundingBox();
-        expect(box?.height, await target.innerText()).toBeGreaterThanOrEqual(44);
-        expect(box?.width, await target.innerText()).toBeGreaterThanOrEqual(44);
-      }
+      await expectFitsTheViewport(page);
     });
 
     test("shows Lukas waving, and still under reduced motion", async ({ page }) => {
@@ -650,6 +785,281 @@ test.describe("landing with JavaScript", () => {
   }
 });
 
+for (const l of LOCALES) {
+  const r = ROADMAP[l.locale];
+  const self = `${ORIGIN}${r.path}`;
+
+  test.describe(`roadmap (${l.locale})`, () => {
+    test("the prerendered HTML carries the plan, without JavaScript", async ({ page, request }) => {
+      const html = (await (await request.get(r.path)).text()).replaceAll("&#x27;", "'");
+      expect(html).toContain(`<html lang="${l.locale}"`);
+      expect(html).toContain(r.intro);
+      for (const column of r.columns) {
+        expect(html).toContain(column.label);
+        for (const item of column.items) expect(html).toContain(item);
+      }
+
+      await page.goto(r.path);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(r.title);
+      await expect(page.getByRole("main")).toContainText(r.intro);
+      await expect(page).toHaveTitle(new RegExp(r.titlePart));
+    });
+
+    test("shows a column per status that has items, with its items", async ({ page }) => {
+      await page.goto(r.path);
+      const main = page.getByRole("main");
+      // Only the columns with items render: "done" stays empty for now.
+      await expect(main.getByRole("heading", { level: 2 })).toHaveText(
+        r.columns.map((column) => column.label),
+      );
+      await expect(main.getByText(r.emptyLabel, { exact: true })).toHaveCount(0);
+      for (const column of r.columns) {
+        const section = main.getByRole("region", { name: column.label });
+        await expect(section.getByRole("heading", { level: 3 })).toHaveText(column.items);
+        await expect(section.getByRole("listitem")).toHaveCount(column.items.length);
+        // Each item: a glyph, its title and one line.
+        for (const card of await section.getByRole("listitem").all()) {
+          expect(await card.locator("p").count()).toBe(1);
+          expect(((await card.locator("p").innerText()) ?? "").trim().length).toBeGreaterThan(8);
+          await expect(card.locator(".lk-landing-icon")).toHaveAttribute("aria-hidden", "true");
+          expect(
+            (await card.locator(".lk-landing-icon").innerText()).trim().length,
+          ).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    test("is one column on a phone and side by side on a desktop", async ({ page }) => {
+      await page.goto(r.path);
+      const sections = page.getByRole("main").getByRole("region");
+      await expect(sections).toHaveCount(r.columns.length);
+      const boxes = await sections.evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const box = node.getBoundingClientRect();
+          return { left: box.left, top: box.top };
+        }),
+      );
+      const wide = (page.viewportSize()?.width ?? 0) >= 900;
+      const tops = new Set(boxes.map((box) => Math.round(box.top)));
+      const lefts = new Set(boxes.map((box) => Math.round(box.left)));
+      if (wide) {
+        expect(tops.size).toBe(1);
+        expect(lefts.size).toBe(boxes.length);
+      } else {
+        expect(tops.size).toBe(boxes.length);
+        expect(lefts.size).toBe(1);
+      }
+    });
+
+    test("promises no dates, asks for no proposals or votes and is not a game", async ({
+      page,
+      request,
+    }) => {
+      const html = (await (await request.get(r.path)).text()).replaceAll("&#x27;", "'");
+      // The page's words as a crawler reads them: no scripts, no tags (asset names have hashes).
+      const withoutScripts = html
+        .replace(/<script[\s\S]*?<\/script>/g, "")
+        .replace(/<[^>]+>/g, " ")
+        // The copyright year is the one year on the page.
+        .replace(/©\s*\d{4}/, "©");
+      await page.goto(r.path);
+      const text = await page.getByRole("main").evaluate((main) => main.textContent ?? "");
+      const forbidden = [
+        ...l.banned,
+        /\b(20\d\d|Q[1-4])\b/,
+        /discussions/i,
+        /\bvot(a|o|e|ar|ing|es)\b/i,
+        /\bpropon(e|er|ga)\b|\bpropose\b/i,
+      ];
+      for (const pattern of forbidden) {
+        expect(text).not.toMatch(pattern);
+        expect(withoutScripts).not.toMatch(pattern);
+      }
+      // The only links in the content are the header's and the footer's: none leads out.
+      await expect(page.getByRole("main").getByRole("link")).toHaveCount(0);
+      expect(
+        await page
+          .locator("a[href]")
+          .evaluateAll((nodes) =>
+            nodes
+              .map((node) => node.getAttribute("href") ?? "")
+              .filter((href) => /github/i.test(href)),
+          ),
+      ).toEqual([]);
+    });
+
+    test("names the product Lukitas in the text, the title and the share tags", async ({
+      page,
+      request,
+    }) => {
+      await page.goto(r.path);
+      const seen = await page.evaluate(() => {
+        const attributes = [...document.querySelectorAll("[aria-label], [alt], [title]")].flatMap(
+          (element) =>
+            ["aria-label", "alt", "title"].map((name) => element.getAttribute(name) ?? ""),
+        );
+        const meta = [...document.querySelectorAll("head meta[content]")].map(
+          (element) => element.getAttribute("content") ?? "",
+        );
+        const body = document.body.cloneNode(true) as HTMLElement;
+        for (const script of body.querySelectorAll("script, style")) script.remove();
+        return { body: body.textContent ?? "", title: document.title, attributes, meta };
+      });
+      expect(seen.body).toContain("Lukitas");
+      expect(seen.title).toContain("Lukitas");
+      const everything = [seen.body, seen.title, ...seen.attributes, ...seen.meta].join("\n");
+      expect(everything).not.toMatch(/\bLukas\b/);
+      const html = await (await request.get(r.path)).text();
+      expect(html.replace(/<script[\s\S]*?<\/script>/g, "")).not.toMatch(/\bLukas\b/);
+      await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute(
+        "content",
+        "Lukitas",
+      );
+    });
+
+    test("has its own SEO tags: title, description, Open Graph, canonical and hreflang", async ({
+      page,
+    }) => {
+      await page.goto(r.path);
+      const head = page.locator("head");
+      const description = head.locator('meta[name="description"]');
+      await expect(description).toHaveAttribute("content", /.{60,}/);
+      await expect(description).toHaveAttribute("content", r.description);
+      await expect(head.locator('link[rel="canonical"]')).toHaveAttribute("href", self);
+      await expect(head.locator('link[rel="alternate"][hreflang="es"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/roadmap`,
+      );
+      await expect(head.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/en/roadmap`,
+      );
+      await expect(head.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/roadmap`,
+      );
+      await expect(head.locator('meta[property="og:title"]')).toHaveAttribute(
+        "content",
+        new RegExp(r.titlePart),
+      );
+      await expect(head.locator('meta[property="og:description"]')).toHaveAttribute(
+        "content",
+        r.description,
+      );
+      await expect(head.locator('meta[property="og:url"]')).toHaveAttribute("content", self);
+      await expect(head.locator('meta[property="og:type"]')).toHaveAttribute("content", "website");
+      await expect(head.locator('meta[property="og:image"]')).toHaveAttribute(
+        "content",
+        `${ORIGIN}/og-${l.locale}.png`,
+      );
+      await expect(head.locator('meta[name="twitter:card"]')).toHaveAttribute(
+        "content",
+        "summary_large_image",
+      );
+    });
+
+    test("has the landing's header and footer: logo home, sign-in, theme switch, language", async ({
+      page,
+    }) => {
+      await page.goto(r.path);
+      const header = page.getByRole("banner");
+      await expect(header.getByRole("link", { name: r.logo })).toHaveAttribute("href", l.path);
+      await expect(header.getByRole("link", { name: l.signIn })).toHaveAttribute(
+        "href",
+        `/sign-in?lang=${l.locale}`,
+      );
+      await expect(header.getByRole("button", { name: l.toggleToDay })).toBeVisible();
+      if ((page.viewportSize()?.width ?? 0) >= 900) {
+        const link = header.getByRole("link", { name: r.navLink });
+        await expect(link).toHaveAttribute("aria-current", "page");
+        // The section links lead back to the landing's sections.
+        await expect(
+          header.getByRole("link", { name: l.locale === "es" ? "Cómo funciona" : "How it works" }),
+        ).toHaveAttribute("href", `${l.path}#how`);
+      }
+      const footer = page.getByRole("contentinfo");
+      await expect(footer.getByRole("link", { name: r.navLink })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      await expect(footer.getByRole("link", { name: l.privacy })).toHaveAttribute(
+        "href",
+        `${l.path}#privacy`,
+      );
+      await expect(footer).toContainText("© 2026 Lukitas");
+
+      // The language switch keeps the page.
+      const switchLink = footer.getByRole("link", { name: l.other.name });
+      await expect(switchLink).toHaveAttribute("href", r.otherPath);
+      await switchLink.click();
+      await expect(page).toHaveURL(new RegExp(`${r.otherPath}$`));
+      await expect(page.locator("html")).toHaveAttribute("lang", l.locale === "es" ? "en" : "es");
+    });
+
+    test("fits the viewport and keeps every target at 44px", async ({ page }) => {
+      await page.goto(r.path);
+      await expectFitsTheViewport(page);
+    });
+
+    test.describe("at 320px", () => {
+      test.use({ viewport: { width: 320, height: 700 } });
+
+      test("nothing overflows", async ({ page }) => {
+        await page.goto(r.path);
+        await expectFitsTheViewport(page);
+      });
+
+      test("the landing's what's-next section does not overflow either", async ({ page }) => {
+        await page.goto(l.path);
+        await expectFitsTheViewport(page);
+      });
+    });
+
+    test.describe(() => {
+      test.use({ javaScriptEnabled: true, colorScheme: "dark" });
+
+      test("the prerendered page is accessible (axe, night theme)", async ({ page }) => {
+        await page.route("**/assets/*.js", (route) => route.abort());
+        await page.goto(r.path);
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "night");
+        await expectNoA11yViolations(page);
+      });
+    });
+
+    test.describe(() => {
+      test.use({ javaScriptEnabled: true });
+
+      test("is accessible in the day theme and hydrates cleanly", async ({ page }) => {
+        const errors: string[] = [];
+        page.on("console", (message) => {
+          if (message.type() === "error") errors.push(message.text());
+        });
+        page.on("pageerror", (error) => errors.push(error.message));
+        await page.addInitScript(() => localStorage.setItem("lukas.theme", "day"));
+        await page.goto(r.path);
+        await page.waitForLoadState("networkidle");
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "day");
+        await expectNoA11yViolations(page);
+        expect(errors).toEqual([]);
+      });
+
+      test("the landing's button opens the roadmap and the logo comes back", async ({ page }) => {
+        const errors: string[] = [];
+        page.on("pageerror", (error) => errors.push(error.message));
+        await page.goto(l.path);
+        await page.waitForLoadState("networkidle");
+        await page.locator("#whats-next").getByRole("link", { name: r.cta }).click();
+        await expect(page).toHaveURL(new RegExp(`${r.path}$`));
+        await expect(page.getByRole("heading", { level: 1 })).toHaveText(r.title);
+        await expect(page.locator("html")).toHaveAttribute("lang", l.locale);
+        await page.getByRole("banner").getByRole("link", { name: r.logo }).click();
+        await expect(page).toHaveURL(new RegExp(`${l.path === "/" ? "/" : l.path}$`));
+        expect(errors).toEqual([]);
+      });
+    });
+  });
+}
+
 test.describe("static files", () => {
   test("robots.txt, sitemap.xml and the Open Graph images are served", async ({ request }) => {
     const robots = await (await request.get("/robots.txt")).text();
@@ -660,6 +1070,8 @@ test.describe("static files", () => {
     expect(sitemap).toContain("<loc>https://lukas.app/</loc>");
     expect(sitemap).toContain("<loc>https://lukas.app/en</loc>");
     expect(sitemap).toContain('hreflang="x-default"');
+    expect(sitemap).toContain("<loc>https://lukas.app/roadmap</loc>");
+    expect(sitemap).toContain("<loc>https://lukas.app/en/roadmap</loc>");
 
     for (const locale of ["es", "en"]) {
       const image = await request.get(`/og-${locale}.png`);

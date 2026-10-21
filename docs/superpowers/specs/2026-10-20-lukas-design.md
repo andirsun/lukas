@@ -131,6 +131,8 @@ Each stage gets its own spec → plan → implementation.
 5. **Advanced gamification:** streaks, achievements, rewards.
 6. **Automatic capture:** bank alerts and wallet payments become transactions without typing. It comes after Stage 4; its order relative to Stage 5 will be decided later. See Automatic capture below.
 
+The public roadmap page (`/roadmap`) and the landing's "Lo que viene" section show these stages to visitors, with statuses and no dates (Stage 2 web spec §2.8).
+
 #### Quick capture (founder request, 2026-10-21)
 
 Log several transactions from one sentence, such as "gasté 15.000 en el almuerzo y 3.000 en Uber". The flow:

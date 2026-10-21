@@ -3,6 +3,7 @@ import { join } from "node:path";
 import type { Config } from "@react-router/dev/config";
 import { readBuildEnv } from "./app/site/build-env.ts";
 import { isLandingOnly, resolveSiteOrigin } from "./app/site/origin.ts";
+import { PAGE_PATH, SITE_PAGES } from "./app/site/paths.ts";
 import { finalizeBuild } from "./scripts/finalize-build.ts";
 
 /**
@@ -16,11 +17,14 @@ const env = readBuildEnv();
 const origin = resolveSiteOrigin(env.siteUrl);
 const landingOnly = isLandingOnly(env.landingOnly);
 
+/** The public pages, in both languages (the landing and the roadmap). */
+const PUBLIC_PAGES = SITE_PAGES.flatMap((page) => [PAGE_PATH[page].es, PAGE_PATH[page].en]);
+
 export default {
-  // The landing pages are static HTML; everything else is a client-side SPA.
+  // The landing and roadmap pages are static HTML; everything else is a client-side SPA.
   ssr: false,
   // Landing-only: the unknown-path page too, which buildEnd turns into the top-level 404.html.
-  prerender: landingOnly ? ["/", "/en", "/404"] : ["/", "/en"],
+  prerender: landingOnly ? [...PUBLIC_PAGES, "/404"] : PUBLIC_PAGES,
   /**
    * Vite's manifest (`build.manifest` in vite.config.ts) is for the landing e2e's JavaScript budget,
    * not for visitors: move it out of `build/client` (what ships) to `build/vite-manifest.json`.

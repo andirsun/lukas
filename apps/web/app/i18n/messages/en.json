@@ -169,6 +169,66 @@
     "failed_title": "We couldn't sign you in",
     "send_new_code": "Send a new code"
   },
+  "roadmap": {
+    "meta": {
+      "title": "Lukitas · What's next",
+      "description": "What we have planned for Lukitas: the web app, the Android widget with a microphone, several expenses in one sentence, your AI connected and more. No dates, and it may change."
+    },
+    "title": "What's next",
+    "intro": "This is what we have planned. It may change depending on what you tell us.",
+    "status": {
+      "done": "Live",
+      "building": "Being built",
+      "next": "Next",
+      "later": "Later"
+    },
+    "landing": {
+      "title": "What's next",
+      "cta": "See the roadmap"
+    },
+    "items": {
+      "web_app": {
+        "title": "Web app",
+        "body": "Budgets per category, transactions, analysis and what living really costs you."
+      },
+      "import_budge": {
+        "title": "Import your history from Budge",
+        "body": "Upload your CSV file and see a preview before anything comes in."
+      },
+      "demo": {
+        "title": "Try it without an account",
+        "body": "A demo with made-up data, to use the app before you sign up."
+      },
+      "widget_mic": {
+        "title": "Android: widget with a microphone",
+        "body": "Say what you spent and it's logged."
+      },
+      "multi_expense": {
+        "title": "Several expenses in one sentence",
+        "body": "“Spent 15k on lunch and 3k on Uber” and both are logged."
+      },
+      "connect_ai": {
+        "title": "Connect your AI",
+        "body": "Use Claude or ChatGPT to check and log your expenses."
+      },
+      "iphone_app": {
+        "title": "iPhone app",
+        "body": "The same app, on iOS too."
+      },
+      "bank_alerts": {
+        "title": "Automatic capture of your bank's alerts",
+        "body": "Bancolombia, Nequi and more: alerts become transactions for you to review."
+      },
+      "import_others": {
+        "title": "Import from Buddy and other apps",
+        "body": "More ways to bring your history."
+      },
+      "streaks": {
+        "title": "Streaks and achievements",
+        "body": "A nudge to make logging a habit."
+      }
+    }
+  },
   "landing": {
     "new_tab": "(opens in a new tab)",
     "meta": {
@@ -180,6 +240,7 @@
       "label": "Main",
       "home": "Lukitas, home",
       "how": "How it works",
+      "roadmap": "What's next",
       "faq": "Questions",
       "sign_in": "Sign in",
       "sign_in_soon": "Coming soon"
@@ -283,7 +344,8 @@
     "footer": {
       "language": "Language",
       "privacy": "Privacy",
-      "copyright": "© {year} Lukitas"
+      "copyright": "© {year} Lukitas",
+      "roadmap": "What's next"
     },
     "not_found": {
       "title": "This page doesn't exist",

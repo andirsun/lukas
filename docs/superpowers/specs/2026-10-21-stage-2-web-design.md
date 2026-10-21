@@ -43,6 +43,7 @@ Ship the first product people can use: a public landing page and a web app that 
 | Route | Screen | Access |
 |---|---|---|
 | `/`, `/en` | Landing page | Public, prerendered |
+| `/roadmap`, `/en/roadmap` | Public roadmap (§2.8) | Public, prerendered |
 | `/sign-in` | Email → code or magic link; "Sign in with fingerprint" when a passkey exists | Public |
 | `/auth/verify` | Magic-link target: submits `email` + `code` from the query and signs in | Public |
 | `/welcome/*` | Onboarding: offer passkey → pick categories → set budgets → import Budge (optional) → done | Signed in, until onboarding is completed |
@@ -134,6 +135,18 @@ To lower the barrier of creating an account, `/demo` lets anyone use the full ap
 - **Recurring:** list with next date; create / edit / delete.
 - **Categories:** list (with archived toggle), create, edit, archive.
 - **Settings:** profile time zone and language, theme (auto / night / day), sound on/off, passkeys (add / remove), import from Budge, export (JSON / CSV), delete account (typed confirmation).
+
+### 2.8 Public roadmap (v1, added 2026-10-21)
+
+Visitors can see what is planned. It is a public, prerendered page plus a short section on the landing.
+
+- **Routes:** `/roadmap` (Spanish) and `/en/roadmap` (English), prerendered in the default build and in the landing-only build, listed in `sitemap.xml` with `hreflang` alternates, each with its own `<title>`, meta description, canonical and Open Graph tags. Same header, footer, theme switch and look as the landing.
+- **Single source:** `apps/web/app/features/roadmap/roadmap.ts` lists the items. Each has an `id`, a `status` (`done`, `building`, `next` or `later`), an emoji glyph and catalog keys for its title and one-line description (`roadmap.items.<id>.*` in both message catalogs). The page and the landing section both read it, so there is one place to edit.
+- **Page:** a title, a short intro saying the plans can change, and a column per status that has items (a single column on a phone, side by side from 900px). Labels: Ya está / En construcción / Próximo / Más adelante (Live / Being built / Next / Later). `done` is empty for now, so its column does not render. No dates anywhere, and Lukitas is never called a game.
+- **Landing:** a "Lo que viene" / "What's next" section between "Código abierto" and the FAQ, in the same cards as "Úsalo como prefieras": the widget microphone, several expenses in one sentence, and connect your AI, with a button "Ver el roadmap". It has no Lukitas spot: he travels from "how it works" to the FAQ past it.
+- **Navigation:** a "Lo que viene" link in the footer, and in the desktop header between "Cómo funciona" and "Preguntas" (the phone header stays as it is).
+- **Not in v1:** no link to GitHub Discussions and no "propose or vote" call to action.
+- **Later, inside the app (once accounts exist):** idea proposals and voting, with one vote per account per idea and statuses moderated by the founder. It gets its own spec then; nothing of it is built or promised on the public page.
 
 ## 3. Design system
 
