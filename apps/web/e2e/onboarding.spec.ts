@@ -254,4 +254,41 @@ test.describe("from Spain", () => {
     expect(categories.some((c) => c.name === "Things")).toBe(true);
     expect(categories.some((c) => c.name === "Ocio")).toBe(true);
   });
+
+  test("a re-import from /app/import keeps a budget already saved and fills the rest", async ({
+    page,
+  }) => {
+    await signUpNewUser(page);
+    await page.getByRole("button", { name: "Entrar directo" }).click();
+    await expect(page).toHaveURL(/\/app$/);
+    // A budget saved before the import: 300 € for Supermercado, from this month.
+    const month = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Europe/Madrid",
+      year: "numeric",
+      month: "2-digit",
+    }).format(new Date());
+    const before = (await (await page.request.get("/api/v1/categories")).json()) as {
+      id: string;
+      name: string;
+    }[];
+    const groceries = before.find((c) => c.name === "Supermercado")?.id as string;
+    const put = await page.request.put(`/api/v1/categories/${groceries}/budget`, {
+      data: { amount: 30000, effectiveFrom: month },
+    });
+    expect(put.status()).toBe(200);
+
+    await page.goto("/app/import");
+    await page.getByRole("button", { name: "Budge" }).click();
+    await page.getByLabel("Subir archivo de Budge").setInputFiles(BUDGE_SAMPLE);
+    await page.getByRole("button", { name: "Importar 22 movimientos" }).click();
+    await expect(page.getByRole("heading", { name: "Tus presupuestos" })).toBeFocused();
+    // The saved one shows as it is, not the file's average.
+    await expect(page.getByRole("textbox", { name: "Presupuesto de Supermercado" })).toHaveValue(
+      "300",
+    );
+    await page.getByRole("button", { name: "Guardar presupuestos" }).click();
+    await expect(page.getByText("Guardamos tus presupuestos.")).toBeVisible();
+    const after = await categoriesOf(page);
+    expect(after.find((c) => c.name === "Supermercado")?.currentBudget).toBe(30000);
+  });
 });

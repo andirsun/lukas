@@ -123,7 +123,7 @@ describe("changing a category's kind", () => {
     ).toHaveLength(1);
   });
 
-  test("is refused while the category has live transactions, and allowed once they are gone", async () => {
+  test("is refused while the category has transactions, soft-deleted ones included", async () => {
     const created = (await (
       await create(c, { name: "Casa", kind: "expense", icon: "🏠", color: "#6d6bff" })
     ).json()) as { id: string };
@@ -138,8 +138,18 @@ describe("changing a category's kind", () => {
     expect(await refused.json()).toMatchObject({ code: "category_has_transactions" });
     // Renaming is still fine.
     expect((await patch(created.id, { name: "Hogar" })).status).toBe(200);
-    // A soft-deleted transaction doesn't count.
+    // A soft-deleted transaction still counts: restoring it would leave a mis-signed row under
+    // the other kind.
     await t.request("DELETE", `/v1/transactions/${tx.id}`, { headers: c });
-    expect((await patch(created.id, { kind: "income" })).status).toBe(200);
+    const stillRefused = await patch(created.id, { kind: "income" });
+    expect(stillRefused.status).toBe(409);
+    expect(await stillRefused.json()).toMatchObject({ code: "category_has_transactions" });
+    expect(
+      (await t.request("POST", `/v1/transactions/${tx.id}/restore`, { headers: c })).status,
+    ).toBe(200);
+    const restored = (await list(c)).find((x) => x.id === created.id) as unknown as {
+      kind: string;
+    };
+    expect(restored.kind).toBe("expense");
   });
 });

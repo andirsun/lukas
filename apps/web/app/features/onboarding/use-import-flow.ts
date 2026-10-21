@@ -132,9 +132,10 @@ export function useImportFlow(deps: ImportFlowDeps) {
 
   /**
    * Refreshes what the import changed, then fills budgets from the file's recent months (the
-   * preview's `averageMonthlySpending`): the empty ones, or all of them when the currency switched
-   * (amounts typed in the old currency mean nothing now). Categories without spending in those
-   * months keep no budget.
+   * preview's `averageMonthlySpending`) for the categories without a saved budget whose field is
+   * empty, or all of them when the currency switched (amounts typed in the old currency mean
+   * nothing now). A saved budget is kept as it is. Categories without spending in those months
+   * keep no budget.
    */
   async function afterImport(result: ImportDto, currencyNote: CurrencyNote) {
     const imported = { phase: "imported" as const, result, currencyNote };
@@ -152,6 +153,12 @@ export function useImportFlow(deps: ImportFlowDeps) {
       const next: Record<string, string> = { ...deps.drafts };
       let prefilled = false;
       for (const c of categories.filter((c) => c.kind === "expense" && !c.archived)) {
+        // A budget they already saved stays theirs: shown as it is, never replaced by an average
+        // (after a currency switch there are none: the API dropped them with the old currency).
+        if (c.currentBudget !== null && !switched) {
+          if (!next[c.id]?.trim()) next[c.id] = draftFromCents(c.currentBudget, locale);
+          continue;
+        }
         const average = averages.get(normalizeName(c.name));
         const empty = !next[c.id]?.trim();
         if (average && average > 0 && (empty || switched)) {

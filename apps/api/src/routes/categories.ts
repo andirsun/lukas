@@ -10,7 +10,7 @@ import {
   updateCategorySchema,
 } from "@lukas/core";
 import { categories, categoryBudgets, type Tx, transactions, withUser } from "@lukas/db";
-import { and, asc, eq, isNull } from "@lukas/db/orm";
+import { asc, eq, isNull } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { isUniqueViolation } from "../http/db-errors.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
@@ -120,13 +120,14 @@ export function categoryRoutes(deps: AppDeps) {
       const month = currentMonth(c.get("user"));
       const dto = await withUser(deps.db, c.get("userId"), async (tx) => {
         const existing = await findCategory(tx, id);
-        // Spending ↔ income only while nothing is booked under it: its transactions' signs and
-        // the budgets would no longer mean what they meant.
+        // Spending ↔ income only while nothing was ever booked under it: its transactions' signs
+        // would no longer mean what they meant. Soft-deleted ones count, as for the currency lock:
+        // they can be restored.
         if (fields.kind && fields.kind !== existing.kind) {
           const [booked] = await tx
             .select({ id: transactions.id })
             .from(transactions)
-            .where(and(eq(transactions.categoryId, id), isNull(transactions.deletedAt)))
+            .where(eq(transactions.categoryId, id))
             .limit(1);
           if (booked) {
             throw new ApiError(

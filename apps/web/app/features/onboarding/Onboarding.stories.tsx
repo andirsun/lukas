@@ -1333,3 +1333,29 @@ export const FlowImportedLeadAndTints: Story = {
     await expect(sheet.getByRole("radio", { name: "Amarillo" })).toBeChecked();
   },
 };
+
+/**
+ * Re-import with a budget already saved: it keeps its amount (not replaced by the file's average),
+ * the categories without one are prefilled, and saving writes only those.
+ */
+export const ImportPageKeepsSavedBudgets: Story = {
+  render: (args) => <ImportPageStage currency="EUR" budgeted onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await pageImport(canvas);
+    await userEvent.click(await canvas.findByRole("button", { name: "Importar 22 movimientos" }));
+    await canvas.findByRole("heading", { name: "Tus presupuestos" });
+    // Saved 300.000 € stays; the file's 35,89 doesn't replace it.
+    await expect(canvas.getByRole("textbox", { name: "Presupuesto de Supermercado" })).toHaveValue(
+      "300.000",
+    );
+    // Ocio (made by the import) had none: prefilled with its average.
+    await expect(canvas.getByRole("textbox", { name: "Presupuesto de Ocio" })).toHaveValue("62,25");
+    await userEvent.click(canvas.getByRole("button", { name: "Guardar presupuestos" }));
+    await canvas.findByText("Guardamos tus presupuestos.");
+    const puts = calls(args.onRequest).filter((l) => l.includes("/budget"));
+    await expect(puts.some((l) => l.includes("cat-groceries"))).toBe(false);
+    await expect(puts).toHaveLength(1);
+    await expect(puts[0]).toContain('{"amount":6225,');
+  },
+};
