@@ -189,6 +189,21 @@ People can start without an email: no login wall after installing the app or on 
   - The backend (anonymous plugin, account linking, cleanup job, `isAnonymous` on `GET /v1/me`) can ship before Stage 3.
   - The client flows (mobile first run, web "Empieza ahora" without email, upgrade sheet, gating of sync/AI/MCP) land at the start of Stage 3, for both mobile and web.
 
+#### WhatsApp (founder request, 2026-10-21; after the first working version)
+
+Both pieces use the **official WhatsApp Business Platform (Cloud API)**. Unofficial WhatsApp Web bridges, such as Evolution API with Baileys, break WhatsApp's terms and get the sending number banned. If that number is banned, nobody can sign in.
+
+- **Sign-in code by WhatsApp**, next to email.
+  - It uses Better Auth's phone-number plugin. The code goes out as an authentication template. It is also offered by guest mode's "Guarda tu progreso".
+  - Each message is billed per message by Meta. It needs a Meta Business account, a dedicated phone number and an approved template.
+  - Unverified accounts start capped at about 250 business-initiated conversations per 24 h. Business verification is free but needs legal-entity documents.
+  - Rate limits apply per number and per IP, plus a monthly spend cap, to stop OTP-pumping abuse.
+- **Chat with Lukitas on WhatsApp.** Log by message ("gasté 15 mil en almuerzo y 3 mil en uber" → the same quick-capture preview, confirmed with a reply) and ask about the budget ("¿cuánto me queda en mercado?").
+  - It reuses the quick-capture parser, the AI fallback under its quota, and the MCP tool layer, so it comes after Stage 4.
+  - It needs an account with a verified number.
+  - Voice notes need server-side transcription, which costs money, so they come later.
+  - The privacy copy says that messages pass through Meta.
+
 #### Automatic capture (founder request, 2026-10-21; Stage 6)
 
 Most people don't keep the habit of logging by hand, so the hard part is getting transactions in without typing. In Colombia, digital wallets are rarely used, while bank alerts from Bancolombia, Nequi, Davivienda and others are common.
