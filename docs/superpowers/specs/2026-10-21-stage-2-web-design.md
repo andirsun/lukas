@@ -68,6 +68,7 @@ Reference: `docs/design/stage-2-mockups/landing.html`.
 
 - `/sign-in`: email field → "send code". The page shows a 6-digit code input; the same email carries a magic link to `/auth/verify`. If the browser offers a passkey for this site, a "Sign in with fingerprint" button is shown first.
 - After the first sign-in, `/welcome` runs once:
+  0. **Currency** (added 2026-10-21): COP, EUR, USD, MXN, and more on request. It is preselected from the browser's region and language, and a Budge import uses the file's currency. When COP is chosen, the step also offers "¿Ver tu plata en lukas? (recomendado)", on by default; see §2.6c.
   1. **Passkey offer:** "¿Entrar con tu huella la próxima vez?" (skippable).
   2. **Categories:** suggested categories (Supermercado, Restaurante, Casa, Transporte, Ocio, Suscripciones, Vida, Salario…) as toggles with their icon and color; at least one expense category.
   3. **Budgets:** an amount per chosen expense category; the running total is shown as "what you can spend per month".
@@ -97,6 +98,30 @@ Reference: `docs/design/stage-2-mockups/add-transaction.html`.
 - Category chips (most used first, "more" for the rest); date defaults to today in the user's time zone; optional note; paid/pending.
 - **Save** → sheet closes → celebration (Lukas, confetti, sound, vibration) → toast with the rule-based message, **Undo** and **Name it** (when saved without a name).
 - Edit mode adds delete (soft, with undo).
+
+### 2.6c Money in lukas (COP only, added 2026-10-21)
+
+Colombians count money in *lukas*, where 1 luka = $1.000 COP. When the account currency is COP, amounts can be shown and typed in lukas. This is the recommended default. Other currencies (EUR, USD…) are never affected: their figures are already short.
+
+- **Preference:** `moneyStyle: "lukas" | "full"` on the user profile, so web, mobile and widget agree.
+  - New COP users get `"lukas"`.
+  - Settings offer Lukas / Pesos completos.
+  - It is ignored for non-COP accounts.
+- **Display (es):**
+
+  | Amount (COP) | Shown |
+  |---|---|
+  | under 1.000 | full pesos ("$850") |
+  | 1.000 | "1 luka" |
+  | 15.000 | "15 lukas" |
+  | 15.500 | "15,5 lukas" (at most one decimal, rounded; ",0" dropped) |
+  | 2.350.000 | "2.350 lukas" |
+  | an expense of 15.000 | "−15 lukas" |
+
+  English shows "15k" instead, because "lukas" doesn't travel. The exact amount in pesos is always one tap away: the edit sheet and the transaction detail show it.
+- **Everywhere the same formatter:** hero, rows, budgets, insights, chart axes and totals, Lukitas' messages ("Te quedan 46 lukas en Mercado"), the toast, and the export. The CSV/JSON export stays in exact pesos.
+- **Typing:** in lukas mode the keypad takes lukas: "15" saves 15.000, and "15,5" saves 15.500. A live line under it confirms "= $15.500". A toggle switches the keypad to exact pesos. Amounts are always stored in exact minor units.
+- **Later idea, not v1:** "palos" for millions ("2,3 palos").
 
 ### 2.6b Try-before-signup demo (added 2026-10-21)
 
@@ -169,6 +194,11 @@ One `feedback` module maps semantic events to animation, sound and vibration:
 4. **Rule-based messages** — a pure function in `packages/core`:
    `lukasMessage(input: { summary: MonthSummary; today: IsoDate; event?: { kind: "saved" | "paid"; categoryId: string; amount: number } }): { key: LukasMessageKey; params: Record<string, string | number> }`.
    Keys for v1: `first_of_day`, `on_track`, `near_limit`, `over_budget`, `income_received`, `pending_paid`, `month_last_day`, `month_closed_green`. The web owns the copy: several variants per key per language, chosen at random. The same function serves Android and MCP later.
+5. **Currency choice** (added 2026-10-21). Today every account is created in EUR. This addition replaces that:
+   - `PATCH /v1/me` accepts `{ currency }`, an ISO 4217 code from a supported list, and sets the default account's currency.
+   - The change is allowed only while the account has no transactions; otherwise it returns 409 `currency_locked`.
+   - `GET /v1/me` returns `currency`.
+6. **Money style** (added 2026-10-21): `user.money_style` (`"lukas" | "full"`, default `"full"`). `PATCH /v1/me` accepts `{ moneyStyle }`, and `GET /v1/me` returns it. Choosing COP during onboarding sets `"lukas"` unless the user turns it off.
 
 ### 4.3 Errors
 
