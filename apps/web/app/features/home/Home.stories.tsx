@@ -21,6 +21,8 @@ const meta = {
       options: {
         phone: { name: "Phone", styles: { width: "390px", height: "844px" }, type: "mobile" },
         desktop: { name: "Desktop", styles: { width: "1280px", height: "800px" }, type: "desktop" },
+        short: { name: "Short phone", styles: { width: "360px", height: "640px" }, type: "mobile" },
+        se: { name: "Small phone", styles: { width: "375px", height: "667px" }, type: "mobile" },
       },
     },
   },
@@ -520,5 +522,136 @@ export const Desktop: Story = {
     await expect(nav.getByText("Análisis")).toBeVisible();
     await userEvent.click(nav.getByRole("button", { name: "Agregar" }));
     await expect(await screen.findByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
+  },
+};
+
+// -- Fix round 1 -----------------------------------------------------------------------------------
+
+/**
+ * A transaction in an archived category keeps its category everywhere: named in its row, a
+ * budget row while it has spending, and selected (marked "archivada") when edited. Editing only
+ * the note never moves it; new transactions are offered only active categories.
+ */
+export const ArchivedCategory: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedCategory />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const budgets = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    await expect(await budgets.findByRole("button", { name: /^Transporte/ })).toHaveAccessibleName(
+      "Transporte · archivada Sin presupuesto",
+    );
+
+    await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));
+    const taxi = await panel.findByRole("button", { name: /^taxi −15,00\s€ Transporte$/ });
+    await userEvent.click(taxi);
+    const edit = within(await screen.findByRole("dialog", { name: "Editar movimiento" }));
+    const chips = within(edit.getByRole("group", { name: "Categoría" }));
+    await expect(chips.getByRole("button", { name: "Transporte archivada" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await userEvent.click(edit.getByRole("button", { name: /^Más opciones/ }));
+    await userEvent.type(edit.getByRole("textbox", { name: "Nota (opcional)" }), "aeropuerto");
+    await userEvent.click(edit.getByRole("button", { name: "Guardar cambios" }));
+    await dialogGone();
+    await waitFor(() =>
+      expect(calls(args.onRequest).map(([line]) => line)).toContainEqual(
+        expect.stringMatching(/^PATCH \/api\/v1\/transactions\/\S+ \{"note":"aeropuerto"\}$/),
+      ),
+    );
+
+    // A new transaction is never put in an archived category.
+    const sheet = await openAdd(canvas);
+    await expect(
+      within(sheet.getByRole("group", { name: "Categoría" })).queryByRole("button", {
+        name: /Transporte/,
+      }),
+    ).toBeNull();
+  },
+};
+
+/** Pesos from a keyboard: "." is a thousands separator, there is no decimal key, and a paste works. */
+export const PesosKeyboardAndPaste: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} currency="COP" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await expect(sheet.queryByRole("button", { name: "Coma decimal" })).toBeNull();
+    await userEvent.keyboard("15.000,5");
+    const amount = sheet.getByTestId("amount");
+    await expect(amount).toHaveTextContent("$150.005 (150 lukas)");
+    for (let i = 0; i < 6; i += 1) await userEvent.keyboard("{Backspace}");
+    const clipboard = new DataTransfer();
+    clipboard.setData("text/plain", "$4.300.000");
+    document.body.dispatchEvent(
+      new ClipboardEvent("paste", { clipboardData: clipboard, bubbles: true, cancelable: true }),
+    );
+    await waitFor(() => expect(amount).toHaveTextContent("$4.300.000 (4,3 palos)"));
+    // Ten million pesos and more fit.
+    await userEvent.keyboard("0");
+    await expect(amount).toHaveTextContent("$43.000.000");
+  },
+};
+
+/** Guardar stays in view on short phones, with the amount; the content scrolls between them. */
+export const ShortPhone: Story = {
+  globals: { viewport: { value: "short", isRotated: false } },
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "6");
+    const save = sheet.getByRole("button", { name: "Guardar" });
+    const inView = (element: HTMLElement) => {
+      const box = element.getBoundingClientRect();
+      return box.top >= 0 && box.bottom <= window.innerHeight;
+    };
+    await waitFor(() => expect(inView(save)).toBe(true));
+    // Scrolled to the top (the amount) or to the bottom (the keypad), Guardar is still there.
+    const dialog = screen.getByRole("dialog");
+    dialog.scrollTop = dialog.scrollHeight;
+    await waitFor(() => expect(inView(save)).toBe(true));
+    await expect(inView(sheet.getByRole("button", { name: "0" }))).toBe(true);
+    // Tab order still ends on Guardar, then wraps to the first control.
+    save.focus();
+    await userEvent.tab();
+    await expect(sheet.getByRole("button", { name: "Cerrar" })).toHaveFocus();
+  },
+};
+
+/** The same on a 375×667 phone. */
+export const SmallPhone: Story = {
+  ...ShortPhone,
+  globals: { viewport: { value: "se", isRotated: false } },
+};
+
+/** Sign-out that fails stays here with an error; one that works goes to sign-in. */
+export const SignOut: Story = {
+  render: (args) => {
+    let attempts = 0;
+    return (
+      <HomeStage
+        onRequest={args.onRequest}
+        signOut={async () => {
+          attempts += 1;
+          return { error: attempts === 1 ? { status: 500 } : null };
+        }}
+      />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    await userEvent.click(canvas.getByRole("button", { name: "Tu cuenta" }));
+    await userEvent.click(canvas.getByRole("button", { name: "Cerrar sesión" }));
+    await toastSaying("No pudimos cerrar tu sesión. Inténtalo de nuevo.", "alert");
+    await expect(canvas.queryByText("Sign-in (stand-in)")).toBeNull();
+    await expect(canvas.getByRole("region", { name: "Te quedan este mes" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Cerrar sesión" }));
+    await expect(await canvas.findByText("Sign-in (stand-in)")).toBeVisible();
   },
 };

@@ -11,10 +11,12 @@ import { Keypad } from "./Keypad.tsx";
  */
 function KeypadHarness({
   locale,
+  currency,
   initial = "",
   onChange,
 }: {
   locale: Locale;
+  currency?: string;
   initial?: string;
   onChange?: (value: string) => void;
 }) {
@@ -36,6 +38,7 @@ function KeypadHarness({
       <Keypad
         value={value}
         locale={locale}
+        {...(currency ? { currency } : {})}
         onChange={(next) => {
           setValue(next);
           onChange?.(next);
@@ -142,14 +145,27 @@ export const Backspace: Story = {
   },
 };
 
-/** The whole part stops at seven digits (9.999.999,99 €), far below the safe-integer limit. */
+/** Capped by value at 999.999.999,99: a tenth whole digit is ignored. */
 export const MaxLength: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await press(canvas, ...Array.from({ length: 9 }, () => "1"));
-    await expect(canvas.getByRole("status", { name: "raw" })).toHaveTextContent(/^1111111$/);
+    await press(canvas, ...Array.from({ length: 11 }, () => "9"));
+    await expect(canvas.getByRole("status", { name: "raw" })).toHaveTextContent(/^999999999$/);
     await press(canvas, ",", "9", "9");
-    await expect(canvas.getByRole("status", { name: "cents" })).toHaveTextContent("111111199");
+    await expect(canvas.getByRole("status", { name: "cents" })).toHaveTextContent("99999999999");
+  },
+};
+
+/** Pesos are whole: no decimal key (its place stays empty), and ten-million-peso amounts fit. */
+export const Pesos: Story = {
+  args: { currency: "COP" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const pad = canvas.getByRole("group", { name: "Teclado numérico" });
+    await expect(within(pad).getAllByRole("button")).toHaveLength(11);
+    await expect(canvas.queryByRole("button", { name: "Coma decimal" })).toBeNull();
+    await press(canvas, "1", "2", "0", "0", "0", "0", "0", "0");
+    await expect(canvas.getByRole("status", { name: "raw" })).toHaveTextContent(/^12000000$/);
   },
 };
 

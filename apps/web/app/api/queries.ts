@@ -107,6 +107,25 @@ export function useCategories() {
   });
 }
 
+/**
+ * Every category, archived ones too: what older transactions are in. Lists of choices use
+ * `useCategories` (active only); lookups by id (a row's name, the transaction being edited) use
+ * this. Invalidating `categories()` refreshes both.
+ */
+export function useAllCategories() {
+  const api = useApi();
+  return useQuery({
+    queryKey: [...queryKeys.categories(), "all"] as const,
+    queryFn: async ({ signal }) =>
+      dataOf(
+        await api.GET("/v1/categories", {
+          params: { query: { includeArchived: "true" } },
+          signal,
+        }),
+      ),
+  });
+}
+
 /** Names you used before, with the category they usually go in, matching what is being typed. */
 export function useSuggestions(q: string) {
   const api = useApi();
@@ -197,6 +216,8 @@ function settle(qc: QueryClient, months: string[]) {
   void qc.invalidateQueries({ queryKey: queryKeys.reports() });
   // Names you used before (and their usual category) change with every write.
   void qc.invalidateQueries({ queryKey: ["suggestions"] });
+  // Whether the account has any transaction at all (home's "Trae tu historial").
+  void qc.invalidateQueries({ queryKey: ["onboarding", "has-transactions"] });
 }
 
 function mutation<Vars, Result>(

@@ -13,7 +13,7 @@ import {
   type NewTransaction,
   queryKeys,
   type TransactionPatch,
-  useCategories,
+  useAllCategories,
   useCreateTransaction,
   useDeleteTransaction,
   useMarkPaid,
@@ -23,7 +23,13 @@ import {
   useUpdateTransaction,
 } from "../../api/queries.ts";
 import { feedback } from "../../feedback/feedback.ts";
-import { formatMoney, type Locale, lukasHint, parseAmountInput } from "../../i18n/format.ts";
+import {
+  formatMoney,
+  isWholeUnit,
+  type Locale,
+  lukasHint,
+  parseAmountInput,
+} from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { useToast } from "../../ui/Toast.tsx";
 import { feedbackForSave, orderByUse } from "../home/home-model.ts";
@@ -192,9 +198,13 @@ export type TransactionActions = ReturnType<typeof useTransactionActions>;
 
 // -- The form --------------------------------------------------------------------------------------
 
-/** Stored cents as keypad text in the locale (`26280` → `262,80`; `5000` → `50`). */
-export function keypadText(cents: number, locale: Locale): string {
+/**
+ * Stored cents as keypad text in the locale (`26280` → `262,80`; `5000` → `50`). Whole-unit
+ * currencies (COP) are rounded to whole pesos: the keypad never holds fractional pesos.
+ */
+export function keypadText(cents: number, locale: Locale, currency?: string): string {
   const abs = Math.abs(cents);
+  if (currency && isWholeUnit(currency)) return String(Math.round(abs / 100));
   const whole = Math.floor(abs / 100);
   const rest = abs % 100;
   return rest === 0
@@ -228,6 +238,7 @@ export interface FormOptions {
   /** A category to start with (e.g. from a budget row). */
   categoryId?: string | undefined;
   timezone: string;
+  currency: string;
 }
 
 /** The add/edit sheet's state, its choices (categories, shortcuts) and what saving would send. */
@@ -235,9 +246,11 @@ export function useTransactionForm({
   editing,
   categoryId: initialCategory,
   timezone,
+  currency,
 }: FormOptions) {
   const { locale } = useLocale();
-  const categoriesQuery = useCategories();
+  // Archived ones too: the transaction being edited may be in one (it is never moved silently).
+  const categoriesQuery = useAllCategories();
   const categories: CategoryDto[] = categoriesQuery.data ?? [];
   const today = todayIn(timezone);
   const recent = useTransactions(monthOf(today));
@@ -250,12 +263,20 @@ export function useTransactionForm({
   const presetKind = initialCategory ? byId.get(initialCategory)?.kind : undefined;
   const kind: Kind = kindState ?? editingCategory?.kind ?? presetKind ?? "expense";
 
-  const [raw, setRaw] = useState(() => (editing ? keypadText(editing.amount, locale) : ""));
+  const [raw, setRaw] = useState(() =>
+    editing ? keypadText(editing.amount, locale, currency) : "",
+  );
   const [name, setName] = useState(() => editing?.name ?? "");
   const [picked, setPicked] = useState<string | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(
     () => editing?.categoryId ?? initialCategory ?? null,
   );
+  // Only a category the person picked goes into an edit's patch: never a fallback.
+  const [categoryChosen, setCategoryChosen] = useState(false);
+  const choose = (id: string | null) => {
+    setCategoryId(id);
+    setCategoryChosen(true);
+  };
   const [date, setDate] = useState(() => editing?.date ?? today);
   const [pending, setPending] = useState(() => editing?.status === "pending");
   const [note, setNote] = useState(() => editing?.note ?? "");
@@ -263,10 +284,16 @@ export function useTransactionForm({
   // One key per opening of the sheet: any repeat of this save is the same request to the API.
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
-  const ofKind = orderByUse(
+  const active = orderByUse(
     categories.filter((c) => !c.archived && c.kind === kind),
     recent.data?.items ?? [],
   );
+  // New transactions only go in active categories; an edited one keeps offering its own, even
+  // archived (first, so it shows among the visible chips).
+  const ofKind =
+    editingCategory?.archived && editingCategory.kind === kind
+      ? [editingCategory, ...active]
+      : active;
   const selected =
     (categoryId && ofKind.find((c) => c.id === categoryId)) || ofKind[0] || undefined;
   // An edited transaction whose name is just its category's shows the name as the placeholder.
@@ -319,7 +346,7 @@ export function useTransactionForm({
     kind,
     setKind(next: Kind) {
       setKindState(next);
-      if (selected?.kind !== next) setCategoryId(null);
+      if (selected?.kind !== next) choose(null);
     },
     raw,
     setRaw,
@@ -333,11 +360,11 @@ export function useTransactionForm({
       setName(s.name);
       setPicked(s.name);
       setKindState(s.kind);
-      setCategoryId(s.categoryId);
+      choose(s.categoryId);
     },
     suggestions,
     selected,
-    select: setCategoryId,
+    select: choose,
     chips,
     overflow,
     allChips,
@@ -359,7 +386,9 @@ export function useTransactionForm({
       const patch: TransactionPatch = {};
       if (next.name !== editing.name) patch.name = next.name;
       if (next.amount !== editing.amount) patch.amount = next.amount;
-      if (next.categoryId !== editing.categoryId) patch.categoryId = next.categoryId;
+      if (categoryChosen && next.categoryId !== editing.categoryId) {
+        patch.categoryId = next.categoryId;
+      }
       if (next.date !== editing.date) patch.date = next.date;
       if (next.status !== editing.status) patch.status = next.status;
       const nextNote = note.trim() || null;

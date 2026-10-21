@@ -4,6 +4,8 @@ export interface CategoryChipProps {
   /** The category's emoji. */
   glyph: string;
   label: string;
+  /** A short muted word under the name, e.g. "archivada". Part of the chip's name. */
+  note?: string;
   selected: boolean;
   onSelect(): void;
 }
@@ -13,7 +15,7 @@ export interface CategoryChipProps {
  * tile with the name under it. The whole chip is one toggle button named by its label; the
  * selected one gets the `gold` outline and `ink` label.
  */
-export function CategoryChip({ glyph, label, selected, onSelect }: CategoryChipProps) {
+export function CategoryChip({ glyph, label, note, selected, onSelect }: CategoryChipProps) {
   return (
     <button
       type="button"
@@ -25,6 +27,7 @@ export function CategoryChip({ glyph, label, selected, onSelect }: CategoryChipP
         {glyph}
       </span>
       <span className="max-w-full truncate">{label}</span>
+      {note && <span className="max-w-full truncate text-[9px] text-ink-muted">{note}</span>}
     </button>
   );
 }

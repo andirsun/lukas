@@ -14,6 +14,7 @@ import { ToastProvider } from "../../ui/Toast.tsx";
 import { AppShell } from "./AppShell.tsx";
 import { Home } from "./Home.tsx";
 import { clearHomeStorage } from "./home-storage.ts";
+import type { SignOutRequest } from "./use-sign-out.ts";
 
 /** The time zone of the made-up person: "today" and the month are theirs. */
 export const STORY_TIMEZONE = "Europe/Madrid";
@@ -126,6 +127,8 @@ export interface HomeApiOptions {
   failCreate?: boolean;
   /** How long a create takes, in ms. */
   createDelayMs?: number;
+  /** Transporte is archived, with a taxi ride in it today (sample data only). */
+  archivedCategory?: boolean;
 }
 
 function summaryOf(
@@ -133,15 +136,20 @@ function summaryOf(
   transactions: TransactionDto[],
   month: string,
 ): MonthSummary {
+  const inMonth = transactions.filter((t) => monthOf(t.date) === month);
+  // Like the API: an archived category stays while it has spending that month.
+  const used = new Set(inMonth.map((t) => t.categoryId));
   return monthSummary({
     month,
-    categories: categories.filter((c) => !c.archived).map((c) => ({ id: c.id, kind: c.kind })),
+    categories: categories
+      .filter((c) => !c.archived || used.has(c.id))
+      .map((c) => ({ id: c.id, kind: c.kind })),
     budgets: categories.flatMap((c) =>
       c.currentBudget === null
         ? []
         : [{ categoryId: c.id, amount: c.currentBudget, effectiveFrom: addMonths(month, -12) }],
     ),
-    transactions: transactions.filter((t) => monthOf(t.date) === month),
+    transactions: inMonth,
   });
 }
 
@@ -153,6 +161,7 @@ function homeFetch({
   data = "sample",
   failCreate = false,
   createDelayMs = 0,
+  archivedCategory = false,
 }: HomeApiOptions): typeof fetch {
   let categories: FakeCategory[] =
     data === "no-categories"
@@ -163,6 +172,12 @@ function homeFetch({
   if (data === "empty") categories = categories.map((c) => ({ ...c, currentBudget: null }));
   let transactions: TransactionDto[] =
     data === "sample" && currency === "EUR" ? sampleTransactions() : [];
+  if (archivedCategory) {
+    categories = categories.map((c) =>
+      c.id === "cat-transport" ? { ...c, archived: true, currentBudget: null } : c,
+    );
+    transactions = [...transactions, transaction("taxi", "cat-transport", -1500, STORY_TODAY)];
+  }
   const deleted = new Map<string, TransactionDto>();
   const profile = {
     id: STORY_USER_ID,
@@ -190,7 +205,8 @@ function homeFetch({
 
     if (path === "/api/v1/me") return Response.json(profile);
     if (path === "/api/v1/categories" && request.method === "GET") {
-      return Response.json(categories.filter((c) => !c.archived));
+      const all = url.searchParams.get("includeArchived") === "true";
+      return Response.json(categories.filter((c) => all || !c.archived));
     }
     if (path === "/api/v1/categories" && request.method === "POST") {
       const created = {
@@ -258,14 +274,17 @@ function homeFetch({
   };
 }
 
-export type HomeStageProps = HomeApiOptions;
+export interface HomeStageProps extends HomeApiOptions {
+  /** Stands in for Better Auth's sign-out; by default it succeeds. */
+  signOut?: SignOutRequest;
+}
 
 /**
  * `/app` (the shell with its bottom bar and the add sheet, and home) in a memory router, against
  * the fake API above, with the toasts. Each story starts with no remembered choices; "Recargar"
  * remounts everything as a reload would, keeping what the browser stored.
  */
-export function HomeStage(api: HomeStageProps) {
+export function HomeStage({ signOut = async () => ({ error: null }), ...api }: HomeStageProps) {
   const [fetchImpl] = useState(() => {
     clearHomeStorage(STORY_USER_ID);
     return homeFetch(api);
@@ -287,9 +306,13 @@ export function HomeStage(api: HomeStageProps) {
               path="/app"
               element={
                 <AppShell>
-                  <Home />
+                  <Home signOut={signOut} />
                 </AppShell>
               }
+            />
+            <Route
+              path="/sign-in"
+              element={<p className="p-(--space-4) text-ink">Sign-in (stand-in)</p>}
             />
           </Routes>
         </ToastProvider>

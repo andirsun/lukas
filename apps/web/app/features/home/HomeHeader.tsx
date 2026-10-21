@@ -1,18 +1,18 @@
 import type { Month } from "@lukas/core";
 import { useEffect, useId, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import { useTranslations } from "use-intl";
-import { useClearSession } from "../../api/ApiProvider.tsx";
-import { authClient } from "../../auth/auth-client.ts";
 import { MonthPicker } from "../../ui/MonthPicker.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
+import { type SignOutRequest, useSignOut } from "./use-sign-out.ts";
 
 export interface HomeHeaderProps {
   month: Month;
   onMonth(month: Month): void;
   /** The current month in the person's time zone: the latest one to show. */
   max: Month;
+  /** Ends the session (stories pass a stand-in); Better Auth's by default. */
+  signOut?: SignOutRequest | undefined;
 }
 
 /** Sections that live in the avatar menu and do not exist yet (Tasks 13 and 15). */
@@ -23,14 +23,13 @@ const SOON = ["recurring", "categories", "settings"] as const;
  * the day/night switch, the sections still to come, and sign-out. The menu is a disclosure: its
  * button says whether it is open, Escape or a tap outside closes it and gives focus back.
  */
-export function HomeHeader({ month, onMonth, max }: HomeHeaderProps) {
+export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeaderProps) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const button = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  const clearSession = useClearSession();
+  const signOut = useSignOut(request);
 
   useEffect(() => {
     if (!open) return;
@@ -51,18 +50,16 @@ export function HomeHeader({ month, onMonth, max }: HomeHeaderProps) {
     };
   }, [open]);
 
-  const signOut = async () => {
-    await authClient.signOut().catch(() => {});
-    clearSession();
-    navigate("/sign-in", { replace: true });
-  };
-
   return (
-    <header className="relative flex items-center justify-between gap-(--space-2)">
+    // Under 400px the three do not fit on one row (360px phones are common): the month gets its
+    // own centred row under the logo and the avatar.
+    <header className="relative flex flex-wrap items-center justify-between gap-x-(--space-2)">
       <span className="lk-logo inline-flex min-h-11 items-center lg:invisible">
         {t("app.name")}
       </span>
-      <MonthPicker month={month} onChange={onMonth} max={max} />
+      <div className="order-last flex w-full justify-center min-[400px]:order-none min-[400px]:w-auto">
+        <MonthPicker month={month} onChange={onMonth} max={max} />
+      </div>
       <button
         ref={button}
         type="button"

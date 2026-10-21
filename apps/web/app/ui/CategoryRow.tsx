@@ -7,6 +7,8 @@ import { cx } from "./cx.ts";
 
 export interface CategoryRowProps {
   name: string;
+  /** A short muted word after the name, e.g. "archivada". Part of the row's name. */
+  note?: string;
   /** Emoji shown in the tile. */
   glyph: string;
   /** The category's color; the tile mixes it into the sunken surface so it reads in both themes. */
@@ -32,6 +34,7 @@ export interface CategoryRowProps {
  */
 export function CategoryRow({
   name,
+  note,
   glyph,
   tint,
   budget,
@@ -72,6 +75,8 @@ export function CategoryRow({
         <div className="lk-rowtop">
           <span id={`${id}-name`} className="truncate">
             {name}
+            {note && " "}
+            {note && <span className="font-bold text-ink-muted">· {note}</span>}
           </span>
           {hasBudget && <span className="lk-num">{money(budget)}</span>}
         </div>

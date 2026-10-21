@@ -11,7 +11,13 @@ import { type PointerEvent, useEffect, useId, useMemo, useRef, useState } from "
 import { useTranslations } from "use-intl";
 import { useApi } from "../../api/ApiProvider.tsx";
 import { ApiProblem, problemMessage, type Translator } from "../../api/errors.ts";
-import { queryKeys, useCategories, useMe, useSummary, useTransactions } from "../../api/queries.ts";
+import {
+  queryKeys,
+  useAllCategories,
+  useMe,
+  useSummary,
+  useTransactions,
+} from "../../api/queries.ts";
 import { formatDay, formatMoney, formatMonth } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { moodFor } from "../../lukas/mood.ts";
@@ -32,6 +38,7 @@ import { SUGGESTED_CATEGORIES } from "../onboarding/suggested-categories.ts";
 import { HomeHeader } from "./HomeHeader.tsx";
 import { type DayGroup, groupByDay, homeLukasLine, overallState } from "./home-model.ts";
 import { type HomeView, useDismissed, useHomeView } from "./home-storage.ts";
+import type { SignOutRequest } from "./use-sign-out.ts";
 
 /** How long Lukitas celebrates after a save or a payment. */
 const CELEBRATE_MS = 2500;
@@ -46,7 +53,12 @@ const SWIPE_PX = 60;
  * sideways swipe) switches between them and the choice is remembered on the device; on wide
  * screens they sit side by side. Around them, gentle cards for an account that skipped the setup.
  */
-export function Home() {
+export interface HomeProps {
+  /** Ends the session (stories pass a stand-in); Better Auth's by default. */
+  signOut?: SignOutRequest;
+}
+
+export function Home({ signOut }: HomeProps = {}) {
   const me = useMe().data;
   if (!me) throw new Error("Home renders inside AppShell, which waits for the profile");
   const today = todayIn(me.timezone);
@@ -61,6 +73,7 @@ export function Home() {
       current={current}
       month={month}
       onMonth={setMonth}
+      signOut={signOut}
     />
   );
 }
@@ -72,14 +85,16 @@ interface MonthViewProps {
   current: Month;
   month: Month;
   onMonth(month: Month): void;
+  signOut?: SignOutRequest | undefined;
 }
 
-function MonthView({ userId, currency, today, current, month, onMonth }: MonthViewProps) {
+function MonthView({ userId, currency, today, current, month, onMonth, signOut }: MonthViewProps) {
   const t = useTranslations("home");
   const { locale } = useLocale();
   const summary = useSummary(month);
   const transactions = useTransactions(month);
-  const categories = useCategories();
+  // Archived ones too: older transactions (and a month's summary) can still be in them.
+  const categories = useAllCategories();
   const [view, setView] = useHomeView();
 
   if (summary.error && !summary.data) throw summary.error;
@@ -92,7 +107,7 @@ function MonthView({ userId, currency, today, current, month, onMonth }: MonthVi
 
   return (
     <div className="mx-auto flex w-full max-w-[480px] flex-col gap-(--space-3) px-(--space-4) pt-(--space-3) lg:max-w-[1040px] lg:px-(--space-6) lg:pt-(--space-5)">
-      <HomeHeader month={month} onMonth={onMonth} max={current} />
+      <HomeHeader month={month} onMonth={onMonth} max={current} signOut={signOut} />
       <main className="flex flex-col gap-(--space-3)">
         {summary.data && categories.data && transactions.data ? (
           <>
@@ -487,13 +502,15 @@ function Budgets({
   currency: string;
 }) {
   const t = useTranslations("home");
+  const tTransaction = useTranslations("transaction");
   const { openAdd } = useTransactionSheet();
   if (!summary || !categories) return <div className="min-h-[120px]" aria-busy="true" />;
   const byId = new Map(categories.map((c) => [c.id, c]));
   const rows = summary.categories
     .flatMap((s) => {
       const category = byId.get(s.categoryId);
-      return category && !category.archived && category.kind === "expense" ? [{ s, category }] : [];
+      // The summary keeps an archived category only while it has spending that month.
+      return category && category.kind === "expense" ? [{ s, category }] : [];
     })
     .sort((a, b) => a.category.sortOrder - b.category.sortOrder);
   if (rows.length === 0) {
@@ -514,8 +531,10 @@ function Budgets({
             remaining={s.remaining}
             state={s.state}
             currency={currency}
-            // Until the category detail exists (Task 13), a row starts an expense in it.
-            onOpen={() => openAdd(category.id)}
+            {...(category.archived ? { note: tTransaction("archived") } : {})}
+            // Until the category detail exists (Task 13), a row starts an expense in it (in an
+            // archived one, no new expenses: the sheet starts on the usual choice).
+            onOpen={() => (category.archived ? openAdd() : openAdd(category.id))}
           />
         );
       })}

@@ -1152,6 +1152,25 @@
     cursor: pointer;
     text-align: left;
   }
+  /* The amount in the sheet stays in view at the top while the keypad is scrolled to. */
+  .lk-sheet-amount {
+    position: sticky;
+    top: calc(-1 * 10px);
+    z-index: 1;
+    margin: 0 calc(-1 * var(--space-3));
+    padding: var(--space-1) var(--space-3);
+    background: var(--surface);
+  }
+  /* The sheet's save row: stuck to the bottom of the sheet, the content scrolls above it. */
+  .lk-sheet-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
+    padding: var(--space-2) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 2px solid var(--stroke);
+  }
   .lk-more-row:focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: 2px;

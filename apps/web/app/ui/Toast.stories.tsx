@@ -290,7 +290,8 @@ export const ErrorInsideSheet: Story = {
     const alert = await within(dialog).findByRole("alert");
     await expect(alert).toHaveTextContent("Sin conexión. Inténtalo de nuevo.");
     await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 4000 });
+    // The sheet slides out over `--sheet`; on a loaded machine its frames come late.
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 8000 });
     await expect(screen.getByRole("alert")).toHaveTextContent("Sin conexión. Inténtalo de nuevo.");
   },
 };

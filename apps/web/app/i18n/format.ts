@@ -28,6 +28,11 @@ const MINOR_UNIT = 100;
 /** Currencies shown without decimals; stored in hundredths like the rest. */
 const WHOLE_UNIT_CURRENCIES = new Set(["COP", "CLP"]);
 
+/** Whether a currency is counted in whole units only (no cents to type or show): COP, CLP. */
+export function isWholeUnit(currency: string): boolean {
+  return WHOLE_UNIT_CURRENCIES.has(currency);
+}
+
 /** The formatter `formatMoney` uses for a currency and locale (before its own fix-ups). */
 function moneyFormat(
   currency: string,

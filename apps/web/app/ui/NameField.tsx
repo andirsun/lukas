@@ -52,6 +52,7 @@ export function NameField<S extends NameSuggestion>({
           value={value}
           placeholder={placeholder}
           autoComplete="off"
+          maxLength={120}
           enterKeyHint="done"
           onChange={(event) => onChange(event.target.value)}
           className="min-w-0 flex-1 border-0 bg-transparent p-0 font-text text-ink outline-none placeholder:text-ink-muted placeholder:italic"

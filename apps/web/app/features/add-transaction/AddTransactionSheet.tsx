@@ -6,7 +6,8 @@ import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { CategoryChip } from "../../ui/CategoryChip.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
 import { cx } from "../../ui/cx.ts";
-import { Keypad, typeOnKeypad } from "../../ui/Keypad.tsx";
+import { Keypad } from "../../ui/Keypad.tsx";
+import { pasteAmount, typeOnKeypad } from "../../ui/keypad-input.ts";
 import { NameField } from "../../ui/NameField.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
@@ -51,7 +52,7 @@ export function AddTransactionSheet({
   const tRoot = useTranslations();
   const { locale } = useLocale();
   const { actions } = useTransactionSheet();
-  const form = useTransactionForm({ editing, categoryId, timezone });
+  const form = useTransactionForm({ editing, categoryId, timezone, currency });
   const [moreOpen, setMoreOpen] = useState(false);
   const [nameInput, setNameInput] = useState<HTMLInputElement | null>(null);
   const saving = useRef(false);
@@ -63,29 +64,35 @@ export function AddTransactionSheet({
     if (open && focusName && nameInput) nameInput.focus();
   }, [open, focusName, nameInput]);
 
-  // Typing on a keyboard fills the amount, unless a text field has the keys.
+  // Typing or pasting fills the amount, unless a text field has the keys. The thousands
+  // separator is ignored ("15.000" in Spanish is 15000) and pesos take no decimals.
   const { raw, setRaw } = form;
   useEffect(() => {
     if (!open) return;
+    const format = { locale, currency };
+    const inField = (target: EventTarget | null) =>
+      target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
     const onKey = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (
-        event.metaKey ||
-        event.ctrlKey ||
-        event.altKey ||
-        target instanceof HTMLInputElement ||
-        target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
-      const next = typeOnKeypad(raw, event.key, locale);
+      if (event.metaKey || event.ctrlKey || event.altKey || inField(event.target)) return;
+      const next = typeOnKeypad(raw, event.key, format);
+      if (next === null) return;
+      event.preventDefault();
+      setRaw(next);
+    };
+    const onPaste = (event: ClipboardEvent) => {
+      if (inField(event.target)) return;
+      const next = pasteAmount(event.clipboardData?.getData("text") ?? "", format);
       if (next === null) return;
       event.preventDefault();
       setRaw(next);
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, raw, setRaw, locale]);
+    document.addEventListener("paste", onPaste);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("paste", onPaste);
+    };
+  }, [open, raw, setRaw, locale, currency]);
 
   const save = () => {
     if (saving.current || !form.valid || !form.selected) return;
@@ -137,8 +144,9 @@ export function AddTransactionSheet({
 
         <p
           data-testid="amount"
+          aria-live="polite"
           className={cx(
-            "lk-amount-display m-0",
+            "lk-amount-display lk-sheet-amount",
             form.kind === "expense" ? "is-expense" : "is-income",
           )}
         >
@@ -175,6 +183,7 @@ export function AddTransactionSheet({
                 key={c.id}
                 glyph={categoryLook(c).glyph}
                 label={c.name}
+                {...(c.archived ? { note: t("archived") } : {})}
                 selected={form.selected?.id === c.id}
                 onSelect={() => form.select(c.id)}
               />
@@ -242,9 +251,10 @@ export function AddTransactionSheet({
           </label>
         </div>
 
-        <Keypad value={form.raw} onChange={form.setRaw} locale={locale} />
+        <Keypad value={form.raw} onChange={form.setRaw} locale={locale} currency={currency} />
 
-        <div className="flex gap-(--space-2)">
+        {/* Always in view, even on short phones: the content scrolls above it. */}
+        <div className="lk-sheet-footer flex gap-(--space-2)">
           {editing && (
             <PressButton variant="secondary" onClick={remove}>
               {t("delete")}
