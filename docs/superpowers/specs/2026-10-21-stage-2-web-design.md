@@ -68,14 +68,25 @@ Reference: `docs/design/stage-2-mockups/landing.html`.
 ### 2.4 Sign-in and onboarding
 
 - `/sign-in`: email field → "send code". The page shows a 6-digit code input; the same email carries a magic link to `/auth/verify`. If the browser offers a passkey for this site, a "Sign in with fingerprint" button is shown first.
-- After the first sign-in, `/welcome` runs once:
-  0. **Currency** (added 2026-10-21): COP, EUR, USD, MXN, and more on request. It is preselected from the browser's region and language, and a Budge import uses the file's currency.
-  1. **Passkey offer:** "¿Entrar con tu huella la próxima vez?" (skippable).
-  2. **Categories:** suggested categories (Supermercado, Restaurante, Casa, Transporte, Ocio, Suscripciones, Vida, Salario…) as toggles with their icon and color; at least one expense category.
-  3. **Budgets:** an amount per chosen expense category; the running total is shown as "what you can spend per month".
-  4. **Import from Budge (optional):** upload the CSV → preview (rows, duplicates, rejected rows, new categories) → confirm. When an import happens before step 3, budgets are prefilled with `averageMonthlySpending`.
-  5. **Done:** celebration with Lukas, then `/app`.
-- Completing step 5 sets `onboardingCompletedAt`.
+- After the first sign-in, `/welcome` runs once. It was **revised 2026-10-21 after founder feedback**: onboarding is optional, short and skippable.
+  1. **Welcome:** two buttons, **CONFIGURAR EN 1 MINUTO** and **ENTRAR DIRECTO**.
+     - *Entrar directo* skips everything and still leaves a usable account: the currency is preselected from region and language, the suggested categories are created, there are no budgets, and onboarding is marked complete.
+     - Home then shows gentle nudges: "Ponle presupuesto a tus categorías" and "Trae tu historial".
+  2. **Currency:** **COP, USD, EUR** only at launch, preselected. An imported file's currency wins (the import switches the account currency before confirming, while the account is still empty).
+  3. **Categories:**
+     - The suggested categories (Supermercado, Restaurante, Casa, Transporte, Ocio, Suscripciones, Vida, Salario…) come **pre-selected**, so SIGUIENTE works with no input. Tapping one deselects it.
+     - **＋ Agregar categoría** creates your own: name, emoji glyph, tint, and expense or income.
+  4. **¿Traes tu historial?** A list of sources:
+     - **Budge:** a short how-to-export tutorial (the founder confirms the exact steps), then upload, preview and confirm.
+     - **Buddy** and **otras apps:** marked "pronto".
+     - **Excel / Google Sheets / CSV:** upload `.xlsx` or `.csv`. Columns (date, description, amount, category) are auto-detected and the user can fix the mapping. Category names in the file are created as is. Rows without one get a suggestion from the name → category rules. Then the same preview and confirm.
+     - A later, opt-in "Sugerir categorías con IA" for messy sheets.
+  5. **Budgets (last):** an amount per selected expense category, with the running total.
+     - After an import they are prefilled from the **last 3 complete months**, with the line "Basado en lo que gastaste en tus últimos 3 meses".
+     - Without an import they start empty.
+     - For COP, the lukas hint (§2.6c) shows.
+- **Every step has SIGUIENTE and SALTAR.** No step forces input. Finishing or skipping lands on `/app` with the celebration and sets `onboardingCompletedAt`.
+- **Passkey offer moved out of onboarding:** Lukitas offers "¿Entrar con tu huella la próxima vez?" later (after the first saved transaction, as a dismissible card) and in Settings.
 
 ### 2.5 Home (`/app`)
 
