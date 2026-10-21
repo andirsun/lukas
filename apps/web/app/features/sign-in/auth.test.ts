@@ -1,0 +1,59 @@
+import { describe, expect, it } from "vitest";
+import { authErrorKey, destinationAfterSignIn, langFrom, verifyErrorKey } from "./auth.ts";
+
+describe("authErrorKey", () => {
+  it.each([
+    [{ code: "INVALID_OTP", status: 400 }, "errors.invalid_code"],
+    [{ code: "OTP_EXPIRED", status: 400 }, "errors.invalid_or_expired_code"],
+    [{ code: "TOO_MANY_ATTEMPTS", status: 403 }, "errors.too_many_attempts"],
+    [{ code: "INVALID_EMAIL", status: 400 }, "errors.invalid_email"],
+    [{ status: 429 }, "errors.too_many_requests"],
+    [{ code: "TOO_MANY_REQUESTS", status: 429 }, "errors.too_many_requests"],
+    [{ status: 0 }, "errors.network_error"],
+    [{ status: 502 }, "errors.internal_error"],
+    [{ code: "SOMETHING_NEW", status: 400 }, "errors.generic"],
+  ])("maps %j to %s", (error, key) => {
+    expect(authErrorKey(error)).toBe(key);
+  });
+});
+
+describe("verifyErrorKey", () => {
+  it("reads every code problem on the magic link as invalid or expired", () => {
+    for (const code of ["INVALID_OTP", "OTP_EXPIRED", "TOO_MANY_ATTEMPTS", "INVALID_EMAIL"]) {
+      expect(verifyErrorKey({ code, status: 400 })).toBe("errors.invalid_or_expired_code");
+    }
+  });
+
+  it("keeps connection and server problems, which a retry can fix", () => {
+    expect(verifyErrorKey({ status: 0 })).toBe("errors.network_error");
+    expect(verifyErrorKey({ status: 503 })).toBe("errors.internal_error");
+    expect(verifyErrorKey({ status: 429 })).toBe("errors.too_many_requests");
+  });
+});
+
+describe("destinationAfterSignIn", () => {
+  it("sends someone who has not finished onboarding to /welcome", () => {
+    expect(destinationAfterSignIn({ onboardingCompletedAt: null }, "/app/insights")).toBe(
+      "/welcome",
+    );
+    expect(destinationAfterSignIn({}, null)).toBe("/welcome");
+  });
+
+  it("sends an onboarded user to a same-origin next, or to /app", () => {
+    const user = { onboardingCompletedAt: "2026-10-01T10:00:00.000Z" };
+    expect(destinationAfterSignIn(user, "/app/insights")).toBe("/app/insights");
+    expect(destinationAfterSignIn(user, null)).toBe("/app");
+    expect(destinationAfterSignIn(user, "https://evil.example")).toBe("/app");
+    expect(destinationAfterSignIn(user, "/.//evil.example")).toBe("/app");
+  });
+});
+
+describe("langFrom", () => {
+  it("accepts only the languages the app speaks", () => {
+    expect(langFrom("en")).toBe("en");
+    expect(langFrom("es")).toBe("es");
+    expect(langFrom("EN")).toBeNull();
+    expect(langFrom("fr")).toBeNull();
+    expect(langFrom(null)).toBeNull();
+  });
+});

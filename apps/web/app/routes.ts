@@ -13,5 +13,12 @@ export default [
   // that code. (The demo has its own layout with a demo ApiProvider, not nested in this one.)
   // The landing-only release has no app, so the layout (and its code and sounds) is left out, and
   // any other path is a prerendered 404 (react-router.config.ts).
-  ...(landingOnly ? [route("*", "routes/not-found.tsx")] : [layout("routes/app-layout.tsx", [])]),
+  ...(landingOnly
+    ? [route("*", "routes/not-found.tsx")]
+    : [
+        layout("routes/app-layout.tsx", [
+          route("sign-in", "routes/sign-in.tsx"),
+          route("auth/verify", "routes/auth.verify.tsx"),
+        ]),
+      ]),
 ] satisfies RouteConfig;

@@ -717,6 +717,32 @@
     outline-offset: 2px;
   }
 
+  /* Sign-in code: six sunken boxes, one digit each, at least 44px wide even on a 320px phone. */
+  .lk-code-box {
+    flex: 1 1 0;
+    min-width: 44px;
+    max-width: 56px;
+    height: 56px;
+    padding: 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    caret-color: var(--focus);
+    background: var(--surface-sunken);
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius-md);
+  }
+  .lk-code-box:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-code-box.is-invalid {
+    border-color: var(--over);
+  }
+
   /* Keypad keys */
   .lk-key {
     transition:

@@ -132,7 +132,42 @@
     "import_duplicate_file": "You already imported this file.",
     "import_too_large": "That file is too large. The limit is 5 MB.",
     "import_unrecognized_format": "We don't recognize this file. Use a Budge export.",
-    "import_not_in_preview": "This import is no longer in preview."
+    "import_not_in_preview": "This import is no longer in preview.",
+    "invalid_email": "Enter a valid email, like ana@example.com.",
+    "invalid_code": "That code isn't right. Check it and try again.",
+    "invalid_or_expired_code": "This code no longer works: it expired or was already used. Ask for a new one.",
+    "too_many_attempts": "Too many tries with this code. Ask for a new one.",
+    "too_many_requests": "You asked for a lot of codes in a row. Wait a few minutes and try again.",
+    "passkey_failed": "We couldn't sign you in with your fingerprint. Try again or use your email."
+  },
+  "sign_in": {
+    "meta_title": "Sign in · Lukitas",
+    "home": "Lukitas, home",
+    "title": "Sign in to Lukitas",
+    "lead": "No passwords: we'll email you a code.",
+    "passkey": "Sign in with fingerprint",
+    "passkey_busy": "Waiting for your fingerprint…",
+    "or_email": "or with your email",
+    "email_label": "Your email",
+    "email_placeholder": "ana@example.com",
+    "send_code": "Send code",
+    "sending": "Sending…",
+    "code_title": "Check your email",
+    "code_lead": "We sent a 6-digit code to <strong>{email}</strong>. Type it here or tap the link in the email.",
+    "code_label": "6-digit code",
+    "digit_label": "Digit {index} of 6",
+    "submit_code": "Sign in",
+    "verifying": "Signing in…",
+    "resend": "Resend code",
+    "resend_in": "Resend in {seconds} s",
+    "resent": "We sent you a new code.",
+    "change_email": "Use another email"
+  },
+  "verify": {
+    "meta_title": "Signing in · Lukitas",
+    "checking": "Signing you in to Lukitas…",
+    "failed_title": "We couldn't sign you in",
+    "send_new_code": "Send a new code"
   },
   "landing": {
     "new_tab": "(opens in a new tab)",

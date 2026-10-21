@@ -132,7 +132,42 @@
     "import_duplicate_file": "Ya importaste este archivo.",
     "import_too_large": "El archivo es demasiado grande. El límite es de 5 MB.",
     "import_unrecognized_format": "No reconocemos este archivo. Usa una exportación de Budge.",
-    "import_not_in_preview": "Esta importación ya no está en vista previa."
+    "import_not_in_preview": "Esta importación ya no está en vista previa.",
+    "invalid_email": "Escribe un correo válido, como ana@correo.com.",
+    "invalid_code": "Ese código no es correcto. Revísalo e inténtalo otra vez.",
+    "invalid_or_expired_code": "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
+    "too_many_attempts": "Demasiados intentos con este código. Pide uno nuevo.",
+    "too_many_requests": "Pediste muchos códigos seguidos. Espera unos minutos e inténtalo otra vez.",
+    "passkey_failed": "No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo."
+  },
+  "sign_in": {
+    "meta_title": "Entrar · Lukitas",
+    "home": "Lukitas, inicio",
+    "title": "Entra a Lukitas",
+    "lead": "Sin contraseñas: te mandamos un código a tu correo.",
+    "passkey": "Entrar con huella",
+    "passkey_busy": "Esperando tu huella…",
+    "or_email": "o con tu correo",
+    "email_label": "Tu correo",
+    "email_placeholder": "ana@correo.com",
+    "send_code": "Enviar código",
+    "sending": "Enviando…",
+    "code_title": "Revisa tu correo",
+    "code_lead": "Te mandamos un código de 6 dígitos a <strong>{email}</strong>. Escríbelo aquí o toca el enlace del correo.",
+    "code_label": "Código de 6 dígitos",
+    "digit_label": "Dígito {index} de 6",
+    "submit_code": "Entrar",
+    "verifying": "Entrando…",
+    "resend": "Reenviar código",
+    "resend_in": "Reenviar en {seconds} s",
+    "resent": "Te mandamos un código nuevo.",
+    "change_email": "Usar otro correo"
+  },
+  "verify": {
+    "meta_title": "Entrando · Lukitas",
+    "checking": "Entrando a Lukitas…",
+    "failed_title": "No pudimos hacerte entrar",
+    "send_new_code": "Enviar un código nuevo"
   },
   "landing": {
     "new_tab": "(se abre en una pestaña nueva)",
