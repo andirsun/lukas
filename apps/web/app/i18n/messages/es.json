@@ -32,7 +32,9 @@
       "label": "Vista",
       "budgets": "Presupuestos",
       "transactions": "Movimientos"
-    }
+    },
+    "spent_label": "Gastado este mes",
+    "of_budget": "de {amount}"
   },
   "transaction": {
     "add_expense": "Agregar gasto"
@@ -140,7 +142,8 @@
     "too_many_attempts": "Demasiados intentos con este código. Pide uno nuevo.",
     "too_many_requests": "Pediste muchos códigos seguidos. Espera unos minutos e inténtalo otra vez.",
     "passkey_failed": "No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.",
-    "too_many_sign_in_attempts": "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez."
+    "too_many_sign_in_attempts": "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez.",
+    "import_currency_changed": "La moneda de tu cuenta cambió después de leer el archivo. Súbelo otra vez."
   },
   "sign_in": {
     "meta_title": "Entrar · Lukitas",
@@ -355,6 +358,79 @@
       "body": "Puede que el enlace esté roto o que la página se haya movido. Lukitas ya la buscó por todos lados.",
       "home": "Volver al inicio",
       "mascot": "Lukitas, una moneda de oro preocupada, busca la página"
+    }
+  },
+  "onboarding": {
+    "meta_title": "Bienvenida · Lukitas",
+    "progress": "Paso {current} de {total}",
+    "back": "Atrás",
+    "continue": "Continuar",
+    "skip": "Saltar",
+    "saving": "Guardando…",
+    "currency": {
+      "title": "¿En qué moneda llevas tus cuentas?",
+      "lead": "La usamos para mostrar tus montos. Si importas desde Budge, usamos la moneda del archivo.",
+      "label": "Moneda"
+    },
+    "passkey": {
+      "title": "¿Entrar con tu huella la próxima vez?",
+      "lead": "Usa la huella o la cara de este dispositivo y entra sin esperar el código.",
+      "add": "Usar mi huella",
+      "adding": "Esperando tu huella…",
+      "added": "Listo: la próxima vez entras con tu huella.",
+      "failed": "No pudimos guardar tu huella. Inténtalo otra vez o sigue sin ella."
+    },
+    "categories": {
+      "title": "¿En qué se te va el dinero?",
+      "lead": "Elige tus categorías. Puedes cambiarlas cuando quieras.",
+      "expenses": "Gastos",
+      "income": "Ingresos",
+      "need_expense": "Elige al menos una categoría de gasto para seguir."
+    },
+    "budgets": {
+      "title": "¿Cuánto quieres gastar al mes?",
+      "lead": "Ponle un presupuesto a cada categoría. Puedes dejar alguna vacía y ponerlo después.",
+      "amount_label": "Presupuesto de {category}",
+      "invalid": "Escribe solo el número, como {example}.",
+      "none": "Sin presupuesto",
+      "total_label": "Lo que puedes gastar al mes"
+    },
+    "import": {
+      "title": "¿Vienes de Budge?",
+      "lead": "Sube la exportación de Budge (un archivo CSV) y traemos tus movimientos. Si no la tienes, salta este paso.",
+      "choose": "Subir archivo de Budge",
+      "reading": "Leyendo tu archivo…",
+      "preview_title": "Esto es lo que vamos a importar",
+      "file": "Archivo: {name}",
+      "transactions": "Movimientos",
+      "duplicates": "Repetidos (ya los tienes)",
+      "rejected": "Filas con problemas",
+      "new_categories": "Categorías nuevas",
+      "range": "Del {from} al {to}",
+      "rejected_details": "Ver las filas con problemas",
+      "rejected_line": "Línea {line}: {reason}",
+      "reasons": {
+        "invalid_date": "fecha no válida",
+        "invalid_amount": "monto no válido",
+        "zero_amount": "monto en cero",
+        "missing_category": "sin categoría",
+        "currency_mismatch": "otra moneda",
+        "other": "no se pudo leer"
+      },
+      "currency_switched": "Tu archivo está en {currency}, así que tu cuenta ahora usa {currency}.",
+      "currency_locked": "Tu archivo está en {file}, pero tu cuenta ya usa {account}: esas filas no se importan.",
+      "confirm": "Importar {count, plural, one {# movimiento} other {# movimientos}}",
+      "importing": "Importando…",
+      "other_file": "Usar otro archivo",
+      "imported": "Importamos {count, plural, one {# movimiento} other {# movimientos}}.",
+      "prefilled": "Llenamos tus presupuestos con lo que gastas en promedio cada mes.",
+      "review_budgets": "Revisar presupuestos"
+    },
+    "done": {
+      "title": "¡Todo listo!",
+      "lead": "Ya puedes empezar a anotar tus gastos. Lukitas te avisa cuando te acerques al límite.",
+      "total_label": "Tu presupuesto del mes",
+      "start": "Empezar"
     }
   }
 }

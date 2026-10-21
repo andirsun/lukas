@@ -22,6 +22,9 @@ export default [
         layout("routes/app-layout.tsx", [
           route("sign-in", "routes/sign-in.tsx"),
           route("auth/verify", "routes/auth.verify.tsx"),
+          route("welcome/:step?", "routes/welcome.tsx"),
+          // A stand-in until the home screen (Task 12) takes over /app.
+          route("app", "routes/app-placeholder.tsx"),
         ]),
       ]),
 ] satisfies RouteConfig;

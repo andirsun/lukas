@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import {
   averageMonthlySpending,
+  fileCurrency,
   inferCategoryKinds,
   parseBudgeCsv,
   rowHashes,
@@ -69,5 +70,15 @@ describe("derived data", () => {
     expect(average.find((a) => a.category === "Restaurante")?.amount).toBe(2490);
     expect(average.find((a) => a.category === "Salário")).toBeUndefined();
     expect(average[0]?.category).toBe("Ocio");
+  });
+
+  test("the file's currency is the one most of its rows use", () => {
+    expect(fileCurrency(rows)).toBe("EUR");
+    const mixed = [
+      ...rows.slice(0, 2),
+      ...rows.slice(0, 3).map((r) => ({ ...r, currency: "COP" })),
+    ];
+    expect(fileCurrency(mixed)).toBe("COP");
+    expect(fileCurrency([])).toBeNull();
   });
 });

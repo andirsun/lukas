@@ -32,7 +32,9 @@
       "label": "View",
       "budgets": "Budgets",
       "transactions": "Transactions"
-    }
+    },
+    "spent_label": "Spent this month",
+    "of_budget": "of {amount}"
   },
   "transaction": {
     "add_expense": "Add expense"
@@ -140,7 +142,8 @@
     "too_many_attempts": "Too many tries with this code. Ask for a new one.",
     "too_many_requests": "You asked for a lot of codes in a row. Wait a few minutes and try again.",
     "passkey_failed": "We couldn't sign you in with your fingerprint. Try again or use your email.",
-    "too_many_sign_in_attempts": "Too many tries in a row. Wait a few seconds and try again."
+    "too_many_sign_in_attempts": "Too many tries in a row. Wait a few seconds and try again.",
+    "import_currency_changed": "Your account's currency changed after the file was read. Upload it again."
   },
   "sign_in": {
     "meta_title": "Sign in · Lukitas",
@@ -355,6 +358,79 @@
       "body": "The link may be broken, or the page may have moved. Lukitas already looked everywhere.",
       "home": "Back to home",
       "mascot": "Lukitas, a worried gold coin, looks for the page"
+    }
+  },
+  "onboarding": {
+    "meta_title": "Welcome · Lukitas",
+    "progress": "Step {current} of {total}",
+    "back": "Back",
+    "continue": "Continue",
+    "skip": "Skip",
+    "saving": "Saving…",
+    "currency": {
+      "title": "Which currency do you use?",
+      "lead": "We use it to show your amounts. If you import from Budge, we use the file's currency.",
+      "label": "Currency"
+    },
+    "passkey": {
+      "title": "Sign in with your fingerprint next time?",
+      "lead": "Use this device's fingerprint or face and sign in without waiting for a code.",
+      "add": "Use my fingerprint",
+      "adding": "Waiting for your fingerprint…",
+      "added": "Done: next time, sign in with your fingerprint.",
+      "failed": "We couldn't save your fingerprint. Try again or continue without it."
+    },
+    "categories": {
+      "title": "Where does your money go?",
+      "lead": "Pick your categories. You can change them anytime.",
+      "expenses": "Spending",
+      "income": "Income",
+      "need_expense": "Pick at least one spending category to continue."
+    },
+    "budgets": {
+      "title": "How much do you want to spend each month?",
+      "lead": "Give each category a budget. You can leave some empty and set them later.",
+      "amount_label": "Budget for {category}",
+      "invalid": "Type just the number, like {example}.",
+      "none": "No budget",
+      "total_label": "What you can spend per month"
+    },
+    "import": {
+      "title": "Coming from Budge?",
+      "lead": "Upload your Budge export (a CSV file) and we'll bring your transactions. If you don't have one, skip this step.",
+      "choose": "Upload a Budge file",
+      "reading": "Reading your file…",
+      "preview_title": "Here's what we'll import",
+      "file": "File: {name}",
+      "transactions": "Transactions",
+      "duplicates": "Duplicates (already here)",
+      "rejected": "Rows with problems",
+      "new_categories": "New categories",
+      "range": "From {from} to {to}",
+      "rejected_details": "See the rows with problems",
+      "rejected_line": "Line {line}: {reason}",
+      "reasons": {
+        "invalid_date": "invalid date",
+        "invalid_amount": "invalid amount",
+        "zero_amount": "zero amount",
+        "missing_category": "no category",
+        "currency_mismatch": "another currency",
+        "other": "couldn't be read"
+      },
+      "currency_switched": "Your file is in {currency}, so your account now uses {currency}.",
+      "currency_locked": "Your file is in {file}, but your account already uses {account}: those rows won't be imported.",
+      "confirm": "Import {count, plural, one {# transaction} other {# transactions}}",
+      "importing": "Importing…",
+      "other_file": "Use another file",
+      "imported": "We imported {count, plural, one {# transaction} other {# transactions}}.",
+      "prefilled": "We filled in your budgets with what you spend on average each month.",
+      "review_budgets": "Review budgets"
+    },
+    "done": {
+      "title": "You're all set!",
+      "lead": "You can start logging your spending. Lukitas lets you know when you get close to a limit.",
+      "total_label": "Your monthly budget",
+      "start": "Let's go"
     }
   }
 }

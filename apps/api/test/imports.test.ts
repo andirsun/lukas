@@ -30,6 +30,7 @@ interface Preview {
     from: string;
     to: string;
     averageMonthlySpending: { category: string; amount: number }[];
+    currency: string | null;
   };
 }
 
@@ -164,5 +165,41 @@ describe("Budge import", () => {
     const preview = (await (await upload(b, usd)).json()) as Preview;
     expect(preview.stats.rejected).toContainEqual({ line: 8, reason: "currency_mismatch" });
     expect(preview.stats.transactions).toBe(21);
+  });
+});
+
+describe("the file's currency", () => {
+  let c: { authorization: string };
+  beforeAll(async () => {
+    c = (await t.signIn("c@lukas.test")).headers;
+  });
+  const setCurrency = (currency: string) =>
+    t.request("PATCH", "/v1/me", { headers: c, body: { currency } });
+
+  test("the preview reports it, even when the account uses another one", async () => {
+    expect((await setCurrency("COP")).status).toBe(200);
+    const preview = (await (await upload(c, FIXTURE)).json()) as Preview;
+    expect(preview.stats.currency).toBe("EUR");
+    expect(preview.stats.transactions).toBe(0);
+    expect(preview.stats.rejected).toContainEqual({ line: 7, reason: "currency_mismatch" });
+  });
+
+  test("a preview read before the account's currency changed cannot be confirmed", async () => {
+    expect((await setCurrency("EUR")).status).toBe(200);
+    const stale = (await (await upload(c, FIXTURE)).json()) as Preview;
+    expect(stale.stats).toMatchObject({ currency: "EUR", transactions: 22 });
+    expect((await setCurrency("COP")).status).toBe(200);
+    const res = await t.request("POST", `/v1/imports/${stale.id}/confirm`, { headers: c });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "import_currency_changed" });
+    expect(await countTransactions(c)).toBe(0);
+  });
+
+  test("switching to the file's currency and reading it again imports it", async () => {
+    expect((await setCurrency("EUR")).status).toBe(200);
+    const fresh = (await (await upload(c, FIXTURE)).json()) as Preview;
+    const res = await t.request("POST", `/v1/imports/${fresh.id}/confirm`, { headers: c });
+    expect(res.status).toBe(200);
+    expect(await countTransactions(c)).toBe(22);
   });
 });

@@ -6,6 +6,7 @@ import {
   averageMonthlySpending,
   type BudgeRow,
   categoryStyle,
+  fileCurrency,
   inferCategoryKinds,
   normalizeName,
   parseBudgeCsv,
@@ -33,6 +34,12 @@ const statsSchema = z.object({
   from: z.string().nullable(),
   to: z.string().nullable(),
   averageMonthlySpending: z.array(z.object({ category: z.string(), amount: z.number().int() })),
+  /**
+   * The file's currency (what most of its rows use), even when it is not the account's: those
+   * rows are rejected as `currency_mismatch`, and a client can switch an empty account to this
+   * currency and read the file again. Null for a file without rows (and for older previews).
+   */
+  currency: z.string().nullable(),
   inserted: z.number().int().optional(),
 });
 type ImportStats = z.infer<typeof statsSchema>;
@@ -41,11 +48,10 @@ const importDto = z.object({
   status: z.enum(["preview", "confirmed", "reverted"]),
   stats: statsSchema,
 });
-const toDto = (row: ImportRow) => ({
-  id: row.id,
-  status: row.status,
-  stats: row.stats as ImportStats,
-});
+const toDto = (row: ImportRow) => {
+  const stats = row.stats as Omit<ImportStats, "currency"> & { currency?: string | null };
+  return { id: row.id, status: row.status, stats: { ...stats, currency: stats.currency ?? null } };
+};
 
 async function existingHashes(tx: Tx, hashes: string[]): Promise<Set<string>> {
   const found = new Set<string>();
@@ -155,6 +161,7 @@ export function importRoutes(deps: AppDeps) {
           from: dates[0] ?? null,
           to: dates.at(-1) ?? null,
           averageMonthlySpending: averageMonthlySpending(rows),
+          currency: fileCurrency(parsed.rows),
         };
         const payload: PayloadRow[] = rows.map((r, i) => ({ ...r, hash: hashes[i] as string }));
         const [created] = await tx
@@ -184,6 +191,15 @@ export function importRoutes(deps: AppDeps) {
         await assertFileNotImported(tx, imp.fileHash, imp.id);
         const rows = (imp.payload ?? []) as PayloadRow[];
         const account = await defaultAccount(tx);
+        // The preview kept only rows in the account's currency of that moment. If the currency
+        // changed since (the account was still empty), they would go in under the wrong one.
+        if (rows.some((r) => r.currency !== account.currency)) {
+          throw new ApiError(
+            409,
+            "import_currency_changed",
+            "The account's currency changed after this preview; upload the file again",
+          );
+        }
 
         const categoryIds = new Map(
           (await tx.select().from(categories)).map((cat) => [normalizeName(cat.name), cat.id]),

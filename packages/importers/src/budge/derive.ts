@@ -45,3 +45,21 @@ export function averageMonthlySpending(rows: BudgeRow[]): { category: string; am
     .map(({ category, total }) => ({ category, amount: Math.round(total / span) }))
     .sort((a, b) => b.amount - a.amount);
 }
+
+/**
+ * The currency of an export: the one most of its rows use (a tie goes to the one seen first), or
+ * null without rows. Budge exports one account at a time, so in practice every row agrees.
+ */
+export function fileCurrency(rows: BudgeRow[]): string | null {
+  const counts = new Map<string, number>();
+  for (const row of rows) counts.set(row.currency, (counts.get(row.currency) ?? 0) + 1);
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const [currency, count] of counts) {
+    if (count > bestCount) {
+      best = currency;
+      bestCount = count;
+    }
+  }
+  return best;
+}

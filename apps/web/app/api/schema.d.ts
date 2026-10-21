@@ -1540,6 +1540,7 @@ export interface paths {
                                     category: string;
                                     amount: number;
                                 }[];
+                                currency: string | null;
                                 inserted?: number;
                             };
                         };
@@ -1655,6 +1656,7 @@ export interface paths {
                                     category: string;
                                     amount: number;
                                 }[];
+                                currency: string | null;
                                 inserted?: number;
                             };
                         };

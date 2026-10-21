@@ -340,7 +340,8 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
   );
 }
 
-function FingerprintIcon() {
+/** The fingerprint glyph of the passkey buttons (sign-in, onboarding). */
+export function FingerprintIcon() {
   return (
     <svg
       width="22"
