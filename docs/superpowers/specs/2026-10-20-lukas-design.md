@@ -130,6 +130,32 @@ Each stage gets its own spec → plan → implementation.
 4. **MCP:** remote server with OAuth; tools to read, create and edit transactions, generate reports and adjust budgets.
 5. **Advanced gamification:** streaks, achievements, rewards.
 
+#### Quick capture (founder request, 2026-10-21)
+
+Log several transactions from one sentence, such as "gasté 15.000 en el almuerzo y 3.000 en Uber". The flow:
+
+1. The sentence is parsed into an **editable preview**: one card per transaction with amount, category, name and date. Each card can be fixed or removed.
+2. One **SAVE N** button stores the whole batch.
+3. A single celebration and rule-based message follows, with the total. Undo reverts the whole batch.
+
+It is inspired by the "smart assistant" of an unrelated app. Capture design is not covered by a separate spec yet; each phase gets its own spec → plan.
+
+- **Phase 1, no AI (with Stage 3; web too):** a deterministic parser that runs on the device.
+  - Amounts: "15.000", "15 mil", "15k", "15 lukas".
+  - Separators: "y" and commas.
+  - Relative dates: "hoy", "ayer".
+  - Categories come from the user's own history through the name → category suggestions that already exist in the API (`GET /v1/transactions/suggestions`).
+  - Free, private (the text never leaves the device) and works offline.
+  - Needs a batch-create endpoint, or a client loop over `POST /v1/transactions` with one idempotency key per item, plus a batch undo.
+- **Phase 2, AI and voice (with Stage 4):**
+  - **AI fallback** for messy sentences ("pagué el almuerzo con Juan, yo puse la mitad").
+  - **Voice:** Web Speech API on the web, Android `SpeechRecognizer` on mobile, on-device where available.
+  - **Requirements:**
+    - Opt-in.
+    - Honest privacy copy: the sentence is sent to an AI provider, and audio may be processed by the platform's speech service.
+    - A cheap model with per-user rate limits, so "free forever" holds.
+  - Users who connect their own assistant through MCP get the same capability at no cost to the project. The in-app version is for people who don't.
+
 ## 4. Data model (Stage 1)
 
 ### 4.1 Principles
