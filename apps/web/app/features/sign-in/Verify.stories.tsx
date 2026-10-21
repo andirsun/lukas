@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { expectTarget } from "../../../.storybook/story-utils.ts";
-import { fail, fakeAuth, GOOD_CODE, SignInStage } from "./story-harness.tsx";
+import { fail, fakeAuth, GOOD_CODE, ONBOARDED_USER, SignInStage } from "./story-harness.tsx";
 
-const LINK = `/auth/verify?email=ana%40example.com&code=${GOOD_CODE}`;
+/** The magic link as the API writes it: email, code, the email's language, and `next` if any. */
+const LINK = `/auth/verify?email=ana%40example.com&code=${GOOD_CODE}&lang=es`;
 
 const meta = {
   title: "Sign-in/Verify",
@@ -22,25 +23,86 @@ const expired = (auth = fakeAuth()) => ({
   verifyCode: fn(async () => fail({ code: "OTP_EXPIRED", status: 400 })),
 });
 
-/** The magic link submits the email and code from the URL on its own, then goes to onboarding. */
+const tapContinue = async (canvas: ReturnType<typeof within>) => {
+  const button = await canvas.findByRole("button", { name: "Continuar" });
+  await userEvent.click(button);
+};
+
+/**
+ * Opening the link spends nothing: it shows which account is about to sign in and waits for a
+ * tap. A mail scanner that opens (and even runs) the page leaves the code for its owner.
+ */
+export const AsksFirst: Story = {
+  args: { auth: fakeAuth() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("heading", { level: 1, name: "Continuar como ana@example.com" }),
+    ).toBeVisible();
+    await expect(canvas.getByRole("img", { name: "Lukitas, contento" })).toBeVisible();
+    const button = canvas.getByRole("button", { name: "Continuar" });
+    await expectTarget(button);
+    const notMe = canvas.getByRole("link", { name: "No soy yo" });
+    await expect(notMe).toHaveAttribute("href", "/sign-in?lang=es");
+    await expectTarget(notMe);
+    // Some time passes, as for a scanner rendering the page: still nothing spent.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await expect(args.auth.verifyCode).not.toHaveBeenCalled();
+  },
+};
+
+/** One tap signs in with the email and code from the link, then on to onboarding. */
 export const SignsIn: Story = {
   args: { auth: fakeAuth() },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
+    await tapContinue(canvas);
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
     await expect(args.auth.verifyCode).toHaveBeenCalledTimes(1);
     await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", GOOD_CODE);
   },
 };
 
-/** While the code is checked: Lukitas and a polite "signing you in". */
+/** The link's `next` survives the email round trip: an onboarded user goes back there. */
+export const KeepsNext: Story = {
+  args: {
+    auth: fakeAuth({ user: ONBOARDED_USER }),
+    profileUser: ONBOARDED_USER,
+    initialEntry: `${LINK}&next=%2Fapp%2Finsights`,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await tapContinue(canvas);
+    await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/app/insights"));
+  },
+};
+
+/** The link's language becomes a new user's profile language. */
+export const NewUserInEnglish: Story = {
+  args: {
+    auth: fakeAuth(),
+    initialEntry: `/auth/verify?email=ana%40example.com&code=${GOOD_CODE}&lang=en`,
+    onPatchMe: fn(),
+  },
+  globals: { locale: "en" },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("heading", { level: 1, name: "Continue as ana@example.com" }),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Continue" }));
+    await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
+    await expect(args.onPatchMe).toHaveBeenCalledWith({ locale: "en" });
+  },
+};
+
+/** While the code is checked: the button says so and can't be pressed twice. */
 export const Checking: Story = {
   args: { auth: fakeAuth({ verifyCode: fn(() => new Promise<never>(() => {})) }) },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Entrando a Lukitas…" }),
-    ).toBeVisible();
+    await tapContinue(canvas);
+    await expect(await canvas.findByRole("button", { name: "Entrando…" })).toBeDisabled();
   },
 };
 
@@ -49,13 +111,17 @@ export const Expired: Story = {
   args: { auth: expired() },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
+    await tapContinue(canvas);
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
     );
     const again = canvas.getByRole("button", { name: "Enviar un código nuevo" });
     await expectTarget(again);
     await userEvent.click(again);
-    await expect(args.auth.sendCode).toHaveBeenCalledWith("ana@example.com");
+    await expect(args.auth.sendCode).toHaveBeenCalledWith("ana@example.com", {
+      locale: "es",
+      next: null,
+    });
     // The new code is typed on the sign-in page, already at the code step.
     await expect(
       await canvas.findByRole("heading", { level: 1, name: "Revisa tu correo" }),
@@ -66,10 +132,11 @@ export const Expired: Story = {
 
 /** The same, by day and in English. */
 export const ExpiredDay: Story = {
-  args: { auth: expired() },
+  args: { auth: expired(), initialEntry: LINK.replace("lang=es", "lang=en") },
   globals: { theme: "day", locale: "en" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Continue" }));
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       "This code no longer works: it expired or was already used. Ask for a new one.",
     );
@@ -79,14 +146,15 @@ export const ExpiredDay: Story = {
 
 /** A link without its email or code can't sign in; "send a new code" starts over at the email step. */
 export const IncompleteLink: Story = {
-  args: { auth: fakeAuth(), initialEntry: "/auth/verify?code=123456" },
+  args: { auth: fakeAuth(), initialEntry: "/auth/verify?code=123456&lang=es" },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
     );
-    await expect(args.auth.verifyCode).not.toHaveBeenCalled();
+    await expect(canvas.queryByRole("button", { name: "Continuar" })).toBeNull();
     await userEvent.click(canvas.getByRole("button", { name: "Enviar un código nuevo" }));
+    await expect(args.auth.verifyCode).not.toHaveBeenCalled();
     await expect(args.auth.sendCode).not.toHaveBeenCalled();
     await expect(canvas.getByRole("textbox", { name: "Tu correo" })).toBeVisible();
   },
@@ -102,11 +170,40 @@ export const Offline: Story = {
   args: { auth: fakeAuth({ verifyCode: offlineOnce }) },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
+    await tapContinue(canvas);
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
     );
     await userEvent.click(canvas.getByRole("button", { name: "Reintentar" }));
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
     await expect(args.auth.verifyCode).toHaveBeenCalledTimes(2);
+  },
+};
+
+/** The first check hits the sign-in rate limit (retry after 2 s); the next one works. */
+const rateLimitedOnce = fn(async (email: string, code: string) =>
+  rateLimitedOnce.mock.calls.length === 1
+    ? fail({ status: 429, retryAfter: 2 })
+    : fakeAuth().verifyCode(email, code),
+);
+
+/**
+ * Rate limited: the link's code is still good, so the page counts down the server's wait and
+ * then offers to retry (no new email needed).
+ */
+export const RateLimited: Story = {
+  args: { auth: fakeAuth({ verifyCode: rateLimitedOnce }) },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await tapContinue(canvas);
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez.",
+    );
+    await expect(canvas.getByRole("button", { name: /^Reintentar en \d s$/ })).toBeDisabled();
+    const retry = await canvas.findByRole("button", { name: "Reintentar" }, { timeout: 5000 });
+    await userEvent.click(retry);
+    await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
+    await expect(args.auth.verifyCode).toHaveBeenCalledTimes(2);
+    await expect(args.auth.sendCode).not.toHaveBeenCalled();
   },
 };

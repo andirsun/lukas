@@ -35,7 +35,10 @@ test("the emailed code signs a new user in, and the magic link signs them in els
   await page.getByRole("button", { name: "Send code" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Check your email" })).toBeVisible();
 
+  // The email is in the language of the page that asked for it, and so is its link.
   const first = await readSignInMail(email);
+  expect(first.subject).toMatch(/^Your Lukitas code: \d{6}$/);
+  expect(new URL(first.link).searchParams.get("lang")).toBe("en");
   const firstBox = page.getByRole("textbox", { name: "Digit 1 of 6" });
   await expect(firstBox).toBeFocused();
 
@@ -58,11 +61,15 @@ test("the emailed code signs a new user in, and the magic link signs them in els
   await page.goto("/sign-in");
   await expect(page).toHaveURL(/\/welcome$/);
 
-  // A new code for the same address, and its magic link opened in another browser.
-  await requestCode(email);
+  // A new code for the same address (now in their profile's English), and its magic link
+  // opened in another browser, which keeps the language and `next`.
+  await requestCode(email, { next: "/app/insights" });
   const second = await readSignInMail(email, { skip: [first.id] });
-  expect(second.subject).toContain("Lukitas");
-  expect(new URL(second.link).pathname).toBe("/auth/verify");
+  expect(second.subject).toMatch(/^Your Lukitas code/);
+  const secondLink = new URL(second.link);
+  expect(secondLink.pathname).toBe("/auth/verify");
+  expect(secondLink.searchParams.get("lang")).toBe("en");
+  expect(secondLink.searchParams.get("next")).toBe("/app/insights");
 
   const elsewhere = await browser.newContext({
     extraHTTPHeaders: { "x-forwarded-for": clientIp() },
@@ -71,6 +78,13 @@ test("the emailed code signs a new user in, and the magic link signs them in els
     const other = await elsewhere.newPage();
     expect(await sessionUser(other)).toBeNull();
     await other.goto(second.link);
+    // It asks before spending the code, and the code has already left the address bar.
+    await expect(
+      other.getByRole("heading", { level: 1, name: `Continue as ${email}` }),
+    ).toBeVisible();
+    await expect(other).toHaveURL(/\/auth\/verify\?lang=en$/);
+    await expect(other.locator('meta[name="referrer"]')).toHaveAttribute("content", "no-referrer");
+    await other.getByRole("button", { name: "Continue" }).click();
     await expect(other).toHaveURL(/\/welcome$/);
     expect((await sessionUser(other))?.id).toBe(user?.id);
   } finally {
@@ -88,6 +102,7 @@ test("a used magic link says so and sends a new code", async ({ page }) => {
   await spendCode(email, mail.code);
 
   await page.goto(mail.link);
+  await page.getByRole("button", { name: "Continuar" }).click();
   await expect(page.getByRole("main").getByRole("alert")).toHaveText(
     "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
   );
@@ -95,10 +110,40 @@ test("a used magic link says so and sends a new code", async ({ page }) => {
 
   await page.getByRole("button", { name: "Enviar un código nuevo" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Revisa tu correo" })).toBeVisible();
-  await expect(page).toHaveURL(/\/sign-in$/);
+  await expect(page).toHaveURL(/\/sign-in\?lang=es$/);
 
   const fresh = await readSignInMail(email, { skip: [mail.id] });
   await page.getByRole("textbox", { name: "Dígito 1 de 6" }).fill(fresh.code);
+  await expect(page).toHaveURL(/\/welcome$/);
+  expect((await sessionUser(page))?.email).toBe(email);
+});
+
+test("opening the magic link spends nothing until Continue", async ({ page, browser, request }) => {
+  const email = freshEmail("scan");
+  await requestCode(email, { locale: "es" });
+  const mail = await readSignInMail(email);
+
+  // A mail scanner: a plain GET, then a browser that runs the page and looks around.
+  expect((await request.get(mail.link)).ok()).toBe(true);
+  const scanner = await browser.newContext({
+    extraHTTPHeaders: { "x-forwarded-for": clientIp() },
+  });
+  try {
+    const scan = await scanner.newPage();
+    await scan.goto(mail.link);
+    await expect(scan.getByRole("button", { name: "Continuar" })).toBeVisible();
+    await scan.waitForTimeout(500);
+    expect(await sessionUser(scan)).toBeNull();
+  } finally {
+    await scanner.close();
+  }
+
+  // Its owner taps Continue later: the code still works.
+  await page.goto(mail.link);
+  await expect(
+    page.getByRole("heading", { level: 1, name: `Continuar como ${email}` }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Continuar" }).click();
   await expect(page).toHaveURL(/\/welcome$/);
   expect((await sessionUser(page))?.email).toBe(email);
 });

@@ -15,22 +15,24 @@ import { PressButton } from "../../ui/PressButton.tsx";
 import { useToast } from "../../ui/Toast.tsx";
 import {
   type AuthErrorKey,
+  type AuthFailure,
   type AuthResult,
   type AuthUser,
   authErrorKey,
-  langFrom,
+  CODE_ERRORS,
+  DEFAULT_SIGN_IN_WAIT_S,
+  EMAIL,
   passkeyErrorKey,
   type SignInAuth,
+  signInLocale,
 } from "./auth.ts";
 import { CODE_LENGTH, CodeInput, type CodeInputHandle } from "./CodeInput.tsx";
 import { FieldError, ScreenTitle, SignInScreen } from "./SignInScreen.tsx";
 import { useFinishSignIn } from "./use-finish-sign-in.ts";
+import { useSecondsUntil } from "./use-seconds-until.ts";
 
 /** How long "resend" waits after a code was sent. */
 export const RESEND_DELAY_MS = 30_000;
-
-/** Good enough to catch typos; the server has the final word. */
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** What `/auth/verify` passes when it sends a new code: open at the code step for this email. */
 export interface SignInState {
@@ -45,20 +47,6 @@ function isSignInState(state: unknown): state is SignInState {
     typeof (state as SignInState).email === "string" &&
     (state as SignInState).codeSent === true
   );
-}
-
-/** Seconds left until `at`, ticking every second while there are any. */
-function useSecondsUntil(at: number): number {
-  const [now, setNow] = useState(() => Date.now());
-  const left = Math.max(0, Math.ceil((at - now) / 1000));
-  useEffect(() => {
-    if (left === 0) return;
-    const timer = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(timer);
-  }, [left]);
-  // A new deadline counts from now, not from the last tick (before paint: no stale number shows).
-  useLayoutEffect(() => setNow(Date.now()), [at]);
-  return left;
 }
 
 export interface SignInProps {
@@ -83,12 +71,19 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
   const location = useLocation();
   const [params] = useSearchParams();
   const next = params.get("next");
-  const lang = langFrom(params.get("lang"));
   const { locale, setLocale } = useLocale();
+  // The landing's `?lang=`, else the browser's language: for these pages, the email and a new
+  // profile. Read once, so a later locale switch can't change it under the person.
+  const [lang] = useState(() =>
+    signInLocale(
+      params.get("lang"),
+      typeof navigator === "undefined" ? undefined : navigator.language,
+    ),
+  );
 
   // Before paint, so a visitor from the English landing never sees a Spanish frame.
   useLayoutEffect(() => {
-    if (lang && lang !== locale) setLocale(lang);
+    if (lang !== locale) setLocale(lang);
   }, [lang, locale, setLocale]);
 
   const arrived = isSignInState(location.state) ? location.state : null;
@@ -100,6 +95,9 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
   const [resendAt, setResendAt] = useState(() => (arrived ? Date.now() + resendDelayMs : 0));
   const [passkeys] = useState(() => auth.passkeysAvailable());
   const resendIn = useSecondsUntil(resendAt);
+  // After a sign-in 429: when the code may be tried again.
+  const [retryAt, setRetryAt] = useState(0);
+  const retryIn = useSecondsUntil(retryAt);
   // A ref, not state: Enter and the 6th digit can both submit within one render.
   const inFlight = useRef(false);
   const emailInput = useRef<HTMLInputElement>(null);
@@ -113,12 +111,15 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
     [finish, next, lang],
   );
 
-  /** Runs one auth call at a time; on failure shows `toKey(error)` and returns null. */
+  /**
+   * Runs one auth call at a time. On failure shows `toKey(error)` (nothing when it is null) and
+   * returns `{ failed }` with the key, so the caller can react; on success the data.
+   */
   async function run<T>(
     kind: Exclude<Busy, null>,
     call: () => Promise<AuthResult<T>>,
-    toKey: (error: { code?: string | undefined; status: number }) => AuthErrorKey = authErrorKey,
-  ): Promise<T | null> {
+    toKey: (error: AuthFailure) => AuthErrorKey | null,
+  ): Promise<{ data: T } | { failed: AuthErrorKey | null } | null> {
     if (inFlight.current) return null;
     inFlight.current = true;
     setBusy(kind);
@@ -126,10 +127,15 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
     try {
       const result = await call();
       if (result.error) {
-        setError(toKey(result.error));
-        return null;
+        const key = toKey(result.error);
+        setError(key);
+        if (key === "errors.too_many_sign_in_attempts") {
+          const wait = result.error.retryAfter ?? DEFAULT_SIGN_IN_WAIT_S;
+          setRetryAt(Date.now() + wait * 1000);
+        }
+        return { failed: key };
       }
-      return result.data;
+      return { data: result.data };
     } finally {
       inFlight.current = false;
       setBusy(null);
@@ -144,8 +150,12 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
       emailInput.current?.focus();
       return;
     }
-    const sent = await run("send", () => auth.sendCode(address));
-    if (!sent) {
+    const sent = await run(
+      "send",
+      () => auth.sendCode(address, { locale: lang, next }),
+      (e) => authErrorKey(e, "send"),
+    );
+    if (!sent || !("data" in sent)) {
       emailInput.current?.focus();
       return;
     }
@@ -156,23 +166,35 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
   }
 
   async function verify(candidate: string) {
-    if (candidate.length !== CODE_LENGTH) return;
-    const user = await run("verify", () => auth.verifyCode(email, candidate));
-    if (!user) {
-      // Start over in the first box; the error stays until the next try.
-      setCode("");
-      codeInput.current?.focus(0);
+    if (candidate.length !== CODE_LENGTH || retryIn > 0) return;
+    const result = await run(
+      "verify",
+      () => auth.verifyCode(email, candidate),
+      (e) => authErrorKey(e, "sign_in"),
+    );
+    if (!result) return;
+    if ("failed" in result) {
+      // A wrong code starts over in the first box; a connection or rate-limit problem keeps the
+      // code, so "Entrar" tries it again. The error stays until the next try.
+      if (result.failed && CODE_ERRORS.has(result.failed)) {
+        setCode("");
+        codeInput.current?.focus(0);
+      }
       return;
     }
     // Stays busy while the profile is read and the next page loads.
     inFlight.current = true;
     setBusy("verify");
-    await signedIn(user);
+    await signedIn(result.data);
   }
 
   async function resend() {
-    const sent = await run("resend", () => auth.sendCode(email));
-    if (!sent) return;
+    const sent = await run(
+      "resend",
+      () => auth.sendCode(email, { locale: lang, next }),
+      (e) => authErrorKey(e, "send"),
+    );
+    if (!sent || !("data" in sent)) return;
     setCode("");
     setResendAt(Date.now() + resendDelayMs);
     toast.show({ message: t("resent") });
@@ -180,11 +202,11 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
   }
 
   async function passkey() {
-    const user = await run("passkey", () => auth.signInWithPasskey(), passkeyErrorKey);
-    if (!user) return;
+    const result = await run("passkey", () => auth.signInWithPasskey(), passkeyErrorKey);
+    if (!result || !("data" in result)) return;
     inFlight.current = true;
     setBusy("passkey");
-    await signedIn(user);
+    await signedIn(result.data);
   }
 
   function changeEmail() {
@@ -230,7 +252,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
               if (error) setError(null);
             }}
             onComplete={(value) => void verify(value)}
-            invalid={error !== null}
+            invalid={error !== null && CODE_ERRORS.has(error)}
             readOnly={busy === "verify"}
             describedBy={errorText ? errorId : undefined}
             autoFocus
@@ -239,9 +261,13 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
           <PressButton
             type="submit"
             className="w-full"
-            disabled={busy !== null || code.length !== CODE_LENGTH}
+            disabled={busy !== null || code.length !== CODE_LENGTH || retryIn > 0}
           >
-            {busy === "verify" ? t("verifying") : t("submit_code")}
+            {busy === "verify"
+              ? t("verifying")
+              : retryIn > 0
+                ? t("wait", { seconds: retryIn })
+                : t("submit_code")}
           </PressButton>
         </form>
         {/* Stacked: the countdown changes width every second and must not reflow the row. */}
@@ -257,6 +283,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
     );
   }
 
+  // A passkey problem is shown under its button; anything else is about the email field.
   const passkeyError = error === "errors.passkey_failed";
   return (
     <SignInScreen>

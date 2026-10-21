@@ -118,6 +118,42 @@ describe("email code + magic link", () => {
     expect(statuses[5]).toBe(429);
   });
 
+  test("a new address gets the email in the language of the page that asked for it", async () => {
+    await sendCode("lang-en@lukas.test", { "x-lukas-locale": "en" });
+    const mail = t.mailer.lastTo("lang-en@lukas.test");
+    expect(mail?.subject).toMatch(/^Your Lukitas code: \d{6}$/);
+    expect(mail?.text).toContain("&lang=en");
+  });
+
+  test("with no hint, a new address gets the browser's language (Accept-Language)", async () => {
+    await sendCode("accept-en@lukas.test", { "accept-language": "en-GB,en;q=0.9,es;q=0.5" });
+    expect(t.mailer.lastTo("accept-en@lukas.test")?.subject).toMatch(/^Your Lukitas code/);
+    await sendCode("accept-es@lukas.test", { "accept-language": "es-CO,es;q=0.9,en;q=0.8" });
+    expect(t.mailer.lastTo("accept-es@lukas.test")?.subject).toMatch(/^Tu código de Lukitas/);
+    await sendCode("accept-fr@lukas.test", { "accept-language": "fr-FR,fr;q=0.9" });
+    expect(t.mailer.lastTo("accept-fr@lukas.test")?.subject).toMatch(/^Tu código de Lukitas/);
+  });
+
+  test("an existing user's profile language wins over the hint", async () => {
+    const { headers } = await t.signIn("profile-es@lukas.test");
+    await t.request("PATCH", "/v1/me", { headers, body: { locale: "es" } });
+    await sendCode("profile-es@lukas.test", { "x-lukas-locale": "en", "accept-language": "en" });
+    const mail = t.mailer.lastTo("profile-es@lukas.test");
+    expect(mail?.subject).toMatch(/^Tu código de Lukitas/);
+    expect(mail?.text).toContain("&lang=es");
+  });
+
+  test("the magic link carries a same-origin next, and never an off-site one", async () => {
+    await sendCode("next@lukas.test", { "x-lukas-next": "/app/insights?month=2026-10" });
+    const link = /http\S+/.exec(t.mailer.lastTo("next@lukas.test")?.text ?? "")?.[0] ?? "";
+    expect(new URL(link).searchParams.get("next")).toBe("/app/insights?month=2026-10");
+    for (const next of ["https://evil.example", "//evil.example", "/\\evil.example", "app"]) {
+      await sendCode("next-bad@lukas.test", { "x-lukas-next": next });
+      const bad = /http\S+/.exec(t.mailer.lastTo("next-bad@lukas.test")?.text ?? "")?.[0] ?? "";
+      expect(new URL(bad).searchParams.has("next"), next).toBe(false);
+    }
+  });
+
   test("a new user gets one default account", async () => {
     const { userId } = await t.signIn("g@lukas.test");
     const rows = await withUser(t.db, userId, (tx) =>

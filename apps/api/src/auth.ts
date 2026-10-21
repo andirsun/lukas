@@ -35,12 +35,55 @@ export async function bumpEmailThrottle(deps: AppDeps, email: string): Promise<n
   return row?.count ?? 1;
 }
 
-async function localeFor(deps: AppDeps, email: string): Promise<"es" | "en"> {
+type Locale = "es" | "en";
+
+/** Headers the web app sends with a code request: the page's language and where to go after. */
+export const LOCALE_HINT_HEADER = "x-lukas-locale";
+export const NEXT_HINT_HEADER = "x-lukas-next";
+
+const asLocale = (value: string | null | undefined): Locale | null =>
+  value === "es" || value === "en" ? value : null;
+
+/** The first of es/en in an Accept-Language header, by quality; null if it names neither. */
+export function localeFromAcceptLanguage(header: string | null | undefined): Locale | null {
+  const ranked = (header ?? "")
+    .split(",")
+    .map((part, index) => {
+      const [tag = "", ...params] = part.trim().toLowerCase().split(";");
+      const q = Number(params.find((p) => p.trim().startsWith("q="))?.split("=")[1] ?? 1);
+      return { primary: tag.split("-")[0], q: Number.isFinite(q) ? q : 0, index };
+    })
+    .filter((entry) => entry.primary && entry.q > 0)
+    .sort((a, b) => b.q - a.q || a.index - b.index);
+  return asLocale(ranked[0]?.primary);
+}
+
+/**
+ * The language of a sign-in email: the profile's for an existing user; for a new address, the
+ * page's (the web sends it in `x-lukas-locale`), else the browser's Accept-Language, else Spanish.
+ */
+async function localeFor(deps: AppDeps, email: string, headers: Headers | undefined) {
   const [row] = await deps.db
     .select({ locale: userTable.locale })
     .from(userTable)
     .where(eq(userTable.email, email));
-  return row?.locale === "en" ? "en" : "es";
+  if (row) return asLocale(row.locale) ?? "es";
+  return (
+    asLocale(headers?.get(LOCALE_HINT_HEADER)) ??
+    localeFromAcceptLanguage(headers?.get("accept-language")) ??
+    "es"
+  );
+}
+
+/**
+ * `next` for the magic link: a same-origin path only (one leading slash, no backslash, no
+ * whitespace, no encoded slash in the path). The web screens it again with `safeNext` on arrival.
+ */
+export function linkNext(value: string | null | undefined): string | null {
+  if (!value || value.length > 512) return null;
+  if (!/^\/(?![/\\])/.test(value) || /[\\\s]/.test(value)) return null;
+  if (/%(?:2f|5c)/i.test(value.split(/[?#]/, 1)[0] ?? "")) return null;
+  return value;
 }
 
 export function createAuth(deps: AppDeps) {
@@ -111,10 +154,15 @@ export function createAuth(deps: AppDeps) {
         allowedAttempts: 3,
         storeOTP: "hashed",
         disableSignUp: false,
-        async sendVerificationOTP({ email, otp, type }) {
+        async sendVerificationOTP({ email, otp, type }, ctx) {
           if (type !== "sign-in") return;
-          const link = `${config.WEB_URL}/auth/verify?${new URLSearchParams({ email, code: otp })}`;
-          const locale = await localeFor(deps, email);
+          const headers = ctx?.headers ?? ctx?.request?.headers;
+          const locale = await localeFor(deps, email, headers);
+          // The link opens the web in the email's language and goes on to `next` after sign-in.
+          const params = new URLSearchParams({ email, code: otp, lang: locale });
+          const next = linkNext(headers?.get(NEXT_HINT_HEADER));
+          if (next) params.set("next", next);
+          const link = `${config.WEB_URL}/auth/verify?${params}`;
           await deps.mailer.send({ to: email, ...signInEmail({ code: otp, link, locale }) });
         },
       }),

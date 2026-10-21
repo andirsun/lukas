@@ -138,7 +138,8 @@
     "invalid_or_expired_code": "This code no longer works: it expired or was already used. Ask for a new one.",
     "too_many_attempts": "Too many tries with this code. Ask for a new one.",
     "too_many_requests": "You asked for a lot of codes in a row. Wait a few minutes and try again.",
-    "passkey_failed": "We couldn't sign you in with your fingerprint. Try again or use your email."
+    "passkey_failed": "We couldn't sign you in with your fingerprint. Try again or use your email.",
+    "too_many_sign_in_attempts": "Too many tries in a row. Wait a few seconds and try again."
   },
   "sign_in": {
     "meta_title": "Sign in · Lukitas",
@@ -161,12 +162,17 @@
     "resend": "Resend code",
     "resend_in": "Resend in {seconds} s",
     "resent": "We sent you a new code.",
-    "change_email": "Use another email"
+    "change_email": "Use another email",
+    "wait": "Wait {seconds} s"
   },
   "verify": {
     "meta_title": "Signing in · Lukitas",
-    "checking": "Signing you in to Lukitas…",
+    "confirm_title": "Continue as <strong>{email}</strong>",
+    "confirm_lead": "Tap Continue to sign in to Lukitas with this email.",
+    "continue": "Continue",
+    "not_me": "Not me",
     "failed_title": "We couldn't sign you in",
+    "retry_in": "Retry in {seconds} s",
     "send_new_code": "Send a new code"
   },
   "roadmap": {

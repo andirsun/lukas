@@ -138,7 +138,8 @@
     "invalid_or_expired_code": "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
     "too_many_attempts": "Demasiados intentos con este código. Pide uno nuevo.",
     "too_many_requests": "Pediste muchos códigos seguidos. Espera unos minutos e inténtalo otra vez.",
-    "passkey_failed": "No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo."
+    "passkey_failed": "No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.",
+    "too_many_sign_in_attempts": "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez."
   },
   "sign_in": {
     "meta_title": "Entrar · Lukitas",
@@ -161,12 +162,17 @@
     "resend": "Reenviar código",
     "resend_in": "Reenviar en {seconds} s",
     "resent": "Te mandamos un código nuevo.",
-    "change_email": "Usar otro correo"
+    "change_email": "Usar otro correo",
+    "wait": "Espera {seconds} s"
   },
   "verify": {
     "meta_title": "Entrando · Lukitas",
-    "checking": "Entrando a Lukitas…",
+    "confirm_title": "Continuar como <strong>{email}</strong>",
+    "confirm_lead": "Toca Continuar para entrar a Lukitas con este correo.",
+    "continue": "Continuar",
+    "not_me": "No soy yo",
     "failed_title": "No pudimos hacerte entrar",
+    "retry_in": "Reintentar en {seconds} s",
     "send_new_code": "Enviar un código nuevo"
   },
   "roadmap": {

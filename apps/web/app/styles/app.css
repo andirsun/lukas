@@ -560,10 +560,16 @@
 [data-theme="night"] {
   /* Sheet backdrop: derived from tokens, dark in both themes. */
   --scrim: color-mix(in srgb, var(--surface-edge) 72%, transparent);
+  /*
+   * Edge of a field that has no other cue (the sign-in code boxes): at least 3:1 against its own
+   * fill and the background behind it (WCAG 1.4.11). Night ≈ 4:1, day ≈ 3.8:1.
+   */
+  --field-edge: color-mix(in srgb, var(--ink-muted) 60%, var(--surface-sunken));
 }
 
 [data-theme="day"] {
   --scrim: color-mix(in srgb, var(--ink) 40%, transparent);
+  --field-edge: color-mix(in srgb, var(--ink-muted) 80%, var(--surface-sunken));
 }
 
 @layer components {
@@ -732,7 +738,7 @@
     color: var(--ink);
     caret-color: var(--focus);
     background: var(--surface-sunken);
-    border: 2px solid var(--stroke);
+    border: 2px solid var(--field-edge);
     border-radius: var(--radius-md);
   }
   .lk-code-box:focus-visible {

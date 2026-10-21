@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { fn } from "storybook/test";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
-import type { AuthFailure, AuthResult, AuthUser, SignInAuth } from "./auth.ts";
+import type { AuthFailure, AuthResult, AuthUser, CodeHints, SignInAuth } from "./auth.ts";
 import { SignIn } from "./SignIn.tsx";
 import { Verify } from "./Verify.tsx";
 
@@ -32,7 +32,7 @@ export const fail = (error: AuthFailure): AuthResult<never> => ({ data: null, er
 export function fakeAuth(overrides: Partial<SignInAuth> & { user?: AuthUser } = {}): SignInAuth {
   const { user = NEW_USER, ...rest } = overrides;
   return {
-    sendCode: fn(async (_email: string) => ok(true as const)),
+    sendCode: fn(async (_email: string, _hints: CodeHints) => ok(true as const)),
     verifyCode: fn(async (_email: string, code: string) =>
       code === GOOD_CODE ? ok(user) : fail({ code: "INVALID_OTP", status: 400 }),
     ),

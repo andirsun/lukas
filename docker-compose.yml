@@ -31,6 +31,10 @@ services:
       DATABASE_URL: postgres://lukas_app:lukas_app@postgres:5432/lukas
       DATABASE_ADMIN_URL: postgres://lukas:lukas@postgres:5432/lukas
       SMTP_URL: smtp://mailpit:1025
+      # Development only: the proxy in front of this API is Vite's, on this machine, so the client
+      # address it forwards is the one rate limits count (the e2e suite gives each browser its own).
+      # Never copy this to production: see docs/deploy/api.md.
+      TRUSTED_PROXIES: "127.0.0.1,::1"
     ports:
       - "3000:3000"
     depends_on:

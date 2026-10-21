@@ -1,18 +1,24 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { expectTarget } from "../../../.storybook/story-utils.ts";
+import { detectLocale } from "../../i18n/format.ts";
 import { fail, fakeAuth, GOOD_CODE, ONBOARDED_USER, SignInStage } from "./story-harness.tsx";
 
 const meta = {
   title: "Sign-in/SignIn",
   component: SignInStage,
-  args: { auth: fakeAuth(), initialEntry: "/sign-in" },
+  // `?lang=es` pins the language the screens send and set (it matches the fake profile's).
+  args: { auth: fakeAuth(), initialEntry: "/sign-in?lang=es" },
 } satisfies Meta<typeof SignInStage>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const AT_CODE_STEP = { pathname: "/sign-in", state: { email: "ana@example.com", codeSent: true } };
+const AT_CODE_STEP = {
+  pathname: "/sign-in",
+  search: "?lang=es",
+  state: { email: "ana@example.com", codeSent: true },
+};
 
 const digits = (canvas: ReturnType<typeof within>) =>
   canvas.getAllByRole("textbox", { name: /^Dígito \d de 6$/ });
@@ -43,7 +49,11 @@ export const EmailToCode: Story = {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByRole("textbox", { name: "Tu correo" }), " Ana@Example.com ");
     await userEvent.click(canvas.getByRole("button", { name: "Enviar código" }));
-    await expect(args.auth.sendCode).toHaveBeenCalledWith("ana@example.com");
+    // The API writes the email (and its link) in the page's language.
+    await expect(args.auth.sendCode).toHaveBeenCalledWith("ana@example.com", {
+      locale: "es",
+      next: null,
+    });
     await expect(
       await canvas.findByRole("heading", { level: 1, name: "Revisa tu correo" }),
     ).toBeVisible();
@@ -143,7 +153,7 @@ export const RightCode: Story = {
     const canvas = within(canvasElement);
     await userEvent.type(digits(canvas)[0] as HTMLElement, GOOD_CODE);
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
-    // No `?lang=` on this visit: the profile keeps its language.
+    // `?lang=es` is already the profile's language: nothing to change.
     await expect(args.onPatchMe).not.toHaveBeenCalled();
   },
 };
@@ -191,9 +201,13 @@ export const Resend: Story = {
     );
     await expect(resend).toBeEnabled();
     await userEvent.click(resend);
-    await expect(args.auth.sendCode).toHaveBeenCalledWith("ana@example.com");
+    await expect(args.auth.sendCode).toHaveBeenCalledWith(
+      "ana@example.com",
+      expect.objectContaining({ locale: "es" }),
+    );
     const toast = await page.findByText("Te mandamos un código nuevo.");
-    await waitFor(() => expect(toast).toBeVisible());
+    // The toast fades in (Motion): give it time on a loaded machine.
+    await waitFor(() => expect(toast).toBeVisible(), { timeout: 3000 });
     await expect(canvas.getByRole("button", { name: /^Reenviar en \d+ s$/ })).toBeDisabled();
   },
 };
@@ -212,7 +226,7 @@ export const ChangeEmail: Story = {
 export const Passkey: Story = {
   args: {
     auth: fakeAuth({ passkeysAvailable: () => true, user: ONBOARDED_USER }),
-    initialEntry: "/sign-in?next=%2Fapp%2Finsights",
+    initialEntry: "/sign-in?lang=es&next=%2Fapp%2Finsights",
     profileUser: ONBOARDED_USER,
   },
   play: async ({ canvasElement, args }) => {
@@ -230,13 +244,14 @@ export const Passkey: Story = {
   },
 };
 
-/** A cancelled or failed passkey sign-in explains itself and leaves the email route open. */
+/** A passkey sign-in that fails explains itself and leaves the email route open. */
 export const PasskeyFailed: Story = {
   args: {
     auth: fakeAuth({
       passkeysAvailable: () => true,
-      signInWithPasskey: fn(async () => fail({ code: "AUTH_CANCELLED", status: 400 })),
+      signInWithPasskey: fn(async () => fail({ code: "PASSKEY_NOT_FOUND", status: 400 })),
     }),
+    initialEntry: "/sign-in?lang=en",
   },
   globals: { theme: "day", locale: "en" },
   play: async ({ canvasElement }) => {
@@ -259,5 +274,103 @@ export const CheckingCode: Story = {
     const canvas = within(canvasElement);
     await userEvent.type(digits(canvas)[0] as HTMLElement, "123456");
     await expect(await canvas.findByRole("button", { name: "Entrando…" })).toBeDisabled();
+  },
+};
+
+/** Closing the browser's passkey prompt is a choice, not an error: nothing is announced. */
+export const PasskeyCancelled: Story = {
+  args: {
+    auth: fakeAuth({
+      passkeysAvailable: () => true,
+      signInWithPasskey: fn(async () => fail({ code: "AUTH_CANCELLED", status: 400 })),
+    }),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const passkey = canvas.getByRole("button", { name: "Entrar con huella" });
+    await userEvent.click(passkey);
+    await expect(args.auth.signInWithPasskey).toHaveBeenCalled();
+    await waitFor(() => expect(passkey).toBeEnabled());
+    await expect(canvas.queryByRole("alert")).toBeNull();
+  },
+};
+
+/** No connection while checking: the message, and the typed code stays for another try. */
+export const OfflineKeepsCode: Story = {
+  args: {
+    auth: fakeAuth({ verifyCode: fn(async () => fail({ status: 0 })) }),
+    initialEntry: AT_CODE_STEP,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(digits(canvas)[0] as HTMLElement, "123456");
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
+    );
+    await expect(
+      digits(canvas)
+        .map((box: HTMLElement) => (box as HTMLInputElement).value)
+        .join(""),
+    ).toBe("123456");
+    for (const box of digits(canvas)) await expect(box).not.toHaveAttribute("aria-invalid");
+    await expect(canvas.getByRole("button", { name: "Entrar" })).toBeEnabled();
+  },
+};
+
+/** The first check is rate limited (retry after 2 s); the next one goes through. */
+const rateLimitedOnce = fn(async (email: string, code: string) =>
+  rateLimitedOnce.mock.calls.length === 1
+    ? fail({ status: 429, retryAfter: 2 })
+    : fakeAuth().verifyCode(email, code),
+);
+
+/** Too many sign-ins in a row: wait the seconds the server asked for, then the same code works. */
+export const SignInRateLimited: Story = {
+  args: {
+    auth: fakeAuth({ verifyCode: rateLimitedOnce }),
+    initialEntry: AT_CODE_STEP,
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(digits(canvas)[0] as HTMLElement, GOOD_CODE);
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez.",
+    );
+    await expect(canvas.getByRole("button", { name: /^Espera \d s$/ })).toBeDisabled();
+    const retry = await canvas.findByRole("button", { name: "Entrar" }, { timeout: 5000 });
+    await userEvent.click(retry);
+    await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
+    await expect(args.auth.verifyCode).toHaveBeenCalledTimes(2);
+  },
+};
+
+/** A resend that fails says why, without marking the typed code as wrong. */
+export const ResendFails: Story = {
+  args: {
+    auth: fakeAuth({ sendCode: fn(async () => fail({ status: 429 })) }),
+    initialEntry: AT_CODE_STEP,
+    resendDelayMs: 0,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "Reenviar código" }));
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Pediste muchos códigos seguidos. Espera unos minutos e inténtalo otra vez.",
+    );
+    for (const box of digits(canvas)) await expect(box).not.toHaveAttribute("aria-invalid");
+  },
+};
+
+/** No `?lang=`: the browser's language is the one the email (and a new profile) gets. */
+export const BrowserLanguage: Story = {
+  args: { auth: fakeAuth(), initialEntry: "/sign-in" },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.type(canvas.getByRole("textbox", { name: "Tu correo" }), "ana@example.com");
+    await userEvent.click(canvas.getByRole("button", { name: "Enviar código" }));
+    await expect(args.auth.sendCode).toHaveBeenCalledWith("ana@example.com", {
+      locale: detectLocale(navigator.language),
+      next: null,
+    });
   },
 };
