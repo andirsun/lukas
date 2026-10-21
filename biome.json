@@ -8,7 +8,8 @@
       "!**/*.csv",
       "!apps/web/app/styles/tokens.css",
       "!apps/web/app/api/schema.d.ts",
-      "!apps/web/build"
+      "!apps/web/build",
+      "!**/.claude/worktrees"
     ]
   },
   "css": { "parser": { "tailwindDirectives": true } },

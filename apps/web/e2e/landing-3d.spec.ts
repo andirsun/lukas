@@ -66,7 +66,7 @@ test.describe("3D Lukas", () => {
     await expect(page).toHaveURL(/\/$/);
 
     // The primary action under the canvas layer still gets the click.
-    const cta = page.locator("#hero").getByRole("link", { name: "Empieza gratis" });
+    const cta = page.locator("#hero").getByRole("link", { name: "Empieza ahora" });
     const hit = await cta.evaluate((el) => {
       const box = el.getBoundingClientRect();
       const top = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
