@@ -20,6 +20,7 @@
   --near: #ffb547;
   --over: #ff5c7a;
   --gold: #ffe66d;
+  --on-gold: #15122b;
   --candy: #ff8fd8;
   --edge-sm: 0 3px 0 #0f0c22;
   --edge-md: 0 5px 0 #0f0c22;
@@ -45,6 +46,7 @@
   --near: #a85a00;
   --over: #c2194a;
   --gold: #ffd23f;
+  --on-gold: #221a47;
   --candy: #e0408f;
   --edge-sm: 0 3px 0 #d6ccf5;
   --edge-md: 0 5px 0 #d6ccf5;
@@ -70,4 +72,5 @@
   --shiver: 1600ms;
   --font-display: "Fredoka", "Baloo 2", ui-rounded, system-ui, sans-serif;
   --font-text: "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
 }

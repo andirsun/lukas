@@ -6,7 +6,9 @@ import { defineConfig, devices } from "@playwright/test";
  * builds first; the server reads files on every request, so a server left running from an earlier
  * run still serves the fresh build. App flows against the dev server use playwright.config.ts.
  */
-const baseURL = "http://localhost:4180";
+/** `E2E_BUILT_PORT` picks another port, e.g. to run beside a server another checkout reuses. */
+const port = Number(process.env.E2E_BUILT_PORT ?? 4180);
+const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -38,7 +40,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "tsx scripts/serve-build.ts 4180",
+    command: `tsx scripts/serve-build.ts ${port}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
   },

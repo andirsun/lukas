@@ -14,7 +14,7 @@ const meta = {
       </MemoryRouter>
     ),
   ],
-  args: { to: "/sign-in?lang=es", children: "Empieza gratis" },
+  args: { to: "/sign-in?lang=es", children: "Empieza ahora" },
 } satisfies Meta<typeof PressLink>;
 
 export default meta;
@@ -23,7 +23,7 @@ type Story = StoryObj<typeof meta>;
 /** A link dressed as the primary button: solid brand edge, 44px, focus ring, no underline. */
 export const Primary: Story = {
   play: async ({ canvasElement }) => {
-    const link = within(canvasElement).getByRole("link", { name: "Empieza gratis" });
+    const link = within(canvasElement).getByRole("link", { name: "Empieza ahora" });
     await expect(link).toHaveAttribute("href", "/sign-in?lang=es");
     await expect(link).toHaveClass("lk-btn", "lk-btn-primary");
     await expect(getComputedStyle(link).textDecorationLine).toBe("none");

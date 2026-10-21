@@ -16,6 +16,7 @@ const fixture: TokensJson = {
     families: {
       display: '"Fredoka", "Baloo 2", ui-rounded, system-ui, sans-serif',
       text: '"Nunito", ui-rounded, system-ui, sans-serif',
+      hand: '"Caveat", cursive',
     },
   },
   spacing: { tokens: [{ name: "space-4", value: "16px" }] },
@@ -66,6 +67,12 @@ describe("generateTokensCss", () => {
       '--font-display: "Fredoka", "Baloo 2", ui-rounded, system-ui, sans-serif',
     );
     expect(root).toContain('--font-text: "Nunito", ui-rounded, system-ui, sans-serif');
+  });
+
+  it("emits a variable for every type family, the landing's hand face included", () => {
+    const root = declarations(css, ":root");
+    expect(root).toContain('--font-hand: "Caveat", cursive');
+    expect(root.filter((d) => d.startsWith("--font-"))).toHaveLength(3);
   });
 
   it("fails loudly when a themed token misses a theme", () => {

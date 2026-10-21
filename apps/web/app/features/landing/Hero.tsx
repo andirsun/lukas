@@ -2,13 +2,23 @@ import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { HeroMascot } from "./HeroMascot.tsx";
-import { signInHref } from "./links.ts";
+import { DEMO_PATH, signInHref } from "./links.ts";
+import { CodeLink } from "./OpenSource.tsx";
+
+export type HeroProps = {
+  /**
+   * Also offer "Pruébalo sin cuenta" → the demo, as a secondary action. Off until the demo exists
+   * (Task 18a turns it on).
+   */
+  secondaryCta?: boolean;
+};
 
 /**
- * The questions people ask about their money, crossed out; then the answer (the headline), the
- * promise, one primary action and Lukas waving.
+ * The questions people ask about their money, crossed out; then a handwritten promise (free, and
+ * it always will be), the answer (the headline, with "lukas" on a gold marker), what Lukas is,
+ * one primary action with the perks under it, and Lukas waving.
  */
-export function Hero() {
+export function Hero({ secondaryCta = false }: HeroProps) {
   const t = useTranslations("landing.hero");
   const { locale } = useLocale();
   return (
@@ -22,14 +32,29 @@ export function Hero() {
             <s>{t("question_living")}</s>
           </li>
         </ul>
+        <p className="lk-landing-annotation">{t("annotation")}</p>
         <h1 id="hero-title" className="lk-landing-headline">
-          {t("headline")}
+          {t.rich("headline", {
+            mark: (chunks) => <span className="lk-landing-marker">{chunks}</span>,
+          })}
         </h1>
-        <p className="lk-landing-tagline">{t("tagline")}</p>
-        <p className="lk-landing-description">{t("description")}</p>
+        <p className="lk-landing-description">
+          {t.rich("description", {
+            lead: (chunks) => <span className="lk-landing-lead">{chunks}</span>,
+          })}
+        </p>
         <div className="lk-landing-cta">
-          <PressLink to={signInHref(locale)}>{t("cta")}</PressLink>
-          <p className="lk-landing-perks">{t("perks")}</p>
+          <div className="lk-landing-cta-actions">
+            <PressLink to={signInHref(locale)}>{t("cta")}</PressLink>
+            {secondaryCta && (
+              <PressLink to={DEMO_PATH} variant="secondary">
+                {t("cta_demo")}
+              </PressLink>
+            )}
+          </div>
+          <p className="lk-landing-perks">
+            {t.rich("perks", { github: (chunks) => <CodeLink>{chunks}</CodeLink> })}
+          </p>
         </div>
       </div>
       <HeroMascot />

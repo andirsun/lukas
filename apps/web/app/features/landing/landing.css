@@ -161,20 +161,49 @@
     background: var(--over);
     transform: rotate(-3deg);
   }
+  /*
+   * A handwritten note above the headline (`hand`, landing only), tilted like a scribble, on a
+   * translucent candy highlighter stroke. The text is `ink`: at least 7:1 on the stroke in both
+   * themes.
+   */
+  .lk-landing-annotation {
+    justify-self: center;
+    margin-top: var(--space-2);
+    padding: 0.04em 0.45em 0.1em;
+    border-radius: 0.25em 0.7em 0.3em 0.8em / 0.7em 0.3em 0.8em 0.35em;
+    background: color-mix(in srgb, var(--candy) 32%, transparent);
+    font-family: var(--font-hand);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1.1;
+    color: var(--ink);
+    transform: rotate(-4deg);
+  }
   .lk-landing-headline {
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 36px;
     line-height: 1.05;
-    margin: var(--space-2) 0 0;
+    margin: var(--space-1) 0 0;
     color: var(--good);
     text-shadow: 0 0 18px color-mix(in srgb, var(--good) 28%, transparent);
   }
-  .lk-landing-tagline {
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 22px;
-    line-height: 1.2;
+  /*
+   * The headline's key word ("lukas" / "money") on a gold marker blob: an irregular rounded
+   * shape, slightly tilted, with a second offset pass like a real highlighter. Dark ink on solid
+   * gold (`on-gold`: 14.6:1 night, 11.1:1 day). The fill sits on the word itself, so contrast
+   * checkers measure it. A landing-only treatment, like the hand face.
+   */
+  .lk-landing-marker {
+    display: inline-block;
+    margin-inline: -0.04em;
+    padding: 0 0.16em 0.06em;
+    border-radius: 0.5em 0.28em 0.6em 0.22em / 0.38em 0.6em 0.3em 0.55em;
+    background: var(--gold);
+    box-shadow: 0.05em 0.07em 0 color-mix(in srgb, var(--gold) 45%, transparent);
+    color: var(--on-gold);
+    text-shadow: none;
+    transform: rotate(-2deg);
   }
   .lk-landing-description {
     max-width: 34rem;
@@ -182,21 +211,63 @@
     line-height: 1.5;
     color: var(--ink-muted);
   }
+  /* The first sentence of the description: what Lukas is. */
+  .lk-landing-lead {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 21px;
+    line-height: 1.25;
+    color: var(--ink);
+  }
   .lk-landing-cta {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
     margin-top: var(--space-3);
+  }
+  .lk-landing-cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
   }
   .lk-landing-cta .lk-btn {
     padding-inline: 34px;
     font-size: 17px;
+    white-space: nowrap;
   }
   .lk-landing-perks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    column-gap: 0.35em;
     font-size: 13px;
     font-weight: 800;
     color: var(--ink-muted);
+  }
+  /* Links inside running text (the perks, an FAQ answer): underlined, in `ink`. */
+  .lk-landing-perks a,
+  .lk-landing-answer a {
+    border-radius: 4px;
+    color: var(--ink);
+    font-weight: 800;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  .lk-landing-perks a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .lk-landing-perks a:focus-visible,
+  .lk-landing-answer a:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
   }
 
   /* Cards: static surfaces on a solid edge, like the app's hero card. */
@@ -459,6 +530,21 @@
     color: var(--ink-muted);
   }
 
+  /* Open source: one card with the code icon, a short paragraph and the link to the repository. */
+  .lk-landing-open {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+  }
+  .lk-landing-open h2 {
+    margin: 0 0 var(--space-2);
+  }
+  .lk-landing-open p {
+    max-width: 40rem;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
   /* Closing call to action */
   .lk-landing-closing {
     display: grid;
@@ -551,18 +637,35 @@
     .lk-landing-questions {
       font-size: 28px;
     }
+    /* A scribble over the headline's first words, not a centered label. */
+    .lk-landing-annotation {
+      justify-self: start;
+      margin-inline-start: 0.6em;
+      font-size: 32px;
+    }
     .lk-landing-headline {
       font-size: 56px;
-    }
-    .lk-landing-tagline {
-      font-size: 28px;
     }
     .lk-landing-description {
       font-size: 18px;
     }
+    .lk-landing-lead {
+      font-size: 25px;
+    }
+    /* The perks under the action, so neither has to wrap beside the other. */
     .lk-landing-cta {
-      flex-direction: row;
-      gap: var(--space-4);
+      align-items: flex-start;
+    }
+    .lk-landing-cta-actions {
+      justify-content: flex-start;
+    }
+    .lk-landing-perks {
+      justify-content: flex-start;
+    }
+    .lk-landing-open {
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: var(--space-5);
     }
     .lk-landing-section {
       padding-block: var(--space-6) calc(var(--space-6) * 1.5);

@@ -27,7 +27,8 @@ function Step({ demo, title, body }: { demo: ReactNode; title: string; body: str
 
 /**
  * How Lukas works, in four steps, each with a small illustration built from the app's own
- * pieces: logging in seconds, where the money goes, budgets that warn you, importing from Budge.
+ * pieces: logging in seconds, where the money goes, budgets that warn you, importing your history
+ * from other apps (Budge today).
  */
 export function HowItWorks() {
   const t = useTranslations("landing.how");
@@ -105,16 +106,16 @@ export function HowItWorks() {
           }
         />
         <Step
-          title={t("budge.title")}
-          body={t("budge.body")}
+          title={t("import.title")}
+          body={t("import.body")}
           demo={
             <div className="lk-landing-demo-row flex-wrap">
-              <span className="lk-landing-file">{t("budge.demo_file")}</span>
+              <span className="lk-landing-file">{t("import.demo_file")}</span>
               <svg className="lk-landing-arrow" viewBox="0 0 24 24">
                 <path d="M4 12h15M13 6l6 6-6 6" />
               </svg>
               <span className="lk-landing-imported">
-                {t("budge.demo_rows", { count: DEMO.importedRows })}
+                {t("import.demo_rows", { count: DEMO.importedRows })}
               </span>
             </div>
           }
