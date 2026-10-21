@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { createGuards, DEMO_USER, type GuardDeps, type SessionUser } from "./session.ts";
+import { ApiProblem } from "../api/errors.ts";
+import {
+  createGuards,
+  DEMO_USER,
+  demoGuards,
+  type GuardDeps,
+  type SessionUser,
+  sessionUserFrom,
+} from "./session.ts";
 
 const user = (onboardingCompletedAt: string | null): SessionUser => ({
   id: "u1",
@@ -104,6 +112,21 @@ describe("redirectIfSignedIn", () => {
     );
   });
 
+  it.each([
+    "/.//evil.example",
+    "/..//evil.example",
+    "/%2e%2e//evil.example",
+    "/\\evil.example",
+    "%2F%2Fevil.example",
+    "javascript:alert(1)",
+  ])("never redirects to %j", async (next) => {
+    const { redirectIfSignedIn } = guards(user("2026-10-01T10:00:00.000Z"));
+    const result = await redirectOf(() =>
+      redirectIfSignedIn(request(`/sign-in?next=${encodeURIComponent(next)}`)),
+    );
+    expect(result?.location).toBe("/app");
+  });
+
   it("honours a same-origin next and ignores an off-site one", async () => {
     const { redirectIfSignedIn } = guards(user("2026-10-01T10:00:00.000Z"));
     expect(
@@ -117,5 +140,63 @@ describe("redirectIfSignedIn", () => {
         )
       )?.location,
     ).toBe("/app");
+  });
+});
+
+describe("sessionUserFrom", () => {
+  const ana = user(null);
+
+  it("returns the user, or null for a clean signed-out answer", () => {
+    expect(sessionUserFrom({ data: { user: ana }, error: null })).toEqual(ana);
+    expect(sessionUserFrom({ data: null, error: null })).toBeNull();
+  });
+
+  it("treats 401 and 403 as signed out", () => {
+    expect(
+      sessionUserFrom({ data: null, error: { status: 401, statusText: "Unauthorized" } }),
+    ).toBeNull();
+    expect(
+      sessionUserFrom({ data: null, error: { status: 403, statusText: "Forbidden" } }),
+    ).toBeNull();
+  });
+
+  it("throws on a server error, so a blip never signs anyone out", () => {
+    expect(() =>
+      sessionUserFrom({ data: null, error: { status: 503, statusText: "Unavailable" } }),
+    ).toThrowError(expect.objectContaining({ status: 503, code: "internal_error" }));
+  });
+
+  it("throws network_error when there was no response", () => {
+    expect(() =>
+      sessionUserFrom({ data: null, error: { status: 0, statusText: "" } }),
+    ).toThrowError(expect.objectContaining({ status: 0, code: "network_error" }));
+  });
+});
+
+describe("a failed session lookup", () => {
+  const failing = createGuards({
+    getSession: async () => {
+      throw new ApiProblem({ status: 0, code: "network_error" });
+    },
+    mode: () => "live",
+  });
+
+  it("surfaces as an error from every guard, never as a redirect to sign-in", async () => {
+    for (const run of [
+      () => failing.requireSession("/app"),
+      () => failing.requireOnboarded(),
+      () => failing.redirectIfSignedIn({ request: new Request("http://localhost/sign-in") }),
+    ]) {
+      const thrown = await run().catch((e: unknown) => e);
+      expect(thrown).toBeInstanceOf(ApiProblem);
+      expect(thrown).not.toBeInstanceOf(Response);
+    }
+  });
+});
+
+describe("demoGuards", () => {
+  it("sign the demo in without asking for a session", async () => {
+    expect(await demoGuards.requireSession("/demo")).toEqual(DEMO_USER);
+    expect(await demoGuards.requireOnboarded()).toEqual(DEMO_USER);
   });
 });

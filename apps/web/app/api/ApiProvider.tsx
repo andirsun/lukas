@@ -1,45 +1,73 @@
-import { createContext, type ReactNode, useContext, useMemo } from "react";
-import { type ApiClient, createApiClient } from "./client.ts";
-import type { ApiMode } from "./mode.ts";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { createContext, type ReactNode, useContext, useState } from "react";
+import type { ApiClient } from "./client.ts";
+import { type ApiMode, type ApiScope, createApiScope } from "./scope.ts";
 
-interface ApiContextValue {
-  client: ApiClient;
-  mode: ApiMode;
-}
-
-const ApiContext = createContext<ApiContextValue | null>(null);
+const ApiContext = createContext<ApiScope | null>(null);
 
 export interface ApiProviderProps {
   children: ReactNode;
   /** The `fetch` every request goes through. The demo swaps in an in-memory backend. */
   fetch?: typeof globalThis.fetch;
   mode?: ApiMode;
+  /** Where the API is mounted; "/api" unless a test or a story needs an absolute URL. */
+  baseUrl?: string;
 }
 
 /**
- * Gives the query hooks their API client. By default requests go to the real API with the
- * browser's `fetch`; the demo passes its own `fetch` and `mode="demo"`. Components read the mode
- * with `useApiMode()`. Route loaders run outside React, so whatever starts the demo also calls
- * `setApiMode("demo")` (api/mode.ts); the session guards read it from there.
+ * Gives the screens an API client and the cache that goes with it (it hosts the
+ * `QueryClientProvider`). By default requests go to the real API with the browser's `fetch`; the
+ * demo passes its own `fetch` and `mode="demo"`.
+ *
+ * The mode and the cache belong together: a different `mode` or `fetch` starts a new, empty cache,
+ * so demo data never shows up in the live app, nor one user's data in the next one's session. For
+ * a user change inside the same mode (sign-out, sign-in), call `useClearSession()`.
+ *
+ * Screens always get the client from `useApi()`. Never import the `api` singleton from client.ts
+ * in a screen: it is live-only and ignores the demo's `fetch`.
  */
-export function ApiProvider({ children, fetch: fetchImpl, mode = "live" }: ApiProviderProps) {
-  const client = useMemo(() => createApiClient(fetchImpl ? { fetch: fetchImpl } : {}), [fetchImpl]);
-  const value = useMemo(() => ({ client, mode }), [client, mode]);
-
-  return <ApiContext.Provider value={value}>{children}</ApiContext.Provider>;
+export function ApiProvider({
+  children,
+  fetch: fetchImpl,
+  mode = "live",
+  baseUrl,
+}: ApiProviderProps) {
+  const make = () =>
+    createApiScope({
+      mode,
+      ...(fetchImpl ? { fetch: fetchImpl } : {}),
+      ...(baseUrl ? { baseUrl } : {}),
+    });
+  const [held, setHeld] = useState(() => ({ scope: make(), mode, fetchImpl }));
+  let scope = held.scope;
+  if (held.mode !== mode || held.fetchImpl !== fetchImpl) {
+    // Adjusting state while rendering: the old scope is dropped before anything renders with it.
+    scope = make();
+    setHeld({ scope, mode, fetchImpl });
+  }
+  return (
+    <ApiContext.Provider value={scope}>
+      <QueryClientProvider client={scope.queryClient}>{children}</QueryClientProvider>
+    </ApiContext.Provider>
+  );
 }
 
-function useApiContext(): ApiContextValue {
+function useApiScope(): ApiScope {
   const value = useContext(ApiContext);
-  if (!value) throw new Error("useApi and useApiMode must be used inside <ApiProvider>");
+  if (!value) throw new Error("useApi, useApiMode and useClearSession need an <ApiProvider>");
   return value;
 }
 
-/** The API client for the current mode. */
+/** The API client for the current mode, bound to the provider's `fetch`. */
 export function useApi(): ApiClient {
-  return useApiContext().client;
+  return useApiScope().client;
 }
 
 export function useApiMode(): ApiMode {
-  return useApiContext().mode;
+  return useApiScope().mode;
+}
+
+/** Empties the cache; call it when someone signs in or out. */
+export function useClearSession(): () => void {
+  return useApiScope().clearSession;
 }

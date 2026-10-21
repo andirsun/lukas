@@ -1,5 +1,5 @@
 import { redirect } from "react-router";
-import { getApiMode } from "../api/mode.ts";
+import { ApiProblem } from "../api/errors.ts";
 import { authClient } from "./auth-client.ts";
 import { DEFAULT_NEXT, safeNext, signInPath } from "./next.ts";
 
@@ -24,13 +24,35 @@ export interface GuardDeps {
   mode(): "live" | "demo";
 }
 
+interface SessionResult {
+  data: { user: unknown } | null;
+  error: { status: number; statusText: string } | null;
+}
+
+/**
+ * The user in a `getSession` answer. Signed out is an answer with no user (or a 401/403); a failure
+ * to get an answer at all (no connection, a 5xx) throws, so the route's error boundary offers a
+ * retry instead of the guards taking a blip for a sign-out and sending the person to sign-in.
+ */
+export function sessionUserFrom({ data, error }: SessionResult): SessionUser | null {
+  if (error && error.status !== 401 && error.status !== 403) {
+    throw new ApiProblem({
+      status: error.status,
+      code:
+        error.status >= 500
+          ? "internal_error"
+          : error.status === 0
+            ? "network_error"
+            : "http_error",
+    });
+  }
+  // Better Auth returns the extra user fields the API declares (see apps/api/src/auth.ts).
+  return (data?.user as SessionUser | undefined) ?? null;
+}
+
 const liveDeps: GuardDeps = {
-  async getSession() {
-    const { data } = await authClient.getSession();
-    // Better Auth returns the extra user fields the API declares (see apps/api/src/auth.ts).
-    return (data?.user as SessionUser | undefined) ?? null;
-  },
-  mode: getApiMode,
+  getSession: async () => sessionUserFrom(await authClient.getSession()),
+  mode: () => "live",
 };
 
 const isOnboarded = (user: SessionUser) => user.onboardingCompletedAt != null;
@@ -41,6 +63,9 @@ const isOnboarded = (user: SessionUser) => user.onboardingCompletedAt != null;
  * is read in the browser; the API still checks every request.
  *
  *   export const clientLoader = () => requireOnboarded("/app/insights");
+ *
+ * Loaders run outside React and cannot read `<ApiProvider mode>`, so the guards exported here are
+ * the live ones. The demo's routes use `demoGuards`, which sign the made-up user in.
  */
 export function createGuards(deps: GuardDeps) {
   /** The signed-in user, or null (the demo always has one). */
@@ -78,3 +103,6 @@ export function createGuards(deps: GuardDeps) {
 }
 
 export const { requireSession, requireOnboarded, redirectIfSignedIn } = createGuards(liveDeps);
+
+/** The guards for the demo's routes: always signed in and onboarded as `DEMO_USER`. */
+export const demoGuards = createGuards({ getSession: async () => DEMO_USER, mode: () => "demo" });

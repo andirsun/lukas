@@ -77,3 +77,13 @@ describe("createApiClient", () => {
     await expect(client.GET("/v1/me")).rejects.toMatchObject({ status: 0, code: "network_error" });
   });
 });
+
+describe("createApiClient errors that are not a lost connection", () => {
+  it("keeps a bug behind fetch visible as itself", async () => {
+    const fetch = vi.fn(async () => {
+      throw new RangeError("demo backend bug");
+    });
+    const client = createApiClient({ fetch, baseUrl: BASE, onUnauthorized: vi.fn() });
+    await expect(client.GET("/v1/me")).rejects.toThrowError("demo backend bug");
+  });
+});

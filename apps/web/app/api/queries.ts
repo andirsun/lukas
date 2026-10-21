@@ -33,6 +33,10 @@ export type NewTransaction = JsonBody<"/v1/transactions", "post">;
 /** The fields to change on a transaction; send only those that changed. */
 export type TransactionPatch = JsonBody<"/v1/transactions/{id}", "patch">;
 export type ReportRange = { from: string; to: string };
+export type ByCategoryRange = ReportRange & {
+  kind?: "expense" | "income";
+  status?: "paid" | "pending";
+};
 
 /** The data of a successful response. Failures never get here: the client throws `ApiProblem`. */
 function dataOf<T>(result: { data?: T; response: Response }): T {
@@ -52,7 +56,15 @@ export const queryKeys = {
   /** Everything built from transactions beyond one month's list and summary. */
   reports: () => ["reports"] as const,
   costOfLiving: (months: number) => ["reports", "cost-of-living", months] as const,
-  byCategory: (range: ReportRange) => ["reports", "by-category", range.from, range.to] as const,
+  byCategory: (range: ByCategoryRange) =>
+    [
+      "reports",
+      "by-category",
+      range.from,
+      range.to,
+      range.kind ?? null,
+      range.status ?? null,
+    ] as const,
   trend: (range: ReportRange) => ["reports", "trend", range.from, range.to] as const,
 };
 
@@ -125,14 +137,21 @@ export function useCostOfLiving(months: number) {
   });
 }
 
-export function useReportByCategory(range: ReportRange) {
+export function useReportByCategory(range: ByCategoryRange) {
   const api = useApi();
   return useQuery({
     queryKey: queryKeys.byCategory(range),
     queryFn: async ({ signal }) =>
       dataOf(
         await api.GET("/v1/reports/by-category", {
-          params: { query: { from: range.from, to: range.to } },
+          params: {
+            query: {
+              from: range.from,
+              to: range.to,
+              ...(range.kind ? { kind: range.kind } : {}),
+              ...(range.status ? { status: range.status } : {}),
+            },
+          },
           signal,
         }),
       ),
@@ -176,6 +195,8 @@ async function applyOptimistic(
 function settle(qc: QueryClient, months: string[]) {
   for (const queryKey of keysFor(months)) void qc.invalidateQueries({ queryKey });
   void qc.invalidateQueries({ queryKey: queryKeys.reports() });
+  // Names you used before (and their usual category) change with every write.
+  void qc.invalidateQueries({ queryKey: ["suggestions"] });
 }
 
 function mutation<Vars, Result>(
@@ -232,7 +253,8 @@ export function useCreateTransaction() {
         dataOf(
           await api.POST("/v1/transactions", {
             body: input,
-            // A retry of this same request (a flaky connection) must not book it twice.
+            // Lets the API drop a duplicate if this request is ever sent twice. (A new key per call:
+            // a form that wants a manual re-tap deduplicated must hold one key per intent.)
             headers: { "Idempotency-Key": crypto.randomUUID() },
           }),
         ),

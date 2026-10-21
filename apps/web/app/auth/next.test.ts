@@ -9,6 +9,19 @@ describe("safeNext", () => {
     );
   });
 
+  it("never returns a value that starts a protocol-relative URL or holds a backslash", () => {
+    for (const value of ["/.//x", "/..//x", "/%2e%2e//x", "/a/..//x", "/./\\x", "/\\x"]) {
+      const result = safeNext(value);
+      expect(result, value).not.toMatch(/^\/[/\\]/);
+      expect(result, value).not.toContain("\\");
+    }
+  });
+
+  it("keeps ordinary paths that merely contain dots and encodings", () => {
+    expect(safeNext("/app/./insights")).toBe("/app/insights");
+    expect(safeNext("/app/a%20b?q=%2F")).toBe("/app/a%20b?q=%2F");
+  });
+
   it("falls back for missing values", () => {
     expect(safeNext(null)).toBe("/app");
     expect(safeNext(undefined)).toBe("/app");
@@ -29,6 +42,19 @@ describe("safeNext", () => {
     "data:text/html,hi",
     "evil.example",
     "app/insights",
+    // Dot-segments collapse into a protocol-relative URL once parsed.
+    "/.//evil.example",
+    "/..//evil.example",
+    "/a/..//evil.example",
+    "/%2e%2e//evil.example",
+    "/%2E/%2e//evil.example",
+    "/./\\evil.example",
+    // Encoded slashes and backslashes.
+    "%2F%2Fevil.example",
+    "/%2F/evil.example",
+    "/%2f/evil.example",
+    "/%5Cevil.example",
+    "/app\\..\\evil.example",
   ])("rejects %j", (value) => {
     expect(safeNext(value)).toBe("/app");
   });

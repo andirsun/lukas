@@ -57,10 +57,10 @@ export function createApiClient({
       throw await problemFromResponse(response);
     },
     onError({ error }) {
-      if (error instanceof ApiProblem) return error;
-      // A cancelled request (TanStack Query aborting a stale one) is not a connection problem.
-      if (error instanceof Error && error.name === "AbortError") return error;
-      return new ApiProblem({ status: 0, code: "network_error" });
+      // Only a failed `fetch` (a TypeError) is a connection problem; anything else is a bug in
+      // whatever sits behind `fetch` (the demo backend, say), and stays visible as itself.
+      if (error instanceof TypeError) return new ApiProblem({ status: 0, code: "network_error" });
+      return error instanceof Error ? error : new Error(String(error));
     },
   };
 
@@ -74,5 +74,9 @@ export function createApiClient({
   return client;
 }
 
-/** The live client, for code outside React (route loaders). Components use `useApi()`. */
+/**
+ * The live client, for code outside React. It is live-only: it ignores the demo's `fetch`, so a
+ * screen must never use it (a demo screen would hit the real API and be sent to sign-in).
+ * Screens use `useApi()`.
+ */
 export const api = createApiClient();
