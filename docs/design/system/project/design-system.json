@@ -13,11 +13,21 @@
       "tile": "l",
       "order": ["lukas-mascot-concept.webp"],
       "files": {
-        "lukas-mascot-concept.webp": { "name": "lukas-mascot-concept.webp", "blob": "90bfc4b6a99531194e5e101de7522d7c", "size": 149166, "type": "image/webp" }
+        "lukas-mascot-concept.webp": {
+          "name": "lukas-mascot-concept.webp",
+          "blob": "90bfc4b6a99531194e5e101de7522d7c",
+          "size": 149166,
+          "type": "image/webp"
+        }
       }
     }
   },
   "blobs": {},
   "docs": { "readme": "project/README.md", "sections": [] },
-  "lastChange": { "by": "andirsun", "at": "2026-10-21T10:21:25Z", "via": "Claude Code", "note": "First version: Arcade tokens, 13 components, 4 reference screens, mascot concept." }
+  "lastChange": {
+    "by": "andirsun",
+    "at": "2026-10-21T10:21:25Z",
+    "via": "Claude Code",
+    "note": "First version: Arcade tokens, 13 components, 4 reference screens, mascot concept."
+  }
 }
