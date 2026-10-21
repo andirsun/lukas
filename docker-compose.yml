@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: lukas
       POSTGRES_DB: lukas
     ports:
-      - "5432:5432"
+      - "5433:5432" # 5433 on the host: 5432 is often taken by a local Postgres
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -19,7 +19,7 @@ services:
   mailpit:
     image: axllent/mailpit:v1.27
     ports:
-      - "1025:1025" # SMTP
+      - "1026:1025" # SMTP (1026 on the host: 1025 is often taken, e.g. by Proton Mail Bridge)
       - "8025:8025" # Web UI
 
   api:

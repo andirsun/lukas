@@ -56,7 +56,7 @@ curl localhost:3000/v1/summary -H 'authorization: Bearer <token>'
 
 The API is documented at http://localhost:3000/openapi.json.
 
-To run the API outside Docker, start only the services with `docker compose up -d postgres mailpit` and run `pnpm --filter @lukas/api dev`.
+To run the API outside Docker, start only the services with `docker compose up -d postgres mailpit` and run `pnpm --filter @lukas/api dev`. On the host, Postgres listens on port 5433 and Mailpit SMTP on 1026, so they do not clash with a local Postgres or mail bridge.
 
 ### Tests
 
