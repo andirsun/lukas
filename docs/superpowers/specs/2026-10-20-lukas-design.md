@@ -126,9 +126,10 @@ Each stage gets its own spec → plan → implementation.
 
 1. **Core & accounts** (detailed in this document, §4–§10).
 2. **Web v1:** onboarding, home, transactions, budget, analysis, import, "Connect your assistant".
-3. **Mobile + widget:** onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget.
+3. **Mobile + widget:** onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget **with a microphone button** that opens voice quick capture (founder decision, 2026-10-21; see Quick capture below).
 4. **MCP:** remote server with OAuth; tools to read, create and edit transactions, generate reports and adjust budgets.
 5. **Advanced gamification:** streaks, achievements, rewards.
+6. **Automatic capture:** bank alerts and wallet payments become transactions without typing. It comes after Stage 4; its order relative to Stage 5 will be decided later. See Automatic capture below.
 
 #### Quick capture (founder request, 2026-10-21)
 
@@ -140,21 +141,46 @@ Log several transactions from one sentence, such as "gasté 15.000 en el almuerz
 
 It is inspired by the "smart assistant" of an unrelated app. Capture design is not covered by a separate spec yet; each phase gets its own spec → plan.
 
-- **Phase 1, no AI (with Stage 3; web too):** a deterministic parser that runs on the device.
+- **Phase 1, text and voice, no AI (with Stage 3; web too):** a deterministic parser that runs on the device.
   - Amounts: "15.000", "15 mil", "15k", "15 lukas".
   - Separators: "y" and commas.
   - Relative dates: "hoy", "ayer".
   - Categories come from the user's own history through the name → category suggestions that already exist in the API (`GET /v1/transactions/suggestions`).
   - Free, private (the text never leaves the device) and works offline.
   - Needs a batch-create endpoint, or a client loop over `POST /v1/transactions` with one idempotency key per item, plus a batch undo.
-- **Phase 2, AI and voice (with Stage 4):**
-  - **AI fallback** for messy sentences ("pagué el almuerzo con Juan, yo puse la mitad").
-  - **Voice:** Web Speech API on the web, Android `SpeechRecognizer` on mobile, on-device where available.
+  - **Voice:** speech-to-text runs on the device, so it costs nothing. Android uses `SpeechRecognizer`, preferring the on-device recognizer (es-CO); the web uses the Web Speech API. The transcript goes through the same parser. Privacy copy names the platform's speech service when the device sends audio to it.
+  - **Widget microphone (Stage 3 v1):**
+    - The Android widget has a 🎤 button that opens the app already listening, with "¿En qué gastaste?". It shows the editable preview, and SAVE N stores the batch.
+    - Target: under 1 s from tap to listening, with no splash screen and no navigation.
+    - Also a Quick Settings tile with the same action.
+    - Expense or income comes from the sentence ("gasté…" or "me pagaron…"). If the sentence doesn't say, it defaults to expense.
+- **Phase 2, AI fallback (with Stage 4):**
+  - For messy sentences ("pagué el almuerzo con Juan, yo puse la mitad").
   - **Requirements:**
     - Opt-in.
-    - Honest privacy copy: the sentence is sent to an AI provider, and audio may be processed by the platform's speech service.
-    - A cheap model with per-user rate limits, so "free forever" holds.
+    - Honest privacy copy: the sentence is sent to an AI provider.
+    - A cheap model with a per-user monthly quota and a project-wide spend cap. Over the cap the app keeps working with the parser alone, so "free forever" holds.
   - Users who connect their own assistant through MCP get the same capability at no cost to the project. The in-app version is for people who don't.
+
+#### Automatic capture (founder request, 2026-10-21; Stage 6)
+
+Most people don't keep the habit of logging by hand, so the hard part is getting transactions in without typing. In Colombia, digital wallets are rarely used, while bank alerts from Bancolombia, Nequi, Davivienda and others are common.
+
+Every source produces text. That text goes through the same pipeline as quick capture: per-bank templates first, then the phrase parser, then the optional AI fallback.
+
+- **Review inbox.** Captured transactions are not saved blindly. They land as *to review*, with a nudge such as "Anoté −$370.000 en Transferencias, ¿bien?". One tap confirms it or changes the category. The merchant → category mapping is learned over time.
+- **De-duplication.** The same purchase can arrive from two sources, for example Apple Pay and the bank's SMS. Two captures are the same purchase when they have the same amount within a short time window.
+- **Open-source bank templates.** One parser per bank and message format, contributed by the community with invented fixtures. Real alerts are never committed. Bank formats change, so templates are versioned and tested.
+- **Android: notification listener.** A `NotificationListenerService` that the user enables in system settings reads bank-app and Google Wallet notifications and parses them on the device.
+  - Google Play treats notification access as sensitive: it must be core functionality, declared and disclosed. Verify against the current policy before release.
+  - Reading SMS is **not** allowed on Google Play for apps that aren't the default SMS handler, and expense tracking isn't an exception. Don't derive SMS content another way either.
+- **iPhone: Shortcuts.**
+  - Apple Pay payments come from the Wallet *Transaction* automation, which provides amount, merchant and card.
+  - Bank SMS and emails come from the Message and Email automations, filtered by sender.
+  - All of them call an "Add transaction" App Intent. One shareable shortcut per bank.
+  - iOS doesn't let apps read other apps' notifications.
+- **Email forwarding (any phone):** a per-user inbound address. The user forwards bank alert emails to it and the server parses them. The email passes through the server, which the privacy copy must say.
+- **Later, not free:** Colombia's open-finance regime and aggregators allow direct bank connections, but they charge per connection.
 
 ## 4. Data model (Stage 1)
 
