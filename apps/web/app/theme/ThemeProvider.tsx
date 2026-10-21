@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import {
+  DEFAULT_THEME_PREF,
   isThemePref,
   resolveTheme,
   THEME_STORAGE_KEY,
@@ -28,10 +29,11 @@ const DARK_QUERY = "(prefers-color-scheme: dark)";
 /**
  * Keeps the `data-theme` attribute in sync with the preference. The inline bootstrap script has
  * already set it before paint; this provider takes over after mount (reading the stored
- * preference then, so prerendered markup and hydration agree) and reacts to OS changes.
+ * preference then, so prerendered markup and hydration agree) and reacts to OS changes. With
+ * nothing stored the theme is night; only an explicit `auto` follows the OS.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [pref, setPrefState] = useState<ThemePref>("auto");
+  const [pref, setPrefState] = useState<ThemePref>(DEFAULT_THEME_PREF);
   const [prefersDark, setPrefersDark] = useState(true);
   const [ready, setReady] = useState(false);
 
@@ -40,7 +42,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(THEME_STORAGE_KEY);
       if (isThemePref(stored)) setPrefState(stored);
     } catch {
-      // Storage can be blocked; the default preference is fine.
+      // Storage can be blocked; the default (night) is fine.
     }
     const query = typeof matchMedia === "function" ? matchMedia(DARK_QUERY) : null;
     if (query) {

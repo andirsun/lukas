@@ -41,6 +41,9 @@ const LOCALES = [
       "Tus datos viajan cifrados y nunca los vendemos ni los compartimos con anunciantes.",
     faq: "Preguntas frecuentes",
     privacy: "Privacidad",
+    signIn: "Entrar",
+    toggleToDay: "Cambiar a modo día",
+    toggleToNight: "Cambiar a modo noche",
     other: { name: "English", path: "/en" },
     titlePart: "Tus lukas, por fin claras",
   },
@@ -72,6 +75,9 @@ const LOCALES = [
       "Your data travels encrypted, and we never sell it or share it with advertisers.",
     faq: "Frequently asked questions",
     privacy: "Privacy",
+    signIn: "Sign in",
+    toggleToDay: "Switch to day mode",
+    toggleToNight: "Switch to night mode",
     other: { name: "Español", path: "/" },
     titlePart: "Your money, finally clear",
   },
@@ -401,6 +407,40 @@ for (const l of LOCALES) {
       });
     });
 
+    test.describe(() => {
+      // The inline theme script alone (the app's scripts are blocked): with nothing stored the page
+      // is night even when the OS prefers light; only a stored "auto" follows the OS.
+      test.use({ javaScriptEnabled: true, colorScheme: "light" });
+
+      test("is night by default, even on a light OS", async ({ page }) => {
+        await page.route("**/assets/*.js", (route) => route.abort());
+        await page.goto(l.path);
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "night");
+      });
+
+      test("follows the OS when the stored preference is auto", async ({ page }) => {
+        await page.route("**/assets/*.js", (route) => route.abort());
+        await page.addInitScript(() => localStorage.setItem("lukas.theme", "auto"));
+        await page.goto(l.path);
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "day");
+      });
+    });
+
+    test("the header has the day/night switch next to sign-in", async ({ page }) => {
+      await page.goto(l.path);
+      const nav = page.getByRole("banner").getByRole("navigation");
+      const toggle = nav.getByRole("button", { name: l.toggleToDay });
+      await expect(toggle).toBeVisible();
+      await expect(toggle).not.toHaveAttribute("aria-pressed");
+      const signIn = nav.getByRole("link", { name: l.signIn });
+      const [toggleBox, signInBox] = [await toggle.boundingBox(), await signIn.boundingBox()];
+      expect(toggleBox?.width).toBeGreaterThanOrEqual(44);
+      expect(toggleBox?.height).toBeGreaterThanOrEqual(44);
+      // Same row, to the right of "Sign in".
+      expect(Math.abs((toggleBox?.y ?? 0) - (signInBox?.y ?? 0))).toBeLessThan(24);
+      expect(toggleBox?.x).toBeGreaterThan((signInBox?.x ?? 0) + (signInBox?.width ?? 0));
+    });
+
     test("fits the viewport and keeps every target at 44px", async ({ page }) => {
       await page.goto(l.path);
       // `.lk-landing` clips horizontal overflow, so the document never scrolls sideways: check
@@ -471,11 +511,37 @@ test.describe("landing with JavaScript", () => {
 
   for (const l of LOCALES) {
     test(`is accessible in the day theme (${l.locale})`, async ({ page }) => {
-      await page.emulateMedia({ colorScheme: "light" });
+      // Night is the default: day comes from the stored choice (what the switch saves).
+      await page.addInitScript(() => localStorage.setItem("lukas.theme", "day"));
       await page.goto(l.path);
       await expect(page.locator("html")).toHaveAttribute("data-theme", "day");
+      await expect(
+        page.getByRole("banner").getByRole("button", { name: l.toggleToNight }),
+      ).toBeVisible();
       await expectNoA11yViolations(page);
       await expectHeroContrast(page);
+    });
+
+    test(`the switch changes the theme and it persists after a reload (${l.locale})`, async ({
+      page,
+    }) => {
+      await page.goto(l.path);
+      await page.waitForLoadState("networkidle");
+      const html = page.locator("html");
+      await expect(html).toHaveAttribute("data-theme", "night");
+
+      const header = page.getByRole("banner");
+      await header.getByRole("button", { name: l.toggleToDay }).click();
+      await expect(html).toHaveAttribute("data-theme", "day");
+      expect(await page.evaluate(() => localStorage.getItem("lukas.theme"))).toBe("day");
+
+      // The bootstrap script applies it before paint; the switch then offers the way back.
+      await page.reload();
+      await expect(html).toHaveAttribute("data-theme", "day");
+      await page.waitForLoadState("networkidle");
+      await header.getByRole("button", { name: l.toggleToNight }).click();
+      await expect(html).toHaveAttribute("data-theme", "night");
+      expect(await page.evaluate(() => localStorage.getItem("lukas.theme"))).toBe("night");
     });
   }
 });

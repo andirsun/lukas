@@ -44,6 +44,8 @@ export const Page: Story = {
       "href",
       "/sign-in?lang=es",
     );
+    // The day/night switch sits next to "Entrar", in the header.
+    await expect(canvas.getByRole("button", { name: "Cambiar a modo día" })).toBeVisible();
   },
 };
 

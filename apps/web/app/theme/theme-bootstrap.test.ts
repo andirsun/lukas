@@ -35,19 +35,27 @@ describe("THEME_BOOTSTRAP_SCRIPT (theme flash)", () => {
     expect(run({ stored: "night", prefersDark: false }).theme).toBe("night");
   });
 
-  it("follows the OS for auto and for a missing preference", () => {
-    expect(run({ stored: "auto", prefersDark: true }).theme).toBe("night");
-    expect(run({ stored: "auto", prefersDark: false }).theme).toBe("day");
-    expect(run({ stored: null, prefersDark: false }).theme).toBe("day");
+  it("defaults to night when nothing is stored, whatever the OS prefers", () => {
+    expect(run({ stored: null, prefersDark: false }).theme).toBe("night");
     expect(run({ stored: null, prefersDark: true }).theme).toBe("night");
   });
 
-  it("ignores an unknown stored value", () => {
+  it("follows the OS only for a stored auto", () => {
+    expect(run({ stored: "auto", prefersDark: true }).theme).toBe("night");
+    expect(run({ stored: "auto", prefersDark: false }).theme).toBe("day");
+  });
+
+  it("falls back to night for a stored auto without matchMedia", () => {
+    expect(run({ stored: "auto", noMatchMedia: true }).theme).toBe("night");
+  });
+
+  it("falls back to night for an unknown stored value, even on a light OS", () => {
+    expect(run({ stored: "purple", prefersDark: false }).theme).toBe("night");
     expect(run({ stored: "purple", prefersDark: true }).theme).toBe("night");
   });
 
-  it("falls back to the OS preference when localStorage throws", () => {
-    expect(run({ storageThrows: true, prefersDark: false }).theme).toBe("day");
+  it("falls back to night when localStorage throws, even on a light OS", () => {
+    expect(run({ storageThrows: true, prefersDark: false }).theme).toBe("night");
     expect(run({ storageThrows: true, prefersDark: true }).theme).toBe("night");
   });
 

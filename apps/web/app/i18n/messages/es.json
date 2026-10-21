@@ -18,7 +18,9 @@
     "label": "Tema",
     "auto": "Automático",
     "night": "Noche",
-    "day": "Día"
+    "day": "Día",
+    "switch_to_day": "Cambiar a modo día",
+    "switch_to_night": "Cambiar a modo noche"
   },
   "language": {
     "label": "Idioma",

@@ -2,13 +2,14 @@ import type { Decorator, Preview } from "@storybook/react-vite";
 import { MotionConfig } from "motion/react";
 import type { Locale } from "../app/i18n/format.ts";
 import { IntlProvider } from "../app/i18n/IntlProvider.tsx";
-import type { Theme } from "../app/theme/theme-bootstrap.ts";
+import { ThemeProvider } from "../app/theme/ThemeProvider.tsx";
+import { THEME_STORAGE_KEY, type Theme } from "../app/theme/theme-bootstrap.ts";
 import "../app/styles/fonts.ts";
 import "../app/styles/app.css";
 
 /**
  * Every story renders in the app's IntlProvider with the toolbar's locale, under the toolbar's
- * theme. Stories pin either with `globals: { theme: "day", locale: "en" }`, so the a11y checks
+ * theme (inside the app's ThemeProvider). Stories pin either with `globals: { theme: "day", locale: "en" }`, so the a11y checks
  * (contrast included) run in both themes. `parameters: { reducedMotion: true }` renders a story as
  * if the person asked for reduced motion (Motion's `MotionConfig reducedMotion="always"`).
  */
@@ -17,11 +18,20 @@ const withThemeAndLocale: Decorator = (Story, context) => {
   const locale: Locale = context.globals.locale === "en" ? "en" : "es";
   // Set during render (not in an effect) so the first paint and the a11y run see the theme.
   document.documentElement.dataset.theme = theme;
+  // The app's ThemeProvider (which components such as ThemeToggle read) starts from the stored
+  // preference, so the toolbar's theme is stored first; the key remounts it when the toolbar changes.
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // Blocked storage: the provider falls back to night.
+  }
   const story = (
     <IntlProvider locale={locale}>
-      <div className="p-(--space-4)">
-        <Story />
-      </div>
+      <ThemeProvider key={theme}>
+        <div className="p-(--space-4)">
+          <Story />
+        </div>
+      </ThemeProvider>
     </IntlProvider>
   );
   return context.parameters.reducedMotion ? (

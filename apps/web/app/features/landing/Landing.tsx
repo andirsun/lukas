@@ -5,6 +5,7 @@ import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { Lukas } from "../../lukas/Lukas.tsx";
 import { Lukas3DBoundary, useLukas3DReady } from "../../lukas/lukas3d-support.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
+import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
 import { Faq } from "./Faq.tsx";
 import { Footer } from "./Footer.tsx";
 import { Hero } from "./Hero.tsx";
@@ -35,6 +36,7 @@ function Header() {
           <PressLink to={signInHref(locale)} variant="secondary" size="sm">
             {t("sign_in")}
           </PressLink>
+          <ThemeToggle />
         </nav>
       </div>
     </header>
