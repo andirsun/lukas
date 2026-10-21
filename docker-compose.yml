@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: lukas
+      POSTGRES_PASSWORD: lukas
+      POSTGRES_DB: lukas
+    ports:
+      - "5433:5432" # 5433 on the host: 5432 is often taken by a local Postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lukas -d lukas"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1026:1025" # SMTP (1026 on the host: 1025 is often taken, e.g. by Proton Mail Bridge)
+      - "8025:8025" # Web UI
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://lukas_app:lukas_app@postgres:5432/lukas
+      DATABASE_ADMIN_URL: postgres://lukas:lukas@postgres:5432/lukas
+      SMTP_URL: smtp://mailpit:1025
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+volumes:
+  postgres-data:

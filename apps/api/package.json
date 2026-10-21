@@ -1,0 +1,30 @@
+{
+  "name": "@lukas/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "dev": "tsx watch --env-file-if-exists=../../.env src/server.ts",
+    "start": "tsx --env-file-if-exists=../../.env src/server.ts",
+    "seed": "tsx --env-file-if-exists=../../.env src/scripts/seed.ts",
+    "auth:generate": "auth generate --config src/scripts/auth-cli.ts --adapter drizzle --dialect postgresql --output ../../packages/db/src/schema/auth.ts -y"
+  },
+  "dependencies": {
+    "@better-auth/oauth-provider": "^1.7.11",
+    "@better-auth/passkey": "^1.7.11",
+    "@hono/node-server": "^2.1.5",
+    "@hono/zod-openapi": "^1.6.3",
+    "@lukas/core": "workspace:*",
+    "@lukas/db": "workspace:*",
+    "@lukas/importers": "workspace:*",
+    "better-auth": "^1.7.11",
+    "hono": "^4.13.13",
+    "nodemailer": "^7.0.13",
+    "resend": "^6.34.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^8.0.2"
+  }
+}

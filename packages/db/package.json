@@ -1,0 +1,25 @@
+{
+  "name": "@lukas/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/testing.ts",
+    "./orm": "./src/orm.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "generate": "drizzle-kit generate",
+    "migrate": "tsx src/scripts/migrate.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "postgres": "^3.4.9",
+    "uuid": "^13.0.2"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^12.2.1",
+    "drizzle-kit": "^0.31.11"
+  }
+}
