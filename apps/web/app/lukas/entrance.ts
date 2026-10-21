@@ -1,7 +1,7 @@
 /**
  * Lukas' entrance on the landing page, once per browser session: he rolls in on his edge (limbs
  * tucked in), settles with a little bounce facing the viewer, pops his arms and legs out, and
- * waves. Pure timing here; Lukas3D applies it.
+ * waves. Pure timing here; `entranceFrame` (traveling.ts) turns it into the 2.5D Lukas' transforms.
  */
 
 /** Phase lengths in ms (≈2 s in all). */

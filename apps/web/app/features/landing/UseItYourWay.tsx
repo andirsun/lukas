@@ -25,7 +25,7 @@ export function UseItYourWay() {
     <section id="ways" className="lk-landing-section" aria-labelledby="ways-title">
       <div className="lk-landing-section-head">
         <h2 id="ways-title">{t("title")}</h2>
-        <LukasSpot id="ways" pose="point" />
+        <LukasSpot id="ways" pose="point" mood="happy" />
       </div>
       <ul className="lk-landing-cards is-ways">
         <li className="lk-landing-card is-live">

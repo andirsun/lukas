@@ -32,17 +32,23 @@ export interface LukasMoodArt {
   treatment: "none" | "shiver" | "hop";
 }
 
+/** The founder's sheets: 4×2 frames each, 500px cells. Each loop is timed by eye for its mood. */
 const WAVE: LukasSprite = { src: "/lukas/wave.webp", columns: 4, rows: 2, loopMs: 1200 };
+/** Worried wrings his hands and sweats: slower, so it reads as fretting, not panic. */
+const WORRIED: LukasSprite = { src: "/lukas/worried.webp", columns: 4, rows: 2, loopMs: 2000 };
+/** Celebrating jumps with fists up among sparkles: quicker and bouncier. */
+const CELEBRATE: LukasSprite = { src: "/lukas/celebrate.webp", columns: 4, rows: 2, loopMs: 1000 };
 
 /**
- * The art per mood. Only the happy wave exists as a sheet so far; worried and celebrating reuse
- * its first frame with a CSS treatment. When their sheets arrive, point `sprite` at them, set
- * `play: true` and `treatment: "none"`: callers don't change.
+ * The art per mood: every mood plays its own sheet. Under reduced motion each shows one still
+ * frame: happy the first (a soft smile), worried frame 3 (hands clasped, a sweat drop), celebrating
+ * frame 4 (fists up among sparkles). The `treatment` stays the seam for a future mood that has no
+ * sheet yet: point it at a sheet's frame with `play: false` and a treatment; callers don't change.
  */
 export const LUKAS_ART: Record<LukasMood, LukasMoodArt> = {
   happy: { sprite: WAVE, play: true, frame: 0, stillFrame: 0, treatment: "none" },
-  worried: { sprite: WAVE, play: false, frame: 0, stillFrame: 0, treatment: "shiver" },
-  celebrating: { sprite: WAVE, play: false, frame: 0, stillFrame: 4, treatment: "hop" },
+  worried: { sprite: WORRIED, play: true, frame: 0, stillFrame: 3, treatment: "none" },
+  celebrating: { sprite: CELEBRATE, play: true, frame: 0, stillFrame: 4, treatment: "none" },
 };
 
 export interface LukasProps {
@@ -97,9 +103,9 @@ const SPARKLES = [
 ] as const;
 
 /**
- * Lukas, the gold coin, in 2D. Happy waves (the founder's 4×2 sprite sheet); worried shivers with
- * a sweat drop; celebrating hops among sparkles. Under reduced motion every mood is a still frame
- * (the treatment's drop or sparkles stay, unmoving). Named by its mood unless `decorative`.
+ * Lukas, the gold coin, in 2D, drawn from the founder's sprite sheets: happy waves, worried wrings
+ * his hands, celebrating jumps among sparkles. Under reduced motion every mood is a still frame.
+ * Art with a CSS `treatment` (shiver, hop) adds it on top. Named by its mood unless `decorative`.
  */
 export function Lukas({ mood, size = 96, decorative = false, art }: LukasProps) {
   const t = useTranslations("mascot");

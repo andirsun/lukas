@@ -41,7 +41,7 @@ export function HowItWorks() {
     <section id="how" className="lk-landing-section" aria-labelledby="how-title">
       <div className="lk-landing-section-head">
         <h2 id="how-title">{t("title")}</h2>
-        <LukasSpot id="how" pose="carry" />
+        <LukasSpot id="how" pose="carry" mood="worried" />
       </div>
       <ul className="lk-landing-cards is-how">
         <Step

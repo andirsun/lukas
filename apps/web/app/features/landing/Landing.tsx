@@ -1,10 +1,9 @@
-import { lazy, Suspense } from "react";
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
-import { useLukas3DReady } from "../../lukas/experimental/lukas3d-support.tsx";
 import { Lukas } from "../../lukas/Lukas.tsx";
-import { LiveLukasBoundary } from "../../lukas/live-support.tsx";
+import { LiveLukasBoundary, useLiveLukasReady } from "../../lukas/live-support.tsx";
+import { TravelingLukas as TravelingLukas2D } from "../../lukas/TravelingLukas.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
 import { Faq } from "./Faq.tsx";
@@ -44,22 +43,19 @@ function Header() {
   );
 }
 
-/** three.js and the model: their own chunk, fetched only when `useLukas3DReady` says so. */
-const Lukas3D = lazy(() => import("../../lukas/experimental/Lukas3D.tsx"));
-
 /**
- * The 3D Lukas, loaded once the page has rendered and the browser is idle. He travels over the
- * page's Lukas spots (hero → ways → how it works → FAQ → closing). Until then, and whenever he
- * can't or shouldn't move, the prerendered 2D Lukas stays.
+ * The live, 2.5D Lukas (the founder's sprite sheets plus CSS depth), mounted once the page has
+ * loaded and the browser is idle. He stands on the page's Lukas spots (hero → ways → how it works
+ * → FAQ → closing) in each spot's mood. Until then, under reduced motion and without JavaScript,
+ * the prerendered 2D Lukas in the hero and the closing stays. (The 3D Lukas is an experiment in
+ * `app/lukas/experimental/` and never loads here.)
  */
 function TravelingLukas() {
-  const ready = useLukas3DReady();
+  const ready = useLiveLukasReady();
   if (!ready) return null;
   return (
     <LiveLukasBoundary>
-      <Suspense fallback={null}>
-        <Lukas3D />
-      </Suspense>
+      <TravelingLukas2D />
     </LiveLukasBoundary>
   );
 }
@@ -75,6 +71,7 @@ function Closing() {
           className="lk-landing-spot is-closing"
           data-lukas-spot="closing"
           data-lukas-pose="celebrate"
+          data-lukas-mood="celebrating"
           aria-hidden="true"
         >
           <Lukas mood="celebrating" size="100%" decorative />

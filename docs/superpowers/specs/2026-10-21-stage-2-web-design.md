@@ -15,7 +15,7 @@ Ship the first product people can use: a public landing page and a web app that 
 
 1. The author signs up, imports the Budge history and uses the web app on the phone daily instead of Budge.
 2. Logging an expense takes under 5 seconds from the home screen and ends in a celebration.
-3. The landing page is indexable in Spanish and English and its text is visible before any 3D or JavaScript-heavy content loads.
+3. The landing page is indexable in Spanish and English and its text is visible before any animated or JavaScript-heavy content loads.
 4. Everything works in Spanish (default) and English, in night and day themes, on phone and desktop widths.
 
 ### Out of scope (this stage)
@@ -25,7 +25,7 @@ Ship the first product people can use: a public landing page and a web app that 
 - Android app — shown as "soon".
 - AI-generated insights (rule-based messages only; AI comes later as an opt-in).
 - Streaks, levels and achievements (Stage 5).
-- The final mascot artwork and production 3D model (a code-built placeholder ships; see §5.3).
+- More mascot artwork (further moods and poses beyond the founder's three sprite sheets; see §5.3).
 
 ## 2. Product
 
@@ -58,7 +58,7 @@ A signed-out visit to `/app/*` goes to `/sign-in` and returns to the original ro
 Reference: `docs/design/stage-2-mockups/landing.html`.
 
 - **Hero** (revised 2026-10-21 by the founder): a tilted handwritten annotation **"¡Gratis, y siempre lo será!"**, the headline **"Tus lukas, por fin claras."** with "lukas" on a gold marker highlight (English: "Your money, finally clear."), the lead **"Lukas es tu presupuesto, y te va a dar gusto cuidarlo."** plus a short description, and one primary action: **Empieza ahora / Get started** → `/sign-in`. Under it: "Gratis para siempre · Código abierto · Sin contraseñas" (open source links to the GitHub repo). Lukas is never described as a game, the app is free forever and open source, the mobile app is Android and iOS, and imports come from other apps (Budge today, Buddy and others soon). Privacy copy only claims what is true today.
-- **Lukas 3D** (§5.3) beside or above the hero: eyes and body follow the cursor (desktop) or touch / device tilt (phone, where allowed); the character travels with the scroll, changing pose per section; hovering or tapping makes it jump or spin.
+- **Lukas in 2.5D** (§5.3, revised 2026-10-21: the founder found the 3D model not tender enough) beside or above the hero: drawn from the founder's hand-made sprite sheets with CSS depth on top (a ground shadow, an idle bob, a tilt of up to ±12° toward the pointer on desktop). Once per session he rolls in from the side away from the text, settles, unfolds and waves. He stands on one spot per section in that spot's mood (happy in the hero, "use it your way" and the FAQ; worried in "how it works", reacting to the budget; celebrating next to the final call to action) and moves between spots by turning edge-on like a coin and fading, so he never passes over text; hovering or tapping makes him hop.
 - **"Úsalo como prefieras / Use it your way":** three cards — Web (active, "Start"), Android app ("soon"), With your AI — Claude / ChatGPT ("soon").
 - Sections explaining the product (what you spend on, budgets that warn you, import from Budge), an FAQ, and a footer with language switch and the privacy policy.
 
@@ -148,7 +148,7 @@ One `feedback` module maps semantic events to animation, sound and vibration:
 | `undo` | Undo |
 
 - Animation via Motion; short sounds (mutable in settings); vibration via the Vibration API where available (Android browsers; not available in iOS Safari).
-- `prefers-reduced-motion`: animations are reduced to fades and `Lukas3D` is replaced by a static image.
+- `prefers-reduced-motion`: animations are reduced to fades, and the landing's traveling Lukas is replaced by the static, prerendered sprites.
 
 ## 4. Data and API
 
@@ -179,7 +179,7 @@ One `feedback` module maps semantic events to animation, sound and vibration:
 ### 5.1 Stack
 
 - `apps/web`: React 19, **React Router 7** in framework mode with `ssr: false` and `prerender: ["/", "/en"]` — the landing pages are static HTML at build time; the app is a client-rendered SPA. Deployed as static files.
-- TypeScript, Vite, Tailwind CSS (tokens from §3.1 as CSS variables), Motion, TanStack Query, Recharts, i18n with ICU messages (`es` default, `en`), React Three Fiber + drei for `Lukas3D`.
+- TypeScript, Vite, Tailwind CSS (tokens from §3.1 as CSS variables), Motion, TanStack Query, Recharts, i18n with ICU messages (`es` default, `en`), React Three Fiber + drei for the experimental `Lukas3D` (not used by the landing).
 
 ### 5.2 Layout
 
@@ -189,7 +189,7 @@ apps/web/
 │   ├── routes/          # landing (/ and /en), sign-in, auth/verify, welcome/*, app/*
 │   ├── ui/              # design-system components (§3.2)
 │   ├── features/        # home, add-transaction, insights, onboarding, settings…
-│   ├── lukas/           # Lukas (2D) and Lukas3D
+│   ├── lukas/           # Lukas (2D sprites), the landing's TravelingLukas, experimental/ (3D)
 │   ├── feedback/        # semantic feedback events (§3.3)
 │   ├── i18n/            # es.json, en.json, formatting helpers
 │   └── api/             # generated types, client, query hooks
@@ -200,9 +200,10 @@ apps/web/
 ### 5.3 Lukas (mascot)
 
 - Concept: `docs/brand/lukas-mascot-concept.webp` — a chubby 3D gold coin with a thick ridged edge, big eyes, rosy cheeks, dark purple arms and legs, pink sneakers.
-- **`Lukas3D` (landing):** built procedurally in three.js for v1 (coin with edge and rim, eyes with pupils, cheeks, simple limbs) with the concept's colors. Behaviors: idle bob and blink; pupils and slight body rotation follow the pointer; on touch devices it follows the last touch and, where permitted, device orientation; scroll-driven choreography (moves alongside sections, changes pose per section, celebrates next to the final call to action); hover/tap → jump or spin. Loaded lazily after the hero text renders; replaced by a static image under `prefers-reduced-motion`, without WebGL, or on low-memory devices.
-- **`Lukas` (app):** a lightweight 2D rendering of the same character with `mood` = `happy` | `worried` | `celebrating`.
-- Both accept replaceable assets (a GLB model for `Lukas3D`; images or a Rive file for `Lukas`) so the final artwork drops in without code changes elsewhere.
+- **`TravelingLukas` (landing, 2.5D; revised 2026-10-21):** the founder rejected the 3D model ("doesn't feel tender"), so the landing draws Lukas from the founder's sprite sheets (`public/lukas/wave.webp`, `worried.webp`, `celebrate.webp`: 4×2 frames each) with CSS depth on top: a soft ground shadow that shrinks as he rises, an idle bob, a `perspective` tilt of up to ±12° toward the pointer (fine pointers only), and a hop with squash and stretch on hover or tap. One sprite in an `aria-hidden` overlay (no layout shift; only his body takes the pointer) stands on the page's Lukas spots (`data-lukas-spot`), each with a pose and a mood (`data-lukas-mood`): hero → happy (waving), ways → happy, how it works → **worried** (he reacts to the budget), FAQ → happy, closing → **celebrating**; moods cross-fade. Between spots he turns edge-on like a coin and fades out, then turns back in on the next spot, so he never passes over text. Once per session (with the hero in view) he rolls in from the side away from the text, tucked into his coin, settles with a bounce, unfolds and waves. Mounted after the page has loaded and is idle, with no WebGL and no extra chunk; under `prefers-reduced-motion` and without JavaScript the prerendered sprites stay.
+- **3D Lukas (experiment):** the procedural three.js coin (and GLB loader) from the first iteration is kept in `app/lukas/experimental/` with its Storybook story ("Experimental/Lukas 3D"). Nothing in the app's features or routes imports it (a unit test checks), so three.js never reaches the landing build.
+- **`Lukas` (app):** a lightweight 2D rendering of the same character with `mood` = `happy` | `worried` | `celebrating`, each mood playing its own sprite sheet (a still frame under reduced motion).
+- Art is replaceable: a mood's sheet is data (`LUKAS_ART`), and a future mood without a sheet can reuse a frame with a CSS treatment (`shiver`, `hop`), so new artwork drops in without code changes elsewhere.
 
 ## 6. Testing and quality
 
@@ -210,5 +211,5 @@ apps/web/
 - **Storybook (with the Vitest addon):** a story per component in every state, in night and day themes and both languages; stories run as browser tests, including interactions (add-transaction sheet: type amount, pick a shortcut that fills name and category, save, undo; marking a pending transaction paid). Accessibility checked with the a11y addon.
 - **Playwright (against the real API via Docker Compose):** sign-up with the code read from Mailpit → onboarding with the sample Budge CSV → add an expense and see "remaining" drop → switch month → switch language and theme. Each flow runs at phone and desktop viewports; axe checks on every page.
 - **API:** integration and cross-user isolation tests for the suggestions and cost-of-living endpoints, and for the onboarding flag.
-- **Performance:** landing text visible without JavaScript; initial JavaScript under 300 KB gzipped excluding the lazily loaded 3D bundle.
+- **Performance:** landing text visible without JavaScript; initial JavaScript under 300 KB gzipped; the landing ships no three.js (the 3D Lukas is an experiment, never built into the site).
 - **CI:** web lint, typecheck, Vitest, Storybook tests and Playwright (Docker on the runner) are added to the existing workflow.

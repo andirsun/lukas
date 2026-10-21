@@ -68,47 +68,63 @@ export const Happy: Story = {
   },
 };
 
-/** Worried: frame 1 (no wave) with a small side-to-side shiver and a sweat drop. */
+/** The stepping of a playing sheet: its loop, half of it per row, 4 columns and 2 rows. */
+async function expectPlaying(lukas: HTMLElement, src: string, loopMs: number) {
+  const sheet = sprite(lukas);
+  await expect(getComputedStyle(sheet).backgroundImage).toContain(src);
+  await expect(getComputedStyle(sheet).backgroundSize).toBe("400% 200%");
+  await expect(await loads(src)).toEqual({ width: 2000, height: 1000 });
+  await expect(animationNames(lukas)).toEqual(["lk-sprite-x", "lk-sprite-y"]);
+  const [x, y] = sheet.getAnimations() as CSSAnimation[];
+  await expect(x?.effect?.getComputedTiming().duration).toBe(loopMs / 2);
+  await expect(y?.effect?.getComputedTiming().duration).toBe(loopMs);
+  // Each mood has its own sheet now: no CSS stand-ins.
+  await expect(lukas.querySelector(".lk-lukas-sweat")).toBeNull();
+  await expect(lukas.querySelectorAll(".lk-lukas-sparkle")).toHaveLength(0);
+}
+
+/** Worried: his own sheet, wringing his hands with a sweat drop; a slower 2s loop. */
 export const Worried: Story = {
   args: { mood: "worried" },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const lukas = canvas.getByRole("img", { name: "Lukas, preocupado" });
-    const sheet = sprite(lukas);
-    await expect(getComputedStyle(sheet).backgroundPosition).toBe("0% 0%");
-    await expect(sheet.getAnimations()).toHaveLength(0);
-    await expect(lukas.querySelector(".lk-lukas-sweat")).not.toBeNull();
-    await expect(animationNames(lukas)).toEqual(["lk-lukas-shiver"]);
-    // Timed by the `--shiver` token (1600ms).
-    const [shiver] = lukas.getAnimations({ subtree: true });
-    await expect(shiver?.effect?.getComputedTiming().duration).toBe(1600);
+    const lukas = within(canvasElement).getByRole("img", { name: "Lukas, preocupado" });
+    await expectPlaying(lukas, "/lukas/worried.webp", 2000);
   },
 };
 
-/** Celebrating: a hop with squash and stretch, and sparkles in the celebration colors. */
+/** Celebrating: his own sheet, jumping with fists up among sparkles; a bouncier 1s loop. */
 export const Celebrating: Story = {
   args: { mood: "celebrating" },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const lukas = canvas.getByRole("img", { name: "Lukas, celebrando" });
-    await expect(getComputedStyle(sprite(lukas)).backgroundPosition).toBe("0% 0%");
-    const sparkles = lukas.querySelectorAll(".lk-lukas-sparkle");
-    await expect(sparkles.length).toBeGreaterThanOrEqual(3);
-    await expect(animationNames(lukas)).toContain("lk-lukas-hop");
-    await expect(animationNames(lukas)).toContain("lk-lukas-twinkle");
-    // Each twinkle lasts `--celebrate` and starts a quarter of it after the previous one.
-    const twinkles = [...sparkles].map((sparkle) => sparkle.getAnimations()[0]);
-    await expect(twinkles.map((a) => a?.effect?.getComputedTiming().duration)).toEqual([
-      1200, 1200, 1200, 1200,
-    ]);
-    await expect(
-      twinkles.map((a) => Math.round(a?.effect?.getComputedTiming().delay ?? -1)),
-    ).toEqual([0, 300, 600, 900]);
-    await expect(lukas.querySelector(".lk-lukas-sweat")).toBeNull();
+    const lukas = within(canvasElement).getByRole("img", { name: "Lukas, celebrando" });
+    await expectPlaying(lukas, "/lukas/celebrate.webp", 1000);
   },
 };
 
-/** Reduced motion: still frames only (frame 1 happy and worried, frame 5 celebrating). */
+/** Every mood side by side, each playing its own sheet. */
+export const Moods: Story = {
+  render: (args) => (
+    <div className="lk-row-flex">
+      <Lukas {...args} mood="happy" />
+      <Lukas {...args} mood="worried" />
+      <Lukas {...args} mood="celebrating" />
+    </div>
+  ),
+  args: { size: 140 },
+  play: async ({ canvasElement }) => {
+    const [happy, worried, celebrating] = within(canvasElement).getAllByRole(
+      "img",
+    ) as HTMLElement[];
+    await expectPlaying(happy as HTMLElement, "/lukas/wave.webp", 1200);
+    await expectPlaying(worried as HTMLElement, "/lukas/worried.webp", 2000);
+    await expectPlaying(celebrating as HTMLElement, "/lukas/celebrate.webp", 1000);
+  },
+};
+
+/**
+ * Reduced motion: one still frame per sheet. Happy frame 0 (a soft smile), worried frame 3 (hands
+ * clasped, a sweat drop), celebrating frame 4 (fists up among sparkles).
+ */
 export const ReducedMotion: Story = {
   parameters: { reducedMotion: true },
   render: (args) => (
@@ -125,17 +141,15 @@ export const ReducedMotion: Story = {
     for (const lukas of [happy, worried, celebrating] as HTMLElement[]) {
       await expect(lukas.getAnimations({ subtree: true })).toHaveLength(0);
     }
-    await expect(getComputedStyle(sprite(happy as HTMLElement)).backgroundPosition).toBe("0% 0%");
-    await expect(getComputedStyle(sprite(worried as HTMLElement)).backgroundPosition).toBe("0% 0%");
-    // Frame 5 of the 4×2 sheet: first column, second row.
-    await expect(getComputedStyle(sprite(celebrating as HTMLElement)).backgroundPosition).toBe(
-      "0% 100%",
-    );
-    // The mood still reads without motion.
-    await expect((worried as HTMLElement).querySelector(".lk-lukas-sweat")).not.toBeNull();
-    await expect(
-      (celebrating as HTMLElement).querySelectorAll(".lk-lukas-sparkle").length,
-    ).toBeGreaterThan(0);
+    const still = (lukas: HTMLElement | undefined) => {
+      const style = getComputedStyle(sprite(lukas as HTMLElement));
+      return [style.backgroundImage.match(/\/lukas\/\w+\.webp/)?.[0], style.backgroundPosition];
+    };
+    await expect(still(happy)).toEqual(["/lukas/wave.webp", "0% 0%"]);
+    // Frame 3: last column, first row.
+    await expect(still(worried)).toEqual(["/lukas/worried.webp", "100% 0%"]);
+    // Frame 4: first column, second row.
+    await expect(still(celebrating)).toEqual(["/lukas/celebrate.webp", "0% 100%"]);
   },
 };
 
@@ -150,26 +164,53 @@ export const Decorative: Story = {
 };
 
 /**
- * Final per-mood art drops in through `art` (or `LUKAS_ART`) without changing callers: here the
- * worried mood plays its own sheet and needs no CSS treatment.
+ * The `treatment` seam, for a future mood that has no sheet yet: a still frame of an existing sheet
+ * plus a CSS treatment. `shiver` shakes him side to side with a sweat drop.
  */
-export const CustomArt: Story = {
+export const TreatmentShiver: Story = {
   args: {
     mood: "worried",
     art: {
-      sprite: { ...LUKAS_ART.happy.sprite, loopMs: 2400 },
-      play: true,
+      sprite: LUKAS_ART.happy.sprite,
+      play: false,
       frame: 0,
-      stillFrame: 7,
-      treatment: "none",
+      stillFrame: 0,
+      treatment: "shiver",
     },
   },
   play: async ({ canvasElement }) => {
     const lukas = within(canvasElement).getByRole("img", { name: "Lukas, preocupado" });
-    await expect(lukas.querySelector(".lk-lukas-sweat")).toBeNull();
-    await expect(animationNames(lukas)).toEqual(["lk-sprite-x", "lk-sprite-y"]);
-    const [, y] = sprite(lukas).getAnimations();
-    await expect(y?.effect?.getComputedTiming().duration).toBe(2400);
+    const sheet = sprite(lukas);
+    await expect(getComputedStyle(sheet).backgroundPosition).toBe("0% 0%");
+    await expect(sheet.getAnimations()).toHaveLength(0);
+    await expect(lukas.querySelector(".lk-lukas-sweat")).not.toBeNull();
+    await expect(animationNames(lukas)).toEqual(["lk-lukas-shiver"]);
+    // Timed by the `--shiver` token (1600ms).
+    const [shiver] = lukas.getAnimations({ subtree: true });
+    await expect(shiver?.effect?.getComputedTiming().duration).toBe(1600);
+  },
+};
+
+/** The `hop` treatment: a hop with squash and stretch among sparkles that twinkle in turn. */
+export const TreatmentHop: Story = {
+  args: {
+    mood: "celebrating",
+    art: { sprite: LUKAS_ART.happy.sprite, play: false, frame: 0, stillFrame: 4, treatment: "hop" },
+  },
+  play: async ({ canvasElement }) => {
+    const lukas = within(canvasElement).getByRole("img", { name: "Lukas, celebrando" });
+    const sparkles = lukas.querySelectorAll(".lk-lukas-sparkle");
+    await expect(sparkles.length).toBeGreaterThanOrEqual(3);
+    await expect(animationNames(lukas)).toContain("lk-lukas-hop");
+    await expect(animationNames(lukas)).toContain("lk-lukas-twinkle");
+    // Each twinkle lasts `--celebrate` and starts a quarter of it after the previous one.
+    const twinkles = [...sparkles].map((sparkle) => sparkle.getAnimations()[0]);
+    await expect(twinkles.map((a) => a?.effect?.getComputedTiming().duration)).toEqual([
+      1200, 1200, 1200, 1200,
+    ]);
+    await expect(
+      twinkles.map((a) => Math.round(a?.effect?.getComputedTiming().delay ?? -1)),
+    ).toEqual([0, 300, 600, 900]);
   },
 };
 

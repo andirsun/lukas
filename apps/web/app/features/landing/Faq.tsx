@@ -16,7 +16,7 @@ export function Faq() {
     <section id="faq" className="lk-landing-section" aria-labelledby="faq-title">
       <div className="lk-landing-section-head">
         <h2 id="faq-title">{t("title")}</h2>
-        <LukasSpot id="faq" pose="point" />
+        <LukasSpot id="faq" pose="point" mood="happy" />
       </div>
       <ul className="lk-landing-faq">
         {QUESTIONS.map((key) => (

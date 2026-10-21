@@ -4,7 +4,7 @@
  */
 @layer components {
   .lk-landing {
-    /* The 3D Lukas' layer is positioned in this box's coordinates. */
+    /* The traveling Lukas' layer is positioned in this box's coordinates. */
     position: relative;
     min-height: 100dvh;
     overflow-x: clip;
@@ -38,9 +38,9 @@
   }
 
   /*
-   * Lukas spots: where the 3D Lukas stands per section (empty boxes without him). Section spots
-   * sit at the end of the heading row, his feet on the content's top edge; the heading keeps clear
-   * of them. Once he is live, the 2D Lukas in a spot (hero, closing) steps aside.
+   * Lukas spots: where the traveling Lukas stands per section (empty boxes without him). Section
+   * spots sit at the end of the heading row, his feet on the content's top edge; the heading keeps
+   * clear of them. Once he is live, the prerendered Lukas in a spot (hero, closing) steps aside.
    */
   .lk-landing-section-head {
     --lk-spot: 92px;
@@ -73,7 +73,7 @@
       opacity var(--sheet) ease,
       visibility 0s linear var(--sheet);
   }
-  html[data-lukas3d="live"] [data-lukas-spot] > .lk-lukas {
+  html[data-lukas-live="live"] [data-lukas-spot] > .lk-lukas {
     opacity: 0;
     visibility: hidden;
   }

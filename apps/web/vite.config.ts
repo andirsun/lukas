@@ -4,8 +4,8 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [tailwindcss(), reactRouter()],
-  // Keep Vite's manifest (build/client/.vite/manifest.json): the landing e2e reads it to hold the
-  // initial JavaScript of `/` to its budget, separately from the lazy 3D chunk.
+  // Keep Vite's manifest: the landing e2e reads it to hold the initial JavaScript of `/` to its
+  // budget. react-router.config.ts moves it out of what ships, to build/vite-manifest.json.
   build: { manifest: true },
   server: {
     // The API's public URL (API_URL in .env) is this origin + /api, so the port is fixed.

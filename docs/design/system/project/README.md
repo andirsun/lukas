@@ -54,8 +54,8 @@ Use this system for the landing page, the web app and the mobile app (Android an
 ## Lukas, the mascot
 
 - A chubby 3D gold coin with a ridged edge, big eyes, rosy cheeks, dark purple arms and legs and pink sneakers. Concept art: the `Mascot` asset group.
-- Three moods mirror the budget: **happy** (every category ok, or right after logging), **worried** (a category is near or over its limit; sweat drop), **celebrating** (a save, a pending payment marked paid, a month closed within budget).
-- On the landing page Lukas is a live 3D model that looks at the cursor and travels with the scroll. In the app he is a lightweight 2D rendering beside a speech bubble (`lk-bubble`).
+- Three moods mirror the budget: **happy** (every category ok, or right after logging), **worried** (a category is near or over its limit; sweat drop), **celebrating** (a save, a pending payment marked paid, a month closed within budget). Each mood has its own hand-made sprite sheet (4×2 frames): happy waves, worried wrings his hands and sweats, celebrating jumps with fists up among sparkles. Under reduced motion each shows one still frame.
+- On the landing page Lukas is drawn in 2.5D: his sprite sheets with CSS depth on top (a soft ground shadow, an idle bob, a slight tilt toward the cursor on desktop, a hop on hover or tap). He rolls in once per visit, waves from the hero, then stands beside each section's heading in that section's mood (worried next to "how it works", celebrating by the final call to action), turning edge-on like a coin to move between spots so he never passes over text. In the app he is a lightweight 2D rendering beside a speech bubble (`lk-bubble`). A 3D model was tried and kept only as an experiment.
 - Never put Lukas on top of figures or text, never recolor him, and never show him angry or shaming.
 
 ## Iconography

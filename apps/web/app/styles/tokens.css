@@ -22,6 +22,7 @@
   --gold: #ffe66d;
   --on-gold: #15122b;
   --candy: #ff8fd8;
+  --lukas-shadow: rgba(6, 4, 20, 0.78);
   --edge-sm: 0 3px 0 #0f0c22;
   --edge-md: 0 5px 0 #0f0c22;
   --edge-brand: 0 6px 0 #3f22a3, 0 10px 24px rgba(139, 92, 255, 0.45);
@@ -48,6 +49,7 @@
   --gold: #ffd23f;
   --on-gold: #221a47;
   --candy: #e0408f;
+  --lukas-shadow: rgba(74, 43, 191, 0.22);
   --edge-sm: 0 3px 0 #d6ccf5;
   --edge-md: 0 5px 0 #d6ccf5;
   --edge-brand: 0 6px 0 #4a2bbf, 0 10px 24px rgba(123, 61, 240, 0.28);
@@ -70,6 +72,8 @@
   --count-up: 700ms;
   --celebrate: 1200ms;
   --shiver: 1600ms;
+  --bob: 2600ms;
+  --hop: 520ms;
   --font-display: "Fredoka", "Baloo 2", ui-rounded, system-ui, sans-serif;
   --font-text: "Nunito", ui-rounded, system-ui, sans-serif;
   --font-hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
