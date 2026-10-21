@@ -7,6 +7,10 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // Pre-bundled up front: discovering them mid-run makes Vite reload the browser and fail the run.
+  optimizeDeps: {
+    include: ["motion/react", "react-router", "use-intl", "@lukas/core > zod"],
+  },
   test: {
     projects: [
       {

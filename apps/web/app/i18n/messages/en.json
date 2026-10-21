@@ -6,7 +6,13 @@
     "loading": "Loading…",
     "retry": "Try again",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "close": "Close",
+    "undo": "Undo",
+    "not_now": "Not now",
+    "pending": "Pending",
+    "paid": "Paid",
+    "pending_pay_label": "Pending, mark as paid"
   },
   "theme": {
     "label": "Theme",
@@ -18,6 +24,16 @@
     "label": "Language",
     "es": "Español",
     "en": "English"
+  },
+  "home": {
+    "view": {
+      "label": "View",
+      "budgets": "Budgets",
+      "transactions": "Transactions"
+    }
+  },
+  "transaction": {
+    "add_expense": "Add expense"
   },
   "lukas": {
     "first_of_day": {

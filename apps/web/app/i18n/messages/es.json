@@ -6,7 +6,13 @@
     "loading": "Cargando…",
     "retry": "Reintentar",
     "cancel": "Cancelar",
-    "save": "Guardar"
+    "save": "Guardar",
+    "close": "Cerrar",
+    "undo": "Deshacer",
+    "not_now": "Ahora no",
+    "pending": "Pendiente",
+    "paid": "Pagado",
+    "pending_pay_label": "Pendiente, marcar como pagado"
   },
   "theme": {
     "label": "Tema",
@@ -18,6 +24,16 @@
     "label": "Idioma",
     "es": "Español",
     "en": "English"
+  },
+  "home": {
+    "view": {
+      "label": "Vista",
+      "budgets": "Presupuestos",
+      "transactions": "Movimientos"
+    }
+  },
+  "transaction": {
+    "add_expense": "Agregar gasto"
   },
   "lukas": {
     "first_of_day": {

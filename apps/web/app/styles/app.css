@@ -8,8 +8,11 @@
  * `inline` makes utilities read the token (`.rounded-xl { border-radius: var(--radius-xl) }`).
  * Same-named entries (radius, fonts) also land in Tailwind's `@layer theme` as `var(--x)`; the
  * unlayered tokens.css declarations win the cascade, so the token values apply.
+ * Tailwind's default palette is cleared first, so `bg-red-500` or `text-white` don't exist and
+ * every color goes through a token.
  */
 @theme inline {
+  --color-*: initial;
   --color-bg: var(--bg);
   --color-bg-glow: var(--bg-glow);
   --color-surface: var(--surface);
@@ -546,5 +549,58 @@
     border-radius: 28px;
     overflow: hidden;
     position: relative;
+  }
+}
+
+/*
+ * App additions on top of the copied design-system layer: states the bundle leaves out
+ * (disabled, ghost press, focus on toast actions) and two fixes measured against AA.
+ */
+:root,
+[data-theme="night"] {
+  /* Sheet backdrop: derived from tokens, dark in both themes. */
+  --scrim: color-mix(in srgb, var(--surface-edge) 72%, transparent);
+}
+
+[data-theme="day"] {
+  --scrim: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
+@layer components {
+  .lk-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .lk-btn-primary:disabled:active {
+    transform: none;
+    box-shadow: var(--edge-brand);
+  }
+  .lk-btn-secondary:disabled:active {
+    transform: none;
+    box-shadow: var(--edge-sm);
+  }
+  /* Ghost buttons have no edge to collapse; they still sink a little under the finger. */
+  .lk-btn-ghost:active,
+  .lk-btn-ghost.is-pressed {
+    transform: translateY(2px);
+  }
+  .lk-btn-ghost:disabled:active {
+    transform: none;
+  }
+
+  /*
+   * The bundle colors toast actions with `brand`, which is 3.2:1 on the night `surface` (AA needs
+   * 4.5:1). `focus` is the chosen mockup's gold at night and a deep purple by day, AA in both.
+   */
+  .lk-toast-actions button {
+    color: var(--focus);
+    transition: transform var(--press) ease;
+  }
+  .lk-toast-actions button:active {
+    transform: translateY(2px);
+  }
+  :where(.lk-toast-actions button):focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
   }
 }

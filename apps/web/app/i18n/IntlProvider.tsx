@@ -1,4 +1,12 @@
-import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { useLocation } from "react-router";
 import { type AbstractIntlMessages, IntlProvider as UseIntlProvider } from "use-intl";
 import { type Locale, localeFromPathname } from "./format.ts";
@@ -15,25 +23,12 @@ interface LocaleContextValue {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-/**
- * Provides the active locale and its ICU messages. Public pages derive the locale from the URL
- * (`/en/...` is English); `setLocale` lets later features (the profile setting) take over.
- * Keeps `<html lang>` in sync after hydration, since the prerendered fallback is Spanish.
- */
-export function IntlProvider({ children }: { children: ReactNode }) {
-  const { pathname } = useLocation();
-  const urlLocale = localeFromPathname(pathname);
-  const [override, setOverride] = useState<{ locale: Locale; urlLocale: Locale } | null>(null);
-  const locale = override && override.urlLocale === urlLocale ? override.locale : urlLocale;
-
+function IntlRoot({ locale, setLocale, children }: LocaleContextValue & { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  const value = useMemo<LocaleContextValue>(
-    () => ({ locale, setLocale: (next) => setOverride({ locale: next, urlLocale }) }),
-    [locale, urlLocale],
-  );
+  const value = useMemo<LocaleContextValue>(() => ({ locale, setLocale }), [locale, setLocale]);
 
   return (
     <LocaleContext.Provider value={value}>
@@ -42,6 +37,44 @@ export function IntlProvider({ children }: { children: ReactNode }) {
       </UseIntlProvider>
     </LocaleContext.Provider>
   );
+}
+
+function UrlIntlProvider({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  const urlLocale = localeFromPathname(pathname);
+  const [override, setOverride] = useState<{ locale: Locale; urlLocale: Locale } | null>(null);
+  const locale = override && override.urlLocale === urlLocale ? override.locale : urlLocale;
+  const setLocale = useCallback(
+    (next: Locale) => setOverride({ locale: next, urlLocale }),
+    [urlLocale],
+  );
+
+  return (
+    <IntlRoot locale={locale} setLocale={setLocale}>
+      {children}
+    </IntlRoot>
+  );
+}
+
+function ignoreLocaleChange() {}
+
+/**
+ * Provides the active locale and its ICU messages. Public pages derive the locale from the URL
+ * (`/en/...` is English); `setLocale` lets later features (the profile setting) take over.
+ * Keeps `<html lang>` in sync after hydration, since the prerendered fallback is Spanish.
+ *
+ * Passing `locale` forces it and needs no router (Storybook's locale toolbar); `setLocale` is
+ * then ignored.
+ */
+export function IntlProvider({ children, locale }: { children: ReactNode; locale?: Locale }) {
+  if (locale) {
+    return (
+      <IntlRoot locale={locale} setLocale={ignoreLocaleChange}>
+        {children}
+      </IntlRoot>
+    );
+  }
+  return <UrlIntlProvider>{children}</UrlIntlProvider>;
 }
 
 export function useLocale(): LocaleContextValue {
