@@ -77,6 +77,41 @@
       "3": "Mes completado en positivo: {remaining} a tu favor. ¡Bien hecho!"
     }
   },
+  "category_row": {
+    "remaining": "Quedan {amount}",
+    "over": "Te pasaste {amount}",
+    "no_budget": "Sin presupuesto",
+    "spent": "Gastado {amount}",
+    "meter": "{name}: {status}"
+  },
+  "keypad": {
+    "label": "Teclado numérico",
+    "decimal": "Coma decimal",
+    "backspace": "Borrar"
+  },
+  "name_field": {
+    "label": "Nombre (opcional)",
+    "suggestions": "Nombres recientes"
+  },
+  "month_picker": {
+    "label": "Mes",
+    "previous": "Mes anterior",
+    "next": "Mes siguiente"
+  },
+  "nav": {
+    "label": "Navegación principal",
+    "home": "Inicio",
+    "insights": "Análisis",
+    "recurring": "Recurrentes",
+    "categories": "Categorías",
+    "settings": "Ajustes",
+    "add": "Agregar"
+  },
+  "mascot": {
+    "happy": "Lukas, contento",
+    "worried": "Lukas, preocupado",
+    "celebrating": "Lukas, celebrando"
+  },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo en un momento.",
     "unauthenticated": "Inicia sesión para continuar.",

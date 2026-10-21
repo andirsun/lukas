@@ -77,6 +77,41 @@
       "3": "Month wrapped up in the black: {remaining} on your side. Well done!"
     }
   },
+  "category_row": {
+    "remaining": "{amount} left",
+    "over": "{amount} over",
+    "no_budget": "No budget",
+    "spent": "{amount} spent",
+    "meter": "{name}: {status}"
+  },
+  "keypad": {
+    "label": "Keypad",
+    "decimal": "Decimal point",
+    "backspace": "Delete"
+  },
+  "name_field": {
+    "label": "Name (optional)",
+    "suggestions": "Recent names"
+  },
+  "month_picker": {
+    "label": "Month",
+    "previous": "Previous month",
+    "next": "Next month"
+  },
+  "nav": {
+    "label": "Main navigation",
+    "home": "Home",
+    "insights": "Insights",
+    "recurring": "Recurring",
+    "categories": "Categories",
+    "settings": "Settings",
+    "add": "Add"
+  },
+  "mascot": {
+    "happy": "Lukas, happy",
+    "worried": "Lukas, worried",
+    "celebrating": "Lukas, celebrating"
+  },
   "errors": {
     "generic": "Something went wrong. Please try again in a moment.",
     "unauthenticated": "Sign in to continue.",

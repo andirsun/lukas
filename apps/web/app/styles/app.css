@@ -621,3 +621,366 @@
     transition-duration: 0s;
   }
 }
+
+/*
+ * Domain components (Task 7b): pressable rows with a separate hit area (so a row can hold its own
+ * buttons, like the pending badge), chips, shortcuts, the bottom bar and Lukas. Every pressable
+ * sinks into its edge on `:active` and on `.is-pressed`.
+ */
+@layer components {
+  /* A row card whose whole surface opens it, through a transparent button laid over it. */
+  .lk-row {
+    position: relative;
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-row:has(> .lk-row-hit:active),
+  .lk-row.is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-row-hit {
+    position: absolute;
+    inset: -2px;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: transparent;
+    cursor: pointer;
+  }
+  .lk-row-hit:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  /* Controls inside a row sit above its hit area. */
+  .lk-row-control {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Category chip: the whole chip is the button; the tile carries the edge and sinks. */
+  .lk-chip-button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-family: var(--font-text);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+  }
+  .lk-chip-button:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-chip-tile {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-chip-button:active .lk-chip-tile,
+  .lk-chip-button.is-pressed .lk-chip-tile {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+
+  /* Name shortcuts: a 44px button around the visual pill. */
+  .lk-shortcut-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--ink);
+    font-family: var(--font-text);
+    cursor: pointer;
+  }
+  .lk-shortcut {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-shortcut-button:active .lk-shortcut,
+  .lk-shortcut-button.is-pressed .lk-shortcut {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-shortcut-button:focus-visible .lk-shortcut {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Text field: the ring goes on the field box while its input has focus. */
+  .lk-input:focus-within {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Keypad keys */
+  .lk-key {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-key.is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+
+  /* Bottom bar: tabs have no edge (as drawn); they dip slightly. The ＋ sinks into its edge. */
+  .lk-tab {
+    min-height: 44px;
+    justify-content: flex-end;
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: transform var(--press) ease;
+  }
+  .lk-tab:active,
+  .lk-tab.is-pressed {
+    transform: translateY(2px);
+  }
+  .lk-tab:focus-visible,
+  .lk-plus:focus-visible,
+  .lk-side-link:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-plus {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-plus:active,
+  .lk-plus.is-pressed {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 var(--brand-edge);
+  }
+
+  /* Sidebar links: the current one is a raised row; the others dip like ghost buttons. */
+  .lk-side-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    color: var(--ink-muted);
+    font-weight: 800;
+    font-size: 14px;
+    text-decoration: none;
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-side-link:active,
+  .lk-side-link.is-pressed {
+    transform: translateY(2px);
+  }
+  .lk-side-link[aria-current="page"] {
+    color: var(--ink);
+    background: var(--surface-row);
+    border-color: var(--stroke);
+    box-shadow: var(--edge-sm);
+  }
+  .lk-side-link[aria-current="page"]:active,
+  .lk-side-link[aria-current="page"].is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+
+  /* Month picker arrows */
+  .lk-step {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-pill);
+    border: 2px solid var(--stroke);
+    background: var(--surface-row);
+    color: var(--ink);
+    box-shadow: var(--edge-sm);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    cursor: pointer;
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-step:active:not(:disabled),
+  .lk-step.is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-step:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-step:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Lukas speech bubble: a tail pointing at Lukas on its left. */
+  .lk-bubble-tail {
+    position: relative;
+  }
+  .lk-bubble-tail::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background: var(--surface-row);
+    border-left: 2px solid var(--stroke);
+    border-bottom: 2px solid var(--stroke);
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  /* Lukas 2D: a sprite sheet stepped frame by frame, plus a CSS treatment per mood. */
+  .lk-lukas {
+    position: relative;
+    display: inline-block;
+    flex: none;
+  }
+  .lk-lukas-body {
+    position: absolute;
+    inset: 0;
+    transform-origin: 50% 92%;
+  }
+  .lk-lukas-sprite {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+  }
+  .lk-lukas-sprite.is-playing {
+    animation:
+      lk-sprite-x var(--lk-sprite-row-ms) steps(var(--lk-sprite-cols)) infinite,
+      lk-sprite-y var(--lk-sprite-loop-ms) steps(var(--lk-sprite-rows)) infinite;
+  }
+  .lk-lukas.is-shiver .lk-lukas-body {
+    animation: lk-lukas-shiver 1.6s ease-in-out infinite;
+  }
+  .lk-lukas.is-hop .lk-lukas-body {
+    animation: lk-lukas-hop var(--celebrate) ease-in-out infinite;
+  }
+  .lk-lukas-sweat {
+    position: absolute;
+    left: 66%;
+    top: 14%;
+    width: 13%;
+    height: auto;
+    fill: color-mix(in srgb, var(--brand-glow) 30%, var(--on-brand));
+    stroke: var(--brand-edge);
+    stroke-width: 1.5;
+  }
+  .lk-lukas-sparkle {
+    position: absolute;
+    width: 14%;
+    height: auto;
+  }
+  .lk-lukas.is-hop .lk-lukas-sparkle {
+    animation: lk-lukas-twinkle var(--celebrate) ease-in-out infinite;
+  }
+  .lk-lukas-sparkle.is-gold {
+    fill: var(--gold);
+  }
+  .lk-lukas-sparkle.is-candy {
+    fill: var(--candy);
+  }
+}
+
+@keyframes lk-sprite-x {
+  from {
+    background-position-x: 0%;
+  }
+  to {
+    background-position-x: var(--lk-sprite-x-end);
+  }
+}
+
+@keyframes lk-sprite-y {
+  from {
+    background-position-y: 0%;
+  }
+  to {
+    background-position-y: var(--lk-sprite-y-end);
+  }
+}
+
+/* Short bursts of a small side-to-side shake, then a pause. */
+@keyframes lk-lukas-shiver {
+  0%,
+  40%,
+  100% {
+    transform: translateX(0);
+  }
+  5%,
+  15%,
+  25% {
+    transform: translateX(-2%);
+  }
+  10%,
+  20%,
+  30% {
+    transform: translateX(2%);
+  }
+}
+
+/* Crouch (squash), spring up (stretch), float, land (squash), settle. */
+@keyframes lk-lukas-hop {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  15% {
+    transform: translateY(0) scale(1.12, 0.86);
+  }
+  35% {
+    transform: translateY(-16%) scale(0.92, 1.1);
+  }
+  50% {
+    transform: translateY(-20%) scale(1, 1);
+  }
+  70% {
+    transform: translateY(0) scale(1.1, 0.9);
+  }
+  82% {
+    transform: translateY(0) scale(0.97, 1.03);
+  }
+}
+
+@keyframes lk-lukas-twinkle {
+  0%,
+  100% {
+    transform: scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  30%,
+  60% {
+    transform: scale(1) rotate(20deg);
+    opacity: 1;
+  }
+}
+
+/*
+ * Reduced motion for the domain components: presses stay but are instant, and Lukas never
+ * animates (the component already shows a still frame; this also covers the prerendered HTML).
+ */
+@media (prefers-reduced-motion: reduce) {
+  .lk-row,
+  .lk-chip-tile,
+  .lk-shortcut,
+  .lk-tab,
+  .lk-plus,
+  .lk-side-link,
+  .lk-step {
+    transition-duration: 0s;
+  }
+  .lk-lukas,
+  .lk-lukas * {
+    animation: none !important;
+  }
+}
