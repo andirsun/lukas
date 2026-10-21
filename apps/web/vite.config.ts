@@ -6,7 +6,18 @@ export default defineConfig({
   plugins: [tailwindcss(), reactRouter()],
   // Keep Vite's manifest: the landing e2e reads it to hold the initial JavaScript of `/` to its
   // budget. react-router.config.ts moves it out of what ships, to build/vite-manifest.json.
-  build: { manifest: true },
+  build: {
+    manifest: true,
+    rollupOptions: {
+      output: {
+        // The mascot component is shared by the landing and the app, so it is its own chunk, and a
+        // chunk is named after its module. The landing's HTML links that chunk, and its e2e check
+        // allows no `Lukas` (the old name) outside scripts, so the file is called `mascot`.
+        chunkFileNames: (chunk) =>
+          chunk.name === "Lukas" ? "assets/mascot-[hash].js" : "assets/[name]-[hash].js",
+      },
+    },
+  },
   server: {
     // The API's public URL (API_URL in .env) is this origin + /api, so the port is fixed.
     port: 5173,

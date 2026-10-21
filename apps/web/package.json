@@ -8,6 +8,7 @@
     "build": "react-router build",
     "typecheck": "react-router typegen && tsc --noEmit",
     "tokens": "tsx scripts/gen-tokens.ts",
+    "sounds": "tsx scripts/gen-feedback-sounds.ts",
     "og": "tsx scripts/og/render.ts",
     "api:types": "tsx scripts/gen-api.ts",
     "storybook": "storybook dev --port 6006",

@@ -1,0 +1,90 @@
+/*
+ * The celebration overlay: confetti bursting from where Lukitas pops up. It covers the screen but
+ * never takes a tap (`pointer-events: none`), sits above the toast, and lasts one `--celebrate`.
+ * Colors are the brand tokens; each piece is placed by custom properties set in Celebration.tsx.
+ */
+.lk-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lk-celebration-burst {
+  position: absolute;
+  left: 50%;
+  bottom: max(25%, 160px);
+  width: 0;
+  height: 0;
+}
+
+.lk-celebration-lukas {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  translate: -50% 0;
+  animation: lk-celebration-pop var(--celebrate) ease-out both;
+}
+
+.lk-confetti {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: lk-confetti-burst var(--celebrate) cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+.lk-confetti.is-round {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+}
+.lk-confetti.is-gold {
+  background: var(--gold);
+}
+.lk-confetti.is-candy {
+  background: var(--candy);
+}
+.lk-confetti.is-good {
+  background: var(--good);
+}
+
+@keyframes lk-celebration-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1.08);
+  }
+  35% {
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(1);
+  }
+}
+
+/* Out and up fast, then gravity takes the piece down while it spins and fades. */
+@keyframes lk-confetti-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  45% {
+    opacity: 1;
+    transform: translate(calc(var(--lk-dx) * 0.8), var(--lk-rise))
+      rotate(calc(var(--lk-spin) * 0.5));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--lk-dx), var(--lk-fall)) rotate(var(--lk-spin));
+  }
+}
