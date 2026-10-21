@@ -20,7 +20,7 @@ beforeAll(async () => {
       status: "pending",
     },
   });
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 interface ByCategory {

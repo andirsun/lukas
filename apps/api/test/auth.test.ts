@@ -6,7 +6,7 @@ import { codeFrom, createTestApp, type TestApp } from "./harness.ts";
 let t: TestApp;
 beforeAll(async () => {
   t = await createTestApp();
-}, 120_000);
+});
 afterAll(() => t?.stop());
 afterEach(() => {
   vi.useRealTimers();

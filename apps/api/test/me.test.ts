@@ -24,7 +24,7 @@ beforeAll(async () => {
   b = await t.signIn("b@lukas.test");
   await seed(a.headers, "Supermercado");
   await seed(b.headers, "Other");
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 test("profile can be read and updated", async () => {

@@ -70,7 +70,7 @@ beforeAll(async () => {
     headers: a,
     body: { name: "ocio", kind: "expense", icon: "star", color: "purple" },
   });
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 describe("Budge import", () => {

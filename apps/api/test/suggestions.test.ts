@@ -60,7 +60,7 @@ beforeAll(async () => {
   await seed(a, restaurante, "restaurante", "2026-10-09");
   await seed(a, old, "forgotten", "2026-10-10");
   await t.request("PATCH", `/v1/categories/${old}`, { headers: a, body: { archived: true } });
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 describe("transaction name suggestions", () => {

@@ -7,7 +7,7 @@ const API_URL = "http://localhost:5173/api";
 let t: TestApp;
 beforeAll(async () => {
   t = await createTestApp({ API_URL });
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 test("GET /api/health answers under the API_URL path", async () => {

@@ -24,7 +24,7 @@ beforeAll(async () => {
     body: { name: "suscripciones", kind: "expense", icon: "umbrella", color: "pink" },
   });
   subscriptions = ((await res.json()) as { id: string }).id;
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 const listMonth = async (m: string) =>

@@ -24,7 +24,7 @@ beforeAll(async () => {
   );
   a = (await t.signIn("a@lukas.test")).headers;
   b = (await t.signIn("b@lukas.test")).headers;
-}, 120_000);
+});
 afterAll(() => t?.stop());
 afterEach(() => vi.useRealTimers());
 

@@ -36,7 +36,7 @@ beforeAll(async () => {
   ocio = await category(a, "Ocio");
   archived = await category(a, "Old");
   await t.request("PATCH", `/v1/categories/${archived}`, { headers: a, body: { archived: true } });
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 const create = (body: object, headers: Record<string, string> = a) =>

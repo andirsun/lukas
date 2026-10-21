@@ -11,7 +11,7 @@ beforeAll(async () => {
   t = await createTestApp();
   a = (await t.signIn("a@lukas.test")).headers;
   b = (await t.signIn("b@lukas.test")).headers;
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 const create = (headers: typeof a, body: object) =>
