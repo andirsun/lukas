@@ -2,9 +2,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
 
 /**
- * The landing page as shipped: prerendered HTML served statically (`built-*` projects), read with
- * JavaScript off unless a test turns it on. Everything a visitor or a crawler needs must already
- * be in the HTML.
+ * The landing page as shipped: prerendered HTML served statically (playwright.built.config.ts,
+ * `pnpm e2e:landing`), read with JavaScript off unless a test turns it on. Everything a visitor or
+ * a crawler needs must already be in the HTML.
  */
 
 const ORIGIN = "https://lukas.app";
@@ -185,10 +185,27 @@ for (const l of LOCALES) {
 
     test("fits the viewport and keeps every target at 44px", async ({ page }) => {
       await page.goto(l.path);
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      );
-      expect(overflow).toBeLessThanOrEqual(0);
+      // `.lk-landing` clips horizontal overflow, so the document never scrolls sideways: check
+      // every rendered element instead, so content that would be cut off fails here. Nothing on
+      // the page is meant to be clipped (no exceptions).
+      const overflowing = await page.evaluate(() => {
+        const width = document.documentElement.clientWidth;
+        return [...document.querySelectorAll(".lk-landing *")]
+          .filter((el) => {
+            const box = el.getBoundingClientRect();
+            if (box.width === 0 && box.height === 0) return false;
+            return box.left < -0.5 || box.right > width + 0.5;
+          })
+          .map(
+            (el) => `${el.tagName.toLowerCase()}.${el.className} "${el.textContent?.slice(0, 30)}"`,
+          );
+      });
+      expect(overflowing).toEqual([]);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        ),
+      ).toBeLessThanOrEqual(0);
       for (const target of await page.locator("a:visible, button:visible, summary").all()) {
         const box = await target.boundingBox();
         expect(box?.height, await target.innerText()).toBeGreaterThanOrEqual(44);
