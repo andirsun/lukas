@@ -116,6 +116,7 @@
   },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo en un momento.",
+    "network_error": "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
     "unauthenticated": "Inicia sesión para continuar.",
     "bad_request": "No entendimos esa solicitud. Revisa los datos e inténtalo otra vez.",
     "http_error": "No pudimos completar la solicitud. Inténtalo de nuevo.",

@@ -19,6 +19,11 @@ jobs:
       # The Storybook tests in `pnpm test` run in Vitest browser mode on Playwright Chromium.
       - run: pnpm --filter @lukas/web exec playwright install --with-deps chromium
       - run: pnpm lint
+      # The web's API types are generated from the API's OpenAPI document (built from the app, no
+      # server or database). Fails when apps/web/app/api/schema.d.ts is stale: run
+      # `pnpm --filter @lukas/web api:types` (with the API running) or add --file, and commit it.
+      - run: pnpm --filter @lukas/web api:types --file
+      - run: git diff --exit-code apps/web/app/api/schema.d.ts
       - run: pnpm typecheck
       # Integration tests start Postgres with testcontainers (Docker is available on the runner).
       - run: pnpm test

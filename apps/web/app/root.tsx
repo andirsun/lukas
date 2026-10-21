@@ -1,8 +1,12 @@
-import type { ReactNode } from "react";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { type ReactNode, useState } from "react";
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from "react-router";
+import { ApiProvider } from "./api/ApiProvider.tsx";
+import { createQueryClient } from "./api/query-client.ts";
 import { IntlProvider, useLocale } from "./i18n/IntlProvider.tsx";
 import { ThemeProvider } from "./theme/ThemeProvider.tsx";
 import { THEME_BOOTSTRAP_SCRIPT } from "./theme/theme-bootstrap.ts";
+import { ToastProvider } from "./ui/Toast.tsx";
 import "./styles/fonts.ts";
 import "./styles/app.css";
 
@@ -39,5 +43,15 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  // One cache per visitor; created in state so prerendering never shares one across pages.
+  const [queryClient] = useState(createQueryClient);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ApiProvider>
+        <ToastProvider>
+          <Outlet />
+        </ToastProvider>
+      </ApiProvider>
+    </QueryClientProvider>
+  );
 }

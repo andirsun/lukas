@@ -116,6 +116,7 @@
   },
   "errors": {
     "generic": "Something went wrong. Please try again in a moment.",
+    "network_error": "No connection. Check your internet and try again.",
     "unauthenticated": "Sign in to continue.",
     "bad_request": "We couldn't understand that request. Check the details and try again.",
     "http_error": "We couldn't complete the request. Please try again.",
