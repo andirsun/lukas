@@ -8,7 +8,12 @@ import {
   useState,
 } from "react";
 import { useLocation } from "react-router";
-import { type AbstractIntlMessages, IntlProvider as UseIntlProvider } from "use-intl";
+import {
+  type AbstractIntlMessages,
+  type IntlError,
+  IntlErrorCode,
+  IntlProvider as UseIntlProvider,
+} from "use-intl";
 import { type Locale, localeFromPathname } from "./format.ts";
 import en from "./messages/en.json" with { type: "json" };
 import es from "./messages/es.json" with { type: "json" };
@@ -23,6 +28,16 @@ interface LocaleContextValue {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
+/**
+ * use-intl's default reporting (console.error), minus one expected case: while prerendering there
+ * is no visitor time zone, and the public pages format no dates, so its server-only "no timeZone
+ * configured" fallback warning is noise in the build output.
+ */
+function reportIntlError(error: IntlError) {
+  if (error.code === IntlErrorCode.ENVIRONMENT_FALLBACK && typeof window === "undefined") return;
+  console.error(error);
+}
+
 function IntlRoot({ locale, setLocale, children }: LocaleContextValue & { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -32,7 +47,7 @@ function IntlRoot({ locale, setLocale, children }: LocaleContextValue & { childr
 
   return (
     <LocaleContext.Provider value={value}>
-      <UseIntlProvider locale={locale} messages={MESSAGES[locale]}>
+      <UseIntlProvider locale={locale} messages={MESSAGES[locale]} onError={reportIntlError}>
         {children}
       </UseIntlProvider>
     </LocaleContext.Provider>

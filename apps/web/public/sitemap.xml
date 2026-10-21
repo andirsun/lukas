@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- https://lukas.app is a placeholder origin (see SITE_ORIGIN in app/features/landing/seo.ts). -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://lukas.app/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://lukas.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lukas.app/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lukas.app/"/>
+  </url>
+  <url>
+    <loc>https://lukas.app/en</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://lukas.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lukas.app/en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://lukas.app/"/>
+  </url>
+</urlset>

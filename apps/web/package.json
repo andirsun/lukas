@@ -8,6 +8,7 @@
     "build": "react-router build",
     "typecheck": "react-router typegen && tsc --noEmit",
     "tokens": "tsx scripts/gen-tokens.ts",
+    "og": "tsx scripts/og/render.ts",
     "api:types": "tsx scripts/gen-api.ts",
     "storybook": "storybook dev --port 6006",
     "test": "vitest run",
@@ -26,6 +27,7 @@
     "use-intl": "^4.14.9"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.64.1",
     "@react-router/dev": "^8.5.0",
     "@storybook/addon-a11y": "^10.6.3",

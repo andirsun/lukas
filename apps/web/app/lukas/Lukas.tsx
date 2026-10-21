@@ -47,8 +47,8 @@ export const LUKAS_ART: Record<LukasMood, LukasMoodArt> = {
 
 export interface LukasProps {
   mood: LukasMood;
-  /** Width and height in px. */
-  size?: number;
+  /** Width and height: px, or any CSS length (`"100%"` fills a sized box, e.g. the landing hero). */
+  size?: number | string;
   /** Hide from assistive technology when something next to Lukas already says the same. */
   decorative?: boolean;
   /** Overrides the art for this mood (final art, the landing page, stories). */

@@ -1,0 +1,9 @@
+# https://lukas.app is a placeholder origin until the production domain is settled
+# (keep it in sync with SITE_ORIGIN in app/features/landing/seo.ts and sitemap.xml).
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /welcome
+Disallow: /auth/
+
+Sitemap: https://lukas.app/sitemap.xml

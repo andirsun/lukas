@@ -130,5 +130,114 @@
     "import_too_large": "That file is too large. The limit is 5 MB.",
     "import_unrecognized_format": "We don't recognize this file. Use a Budge export.",
     "import_not_in_preview": "This import is no longer in preview."
+  },
+  "landing": {
+    "meta": {
+      "title": "Lukas · Your money, finally clear",
+      "description": "Lukas is the budget that plays like a game: log an expense in seconds, see where your money goes and get a heads-up before you overspend. Free, no passwords.",
+      "image_alt": "Lukas, a smiling gold coin, waves next to the title: Your money, finally clear."
+    },
+    "nav": {
+      "label": "Main",
+      "home": "Lukas, home",
+      "how": "How it works",
+      "faq": "Questions",
+      "sign_in": "Sign in"
+    },
+    "hero": {
+      "question_spend": "Where does all my money go?",
+      "question_living": "How much does living cost me?",
+      "headline": "Your money, finally clear.",
+      "tagline": "Your budget, your best friend.",
+      "description": "Lukas turns your budget into a game you'll actually enjoy: log an expense in seconds and see where every buck goes.",
+      "cta": "Start free",
+      "perks": "No passwords · Import your Budge history",
+      "mascot": "Lukas, a smiling gold coin, waves at you"
+    },
+    "ways": {
+      "title": "Use it your way",
+      "soon": "Soon",
+      "web": {
+        "title": "On the web",
+        "body": "From the browser on your phone or computer. Nothing to install.",
+        "cta": "Start"
+      },
+      "android": {
+        "title": "Android app",
+        "body": "With a widget to log an expense without opening the app."
+      },
+      "ai": {
+        "title": "With your AI",
+        "with": "Claude / ChatGPT",
+        "body": "“Lukas, how much have I spent on restaurants?” and your assistant answers with your numbers."
+      }
+    },
+    "how": {
+      "title": "How it works",
+      "demo_categories": {
+        "groceries": "Groceries",
+        "going_out": "Going out",
+        "home": "Home",
+        "transport": "Getting around"
+      },
+      "log": {
+        "title": "Log it in seconds",
+        "body": "Tap ＋, type the amount and you're done: under five seconds from opening the app. Lukas celebrates with you.",
+        "demo_name": "Coffee and a pastry",
+        "demo_saved": "Logged!"
+      },
+      "spend": {
+        "title": "See where it goes",
+        "body": "Every expense lands in its category. At a glance you know how much went on groceries, going out or getting around, and what living really costs you.",
+        "demo_label": "This month"
+      },
+      "budgets": {
+        "title": "Budgets that give you a heads-up",
+        "body": "Set a limit for each category. The bars fill up with what you spend and change color before you go over, not after.",
+        "demo_remaining": "{amount} left"
+      },
+      "budge": {
+        "title": "Bring your Budge history",
+        "body": "Upload the CSV you export from Budge, check the preview and confirm. You start with months of history already sorted.",
+        "demo_file": "budge.csv",
+        "demo_rows": "{count, plural, one {# transaction ready} other {# transactions ready}}"
+      }
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "what": {
+        "q": "What is Lukas?",
+        "a": "An app for your monthly budget that doesn't feel like homework. You log what you spend, see what's left in each category, and Lukas, a gold coin with plenty of personality, keeps you company: it cheers when you log something and gives you a heads-up when a category is filling up."
+      },
+      "budge": {
+        "q": "Can I bring my Budge history?",
+        "a": "Yes. Export your transactions from Budge as a CSV and upload it when you sign up or later from Settings. Before anything is imported you see a preview: how many transactions come in, which ones are duplicates and which categories will be created."
+      },
+      "passwords": {
+        "q": "Why doesn't it ask for a password?",
+        "a": "Because you don't need one. You sign in with a 6-digit code or a link sent to your email and, if you like, with a passkey: your fingerprint, your face or your phone's screen lock. Nothing to remember, nothing to leak."
+      },
+      "privacy": {
+        "q": "What do you do with my data?",
+        "a": "Use it to show you your numbers, and that's it. We don't sell your data or share it with advertisers. You can export everything (JSON or CSV) or delete your account whenever you want from Settings."
+      },
+      "free": {
+        "q": "How much does it cost?",
+        "a": "Nothing. Creating an account and using Lukas is free, and we never ask for a card."
+      },
+      "languages": {
+        "q": "Which languages is it in?",
+        "a": "Spanish and English. Switch whenever you like in Settings, and amounts and dates follow your language's format."
+      }
+    },
+    "closing": {
+      "title": "Ready when you are.",
+      "body": "Create your account with your email in under a minute. Lukas takes care of making it fun."
+    },
+    "footer": {
+      "language": "Language",
+      "privacy": "Privacy",
+      "copyright": "© {year} Lukas"
+    }
   }
 }

@@ -1,0 +1,140 @@
+<!doctype html>
+<!--
+  Template for the 1200×630 Open Graph images (public/og-es.png, public/og-en.png). Rendered by
+  render.ts, which fills the [data-copy] elements from the message catalogs. Colors come from the
+  app's tokens (night theme), fonts from the self-hosted Fontsource files, Lukas is one frame of
+  the wave sprite.
+-->
+<html lang="es" data-theme="night">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../app/styles/tokens.css" />
+    <style>
+      @font-face {
+        font-family: "Fredoka";
+        font-weight: 600;
+        src: url("../../node_modules/@fontsource/fredoka/files/fredoka-latin-600-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Fredoka";
+        font-weight: 700;
+        src: url("../../node_modules/@fontsource/fredoka/files/fredoka-latin-700-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Nunito";
+        font-weight: 800;
+        src: url("../../node_modules/@fontsource/nunito/files/nunito-latin-800-normal.woff2") format("woff2");
+      }
+      html,
+      body {
+        margin: 0;
+      }
+      .card {
+        position: relative;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 470px;
+        align-items: center;
+        box-sizing: border-box;
+        padding: 0 40px 0 80px;
+        background: radial-gradient(120% 90% at 70% 0%, var(--bg-glow) 0%, var(--bg) 62%);
+        color: var(--ink);
+        font-family: var(--font-text);
+      }
+      .logo {
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 60px;
+        line-height: 1;
+        background: linear-gradient(90deg, var(--gold), var(--candy));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .questions {
+        margin: 34px 0 0;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 30px;
+        line-height: 1.25;
+        color: var(--ink-muted);
+      }
+      .questions span {
+        position: relative;
+      }
+      .questions span::after {
+        content: "";
+        position: absolute;
+        left: -3%;
+        right: -3%;
+        top: 52%;
+        height: 4px;
+        border-radius: 4px;
+        background: var(--over);
+        transform: rotate(-3deg);
+      }
+      .headline {
+        margin: 18px 0 0;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 66px;
+        line-height: 1.02;
+        color: var(--good);
+        text-shadow: 0 0 26px color-mix(in srgb, var(--good) 30%, transparent);
+      }
+      .tagline {
+        margin: 14px 0 0;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 34px;
+      }
+      .perks {
+        margin: 26px 0 0;
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--ink-muted);
+      }
+      .mascot {
+        position: relative;
+        width: 470px;
+        height: 470px;
+      }
+      .mascot::before {
+        content: "";
+        position: absolute;
+        inset: 2%;
+        border-radius: 50%;
+        background: radial-gradient(
+          closest-side,
+          color-mix(in srgb, var(--gold) 38%, transparent),
+          color-mix(in srgb, var(--brand-glow) 18%, transparent) 62%,
+          transparent
+        );
+      }
+      /* Frame 3 of the 4×2 wave sheet (arm up): column 3 of 4, first row. */
+      .mascot::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: url("../../public/lukas/wave.webp") 66.667% 0% / 400% 200% no-repeat;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div>
+        <div class="logo">Lukas</div>
+        <div class="questions">
+          <div><span data-copy="hero.question_spend"></span></div>
+          <div><span data-copy="hero.question_living"></span></div>
+        </div>
+        <div class="headline" data-copy="hero.headline"></div>
+        <div class="tagline" data-copy="hero.tagline"></div>
+        <div class="perks" data-copy="hero.perks"></div>
+      </div>
+      <div class="mascot"></div>
+    </div>
+  </body>
+</html>
