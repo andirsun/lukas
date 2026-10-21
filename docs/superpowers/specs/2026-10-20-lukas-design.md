@@ -170,6 +170,11 @@ People can start without an email: no login wall after installing the app or on 
 
 - **Built on anonymous accounts:** Better Auth's anonymous plugin creates a real server-side user with no email, and the device keeps the session. The API stays the single source of truth, with no local-only data path and no merge step.
 - **Upgrading:** "Guarda tu progreso" links an email (code or magic link) or a passkey to the same user. Nothing is copied, and nothing is lost.
+- **Passkey-only start** (founder decision 2026-10-21): for new users, "Entrar con huella" creates the anonymous account and registers a passkey in one step, with no email and no code. The passkey syncs through the user's provider (Google, iCloud, Samsung Pass, Proton Pass).
+  - The screen explains honestly that without an email (or, later, a phone number via WhatsApp), losing the passkey means losing the account, and that sync, AI and MCP need an email.
+  - "Guarda tu progreso" then offers adding one.
+  - The email (or future phone) stays the recoverable identity.
+  - Installs with a sign-in allowlist (the founder's personal install) keep email-only sign-up.
 - **Works without an email:** categories, budgets, transactions, recurring payments, the widget and microphone quick capture (no AI), Budge import, and export.
 - **Requires an email:**
   - **Sync to a second device:** web and phone, or a new phone. The other device needs a way to sign in.

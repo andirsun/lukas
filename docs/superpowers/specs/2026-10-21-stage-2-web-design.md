@@ -86,7 +86,17 @@ Reference: `docs/design/stage-2-mockups/landing.html`.
      - Without an import they start empty.
      - For COP, the lukas hint (§2.6c) shows.
 - **Every step has SIGUIENTE and SALTAR.** No step forces input. Finishing or skipping lands on `/app` with the celebration and sets `onboardingCompletedAt`.
-- **Passkey offer moved out of onboarding:** Lukitas offers "¿Entrar con tu huella la próxima vez?" later (after the first saved transaction, as a dismissible card) and in Settings.
+- **Passkey offer, after the first sign-in** (founder decision 2026-10-21): right after the first email sign-in, Lukitas offers "¿Entrar con tu huella la próxima vez?". The offer explains in plain words:
+  - a passkey is a key saved on this phone, in Google, Samsung Pass, iCloud or Proton Pass;
+  - the fingerprint or face only unlocks that key;
+  - it syncs to your other devices that use the same account;
+  - email still works as a backup.
+
+  The offer can be skipped. Settings also offers it.
+- **Sign-in screen clarity:**
+  - The fingerprint button only shows when this browser has signed in with a passkey before.
+  - Existing passkeys appear in the email field's autofill (WebAuthn conditional mediation).
+  - A short line reads "¿Primera vez? Entra con tu correo; después podrás usar tu huella."
 
 ### 2.5 Home (`/app`)
 
