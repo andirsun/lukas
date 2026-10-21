@@ -33,6 +33,14 @@ const LUKAS_KEYS = {
   month_closed_green: { remaining: "120,00 €" },
 } satisfies Record<LukasMessageKey, Record<string, string | number>>;
 
+/** Sorted, de-duplicated argument names of an ICU message (`{name}`, `{name, plural, ...}`). */
+function icuArguments(message: string): string[] {
+  const names = new Set<string>();
+  for (const match of message.matchAll(/\{\s*([A-Za-z_]\w*)\s*[,}]/g))
+    names.add(match[1] as string);
+  return [...names].sort();
+}
+
 function apiErrorCodes(): string[] {
   const root = fileURLToPath(new URL("../../../api/src", import.meta.url));
   const codes = new Set<string>();
@@ -57,6 +65,14 @@ describe("message catalogs", () => {
     expect(Object.keys(catalogs.es).sort()).toEqual(Object.keys(catalogs.en).sort());
   });
 
+  it("uses the same ICU argument names in es and en for every key", () => {
+    for (const key of Object.keys(catalogs.es)) {
+      expect(icuArguments(catalogs.en[key] ?? ""), key).toEqual(
+        icuArguments(catalogs.es[key] ?? ""),
+      );
+    }
+  });
+
   it("has no empty messages", () => {
     for (const locale of ["es", "en"] as const) {
       for (const [key, value] of Object.entries(catalogs[locale])) {
@@ -73,9 +89,17 @@ describe("message catalogs", () => {
             new RegExp(`^lukas\\.${key}\\.\\d+$`).test(k),
           );
           expect(variants.length).toBeGreaterThanOrEqual(3);
-          const t = createTranslator({ locale, messages: locale === "es" ? es : en });
+          // A bad ICU string or a missing param must fail the test, not fall back to the key path.
+          const t = createTranslator({
+            locale,
+            messages: locale === "es" ? es : en,
+            onError: (error) => {
+              throw error;
+            },
+          });
           for (const variant of variants) {
             const text = t(variant as never, params as never);
+            expect(text, variant).not.toBe(variant);
             expect(text, variant).not.toMatch(/[{}]/);
             expect(text.length, variant).toBeGreaterThan(0);
           }
