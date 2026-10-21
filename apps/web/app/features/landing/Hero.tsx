@@ -1,6 +1,6 @@
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
-import { LANDING_ONLY } from "../../site/config.ts";
+import { COMING_SOON } from "../../site/config.ts";
 import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { HeroMascot } from "./HeroMascot.tsx";
@@ -40,8 +40,8 @@ export function Hero({ secondaryCta = false }: HeroProps) {
         </p>
         <div className="lk-landing-cta">
           <div className="lk-landing-cta-actions">
-            <PressLink {...app} className={cx(LANDING_ONLY && "is-soon")}>
-              {t(LANDING_ONLY ? "cta_soon" : "cta")}
+            <PressLink {...app} className={cx(COMING_SOON && "is-soon")}>
+              {t(COMING_SOON ? "cta_soon" : "cta")}
               <NewTabHint target={app.target} />
             </PressLink>
             {secondaryCta && (

@@ -8,9 +8,17 @@ import { defineConfig, devices } from "@playwright/test";
  */
 /**
  * `E2E_LANDING_ONLY=true` runs the landing-only suite instead (`pnpm e2e:landing-only`), against a
- * build made with VITE_LANDING_ONLY=true; the default suites need the default build.
+ * build made with VITE_LANDING_ONLY=true; `E2E_LANDING_ONLY=app` runs the suite for the landing-only
+ * build that also has VITE_APP_URL (`pnpm e2e:landing-only-app`). The default suites need the
+ * default build.
  */
-const landingOnly = process.env.E2E_LANDING_ONLY === "true";
+const landingMode = process.env.E2E_LANDING_ONLY;
+const testMatch =
+  landingMode === "true"
+    ? /landing-only\.spec\.ts$/
+    : landingMode === "app"
+      ? /landing-only-app\.spec\.ts$/
+      : /landing(-lukas)?\.spec\.ts$/;
 
 /** `E2E_BUILT_PORT` picks another port, e.g. to run beside a server another checkout reuses. */
 const port = Number(process.env.E2E_BUILT_PORT ?? 4180);
@@ -18,7 +26,7 @@ const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: landingOnly ? /landing-only\.spec\.ts$/ : /landing(-lukas)?\.spec\.ts$/,
+  testMatch,
   outputDir: "test-results/built",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

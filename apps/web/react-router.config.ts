@@ -2,7 +2,7 @@ import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { Config } from "@react-router/dev/config";
 import { readBuildEnv } from "./app/site/build-env.ts";
-import { isLandingOnly, resolveSiteOrigin } from "./app/site/origin.ts";
+import { isLandingOnly, resolveAppOrigin, resolveSiteOrigin } from "./app/site/origin.ts";
 import { PAGE_PATH, SITE_PAGES } from "./app/site/paths.ts";
 import { finalizeBuild } from "./scripts/finalize-build.ts";
 
@@ -10,12 +10,15 @@ import { finalizeBuild } from "./scripts/finalize-build.ts";
  * Build-time switches (see app/site/config.ts for what they do in the app):
  * - VITE_SITE_URL: the site's public origin, for robots.txt and sitemap.xml written after the build.
  * - VITE_LANDING_ONLY=true: only the landing and a 404 page ship (docs/deploy/landing.md).
- * Both are read the way Vite reads them for the app code (`import.meta.env`): from the real
+ * - VITE_APP_URL: with VITE_LANDING_ONLY, the live app's origin; the calls to action open it.
+ * All are read the way Vite reads them for the app code (`import.meta.env`): from the real
  * environment and from the `.env` files of apps/web, so a flag set in either builds the same site.
  */
 const env = readBuildEnv();
 const origin = resolveSiteOrigin(env.siteUrl);
 const landingOnly = isLandingOnly(env.landingOnly);
+// Not used here, but a typo should stop the build before it prerenders broken links.
+resolveAppOrigin(env.appUrl);
 
 /** The public pages, in both languages (the landing and the roadmap). */
 const PUBLIC_PAGES = SITE_PAGES.flatMap((page) => [PAGE_PATH[page].es, PAGE_PATH[page].en]);

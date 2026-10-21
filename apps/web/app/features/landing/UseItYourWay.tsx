@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
-import { LANDING_ONLY } from "../../site/config.ts";
+import { COMING_SOON } from "../../site/config.ts";
 import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { LukasSpot } from "./LukasSpot.tsx";
@@ -19,7 +19,7 @@ function Icon({ tone, children }: { tone: "gold" | "candy" | "good"; children: R
 /**
  * Where Lukas lives: the web app today ("Empezar"), the Android and iOS app and your AI assistant
  * (Claude or ChatGPT, through MCP) marked as coming soon. In the landing-only release the web app
- * is marked as coming soon too.
+ * is marked as coming soon too, unless `VITE_APP_URL` says where it lives: then the card opens it.
  */
 export function UseItYourWay() {
   const t = useTranslations("landing.ways");
@@ -32,7 +32,7 @@ export function UseItYourWay() {
         <LukasSpot id="ways" pose="point" mood="happy" />
       </div>
       <ul className="lk-landing-cards is-ways">
-        <li className={cx("lk-landing-card", !LANDING_ONLY && "is-live")}>
+        <li className={cx("lk-landing-card", !COMING_SOON && "is-live")}>
           <div className="lk-landing-card-head">
             <Icon tone="good">
               <circle cx="12" cy="12" r="9" />
@@ -42,7 +42,7 @@ export function UseItYourWay() {
           </div>
           <p>{t("web.body")}</p>
           <div className="lk-landing-card-foot">
-            {LANDING_ONLY ? (
+            {COMING_SOON ? (
               <span className="lk-landing-soon">{t("soon")}</span>
             ) : (
               <PressLink {...app} variant="secondary" size="sm">

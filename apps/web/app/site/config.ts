@@ -1,10 +1,23 @@
-import { isLandingOnly, resolveSiteOrigin } from "./origin.ts";
+import { isComingSoon, isLandingOnly, resolveAppOrigin, resolveSiteOrigin } from "./origin.ts";
 
 /** The public origin used in absolute URLs. `VITE_SITE_URL` at build time, else the placeholder. */
 export const SITE_ORIGIN = resolveSiteOrigin(import.meta.env.VITE_SITE_URL);
 
 /**
- * Landing-only release (`VITE_LANDING_ONLY=true`): the app does not exist yet, so everything that
- * would lead to it leads to the GitHub repo instead, marked as coming soon. Off by default.
+ * Landing-only release (`VITE_LANDING_ONLY=true`): only the landing ships. Off by default.
+ * What its calls to action do depends on `APP_ORIGIN`.
  */
 export const LANDING_ONLY = isLandingOnly(import.meta.env.VITE_LANDING_ONLY);
+
+/**
+ * The live app's origin (`VITE_APP_URL`), read in the landing-only release only: its calls to
+ * action open the app's sign-in there. `undefined` when unset, and always outside landing-only
+ * (the app is then served from the same origin).
+ */
+export const APP_ORIGIN = LANDING_ONLY ? resolveAppOrigin(import.meta.env.VITE_APP_URL) : undefined;
+
+/**
+ * Landing-only without an app to open: everything that would lead to the app leads to the GitHub
+ * repo instead, marked as coming soon.
+ */
+export const COMING_SOON = isComingSoon(LANDING_ONLY, APP_ORIGIN);

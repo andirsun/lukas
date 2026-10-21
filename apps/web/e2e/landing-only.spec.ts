@@ -485,6 +485,8 @@ test.describe("landing-only build output", () => {
         "404.html",
         "_headers",
         "assets",
+        // The logo image of the sign-in email, linked from the mails themselves (public/email).
+        "email",
         "en",
         "index.html",
         "lukas",

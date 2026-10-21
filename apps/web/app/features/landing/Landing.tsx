@@ -3,7 +3,7 @@ import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { Lukas } from "../../lukas/Lukas.tsx";
 import { LiveLukasBoundary, useLiveLukasReady } from "../../lukas/live-support.tsx";
 import { TravelingLukas as TravelingLukas2D } from "../../lukas/TravelingLukas.tsx";
-import { LANDING_ONLY } from "../../site/config.ts";
+import { APP_ORIGIN, COMING_SOON } from "../../site/config.ts";
 import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { WhatsNext } from "../roadmap/WhatsNext.tsx";
@@ -40,6 +40,12 @@ function Closing() {
   const t = useTranslations("landing");
   const { locale } = useLocale();
   const app = appLinkProps(locale);
+  // Honest about where the app is: not open yet, open to a small group, or open to everyone.
+  const closingBody = COMING_SOON
+    ? "closing.body_soon"
+    : APP_ORIGIN
+      ? "closing.body_invite"
+      : "closing.body";
   return (
     <section id="closing" className="lk-landing-section" aria-labelledby="closing-title">
       <div className="lk-landing-closing">
@@ -53,9 +59,9 @@ function Closing() {
           <Lukas mood="celebrating" size="100%" decorative deferUntilNear />
         </span>
         <h2 id="closing-title">{t("closing.title")}</h2>
-        <p>{t(LANDING_ONLY ? "closing.body_soon" : "closing.body")}</p>
-        <PressLink {...app} className={cx(LANDING_ONLY && "is-soon")}>
-          {t(LANDING_ONLY ? "hero.cta_soon" : "hero.cta")}
+        <p>{t(closingBody)}</p>
+        <PressLink {...app} className={cx(COMING_SOON && "is-soon")}>
+          {t(COMING_SOON ? "hero.cta_soon" : "hero.cta")}
           <NewTabHint target={app.target} />
         </PressLink>
       </div>

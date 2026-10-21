@@ -10,6 +10,7 @@ beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "lukas-build-env-"));
   vi.stubEnv("VITE_SITE_URL", undefined);
   vi.stubEnv("VITE_LANDING_ONLY", undefined);
+  vi.stubEnv("VITE_APP_URL", undefined);
 });
 
 afterEach(() => {
@@ -27,14 +28,19 @@ describe("readBuildEnv", () => {
     expect(readBuildEnv({ root, mode: "production" })).toEqual({
       siteUrl: undefined,
       landingOnly: undefined,
+      appUrl: undefined,
     });
   });
 
   it("reads the flags from a .env file, like Vite does for the app code", () => {
-    write(".env", "VITE_SITE_URL=https://lukitas.example\nVITE_LANDING_ONLY=true\n");
+    write(
+      ".env",
+      "VITE_SITE_URL=https://lukitas.example\nVITE_LANDING_ONLY=true\nVITE_APP_URL=https://app.example\n",
+    );
     expect(readBuildEnv({ root, mode: "production" })).toEqual({
       siteUrl: "https://lukitas.example",
       landingOnly: "true",
+      appUrl: "https://app.example",
     });
   });
 
@@ -42,9 +48,11 @@ describe("readBuildEnv", () => {
     write(".env", "VITE_SITE_URL=https://from-file.example\n");
     vi.stubEnv("VITE_SITE_URL", "https://from-env.example");
     vi.stubEnv("VITE_LANDING_ONLY", "true");
+    vi.stubEnv("VITE_APP_URL", "https://app-from-env.example");
     expect(readBuildEnv({ root, mode: "production" })).toEqual({
       siteUrl: "https://from-env.example",
       landingOnly: "true",
+      appUrl: "https://app-from-env.example",
     });
   });
 
@@ -60,6 +68,7 @@ describe("readBuildEnv", () => {
     expect(readBuildEnv({ root, mode: "production" })).toEqual({
       siteUrl: undefined,
       landingOnly: undefined,
+      appUrl: undefined,
     });
   });
 });

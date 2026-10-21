@@ -405,7 +405,8 @@
     "closing": {
       "title": "Ready when you are.",
       "body": "Create your account with your email in under a minute. Lukitas takes care of making it fun.",
-      "body_soon": "Lukitas is being built in the open. Follow its progress on GitHub and try the app as soon as it opens."
+      "body_soon": "Lukitas is being built in the open. Follow its progress on GitHub and try the app as soon as it opens.",
+      "body_invite": "Lukitas already works, and we're trying it out with a small group. If you were invited, sign in with your email."
     },
     "footer": {
       "language": "Language",

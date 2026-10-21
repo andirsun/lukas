@@ -26,6 +26,8 @@ export interface BuildEnv {
   siteUrl: string | undefined;
   /** `VITE_LANDING_ONLY`, raw: pass it to `isLandingOnly`. */
   landingOnly: string | undefined;
+  /** `VITE_APP_URL`, raw: pass it to `resolveAppOrigin`. */
+  appUrl: string | undefined;
 }
 
 /**
@@ -37,5 +39,9 @@ export interface BuildEnv {
  */
 export function readBuildEnv(options: { root?: string; mode?: string } = {}): BuildEnv {
   const env = loadEnv(options.mode ?? resolveBuildMode(), options.root ?? WEB_ROOT, "VITE_");
-  return { siteUrl: env.VITE_SITE_URL, landingOnly: env.VITE_LANDING_ONLY };
+  return {
+    siteUrl: env.VITE_SITE_URL,
+    landingOnly: env.VITE_LANDING_ONLY,
+    appUrl: env.VITE_APP_URL,
+  };
 }

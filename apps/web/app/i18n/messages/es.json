@@ -405,7 +405,8 @@
     "closing": {
       "title": "Cuando quieras, arrancamos.",
       "body": "Crea tu cuenta con tu correo en menos de un minuto. Lukitas se encarga de que sea divertido.",
-      "body_soon": "Lukitas está en construcción, en abierto. Mira cómo avanza en GitHub y prueba la app en cuanto abra."
+      "body_soon": "Lukitas está en construcción, en abierto. Mira cómo avanza en GitHub y prueba la app en cuanto abra.",
+      "body_invite": "Lukitas ya funciona y la estamos probando con un grupo pequeño. Si te invitaron, entra con tu correo."
     },
     "footer": {
       "language": "Idioma",

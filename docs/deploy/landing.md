@@ -1,8 +1,16 @@
 # Deploying the landing page (Cloudflare)
 
-Until the app exists, Lukitas can ship as the landing page alone: the prerendered pages (`/` in
-Spanish, `/en` in English, and the roadmap at `/roadmap` and `/en/roadmap`), a 404 page and the static files. Every call to action reads "Coming
-soon · Follow on GitHub" and links to the repository; nothing leads to the app.
+Lukitas can ship as the landing page alone: the prerendered pages (`/` in Spanish, `/en` in
+English, and the roadmap at `/roadmap` and `/en/roadmap`), a 404 page and the static files. The
+app, when there is one, runs on its own origin, and the build says so with `VITE_APP_URL`:
+
+- **Without `VITE_APP_URL`** (no app yet): every call to action reads "Coming soon · Follow on
+  GitHub" and links to the repository; nothing leads to the app.
+- **With `VITE_APP_URL`** (the release): the calls to action read "Empieza ahora" / "Get started"
+  and "Entrar" / "Sign in" and open `${VITE_APP_URL}/sign-in?lang=<es|en>`. The "En la web" card
+  links to the app too, and the closing text says Lukitas already works and is being tested with a
+  small group ("Si te invitaron, entra con tu correo"), because only allowlisted emails can sign
+  in there.
 
 ## Build
 
@@ -10,10 +18,19 @@ soon · Follow on GitHub" and links to the repository; nothing leads to the app.
 VITE_SITE_URL=https://lukitas.andersonlaverde.com pnpm --filter @lukas/web build:landing
 ```
 
+The release, with the calls to action opening the live app:
+
+```sh
+VITE_SITE_URL=https://lukitas.andersonlaverde.com VITE_APP_URL=https://app-lukas.andersonlaverde.com pnpm --filter @lukas/web build:landing
+```
+
 - `VITE_SITE_URL` is the site's public origin (no path). Set it in the environment or in `apps/web/.env`: both are read the same way, for the generated files and for the app code. It is required: the script stops with a
   message when it is missing or is not an `http(s)` origin. The same origin goes into the canonical
   and `hreflang` links, the Open Graph tags, `sitemap.xml` and `robots.txt`, which are generated at
   build time.
+- `VITE_APP_URL` is optional: the live app's origin (no path), read like `VITE_SITE_URL`. The
+  script stops with a message when it is set but is not an `http(s)` origin. It only has an effect
+  in this landing-only build; a normal build serves the app from its own origin.
 - The script builds with `VITE_LANDING_ONLY=true`. The output is `apps/web/build/client`:
   `index.html`, `en/index.html`, `roadmap/index.html`, `en/roadmap/index.html`, `404.html`, `assets/`, `lukas/`, `og-*.png`, `robots.txt`,
   `sitemap.xml` and `_headers`.
@@ -58,5 +75,8 @@ Without it the placeholder `https://lukas.app` is used.
 ## Checking a build
 
 `pnpm --filter @lukas/web e2e:landing-only` builds the landing-only release with a test origin and
-runs its end-to-end suite (links, copy, origin, 404 page, accessibility). `pnpm --filter @lukas/web
-e2e:landing` does the same for the default build.
+runs its end-to-end suite (links, copy, origin, 404 page, accessibility).
+`pnpm --filter @lukas/web e2e:landing-only-app` does the same with a test `VITE_APP_URL` and checks
+that the calls to action open its sign-in and nothing says "coming soon". `pnpm --filter
+@lukas/web e2e:landing` does it for the default build. Each overwrites `apps/web/build/client`, so
+build the release again afterwards.

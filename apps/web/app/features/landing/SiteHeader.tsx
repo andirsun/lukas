@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
-import { LANDING_ONLY } from "../../site/config.ts";
+import { COMING_SOON } from "../../site/config.ts";
 import { LANDING_PATH, ROADMAP_PATH, type SitePage } from "../../site/paths.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
@@ -40,7 +40,7 @@ export function SiteHeader({ page }: { page: SitePage }) {
             {t("faq")}
           </a>
           <PressLink {...app} variant="secondary" size="sm">
-            {t(LANDING_ONLY ? "sign_in_soon" : "sign_in")}
+            {t(COMING_SOON ? "sign_in_soon" : "sign_in")}
             <NewTabHint target={app.target} />
           </PressLink>
           <ThemeToggle />

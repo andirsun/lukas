@@ -1,5 +1,5 @@
 import type { Locale } from "../../i18n/format.ts";
-import { LANDING_ONLY } from "../../site/config.ts";
+import { APP_ORIGIN, LANDING_ONLY } from "../../site/config.ts";
 
 /** The demo without an account ("Pruébalo sin cuenta"), built in Task 18a. */
 export const DEMO_PATH = "/demo";
@@ -8,16 +8,20 @@ export const DEMO_PATH = "/demo";
 export const GITHUB_HREF = "https://github.com/andirsun/lukas";
 
 /**
- * Where "Empieza ahora" and "Entrar" go: sign-in, told which language the visitor came from. In
- * the landing-only release there is no app yet, so they lead to the GitHub repo in a new tab
- * (`LANDING_ONLY`, spread onto a `PressLink`).
+ * Where "Empieza ahora" and "Entrar" go: sign-in, told which language the visitor came from
+ * (spread onto a `PressLink`). In the landing-only release the app lives on another origin:
+ * with `VITE_APP_URL` they open its sign-in there; without it there is no app to open yet, so
+ * they lead to the GitHub repo in a new tab.
  */
 export function appLinkProps(
   locale: Locale,
   landingOnly: boolean = LANDING_ONLY,
+  appOrigin: string | undefined = APP_ORIGIN,
 ): { to: string; target?: "_blank"; rel?: string } {
-  if (landingOnly) return { to: GITHUB_HREF, target: "_blank", rel: "noopener" };
-  return { to: `/sign-in?lang=${locale}` };
+  const signIn = `/sign-in?lang=${locale}`;
+  if (!landingOnly) return { to: signIn };
+  if (appOrigin) return { to: `${appOrigin}${signIn}` };
+  return { to: GITHUB_HREF, target: "_blank", rel: "noopener" };
 }
 
 /**

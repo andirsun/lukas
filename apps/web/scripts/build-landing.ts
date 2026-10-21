@@ -6,14 +6,21 @@
  *
  *   VITE_SITE_URL=https://lukitas.andersonlaverde.com pnpm --filter @lukas/web build:landing
  *
+ * VITE_APP_URL (the live app's origin) is optional. Without it the calls to action say "coming
+ * soon" and lead to GitHub. With it they say "Empieza ahora" / "Entrar" and open the app's sign-in:
+ *
+ *   VITE_SITE_URL=https://lukitas.andersonlaverde.com VITE_APP_URL=https://app-lukas.andersonlaverde.com \
+ *     pnpm --filter @lukas/web build:landing
+ *
  * The output stays in build/client.
  */
 import { spawnSync } from "node:child_process";
 import { readBuildEnv } from "../app/site/build-env.ts";
-import { resolveSiteOrigin } from "../app/site/origin.ts";
+import { resolveAppOrigin, resolveSiteOrigin } from "../app/site/origin.ts";
 
 // The environment or a `.env` file of apps/web, as the build itself reads it.
-const raw = readBuildEnv().siteUrl;
+const env = readBuildEnv();
+const raw = env.siteUrl;
 if (!raw?.trim()) {
   console.error(
     "VITE_SITE_URL is not set (environment or apps/web/.env). Pass the site's public origin, e.g.\n" +
@@ -23,16 +30,29 @@ if (!raw?.trim()) {
 }
 
 let origin: string;
+let appOrigin: string | undefined;
 try {
   origin = resolveSiteOrigin(raw);
+  appOrigin = resolveAppOrigin(env.appUrl);
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 }
 
-console.log(`Building the landing-only release for ${origin}`);
+console.log(
+  `Building the landing-only release for ${origin}, ` +
+    (appOrigin
+      ? `with its calls to action opening ${appOrigin}`
+      : "with coming-soon calls to action"),
+);
 const result = spawnSync("react-router", ["build"], {
   stdio: "inherit",
-  env: { ...process.env, VITE_SITE_URL: origin, VITE_LANDING_ONLY: "true" },
+  // The build sees exactly what was validated (blank when there is no app yet).
+  env: {
+    ...process.env,
+    VITE_SITE_URL: origin,
+    VITE_LANDING_ONLY: "true",
+    VITE_APP_URL: appOrigin ?? "",
+  },
 });
 process.exit(result.status ?? 1);
