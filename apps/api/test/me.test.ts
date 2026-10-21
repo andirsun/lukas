@@ -69,9 +69,12 @@ test("the currency can be chosen while the account has no transactions", async (
 });
 
 test("the currency is locked once the account has transactions", async () => {
+  const before = (await (await t.request("GET", "/v1/me", { headers: a.headers })).json()) as {
+    timezone: string;
+  };
   const res = await t.request("PATCH", "/v1/me", {
     headers: a.headers,
-    body: { currency: "COP", timezone: "America/Bogota" },
+    body: { currency: "COP", timezone: "Europe/Madrid" },
   });
   expect(res.status).toBe(409);
   expect(((await res.json()) as { code: string }).code).toBe("currency_locked");
@@ -79,6 +82,12 @@ test("the currency is locked once the account has transactions", async () => {
     currency: string;
   };
   expect(me.currency).toBe("EUR");
+
+  // The rejected request changed nothing else either.
+  const after = (await (await t.request("GET", "/v1/me", { headers: a.headers })).json()) as {
+    timezone: string;
+  };
+  expect(after.timezone).toBe(before.timezone);
 
   // Setting the value it already has is not a change.
   const same = await t.request("PATCH", "/v1/me", {

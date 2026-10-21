@@ -38,15 +38,22 @@ export function formatMoney(
   locale: Locale,
   opts: { sign?: "auto" | "always" } = {},
 ): string {
-  const format = new Intl.NumberFormat(locale, {
+  // Colombians write pesos as "$50.000": `es-CO` with the narrow symbol, scoped to COP so the
+  // other currencies keep the plain `es` conventions (EUR stays "562,92 €"). In English the COP
+  // code stays, because "$50,000" would read as dollars.
+  const colombian = currency === "COP" && locale === "es";
+  const format = new Intl.NumberFormat(colombian ? "es-CO" : locale, {
     style: "currency",
     currency,
     signDisplay: opts.sign === "always" ? "exceptZero" : "negative",
+    ...(colombian ? { currencyDisplay: "narrowSymbol" as const } : {}),
     ...(WHOLE_UNIT_CURRENCIES.has(currency)
       ? { minimumFractionDigits: 0, maximumFractionDigits: 0 }
       : {}),
   });
-  return format.format(cents / MINOR_UNIT).replaceAll("-", MINUS);
+  const text = format.format(cents / MINOR_UNIT).replaceAll("-", MINUS);
+  // `es-CO` puts a (non-breaking) space after the symbol; the spec writes "$50.000".
+  return colombian ? text.replace(/\$\s/, "$") : text;
 }
 
 /**

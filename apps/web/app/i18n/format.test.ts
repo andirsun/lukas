@@ -59,10 +59,34 @@ describe("formatMoney", () => {
 
   it("stores every currency in hundredths, so COP shows whole pesos from pesos x 100", () => {
     // 50.000 pesos are stored as 5.000.000, the same convention as parseAmountInput.
-    expect(formatMoney(5_000_000, "COP", "es")).toBe(`50.000${NBSP}COP`);
+    expect(formatMoney(5_000_000, "COP", "es")).toBe("$50.000");
+    expect(formatMoney(parseAmountInput("50000", "es"), "COP", "es")).toBe("$50.000");
+  });
+
+  it("writes COP as $50.000 in Spanish, with the real minus sign", () => {
+    expect(formatMoney(-5_000_000, "COP", "es")).toBe("−$50.000");
+    expect(formatMoney(-430_000_000, "COP", "es")).toBe("−$4.300.000");
+    expect(formatMoney(430_000_000, "COP", "es")).toBe("$4.300.000");
+    expect(formatMoney(0, "COP", "es")).toBe("$0");
+    expect(formatMoney(-0, "COP", "es")).toBe("$0");
+    expect(formatMoney(5_000_000, "COP", "es", { sign: "always" })).toBe("+$50.000");
+    expect(formatMoney(-5_000_000, "COP", "es", { sign: "always" })).toBe("−$50.000");
+    expect(formatMoney(-5_000_000, "COP", "es")).not.toContain("-");
+  });
+
+  it("keeps the COP code in English, so it is not mistaken for dollars", () => {
     expect(formatMoney(5_000_000, "COP", "en")).toBe(`COP${NBSP}50,000`);
-    expect(formatMoney(-430_000_000, "COP", "es")).toBe(`−4.300.000${NBSP}COP`);
-    expect(formatMoney(parseAmountInput("50000", "es"), "COP", "es")).toBe(`50.000${NBSP}COP`);
+    expect(formatMoney(-5_000_000, "COP", "en")).toBe(`−COP${NBSP}50,000`);
+  });
+
+  it("rounds sub-peso amounts, since COP shows no decimals", () => {
+    expect(formatMoney(150, "COP", "es")).toBe("$2");
+  });
+
+  it("leaves the other currencies as they were", () => {
+    expect(formatMoney(56292, "EUR", "es")).toBe(`562,92${NBSP}€`);
+    expect(formatMoney(56292, "USD", "es")).toBe(`562,92${NBSP}US$`);
+    expect(formatMoney(5_000_000, "CLP", "es")).toBe(`50.000${NBSP}CLP`);
   });
 });
 
@@ -123,7 +147,7 @@ describe("lukasHint", () => {
 
   it("agrees with formatMoney for the same stored integer", () => {
     const stored = pesos(4_300_000);
-    expect(formatMoney(stored, "COP", "es")).toBe(`4.300.000${NBSP}COP`);
+    expect(formatMoney(stored, "COP", "es")).toBe("$4.300.000");
     expect(lukasHint(stored, "COP", "es")).toBe("4,3 palos");
   });
 });

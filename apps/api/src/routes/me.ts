@@ -5,6 +5,7 @@ import {
   categories,
   categoryBudgets,
   recurrences,
+  type Tx,
   transactions,
   user,
   withUser,
@@ -52,36 +53,34 @@ async function profile(deps: AppDeps, userId: string) {
 
 /**
  * Sets the default account's currency, only while it has no transactions (soft-deleted ones
- * count: they carry the old currency and can be restored). The check and the update are one
- * statement, so a transaction created in between cannot slip past it.
+ * count: they carry the old currency and can be restored). The check is part of the UPDATE
+ * itself; it runs in the caller's transaction, so a 409 rolls back the whole PATCH.
  */
-async function setCurrency(deps: AppDeps, userId: string, currency: string) {
-  await withUser(deps.db, userId, async (tx) => {
-    const changed = await tx
-      .update(accounts)
-      .set({ currency })
-      .where(
-        and(
-          eq(accounts.isDefault, true),
-          // Written out: Drizzle renders columns unqualified inside UPDATE, so `id` would be ambiguous.
-          sql`not exists (select 1 from transactions t where t.account_id = accounts.id)`,
-        ),
-      )
-      .returning({ id: accounts.id });
-    if (changed.length > 0) return;
-    // Nothing changed: fine if the account already has that currency, locked otherwise.
-    const [account] = await tx
-      .select({ currency: accounts.currency })
-      .from(accounts)
-      .where(eq(accounts.isDefault, true));
-    if (account?.currency !== currency) {
-      throw new ApiError(
-        409,
-        "currency_locked",
-        "The currency cannot change once the account has transactions",
-      );
-    }
-  });
+async function setCurrency(tx: Tx, currency: string) {
+  const changed = await tx
+    .update(accounts)
+    .set({ currency })
+    .where(
+      and(
+        eq(accounts.isDefault, true),
+        // Written out: Drizzle renders columns unqualified inside UPDATE, so `id` would be ambiguous.
+        sql`not exists (select 1 from transactions t where t.account_id = accounts.id)`,
+      ),
+    )
+    .returning({ id: accounts.id });
+  if (changed.length > 0) return;
+  // Nothing changed: fine if the account already has that currency, locked otherwise.
+  const [account] = await tx
+    .select({ currency: accounts.currency })
+    .from(accounts)
+    .where(eq(accounts.isDefault, true));
+  if (account?.currency !== currency) {
+    throw new ApiError(
+      409,
+      "currency_locked",
+      "The currency cannot change once the account has transactions",
+    );
+  }
 }
 
 export function meRoutes(deps: AppDeps) {
@@ -105,8 +104,7 @@ export function meRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const { onboardingCompleted, currency, ...fields } = c.req.valid("json");
-      // First, so a locked currency rejects the whole request instead of applying part of it.
-      if (currency) await setCurrency(deps, c.get("userId"), currency);
+      const userId = c.get("userId");
       const set = {
         ...fields,
         // Stamp completion once; later calls keep the first timestamp.
@@ -114,12 +112,13 @@ export function meRoutes(deps: AppDeps) {
           ? { onboardingCompletedAt: sql`coalesce(${user.onboardingCompletedAt}, now())` }
           : {}),
       };
-      if (Object.keys(set).length > 0) {
-        await deps.db
-          .update(user)
-          .set(set)
-          .where(eq(user.id, c.get("userId")));
-      }
+      // One transaction: a locked currency (409) leaves every other field untouched.
+      await withUser(deps.db, userId, async (tx) => {
+        if (currency) await setCurrency(tx, currency);
+        if (Object.keys(set).length > 0) {
+          await tx.update(user).set(set).where(eq(user.id, userId));
+        }
+      });
       return c.json(await profile(deps, c.get("userId")), 200);
     },
   );
