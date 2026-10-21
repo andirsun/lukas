@@ -145,8 +145,6 @@
       "sign_in": "Sign in"
     },
     "hero": {
-      "question_spend": "Where does all my money go?",
-      "question_living": "How much does living cost me?",
       "annotation": "Free, and it always will be!",
       "headline": "Your <mark>money</mark>, finally clear.",
       "description": "<lead>Lukas is your budget, and you'll actually enjoy looking after it.</lead> Log an expense in seconds and see where every buck goes.",

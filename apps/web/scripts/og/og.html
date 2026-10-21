@@ -59,47 +59,25 @@
         background-clip: text;
         color: transparent;
       }
-      .questions {
-        margin: 34px 0 0;
-        font-family: var(--font-display);
-        font-weight: 600;
-        font-size: 30px;
-        line-height: 1.25;
-        color: var(--ink-muted);
-      }
-      .questions span {
-        position: relative;
-      }
-      .questions span::after {
-        content: "";
-        position: absolute;
-        left: -3%;
-        right: -3%;
-        top: 52%;
-        height: 4px;
-        border-radius: 4px;
-        background: var(--over);
-        transform: rotate(-3deg);
-      }
       .headline {
-        margin: 18px 0 0;
+        margin: 22px 0 0;
         font-family: var(--font-display);
         font-weight: 700;
-        font-size: 66px;
-        line-height: 1.02;
+        font-size: 74px;
+        line-height: 1.04;
         color: var(--good);
         text-shadow: 0 0 26px color-mix(in srgb, var(--good) 30%, transparent);
       }
       /* The handwritten promise, as on the landing: hand face, tilted, on a candy stroke. */
       .annotation {
         display: inline-block;
-        margin: 22px 0 0 18px;
-        padding: 1px 14px 4px;
+        margin: 52px 0 0 18px;
+        padding: 1px 16px 5px;
         border-radius: 0.25em 0.7em 0.3em 0.8em / 0.7em 0.3em 0.8em 0.35em;
         background: color-mix(in srgb, var(--candy) 32%, transparent);
         font-family: var(--font-hand);
         font-weight: 700;
-        font-size: 38px;
+        font-size: 44px;
         line-height: 1.1;
         transform: rotate(-4deg);
       }
@@ -151,10 +129,6 @@
     <div class="card">
       <div>
         <div class="logo">Lukas</div>
-        <div class="questions">
-          <div><span data-copy="hero.question_spend"></span></div>
-          <div><span data-copy="hero.question_living"></span></div>
-        </div>
         <div class="annotation" data-copy="hero.annotation"></div>
         <div class="headline" data-copy="hero.headline"></div>
         <div class="perks" data-copy="hero.perks"></div>

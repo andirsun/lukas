@@ -14,9 +14,8 @@ export type HeroProps = {
 };
 
 /**
- * The questions people ask about their money, crossed out; then a handwritten promise (free, and
- * it always will be), the answer (the headline, with "lukas" on a gold marker), what Lukas is,
- * one primary action with the perks under it, and Lukas waving.
+ * A handwritten promise (free, and it always will be), the headline with "lukas" on a gold
+ * marker, what Lukas is, one primary action with the perks under it, and Lukas waving.
  */
 export function Hero({ secondaryCta = false }: HeroProps) {
   const t = useTranslations("landing.hero");
@@ -24,14 +23,6 @@ export function Hero({ secondaryCta = false }: HeroProps) {
   return (
     <section id="hero" className="lk-landing-hero" aria-labelledby="hero-title">
       <div className="lk-landing-hero-text">
-        <ul className="lk-landing-questions">
-          <li>
-            <s>{t("question_spend")}</s>
-          </li>
-          <li>
-            <s>{t("question_living")}</s>
-          </li>
-        </ul>
         <p className="lk-landing-annotation">{t("annotation")}</p>
         <h1 id="hero-title" className="lk-landing-headline">
           {t.rich("headline", {

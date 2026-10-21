@@ -145,8 +145,6 @@
       "sign_in": "Entrar"
     },
     "hero": {
-      "question_spend": "¿En qué se me va la plata?",
-      "question_living": "¿Cuánto me cuesta vivir?",
       "annotation": "¡Gratis, y siempre lo será!",
       "headline": "Tus <mark>lukas</mark>, por fin claras.",
       "description": "<lead>Lukas es tu presupuesto, y te va a dar gusto cuidarlo.</lead> Anota un gasto en segundos y mira en qué se va cada luka.",

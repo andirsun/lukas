@@ -63,19 +63,14 @@ export const PageDayEnglish: Story = {
 };
 
 /**
- * Hero: crossed-out questions, the handwritten promise, the headline with "lukas" on the gold
- * marker, one primary action on its edge with the perks (open source links to GitHub), Lukas
- * waving.
+ * Hero: the handwritten promise, the headline with "lukas" on the gold marker, one primary action
+ * on its edge with the perks (open source links to GitHub), Lukas waving.
  */
 export const HeroSection: Story = {
   render: () => <Hero />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const questions = canvasElement.querySelectorAll(".lk-landing-questions s");
-    await expect([...questions].map((q) => q.textContent)).toEqual([
-      "¿En qué se me va la plata?",
-      "¿Cuánto me cuesta vivir?",
-    ]);
+    await expect(canvasElement.querySelectorAll("s")).toHaveLength(0);
     await expect(canvas.getByText("¡Gratis, y siempre lo será!")).toBeVisible();
     const headline = canvas.getByRole("heading", { level: 1 });
     await expect(headline).toHaveTextContent("Tus lukas, por fin claras.");

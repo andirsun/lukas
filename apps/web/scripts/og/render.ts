@@ -56,7 +56,7 @@ try {
     await page.evaluate(async () => {
       await document.fonts.ready;
       await Promise.all(
-        ["600 30px Fredoka", "700 66px Fredoka", "800 20px Nunito", "700 38px Caveat"].map((f) =>
+        ["700 74px Fredoka", "800 22px Nunito", "700 44px Caveat"].map((f) =>
           document.fonts.load(f),
         ),
       );

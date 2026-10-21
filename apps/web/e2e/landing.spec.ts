@@ -21,7 +21,7 @@ const LOCALES = [
     description: "Anota un gasto en segundos y mira en qué se va cada luka.",
     perks: "Gratis para siempre · Código abierto · Sin contraseñas",
     openSourcePerk: "Código abierto",
-    questions: ["¿En qué se me va la plata?", "¿Cuánto me cuesta vivir?"],
+    removedQuestions: ["¿En qué se me va la plata?", "¿Cuánto me cuesta vivir?"],
     cta: "Empieza ahora",
     demoCta: "Pruébalo sin cuenta",
     webCta: "Empezar",
@@ -54,7 +54,7 @@ const LOCALES = [
     description: "Log an expense in seconds and see where every buck goes.",
     perks: "Free forever · Open source · No passwords",
     openSourcePerk: "Open source",
-    questions: ["Where does all my money go?", "How much does living cost me?"],
+    removedQuestions: ["Where does all my money go?", "How much does living cost me?"],
     cta: "Get started",
     demoCta: "Try it without an account",
     webCta: "Start",
@@ -166,11 +166,30 @@ for (const l of LOCALES) {
 
       await page.goto(l.path);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(l.headline);
-      for (const question of l.questions) {
-        // Crossed out: the questions Lukas answers.
-        await expect(page.locator("s", { hasText: question })).toBeVisible();
-      }
       await expect(page).toHaveTitle(new RegExp(l.titlePart));
+    });
+
+    test("the hero is simple: no crossed-out questions, the note comes first", async ({
+      page,
+      request,
+    }) => {
+      // The old crossed-out questions are gone, from the copy and from the markup.
+      const html = (await (await request.get(l.path)).text()).replaceAll("&#x27;", "'");
+      for (const question of l.removedQuestions) expect(html).not.toContain(question);
+      await page.goto(l.path);
+      const hero = page.locator("#hero");
+      await expect(hero.locator("s")).toHaveCount(0);
+      // Annotation → headline → description → actions.
+      expect(
+        await hero
+          .locator(".lk-landing-hero-text > *")
+          .evaluateAll((nodes) => nodes.map((node) => node.className)),
+      ).toEqual([
+        "lk-landing-annotation",
+        "lk-landing-headline",
+        "lk-landing-description",
+        "lk-landing-cta",
+      ]);
     });
 
     test("the hero: a handwritten note, the highlighted word, the lead and the perks", async ({

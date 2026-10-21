@@ -133,38 +133,11 @@
   .lk-landing-mascot > * {
     position: relative;
   }
-  .lk-landing-questions {
-    display: grid;
-    gap: var(--space-1);
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-family: var(--font-display);
-    font-weight: 600;
-    font-size: 19px;
-    line-height: 1.2;
-    color: var(--ink-muted);
-  }
-  /* The questions are crossed out with a slightly tilted marker stroke in `over`. */
-  .lk-landing-questions s {
-    position: relative;
-    text-decoration: none;
-  }
-  .lk-landing-questions s::after {
-    content: "";
-    position: absolute;
-    left: -3%;
-    right: -3%;
-    top: 52%;
-    height: 3px;
-    border-radius: var(--radius-pill);
-    background: var(--over);
-    transform: rotate(-3deg);
-  }
   /*
    * A handwritten note above the headline (`hand`, landing only), tilted like a scribble, on a
-   * translucent candy highlighter stroke. The text is `ink`: at least 7:1 on the stroke in both
-   * themes.
+   * translucent candy highlighter stroke. The text is `ink`: at least 6:1 on the stroke in both
+   * themes. It opens the hero text; the tilt drops its left end by about a third of its height,
+   * so the headline keeps an extra gap below it.
    */
   .lk-landing-annotation {
     justify-self: center;
@@ -184,7 +157,7 @@
     font-weight: 700;
     font-size: 36px;
     line-height: 1.05;
-    margin: var(--space-1) 0 0;
+    margin: var(--space-2) 0 0;
     color: var(--good);
     text-shadow: 0 0 18px color-mix(in srgb, var(--good) 28%, transparent);
   }
@@ -634,9 +607,6 @@
       width: min(400px, 100%);
       justify-self: center;
     }
-    .lk-landing-questions {
-      font-size: 28px;
-    }
     /* A scribble over the headline's first words, not a centered label. */
     .lk-landing-annotation {
       justify-self: start;
@@ -644,6 +614,7 @@
       font-size: 32px;
     }
     .lk-landing-headline {
+      margin-top: var(--space-3);
       font-size: 56px;
     }
     .lk-landing-description {
