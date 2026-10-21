@@ -1,9 +1,9 @@
-import { animate, useReducedMotion } from "motion/react";
+import { animate } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { formatMoney } from "../i18n/format.ts";
 import { useLocale } from "../i18n/IntlProvider.tsx";
 import { cx } from "./cx.ts";
-import { durationToken } from "./motion-tokens.ts";
+import { durationToken, useReducedMotionPreference } from "./motion-tokens.ts";
 
 export interface MoneyProps {
   /** Integer minor units; negatives render with the real minus sign (U+2212). */
@@ -22,7 +22,7 @@ export interface MoneyProps {
  */
 export function Money({ cents, currency, animate: countUp = false, className }: MoneyProps) {
   const { locale } = useLocale();
-  const reduceMotion = useReducedMotion() ?? false;
+  const reduceMotion = useReducedMotionPreference();
   const counting = countUp && !reduceMotion;
   const [shown, setShown] = useState(cents);
   const shownRef = useRef(cents);

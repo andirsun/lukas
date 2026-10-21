@@ -604,3 +604,20 @@
     outline-offset: 2px;
   }
 }
+
+/*
+ * Reduced motion: pressing still moves things down (the feedback stays), but instantly. Unlayered,
+ * so it also beats the `transition-*` utilities on the same elements. Motion-driven animations
+ * (sheet, toast, count-up) handle reduced motion in their components.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .lk-press,
+  .lk-btn,
+  .lk-key,
+  .lk-seg button,
+  .lk-badge,
+  .lk-toast-actions button,
+  .lk-bar > span {
+    transition-duration: 0s;
+  }
+}

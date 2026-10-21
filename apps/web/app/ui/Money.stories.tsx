@@ -77,3 +77,16 @@ export const CountUp: Story = {
     await waitFor(() => expect(shown).toHaveTextContent("556,84 €"), { timeout: 2000 });
   },
 };
+
+/** Reduced motion: no count-up, the new amount shows at once. */
+export const CountUpReducedMotion: Story = {
+  parameters: { reducedMotion: true },
+  render: () => <CountUpHarness />,
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole("button"));
+    const shown = canvasElement.querySelector("[aria-hidden='true']") as HTMLElement;
+    await expect(shown).toHaveTextContent("556,84 €");
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await expect(shown).toHaveTextContent("556,84 €");
+  },
+};

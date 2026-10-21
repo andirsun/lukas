@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useDragControls, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useDragControls } from "motion/react";
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -10,7 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "use-intl";
-import { durationToken } from "./motion-tokens.ts";
+import { durationToken, useReducedMotionPreference } from "./motion-tokens.ts";
 import { PressButton } from "./PressButton.tsx";
 
 export interface SheetProps {
@@ -44,7 +44,7 @@ function focusables(root: HTMLElement): HTMLElement[] {
  */
 export function Sheet({ open, onClose, title, children }: SheetProps) {
   const t = useTranslations("common");
-  const reduceMotion = useReducedMotion() ?? false;
+  const reduceMotion = useReducedMotionPreference();
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();

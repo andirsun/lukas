@@ -119,3 +119,18 @@ export const OpenDayEnglish: Story = {
     await expect(within(dialog).getByRole("button", { name: "Close" })).toBeVisible();
   },
 };
+
+/** Reduced motion: the sheet fades in place; it never slides. */
+export const OpenReducedMotion: Story = {
+  args: { initiallyOpen: true },
+  parameters: { reducedMotion: true },
+  play: async () => {
+    const dialog = await screen.findByRole("dialog", { name: "Agregar gasto" });
+    const offsets: number[] = [];
+    await waitFor(() => {
+      offsets.push(new DOMMatrix(getComputedStyle(dialog).transform).m42);
+      expect(getComputedStyle(dialog).opacity).toBe("1");
+    });
+    await expect(offsets.every((y) => y === 0)).toBe(true);
+  },
+};

@@ -112,3 +112,39 @@ export const DayEnglish: Story = {
     await expect(within(canvasElement).getByRole("button", { name: "Add expense" })).toBeVisible();
   },
 };
+
+/**
+ * Under `prefers-reduced-motion: reduce` the press still moves the button down, but instantly:
+ * the stylesheet zeroes the transitions of every pressable.
+ */
+export const ReducedMotionCss: Story = {
+  play: async () => {
+    const rules = [...document.styleSheets].flatMap((sheet) => {
+      try {
+        return [...sheet.cssRules];
+      } catch {
+        return [];
+      }
+    });
+    const reduced = rules
+      .filter((rule): rule is CSSMediaRule => rule instanceof CSSMediaRule)
+      .filter((rule) => rule.conditionText.includes("prefers-reduced-motion: reduce"))
+      .flatMap((rule) => [...rule.cssRules])
+      .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule);
+    const zeroed = reduced
+      .filter((rule) => rule.style.transitionDuration === "0s")
+      .map((rule) => rule.selectorText)
+      .join(", ");
+    for (const selector of [
+      ".lk-press",
+      ".lk-btn",
+      ".lk-key",
+      ".lk-seg button",
+      ".lk-badge",
+      ".lk-toast-actions button",
+      ".lk-bar > span",
+    ]) {
+      await expect(zeroed).toContain(selector);
+    }
+  },
+};

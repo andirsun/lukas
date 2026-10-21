@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   createContext,
   type ReactNode,
@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { cx } from "./cx.ts";
-import { durationToken } from "./motion-tokens.ts";
+import { durationToken, useReducedMotionPreference } from "./motion-tokens.ts";
 
 export interface ToastAction {
   /** A verb in sentence case: `Deshacer`, `Ponerle nombre`. */
@@ -38,21 +38,30 @@ const ToastContext = createContext<ToastApi | null>(null);
 
 /**
  * Hosts one toast at a time at the bottom of the screen; a new one replaces the current one.
- * Toasts leave after 5 seconds (paused while hovered or focused) or when an action is taken.
- * Info toasts live in a polite `status` region, errors in an `alert` region.
+ * Toasts leave after `dismissAfterMs` (5 seconds; paused while hovered or focused) or when an
+ * action is taken. Info toasts live in a polite `status` region, errors in an `alert` region.
  */
-export function ToastProvider({ children }: { children: ReactNode }) {
+export function ToastProvider({
+  children,
+  dismissAfterMs = TOAST_MS,
+}: {
+  children: ReactNode;
+  /** Shortened only by tests. */
+  dismissAfterMs?: number;
+}) {
   const [toast, setToast] = useState<(ToastOptions & { id: number }) | null>(null);
   const [paused, setPaused] = useState(false);
   const [mounted, setMounted] = useState(false);
   const nextId = useRef(0);
-  const reduceMotion = useReducedMotion() ?? false;
+  const reduceMotion = useReducedMotionPreference();
 
   useEffect(() => setMounted(true), []);
 
   const show = useCallback((options: ToastOptions) => {
     nextId.current += 1;
     setToast({ ...options, id: nextId.current });
+    // The replaced toast may never get its pointer-leave or blur; the new one starts unpaused.
+    setPaused(false);
   }, []);
   const dismiss = useCallback(() => {
     setToast(null);
@@ -61,9 +70,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!toast || paused) return;
-    const timer = setTimeout(dismiss, TOAST_MS);
+    const timer = setTimeout(dismiss, dismissAfterMs);
     return () => clearTimeout(timer);
-  }, [toast, paused, dismiss]);
+  }, [toast, paused, dismiss, dismissAfterMs]);
 
   const api = useMemo(() => ({ show }), [show]);
 
@@ -97,8 +106,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                     type="button"
                     className="min-h-11 px-(--space-1)"
                     onClick={() => {
-                      action.onClick();
+                      // Dismiss first: an action may show a follow-up toast, which must win.
                       dismiss();
+                      action.onClick();
                     }}
                   >
                     {action.label}

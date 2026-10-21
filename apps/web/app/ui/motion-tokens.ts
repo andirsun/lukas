@@ -1,3 +1,6 @@
+import { MotionConfigContext, useReducedMotion } from "motion/react";
+import { useContext } from "react";
+
 export type DurationToken = "--press" | "--sheet" | "--count-up" | "--celebrate";
 
 /**
@@ -10,4 +13,16 @@ export function durationToken(name: DurationToken): number {
   const value = Number.parseFloat(raw);
   if (!Number.isFinite(value)) return 0;
   return raw.endsWith("ms") ? value / 1000 : value;
+}
+
+/**
+ * Whether to keep motion to fades: the person's `prefers-reduced-motion`, or a surrounding
+ * `<MotionConfig reducedMotion="always">` (Storybook forces it to test these paths). Motion's own
+ * `useReducedMotionConfig` can't be used: its context defaults to "never", which would ignore the
+ * OS setting whenever no MotionConfig is mounted.
+ */
+export function useReducedMotionPreference(): boolean {
+  const prefersReduced = useReducedMotion() ?? false;
+  const { reducedMotion } = useContext(MotionConfigContext);
+  return reducedMotion === "always" || prefersReduced;
 }
