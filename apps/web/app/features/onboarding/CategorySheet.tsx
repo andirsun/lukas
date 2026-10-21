@@ -16,59 +16,76 @@ export interface NewCategory {
   kind: CategoryKind;
 }
 
-export interface AddCategorySheetProps {
+/**
+ * What the sheet offers besides saving, when editing: deleting (no transactions; the API archives),
+ * archiving (it has transactions, so it can't go), or nothing yet while they are counted.
+ */
+export type CategoryRemoval =
+  | { kind: "counting" }
+  | { kind: "delete"; onRemove(): Promise<void> }
+  | { kind: "archive"; count: number; capped: boolean; onRemove(): Promise<void> };
+
+export interface CategorySheetProps {
   open: boolean;
   onClose(): void;
-  /** Creates it; a rejection (e.g. the name is taken) is shown in the sheet, which stays open. */
+  /** Editing an existing category (or a suggestion) rather than adding one. */
+  initial?: NewCategory | undefined;
+  /** Saves; a rejection (e.g. the name is taken) is shown in the sheet, which stays open. */
   onSave(category: NewCategory): Promise<void>;
+  /** Editing only: delete or archive, once the transactions are counted. */
+  removal?: CategoryRemoval | undefined;
   /** Turns a failure into the text to show. */
   errorText(problem: unknown): string;
 }
 
-const DEFAULT_GLYPH = CATEGORY_GLYPHS[0];
-const DEFAULT_TINT = CATEGORY_TINTS[0]?.value ?? "#8e87b8";
+const DEFAULT: NewCategory = {
+  name: "",
+  glyph: CATEGORY_GLYPHS[0],
+  tint: CATEGORY_TINTS[0]?.value ?? "#8e87b8",
+  kind: "expense",
+};
 
 /** The radio look: a tile that sits on its edge, outlined in gold when chosen. */
 const OPTION =
-  "flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border-2 border-stroke shadow-edge-sm has-checked:outline-3 has-checked:outline-gold has-checked:outline-offset-1 has-focus-visible:outline-3 has-focus-visible:outline-focus has-focus-visible:outline-offset-2";
+  "flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border-2 border-stroke shadow-edge-sm has-checked:outline-3 has-checked:outline-gold has-checked:outline-offset-1 has-focus-visible:outline-3 has-focus-visible:outline-focus has-focus-visible:outline-offset-2 has-disabled:cursor-not-allowed has-disabled:opacity-60";
 
 /**
- * "＋ Agregar categoría": a bottom sheet with the name, spending or income, an emoji and a tint.
- * Every choice is a native radio (arrow keys move within a group); the tints are named for screen
- * readers. Saving creates the category right away through the categories API.
+ * A category's sheet: "＋ Agregar categoría", or editing one from the categories step. Name,
+ * spending or income, an emoji and a tint, each a native radio group (the tints named for screen
+ * readers). Editing adds "Eliminar categoría" when it has no transactions; with transactions it says
+ * how many, offers "Archivar" instead, and its kind can't change here. Mount it with a `key` per
+ * category, so its fields start from `initial`.
  */
-export function AddCategorySheet({ open, onClose, onSave, errorText }: AddCategorySheetProps) {
+export function CategorySheet({
+  open,
+  onClose,
+  initial,
+  onSave,
+  removal,
+  errorText,
+}: CategorySheetProps) {
   const t = useTranslations("onboarding.categories");
   const nameId = useId();
   const errorId = useId();
-  const [name, setName] = useState("");
-  const [kind, setKind] = useState<CategoryKind>("expense");
-  const [glyph, setGlyph] = useState<string>(DEFAULT_GLYPH);
-  const [tint, setTint] = useState(DEFAULT_TINT);
+  const editing = initial !== undefined;
+  const [values, setValues] = useState<NewCategory>(() => initial ?? DEFAULT);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const kindLocked = removal?.kind === "archive" || removal?.kind === "counting";
+  const set = (patch: Partial<NewCategory>) => setValues((current) => ({ ...current, ...patch }));
 
   const close = () => {
-    setName("");
-    setKind("expense");
-    setGlyph(DEFAULT_GLYPH);
-    setTint(DEFAULT_TINT);
+    setValues(initial ?? DEFAULT);
     setError(null);
     onClose();
   };
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  async function act(write: () => Promise<void>) {
     if (saving) return;
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setError(t("name_required"));
-      return;
-    }
     setSaving(true);
     setError(null);
     try {
-      await onSave({ name: trimmed, glyph, tint, kind });
+      await write();
       close();
     } catch (problem) {
       setError(errorText(problem));
@@ -77,29 +94,39 @@ export function AddCategorySheet({ open, onClose, onSave, errorText }: AddCatego
     }
   }
 
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    const name = values.name.trim();
+    if (!name) {
+      setError(t("name_required"));
+      return;
+    }
+    void act(() => onSave({ ...values, name }));
+  }
+
   return (
-    <Sheet open={open} onClose={close} title={t("add_title")}>
+    <Sheet open={open} onClose={close} title={editing ? t("edit_title") : t("add_title")}>
       <form noValidate onSubmit={submit} className="flex flex-col gap-(--space-4) pt-(--space-3)">
         <div className="flex flex-col gap-(--space-1)">
           <label htmlFor={nameId} className="text-[15px] text-ink-muted">
             {t("name_label")}
           </label>
-          <div className={cx("lk-input min-h-11", error && !name.trim() && "border-over")}>
+          <div className={cx("lk-input min-h-11", error && !values.name.trim() && "border-over")}>
             <input
               id={nameId}
-              value={name}
+              value={values.name}
               maxLength={40}
               autoComplete="off"
               placeholder={t("name_placeholder")}
-              aria-invalid={(error !== null && !name.trim()) || undefined}
+              aria-invalid={(error !== null && !values.name.trim()) || undefined}
               aria-describedby={error ? errorId : undefined}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => set({ name: event.target.value })}
               className="min-h-9 min-w-0 flex-1 border-0 bg-transparent p-0 font-text text-[16px] text-ink outline-none placeholder:font-normal placeholder:text-ink-muted"
             />
           </div>
         </div>
 
-        <fieldset className="flex flex-col gap-(--space-2)">
+        <fieldset className="flex flex-col gap-(--space-2)" disabled={kindLocked}>
           <legend className="pb-(--space-1) text-[15px] text-ink-muted">{t("kind_label")}</legend>
           <div className="grid grid-cols-2 gap-(--space-2)">
             {(["expense", "income"] as const).map((value) => (
@@ -108,28 +135,31 @@ export function AddCategorySheet({ open, onClose, onSave, errorText }: AddCatego
                   type="radio"
                   name="kind"
                   value={value}
-                  checked={kind === value}
-                  onChange={() => setKind(value)}
+                  checked={values.kind === value}
+                  onChange={() => set({ kind: value })}
                   className="sr-only"
                 />
                 {value === "expense" ? t("kind_expense") : t("kind_income")}
               </label>
             ))}
           </div>
+          {removal?.kind === "archive" && (
+            <p className="text-[15px] text-ink-muted">{t("kind_locked")}</p>
+          )}
         </fieldset>
 
         <fieldset className="flex flex-col gap-(--space-2)">
           <legend className="pb-(--space-1) text-[15px] text-ink-muted">{t("glyph_label")}</legend>
           <div className="grid grid-cols-5 gap-(--space-2)">
-            {CATEGORY_GLYPHS.map((value) => (
+            {[...new Set([values.glyph, ...CATEGORY_GLYPHS])].map((value) => (
               <label key={value} className={cx(OPTION, "bg-surface-row text-[22px]")}>
                 <input
                   type="radio"
                   name="glyph"
                   value={value}
                   aria-label={value}
-                  checked={glyph === value}
-                  onChange={() => setGlyph(value)}
+                  checked={values.glyph === value}
+                  onChange={() => set({ glyph: value })}
                   className="sr-only"
                 />
                 <span aria-hidden="true">{value}</span>
@@ -141,9 +171,9 @@ export function AddCategorySheet({ open, onClose, onSave, errorText }: AddCatego
         <fieldset className="flex flex-col gap-(--space-2)">
           <legend className="pb-(--space-1) text-[15px] text-ink-muted">{t("tint_label")}</legend>
           <div className="grid grid-cols-5 gap-(--space-2)">
-            {CATEGORY_TINTS.map(({ name: tintName, value }) => (
+            {CATEGORY_TINTS.map(({ name, value }) => (
               <label
-                key={tintName}
+                key={name}
                 className={OPTION}
                 style={{ background: `color-mix(in srgb, ${value} 70%, var(--surface-sunken))` }}
               >
@@ -151,9 +181,9 @@ export function AddCategorySheet({ open, onClose, onSave, errorText }: AddCatego
                   type="radio"
                   name="tint"
                   value={value}
-                  aria-label={t(`tints.${tintName}`)}
-                  checked={tint === value}
-                  onChange={() => setTint(value)}
+                  aria-label={t(`tints.${name}`)}
+                  checked={values.tint === value}
+                  onChange={() => set({ tint: value })}
                   className="sr-only"
                 />
               </label>
@@ -165,6 +195,38 @@ export function AddCategorySheet({ open, onClose, onSave, errorText }: AddCatego
         <PressButton type="submit" className="w-full" disabled={saving}>
           {t("save")}
         </PressButton>
+
+        {removal?.kind === "counting" && (
+          <p role="status" className="text-[15px] text-ink-muted">
+            {t("counting")}
+          </p>
+        )}
+        {removal?.kind === "delete" && (
+          <PressButton
+            variant="ghost"
+            className="self-center text-over"
+            disabled={saving}
+            onClick={() => void act(removal.onRemove)}
+          >
+            {t("delete")}
+          </PressButton>
+        )}
+        {removal?.kind === "archive" && (
+          <div className="flex flex-col gap-(--space-2)">
+            <p className="text-[15px] text-ink">
+              {removal.capped
+                ? t("has_many_transactions", { count: removal.count })
+                : t("has_transactions", { count: removal.count })}
+            </p>
+            <PressButton
+              variant="secondary"
+              disabled={saving}
+              onClick={() => void act(removal.onRemove)}
+            >
+              {t("archive")}
+            </PressButton>
+          </div>
+        )}
       </form>
     </Sheet>
   );

@@ -9,7 +9,7 @@ import {
   type OnboardingDraft,
   saveOnboardingDraft,
 } from "./onboarding-draft.ts";
-import { SUGGESTED_CATEGORIES } from "./suggested-categories.ts";
+import { normalizeName, SUGGESTED_CATEGORIES } from "./suggested-categories.ts";
 import { Welcome } from "./Welcome.tsx";
 
 /** The last 3 complete months, as the API would report them today. */
@@ -75,6 +75,8 @@ interface FakeApiOptions {
   takenNames?: string[];
   /** How long a confirm takes, in ms. */
   confirmDelayMs?: number;
+  /** Transactions per category name (the categories step counts them before a delete). */
+  transactionsByName?: Record<string, number>;
 }
 
 function onboardingFetch({
@@ -88,6 +90,7 @@ function onboardingFetch({
   takenNames = [],
   confirmDelayMs = 0,
   hasTransactions = false,
+  transactionsByName = {},
 }: FakeApiOptions): typeof fetch {
   let categoryPosts = 0;
   let confirmed = false;
@@ -174,8 +177,8 @@ function onboardingFetch({
       categoryPosts += 1;
       const input = body as Omit<FakeCategory, "id" | "archived" | "currentBudget">;
       const taken = (name: string) => name.toLowerCase() === input.name.toLowerCase();
-      // Like the API: names are unique per person, ignoring case (archived ones too).
-      if (categories.some((c) => taken(c.name)) || takenNames.some(taken)) {
+      // Like the API: names are unique among a person's active categories, ignoring case.
+      if (categories.some((c) => !c.archived && taken(c.name)) || takenNames.some(taken)) {
         return Response.json({ code: "category_name_taken" }, { status: 409 });
       }
       const created = {
@@ -192,6 +195,15 @@ function onboardingFetch({
       return Response.json(created, { status: 201 });
     }
     if (path === "/api/v1/transactions" && request.method === "GET") {
+      const categoryId = url.searchParams.get("category");
+      if (categoryId) {
+        const name = categories.find((c) => c.id === categoryId)?.name ?? "";
+        const count = transactionsByName[name] ?? 0;
+        return Response.json({
+          items: Array.from({ length: Math.min(count, 200) }, (_, i) => ({ id: `t-${i}` })),
+          nextCursor: null,
+        });
+      }
       return Response.json({
         items: confirmed || hasTransactions ? [{ id: "t-1" }] : [],
         nextCursor: null,
@@ -234,6 +246,27 @@ function onboardingFetch({
     if (confirm) {
       if (confirmDelayMs) await new Promise((resolve) => setTimeout(resolve, confirmDelayMs));
       confirmed = true;
+      // Like the importer: the file's categories that don't exist yet (by name, any case) are made,
+      // as the file writes them ("supermercado" in lower case, "Salário" with its accent).
+      for (const [name, kind, icon] of IMPORTED_CATEGORIES) {
+        // The importer matches names without case or accents (and archived ones too).
+        if (categories.some((c) => normalizeName(c.name) === normalizeName(name))) {
+          continue;
+        }
+        categories = [
+          ...categories,
+          {
+            id: `cat-${categories.length}`,
+            name,
+            kind,
+            icon,
+            color: "orange",
+            sortOrder: 0,
+            archived: false,
+            currentBudget: null,
+          },
+        ];
+      }
       failuresLeft = failRefreshesAfterConfirm;
       return Response.json({
         id: confirm[1],
@@ -247,6 +280,14 @@ function onboardingFetch({
     return new Response(null, { status: 404 });
   };
 }
+
+/** What the sample file's import makes, as the importer names it: [name, kind, icon]. */
+const IMPORTED_CATEGORIES: [string, "expense" | "income", string][] = [
+  ["supermercado", "expense", "cart"],
+  ["Ocio", "expense", "star"],
+  ["Taxes", "expense", "document"],
+  ["Salário", "income", "salary"],
+];
 
 /** Who the fake API says is signed in. */
 const FAKE_USER_ID = "u-new";

@@ -45,9 +45,10 @@ function formatDate(iso: string, locale: Locale): string {
 }
 
 /**
- * "¿Traes tu historial?": a list of sources. Budge opens a short how-to and the file picker, then
- * the preview (transactions, duplicates, rows with problems, new categories) and the confirm. The
- * others are "Pronto" for now. SALTAR moves on without importing (dropping a pending preview).
+ * "¿Vienes de otra app?": a list of sources, before the categories (so they can start from what
+ * the file brings). Budge opens a short how-to and the file picker, then the preview (transactions,
+ * duplicates, rows with problems, new categories) and the confirm; the others are "Pronto" for now.
+ * "No, empiezo de cero" and SALTAR move on without importing (SALTAR drops a pending preview).
  */
 export function ImportStep({
   state,
@@ -64,31 +65,6 @@ export function ImportStep({
   locked = false,
 }: ImportStepProps) {
   const t = useTranslations("onboarding");
-  const tCommon = useTranslations("common");
-  const sourcesHeading = useRef<HTMLHeadingElement>(null);
-  const budgeHeading = useRef<HTMLHeadingElement>(null);
-  const pickerInput = useRef<HTMLInputElement>(null);
-  const previewHeading = useRef<HTMLHeadingElement>(null);
-  const importedHeading = useRef<HTMLHeadingElement>(null);
-  const shownPhase = useRef(state.phase);
-
-  // The file input is gone once a file is chosen, so focus would drop to the page. Each new phase
-  // takes it instead: the preview and the result by their headings (read out by screen readers),
-  // the picker again after "Usar otro archivo". (On arriving at the step, the title has it.)
-  useEffect(() => {
-    const previous = shownPhase.current;
-    if (previous === state.phase) return;
-    shownPhase.current = state.phase;
-    if (state.phase === "preview") previewHeading.current?.focus();
-    else if (state.phase === "imported") importedHeading.current?.focus();
-    else if (state.phase === "sources") sourcesHeading.current?.focus();
-    else if (state.phase === "idle") {
-      // After "Usar otro archivo", straight back to the picker; from the list, to the how-to.
-      if (previous === "preview") pickerInput.current?.focus();
-      else budgeHeading.current?.focus();
-    }
-  }, [state.phase]);
-
   const skip = { label: t("skip"), onClick: onSkip, disabled: busy || locked };
   const next = (() => {
     const plain = { label: t("next"), onClick: onNext, disabled: busy };
@@ -122,8 +98,82 @@ export function ImportStep({
       skip={state.phase === "imported" ? undefined : skip}
       next={next}
     >
+      <ImportPanel
+        state={state}
+        onFile={onFile}
+        onDiscard={onDiscard}
+        onSource={onSource}
+        onRetry={onRetry}
+        prefillBasis={prefillBasis}
+        onFresh={busy || locked ? undefined : onSkip}
+      />
+    </StepFrame>
+  );
+}
+
+export interface ImportPanelProps {
+  state: ImportState;
+  onFile(file: File): void;
+  onDiscard(): void;
+  onSource(source: "budge" | null): void;
+  onRetry?: (() => void) | undefined;
+  prefillBasis?: string | null | undefined;
+  /** "No, empiezo de cero" under the sources (onboarding only). */
+  onFresh?: (() => void) | undefined;
+  /** The confirm inside the panel (the app's import page); onboarding has it in the footer. */
+  onConfirm?: (() => void) | undefined;
+}
+
+/**
+ * The import itself, shared by the onboarding step and the app's `/app/import`: the sources, the
+ * Budge how-to and picker, reading, the preview and the result. Each new phase takes focus (the
+ * file input is gone once a file is chosen, so focus would drop to the page): the preview and the
+ * result by their headings, read out by screen readers; the picker again after "Usar otro archivo".
+ */
+export function ImportPanel({
+  state,
+  onFile,
+  onDiscard,
+  onSource,
+  onRetry,
+  prefillBasis,
+  onFresh,
+  onConfirm,
+}: ImportPanelProps) {
+  const t = useTranslations("onboarding");
+  const tCommon = useTranslations("common");
+  const sourcesHeading = useRef<HTMLHeadingElement>(null);
+  const budgeHeading = useRef<HTMLHeadingElement>(null);
+  const pickerInput = useRef<HTMLInputElement>(null);
+  const previewHeading = useRef<HTMLHeadingElement>(null);
+  const importedHeading = useRef<HTMLHeadingElement>(null);
+  const shownPhase = useRef(state.phase);
+
+  useEffect(() => {
+    const previous = shownPhase.current;
+    if (previous === state.phase) return;
+    shownPhase.current = state.phase;
+    if (state.phase === "preview") previewHeading.current?.focus();
+    else if (state.phase === "imported") importedHeading.current?.focus();
+    else if (state.phase === "sources") sourcesHeading.current?.focus();
+    else if (state.phase === "idle") {
+      // After "Usar otro archivo", straight back to the picker; from the list, to the how-to.
+      if (previous === "preview") pickerInput.current?.focus();
+      else budgeHeading.current?.focus();
+    }
+  }, [state.phase]);
+
+  return (
+    <>
       {state.phase === "sources" && (
-        <Sources headingRef={sourcesHeading} onBudge={() => onSource("budge")} />
+        <>
+          <Sources headingRef={sourcesHeading} onBudge={() => onSource("budge")} />
+          {onFresh && (
+            <PressButton variant="secondary" className="w-full" onClick={onFresh}>
+              {t("import.fresh")}
+            </PressButton>
+          )}
+        </>
       )}
       {state.phase === "idle" && (
         <BudgeHowTo
@@ -148,6 +198,17 @@ export function ImportStep({
             currencyNote={state.currencyNote}
           />
           {state.error && <StepError>{state.error}</StepError>}
+          {onConfirm && newRows(state.preview) > 0 && (
+            <PressButton
+              className="w-full"
+              onClick={onConfirm}
+              disabled={state.confirming || state.discarding}
+            >
+              {state.confirming
+                ? t("import.importing")
+                : t("import.confirm", { count: newRows(state.preview) })}
+            </PressButton>
+          )}
           <PressButton
             variant="secondary"
             onClick={onDiscard}
@@ -185,7 +246,7 @@ export function ImportStep({
           )}
         </div>
       )}
-    </StepFrame>
+    </>
   );
 }
 

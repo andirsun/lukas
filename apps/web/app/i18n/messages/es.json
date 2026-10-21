@@ -59,10 +59,12 @@
     "nudge_budgets_title": "Ponle presupuesto a tus categorías",
     "nudge_budgets_lead": "Así Lukitas te avisa antes de que te pases. Pronto lo harás desde cada categoría.",
     "nudge_import_title": "Trae tu historial",
-    "nudge_import_lead": "Importa lo que llevas en Budge y empieza con tus números de verdad. Pronto desde Ajustes.",
+    "nudge_import_lead": "Importa lo que llevas en Budge y empieza con tus números de verdad.",
     "nudge_dismiss": "Ahora no: {title}",
     "account": "Tu cuenta",
-    "sign_out": "Cerrar sesión"
+    "sign_out": "Cerrar sesión",
+    "nudge_import_action": "Traer mi historial",
+    "sign_out_failed": "No pudimos cerrar tu sesión. Inténtalo de nuevo."
   },
   "transaction": {
     "add_expense": "Agregar gasto",
@@ -91,7 +93,8 @@
     "name_it": "Ponerle nombre",
     "paid": "Pagado: {name} · {amount}",
     "no_categories_expense": "Aún no tienes categorías de gasto.",
-    "no_categories_income": "Aún no tienes categorías de ingreso."
+    "no_categories_income": "Aún no tienes categorías de ingreso.",
+    "archived": "archivada"
   },
   "lukas": {
     "first_of_day": {
@@ -429,7 +432,7 @@
     },
     "categories": {
       "title": "¿En qué se te va el dinero?",
-      "lead": "Ya elegimos algunas por ti. Toca una para quitarla, o agrega las tuyas.",
+      "lead": "Si trajiste tu historial, aquí están tus categorías. Toca una para quitarla, edítalas o agrega las tuyas.",
       "expenses": "Gastos",
       "income": "Ingresos",
       "add": "Agregar categoría",
@@ -454,7 +457,18 @@
         "green": "Verde",
         "teal": "Turquesa",
         "gray": "Gris"
-      }
+      },
+      "edit_toggle": "Editar categorías",
+      "edit_done": "Listo",
+      "edit_hint": "Toca una categoría para editarla.",
+      "edit_label": "Editar {name}",
+      "edit_title": "Editar categoría",
+      "counting": "Contando sus movimientos…",
+      "delete": "Eliminar categoría",
+      "archive": "Archivar categoría",
+      "has_transactions": "Tiene {count, plural, one {# movimiento} other {# movimientos}}; podrás unirla con otra desde Categorías.",
+      "has_many_transactions": "Tiene más de {count} movimientos; podrás unirla con otra desde Categorías.",
+      "kind_locked": "Con movimientos, su tipo no se puede cambiar aquí."
     },
     "budgets": {
       "title": "¿Cuánto quieres gastar al mes?",
@@ -466,8 +480,8 @@
       "empty": "No tienes categorías de gasto. Puedes crearlas después en Categorías."
     },
     "import": {
-      "title": "¿Traes tu historial?",
-      "lead": "Trae tus movimientos de otra app. Si no tienes nada que traer, salta este paso.",
+      "title": "¿Vienes de otra app?",
+      "lead": "Trae tus movimientos y empezamos con tus números de verdad.",
       "choose": "Subir archivo de Budge",
       "reading": "Leyendo tu archivo…",
       "preview_title": "Esto es lo que vamos a importar",
@@ -505,7 +519,11 @@
       "budge_step_1": "En Budge, busca la opción para exportar tus movimientos en CSV.",
       "budge_step_2": "Guarda el archivo en este dispositivo.",
       "budge_step_3": "Súbelo aquí: te mostramos qué vamos a importar antes de hacerlo.",
-      "other_source": "Elegir otra fuente"
+      "other_source": "Elegir otra fuente",
+      "fresh": "No, empiezo de cero",
+      "page_title": "Trae tu historial",
+      "page_lead": "Trae tus movimientos de otra app.",
+      "go_home": "Ir al inicio"
     },
     "prefill_basis": "Basado en lo que gastaste en {months, plural, one {tu último mes} other {tus últimos # meses}}",
     "next": "Siguiente",

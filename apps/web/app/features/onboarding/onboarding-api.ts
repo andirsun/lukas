@@ -60,21 +60,31 @@ const nameTaken = (problem: unknown) =>
   problem instanceof ApiProblem && problem.code === "category_name_taken";
 
 /**
- * Creates the suggestions in `keys` that the person doesn't have yet. It reads the categories
- * first (archived ones count as existing: a deselected suggestion stays deselected), and a 409
- * `category_name_taken` counts as created, so after a partial failure (a lost connection halfway)
- * running it again finishes the job instead of failing on the ones already there.
+ * Makes sure the suggestions in `keys` are active categories: one they have active stays as it
+ * is, one that exists only archived is brought back (so "Usar las sugeridas" works after every
+ * suggestion was deselected), and the missing ones are created. It reads the categories first and
+ * a 409 `category_name_taken` counts as created, so after a partial failure (a lost connection
+ * halfway) running it again finishes the job instead of failing on the ones already there.
  */
 export async function createSuggestions(
   api: ApiClient,
   keys: ReadonlySet<string>,
   locale: Locale,
 ): Promise<void> {
-  const existing = new Set(
-    (await allCategories(api)).map((c) => suggestionFor(c.name)?.key).filter(Boolean),
-  );
+  const all = await allCategories(api);
+  const active = new Set(all.filter((c) => !c.archived).map((c) => suggestionFor(c.name)?.key));
   await Promise.all(
-    SUGGESTED_CATEGORIES.filter((s) => keys.has(s.key) && !existing.has(s.key)).map(async (s) => {
+    SUGGESTED_CATEGORIES.filter((s) => keys.has(s.key) && !active.has(s.key)).map(async (s) => {
+      const archived = all.find((c) => c.archived && suggestionFor(c.name)?.key === s.key);
+      if (archived) {
+        dataOf(
+          await api.PATCH("/v1/categories/{id}", {
+            params: { path: { id: archived.id } },
+            body: { archived: false },
+          }),
+        );
+        return;
+      }
       try {
         await api.POST("/v1/categories", { body: suggestionBody(s, locale) });
       } catch (problem) {
@@ -96,4 +106,121 @@ export function useHasTransactions() {
       dataOf(await api.GET("/v1/transactions", { params: { query: { limit: 1 } }, signal })).items
         .length > 0,
   });
+}
+
+/** What can be changed on one of the person's categories from the edit sheet. */
+export interface CategoryEdit {
+  name: string;
+  glyph: string;
+  tint: string;
+  kind: "expense" | "income";
+}
+
+/**
+ * How many transactions a category has, counting up to `cap` (pages of 200); `capped` when there
+ * are at least that many. It decides whether the category can be deleted here.
+ */
+export async function countCategoryTransactions(
+  api: ApiClient,
+  categoryId: string,
+  cap = 2000,
+): Promise<{ count: number; capped: boolean }> {
+  let count = 0;
+  let cursor: string | undefined;
+  do {
+    const page = dataOf(
+      await api.GET("/v1/transactions", {
+        params: { query: { category: categoryId, limit: 200, ...(cursor ? { cursor } : {}) } },
+      }),
+    );
+    count += page.items.length;
+    cursor = page.nextCursor ?? undefined;
+  } while (cursor && count < cap);
+  return { count, capped: Boolean(cursor) };
+}
+
+/**
+ * Saves an edit of one of the person's categories. Name, emoji and tint are a PATCH. The API has
+ * no way to change a category's kind, so for one with no transactions (the only ones whose kind can
+ * change here) it is archived and made again with the new kind under the same name (names are
+ * unique among active categories only). Returns the category as it now is (a new id after that).
+ */
+export async function saveCategoryEdit(
+  api: ApiClient,
+  category: Category,
+  edit: CategoryEdit,
+): Promise<Category> {
+  if (edit.kind !== category.kind) {
+    dataOf(
+      await api.PATCH("/v1/categories/{id}", {
+        params: { path: { id: category.id } },
+        body: { archived: true },
+      }),
+    );
+    return dataOf(
+      await api.POST("/v1/categories", {
+        body: {
+          name: edit.name,
+          kind: edit.kind,
+          icon: edit.glyph,
+          color: edit.tint,
+          sortOrder: category.sortOrder,
+        },
+      }),
+    );
+  }
+  return dataOf(
+    await api.PATCH("/v1/categories/{id}", {
+      params: { path: { id: category.id } },
+      body: { name: edit.name, icon: edit.glyph, color: edit.tint },
+    }),
+  );
+}
+
+/** Archives one of the person's categories ("Eliminar" with no transactions, or "Archivar"). */
+export async function archiveCategory(api: ApiClient, id: string): Promise<void> {
+  dataOf(
+    await api.PATCH("/v1/categories/{id}", { params: { path: { id } }, body: { archived: true } }),
+  );
+}
+
+/**
+ * Applies the categories step: the chosen suggestions are made (or brought back, when an archived
+ * category already has that name), and with `archive` the person's categories they deselected are
+ * archived. SALTAR passes `archive: false`: skipping never takes anything away.
+ */
+export async function applyCategorySelection(
+  api: ApiClient,
+  chips: readonly { id: string; source: "category" | "suggestion"; suggestionKey?: string }[],
+  selected: ReadonlySet<string>,
+  locale: Locale,
+  { archive }: { archive: boolean },
+): Promise<void> {
+  const all = await allCategories(api);
+  const writes: Promise<unknown>[] = [];
+  for (const chip of chips) {
+    const chosen = selected.has(chip.id);
+    if (chip.source === "category") {
+      if (archive && !chosen) writes.push(archiveCategory(api, chip.id));
+      continue;
+    }
+    const suggestion = SUGGESTED_CATEGORIES.find((s) => s.key === chip.suggestionKey);
+    if (!chosen || !suggestion) continue;
+    const archived = all.find((c) => c.archived && suggestionFor(c.name)?.key === suggestion.key);
+    if (archived) {
+      writes.push(
+        api.PATCH("/v1/categories/{id}", {
+          params: { path: { id: archived.id } },
+          body: { archived: false },
+        }),
+      );
+      continue;
+    }
+    writes.push(
+      api.POST("/v1/categories", { body: suggestionBody(suggestion, locale) }).catch((problem) => {
+        if (!nameTaken(problem)) throw problem;
+      }),
+    );
+  }
+  await Promise.all(writes);
 }

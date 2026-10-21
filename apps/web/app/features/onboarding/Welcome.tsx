@@ -9,10 +9,9 @@ import { queryKeys, useCategories, useMe } from "../../api/queries.ts";
 import { feedback } from "../../feedback/feedback.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
-import type { NewCategory } from "./AddCategorySheet.tsx";
 import { BudgetsStep, readDraft } from "./BudgetsStep.tsx";
 import { draftFromCents } from "./budget-input.ts";
-import { CategoriesStep, type CustomCategory } from "./CategoriesStep.tsx";
+import { CategoriesStep } from "./CategoriesStep.tsx";
 import { CurrencyStep } from "./CurrencyStep.tsx";
 import { defaultCurrency, isSupportedCurrency } from "./currency.ts";
 import { ImportStep } from "./ImportStep.tsx";
@@ -29,6 +28,7 @@ import { clearOnboardingDraft, useOnboardingDraft } from "./onboarding-draft.ts"
 import { nextStep, previousStep, type StepId, stepFromParam, stepPath } from "./steps.ts";
 import { SUGGESTED_CATEGORIES, suggestionFor } from "./suggested-categories.ts";
 import { browserTimeZone, timeZoneToSave } from "./timezone.ts";
+import { useCategoriesStep } from "./use-categories-step.ts";
 import { spendingOf, useImportFlow } from "./use-import-flow.ts";
 import { WelcomeStep } from "./WelcomeStep.tsx";
 
@@ -43,23 +43,12 @@ export interface WelcomeProps {
 const APP_PATH = "/app";
 const ALL_SUGGESTIONS = new Set(SUGGESTED_CATEGORIES.map((c) => c.key));
 
-/** The person's own active categories (not one of the suggestions), as chips. */
-function customFrom(categories: Category[]): CustomCategory[] {
-  return categories
-    .filter((c) => !c.archived && !suggestionFor(c.name))
-    .map((c) => ({ id: c.id, name: c.name, kind: c.kind, glyph: categoryLook(c).glyph }));
-}
-
-/** What is active on the server, as chips: suggestion keys and own category ids. */
-function activeChips(categories: Category[]): string[] {
-  return categories.filter((c) => !c.archived).map((c) => suggestionFor(c.name)?.key ?? c.id);
-}
-
 /**
  * `/welcome/:step?`: the onboarding a new user sees once (spec §2.4, revised). It is optional and
  * short: the welcome offers "Configurar en 1 minuto" or "Entrar directo", and every setup step has
- * SIGUIENTE (apply what is on screen) and SALTAR (move on with this step's defaults). Each step
- * saves what it needs before the next (currency, categories, import); budgets come last and stay
+ * SIGUIENTE (apply what is on screen) and SALTAR (move on with this step's defaults). The import
+ * comes before the categories, so they start from what the file brought. Each step saves what it
+ * needs before the next (currency, import, categories); budgets come last and stay
  * drafts until the end, so an import that switches the currency can replace amounts typed in the
  * old one. Choices not on the server yet (the currency picked, the chips) live in a session draft,
  * so a reload keeps them. Finishing or skipping sets the onboarding flag, celebrates and lands on
@@ -80,7 +69,6 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
   const [browser] = useState(() => timeZone ?? browserTimeZone());
 
   const [currency, setCurrency] = useState<SupportedCurrency | null>(null);
-  const [selected, setSelected] = useState<Set<string> | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string> | null>(null);
   const [busy, setBusy] = useState(false);
   // A ref, not state: two taps in one frame must not both start a write.
@@ -101,14 +89,6 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
   if (currency === null) {
     const first = preset();
     if (first) setCurrency(first);
-  }
-  // The chips: those they chose this session; else what they kept from the categories step; else
-  // every suggestion (pre-selected) plus what they already have.
-  if (selected === null && categoriesQuery.data && draft) {
-    const active = activeChips(categoriesQuery.data);
-    setSelected(
-      new Set(draft.selected ?? (draft.categoriesDone ? active : [...ALL_SUGGESTIONS, ...active])),
-    );
   }
   // Seeded in the profile's language, so `300,50` is never read back as an English 30050.
   const localeSettled =
@@ -161,10 +141,13 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
     return queryClient.getQueryData<Category[]>(queryKeys.categories()) ?? [];
   }
 
-  const choose = (next: Set<string>) => {
-    setSelected(next);
-    updateDraft({ selected: [...next] });
-  };
+  const categoriesStep = useCategoriesStep({
+    categories: categoriesQuery.data,
+    draft,
+    updateDraft,
+    locale,
+    refreshCategories,
+  });
 
   const importFlow = useImportFlow({
     // Placeholders until the data is in; the hook only acts on a step, which waits for it.
@@ -175,7 +158,7 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
     onCurrency: setCurrency,
     drafts: drafts ?? {},
     setDrafts,
-    onImported: (categories) => choose(new Set([...(selected ?? []), ...activeChips(categories)])),
+    onImported: categoriesStep.imported,
   });
 
   // Only a first load that failed goes to the error boundary; a failed refetch keeps the data.
@@ -184,6 +167,7 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
   if (hasTransactions.error && hasTransactions.data === undefined) throw hasTransactions.error;
 
   if (step === null) return <Navigate to={stepPath("welcome")} replace />;
+  const selected = categoriesStep.selected;
   if (!me.data || !categoriesQuery.data || !draft || currency === null || !selected || !drafts) {
     return <div className="lk-screen min-h-dvh" aria-busy="true" />;
   }
@@ -253,29 +237,11 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
   const enterDirectly = () =>
     run(async () => {
       if (!hasTransactions.data) await applyCurrency(currency);
+      // Missing suggestions are made and archived ones brought back.
       await createSuggestions(api, ALL_SUGGESTIONS, locale);
-      await restoreSuggestionsIfNoneActive();
       await refreshCategories();
       await complete();
     });
-
-  /** Brings back the archived suggestions when no category at all is active. */
-  async function restoreSuggestionsIfNoneActive() {
-    const all = await allCategories(api);
-    if (all.some((c) => !c.archived)) return;
-    await Promise.all(
-      all
-        .filter((c) => suggestionFor(c.name))
-        .map(async (c) =>
-          dataOf(
-            await api.PATCH("/v1/categories/{id}", {
-              params: { path: { id: c.id } },
-              body: { archived: false },
-            }),
-          ),
-        ),
-    );
-  }
 
   const saveCurrency = () =>
     run(async () => {
@@ -283,7 +249,7 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
         queryClient.setQueryData(queryKeys.me(), await patchCurrency(api, currency));
       }
       updateDraft({ currency });
-      go("categories");
+      go("import");
     });
 
   /** SALTAR: the preselected currency, set while the account is empty. */
@@ -292,69 +258,30 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
       const code = preset() ?? currency;
       if (!hasTransactions.data) await applyCurrency(code);
       setCurrency(code);
-      go("categories");
+      go("import");
+    });
+
+  /** SIGUIENTE on the categories: the chosen suggestions made, the deselected ones archived. */
+  const saveCategories = () =>
+    run(async () => {
+      await categoriesStep.save();
+      go("budgets");
+    });
+
+  /** SALTAR on the categories: the chosen suggestions made, nothing taken away. */
+  const skipCategories = () =>
+    run(async () => {
+      await categoriesStep.skip();
+      go("budgets");
     });
 
   /**
-   * SIGUIENTE: creates the chosen suggestions they don't have, brings back archived ones, and
-   * archives the suggestions and own categories they deselected.
+   * SALTAR or "No, empiezo de cero" on the import: never while it is busy; a pending preview is
+   * dropped first. On to the categories.
    */
-  const saveCategories = () =>
-    run(async () => {
-      const all = await allCategories(api);
-      const archive = (id: string, archived: boolean) =>
-        api.PATCH("/v1/categories/{id}", { params: { path: { id } }, body: { archived } });
-      const writes: Promise<unknown>[] = [];
-      for (const suggestion of SUGGESTED_CATEGORIES) {
-        const mine = all.filter((c) => suggestionFor(c.name)?.key === suggestion.key);
-        const wanted = selected.has(suggestion.key);
-        if (wanted && mine.length > 0 && mine.every((c) => c.archived)) {
-          writes.push(archive((mine[0] as Category).id, false));
-        } else if (!wanted) {
-          for (const c of mine.filter((m) => !m.archived)) writes.push(archive(c.id, true));
-        }
-      }
-      for (const c of all.filter((c) => !c.archived && !suggestionFor(c.name))) {
-        if (!selected.has(c.id)) writes.push(archive(c.id, true));
-      }
-      await Promise.all(writes);
-      await createSuggestions(api, selected, locale);
-      await refreshCategories();
-      updateDraft({ categoriesDone: true });
-      go("import");
-    });
-
-  /** SALTAR: creates the chosen suggestions they don't have yet, and never archives anything. */
-  const skipCategories = () =>
-    run(async () => {
-      await createSuggestions(api, selected, locale);
-      await refreshCategories();
-      updateDraft({ categoriesDone: true });
-      go("import");
-    });
-
-  /** "＋ Agregar categoría": created right away, and chosen. */
-  async function createCategory(category: NewCategory) {
-    const created = dataOf(
-      await api.POST("/v1/categories", {
-        body: {
-          name: category.name,
-          kind: category.kind,
-          icon: category.glyph,
-          color: category.tint,
-        },
-      }),
-    );
-    choose(new Set([...(selected ?? []), created.id]));
-    // The sheet closes as soon as it is saved; the chip shows when the list comes back (a failed
-    // read leaves the category saved, and the next step's write reads the list again).
-    void refreshCategories().catch(() => {});
-  }
-
-  /** SALTAR on the import: never while it is busy; a pending preview is dropped first. */
   const skipImport = () =>
     run(async () => {
-      if (await importFlow.skip()) go("budgets");
+      if (await importFlow.skip()) go("categories");
     });
 
   /** SIGUIENTE on the budgets: saves the ones typed or prefilled, then finishes. */
@@ -407,15 +334,13 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
       return (
         <CategoriesStep
           {...nav}
+          chips={categoriesStep.chips}
           selected={selected}
-          onToggle={(keyOrId) => {
-            const next = new Set(selected);
-            if (next.has(keyOrId)) next.delete(keyOrId);
-            else next.add(keyOrId);
-            choose(next);
-          }}
-          custom={customFrom(categories)}
-          onCreate={createCategory}
+          onToggle={categoriesStep.toggle}
+          onCreate={categoriesStep.create}
+          onEdit={categoriesStep.edit}
+          onRemove={categoriesStep.remove}
+          transactionsOf={categoriesStep.transactionsOf}
           errorText={message}
           onSkip={skipCategories}
           onNext={saveCategories}
@@ -436,7 +361,7 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
           onRetry={importFlow.retry}
           prefillBasis={importFlow.prefillBasis()}
           onSkip={skipImport}
-          onNext={() => go("budgets")}
+          onNext={() => go("categories")}
         />
       );
     case "budgets":

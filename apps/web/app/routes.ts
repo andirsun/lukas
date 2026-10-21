@@ -24,7 +24,11 @@ export default [
           route("auth/verify", "routes/auth.verify.tsx"),
           route("welcome/:step?", "routes/welcome.tsx"),
           // The signed-in app: its shell (bottom bar or sidebar, the add sheet) and home.
-          route("app", "routes/app.tsx", [index("routes/app._index.tsx")]),
+          route("app", "routes/app.tsx", [
+            index("routes/app._index.tsx"),
+            // The import on its own, after onboarding (home's "Trae tu historial").
+            route("import", "routes/app.import.tsx"),
+          ]),
         ]),
       ]),
 ] satisfies RouteConfig;

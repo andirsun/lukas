@@ -59,10 +59,12 @@
     "nudge_budgets_title": "Give your categories a budget",
     "nudge_budgets_lead": "Then Lukitas can tell you before you go over. Soon you'll set it from each category.",
     "nudge_import_title": "Bring your history",
-    "nudge_import_lead": "Import what you have in Budge and start with your real numbers. Soon from Settings.",
+    "nudge_import_lead": "Import what you have in Budge and start with your real numbers.",
     "nudge_dismiss": "Not now: {title}",
     "account": "Your account",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "nudge_import_action": "Bring my history",
+    "sign_out_failed": "We couldn't sign you out. Try again."
   },
   "transaction": {
     "add_expense": "Add expense",
@@ -91,7 +93,8 @@
     "name_it": "Name it",
     "paid": "Paid: {name} · {amount}",
     "no_categories_expense": "You have no spending categories yet.",
-    "no_categories_income": "You have no income categories yet."
+    "no_categories_income": "You have no income categories yet.",
+    "archived": "archived"
   },
   "lukas": {
     "first_of_day": {
@@ -429,7 +432,7 @@
     },
     "categories": {
       "title": "Where does your money go?",
-      "lead": "We picked some for you. Tap one to remove it, or add your own.",
+      "lead": "If you brought your history, here are your categories. Tap one to remove it, edit them, or add your own.",
       "expenses": "Spending",
       "income": "Income",
       "add": "Add category",
@@ -454,7 +457,18 @@
         "green": "Green",
         "teal": "Teal",
         "gray": "Gray"
-      }
+      },
+      "edit_toggle": "Edit categories",
+      "edit_done": "Done",
+      "edit_hint": "Tap a category to edit it.",
+      "edit_label": "Edit {name}",
+      "edit_title": "Edit category",
+      "counting": "Counting its transactions…",
+      "delete": "Delete category",
+      "archive": "Archive category",
+      "has_transactions": "It has {count, plural, one {# transaction} other {# transactions}}; you'll be able to merge it with another from Categories.",
+      "has_many_transactions": "It has more than {count} transactions; you'll be able to merge it with another from Categories.",
+      "kind_locked": "With transactions, its type can't change here."
     },
     "budgets": {
       "title": "How much do you want to spend each month?",
@@ -466,8 +480,8 @@
       "empty": "You have no spending categories. You can create them later in Categories."
     },
     "import": {
-      "title": "Bringing your history?",
-      "lead": "Bring your transactions from another app. If you have nothing to bring, skip this step.",
+      "title": "Coming from another app?",
+      "lead": "Bring your transactions and start with your real numbers.",
       "choose": "Upload a Budge file",
       "reading": "Reading your file…",
       "preview_title": "Here's what we'll import",
@@ -505,7 +519,11 @@
       "budge_step_1": "In Budge, look for the option to export your transactions as CSV.",
       "budge_step_2": "Save the file on this device.",
       "budge_step_3": "Upload it here: we show you what we'll import before we do.",
-      "other_source": "Pick another source"
+      "other_source": "Pick another source",
+      "fresh": "No, I'm starting fresh",
+      "page_title": "Bring your history",
+      "page_lead": "Bring your transactions from another app.",
+      "go_home": "Go home"
     },
     "prefill_basis": "Based on what you spent in {months, plural, one {your last month} other {your last # months}}",
     "next": "Next",

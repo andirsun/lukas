@@ -22,6 +22,7 @@ import { cx } from "../../ui/cx.ts";
 import { LukasBubble } from "../../ui/LukasBubble.tsx";
 import { Money } from "../../ui/Money.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
+import { PressLink } from "../../ui/PressLink.tsx";
 import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
 import { useToast } from "../../ui/Toast.tsx";
 import { TransactionRow } from "../../ui/TransactionRow.tsx";
@@ -288,7 +289,12 @@ function Nudges({
       ? { id: "budgets", title: t("nudge_budgets_title"), lead: t("nudge_budgets_lead") }
       : null,
     hasTransactions.data === false && !dismissed.has("import")
-      ? { id: "import", title: t("nudge_import_title"), lead: t("nudge_import_lead") }
+      ? {
+          id: "import",
+          title: t("nudge_import_title"),
+          lead: t("nudge_import_lead"),
+          action: { label: t("nudge_import_action"), to: "/app/import" },
+        }
       : null,
   ].filter((card) => card !== null);
   if (cards.length === 0) return null;
@@ -302,7 +308,18 @@ function Nudges({
   );
 }
 
-function Nudge({ title, lead, onDismiss }: { title: string; lead: string; onDismiss(): void }) {
+function Nudge({
+  title,
+  lead,
+  action,
+  onDismiss,
+}: {
+  title: string;
+  lead: string;
+  /** Where the card leads; without one it is marked "pronto". */
+  action?: { label: string; to: string };
+  onDismiss(): void;
+}) {
   const t = useTranslations();
   const titleId = useId();
   return (
@@ -313,9 +330,14 @@ function Nudge({ title, lead, onDismiss }: { title: string; lead: string; onDism
           className="m-0 flex flex-wrap items-center gap-(--space-2) text-[14px] font-extrabold text-ink"
         >
           {title}
-          <span className="lk-soon">{t("nav.soon")}</span>
+          {!action && <span className="lk-soon">{t("nav.soon")}</span>}
         </h2>
         <p className="m-0 text-[12px] font-bold text-ink-muted">{lead}</p>
+        {action && (
+          <PressLink to={action.to} variant="secondary" size="sm" className="self-start">
+            {action.label}
+          </PressLink>
+        )}
       </div>
       <PressButton
         variant="ghost"

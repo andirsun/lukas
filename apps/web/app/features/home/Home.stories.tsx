@@ -419,6 +419,11 @@ export const EmptyMonth: Story = {
     await expect(region).toHaveTextContent(eur("0,00"));
     await expect(await canvas.findByText("Ponle presupuesto a tus categorías")).toBeVisible();
     await expect(await canvas.findByText("Trae tu historial")).toBeVisible();
+    // The history card leads to the import; budgets still say "pronto".
+    await expect(canvas.getByRole("link", { name: "Traer mi historial" })).toHaveAttribute(
+      "href",
+      "/app/import",
+    );
     await userEvent.click(canvas.getByRole("button", { name: "Ahora no: Trae tu historial" }));
     await waitFor(() => expect(canvas.queryByText("Trae tu historial")).toBeNull());
     await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));

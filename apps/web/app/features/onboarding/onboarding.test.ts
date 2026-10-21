@@ -1,10 +1,13 @@
 import { InvalidAmountError } from "@lukas/core";
 import { describe, expect, it } from "vitest";
+import { createApiClient } from "../../api/client.ts";
 import { budgetExample, draftFromCents, parseBudgetInput } from "./budget-input.ts";
+import { categoryChips } from "./category-chips.ts";
 import { defaultCurrency } from "./currency.ts";
+import { createSuggestions } from "./onboarding-api.ts";
 import { passkeyOutcome } from "./passkey.ts";
 import { nextStep, previousStep, STEPS, stepFromParam, stepPath } from "./steps.ts";
-import { SUGGESTED_CATEGORIES, suggestionFor } from "./suggested-categories.ts";
+import { normalizeName, SUGGESTED_CATEGORIES, suggestionFor } from "./suggested-categories.ts";
 import { browserTimeZone, timeZoneToSave } from "./timezone.ts";
 
 describe("defaultCurrency", () => {
@@ -79,7 +82,8 @@ describe("parseBudgetInput", () => {
 
 describe("steps", () => {
   it("are the welcome and the four setup steps, budgets last", () => {
-    expect(STEPS).toEqual(["welcome", "currency", "categories", "import", "budgets"]);
+    // The import comes before the categories, so they can start from what the file brought.
+    expect(STEPS).toEqual(["welcome", "currency", "import", "categories", "budgets"]);
   });
 
   it("map to /welcome paths and back", () => {
@@ -94,7 +98,9 @@ describe("steps", () => {
 
   it("go forward and back in order", () => {
     expect(nextStep("welcome")).toBe("currency");
-    expect(nextStep("import")).toBe("budgets");
+    expect(nextStep("currency")).toBe("import");
+    expect(nextStep("import")).toBe("categories");
+    expect(nextStep("categories")).toBe("budgets");
     expect(nextStep("budgets")).toBeNull();
     expect(previousStep("currency")).toBe("welcome");
     expect(previousStep("welcome")).toBeNull();
@@ -183,5 +189,128 @@ describe("draftFromCents", () => {
         expect(parseBudgetInput(draftFromCents(cents, locale), locale)).toBe(cents);
       }
     }
+  });
+});
+
+describe("categoryChips", () => {
+  const server = (name: string, kind: "expense" | "income" = "expense", archived = false) => ({
+    id: `id-${name}`,
+    name,
+    kind,
+    icon: "cart",
+    color: "orange",
+    archived,
+  });
+
+  it("is the suggestions, in order, when the person has no categories", () => {
+    const chips = categoryChips([], "es");
+    expect(chips.map((c) => c.name)).toEqual(SUGGESTED_CATEGORIES.map((s) => s.names.es));
+    expect(chips.every((c) => c.source === "suggestion")).toBe(true);
+    expect(chips[0]).toMatchObject({ id: "s:groceries", glyph: "🛒", kind: "expense" });
+  });
+
+  it("puts what they have (an import's categories) first, then the suggestions not covered", () => {
+    const chips = categoryChips(
+      [server("Taxes"), server("supermercado"), server("Salário", "income"), server("Ocio")],
+      "es",
+    );
+    expect(chips.map((c) => c.name)).toEqual([
+      "Taxes",
+      "supermercado",
+      "Salário",
+      "Ocio",
+      "Restaurante",
+      "Casa",
+      "Transporte",
+      "Suscripciones",
+      "Vida",
+    ]);
+    // The importer's icon names are shown as emoji.
+    expect(chips[0]).toMatchObject({ id: "id-Taxes", source: "category", glyph: "🛒" });
+  });
+
+  it("treats names that differ in case or accents as the same", () => {
+    const chips = categoryChips([server("SUPERMERCADO"), server("Suscripcíones")], "es");
+    expect(chips.filter((c) => normalizeName(c.name) === "supermercado")).toHaveLength(1);
+    expect(chips.filter((c) => normalizeName(c.name) === "suscripciones")).toHaveLength(1);
+  });
+
+  it("covers a suggestion by its English name too, and leaves out archived categories", () => {
+    const chips = categoryChips([server("Groceries"), server("Casa", "expense", true)], "es");
+    expect(chips.map((c) => c.name)).not.toContain("Supermercado");
+    expect(chips.map((c) => c.name)).toContain("Casa");
+    expect(chips.find((c) => c.name === "Casa")?.source).toBe("suggestion");
+  });
+
+  it("names the suggestions in the person's language", () => {
+    expect(categoryChips([], "en")[0]?.name).toBe("Groceries");
+  });
+});
+
+describe("createSuggestions", () => {
+  /** An API client over a fake backend that records the writes. */
+  function fakeApi(start: { name: string; archived: boolean }[]) {
+    const writes: string[] = [];
+    let categories = start.map((c, i) => ({
+      id: `cat-${i}`,
+      kind: "expense",
+      icon: "🏷️",
+      color: "#8e87b8",
+      sortOrder: 0,
+      currentBudget: null,
+      ...c,
+    }));
+    const api = createApiClient({
+      baseUrl: "http://test/api",
+      onUnauthorized: () => {},
+      fetch: async (input) => {
+        const request = input as Request;
+        const { pathname } = new URL(request.url);
+        if (request.method === "GET") return Response.json(categories);
+        const body = (await request.json()) as Record<string, unknown>;
+        writes.push(`${request.method} ${pathname.replace("/api", "")} ${JSON.stringify(body)}`);
+        const id = /categories\/([^/]+)$/.exec(pathname)?.[1];
+        if (id) {
+          categories = categories.map((c) => (c.id === id ? { ...c, ...body } : c));
+          return Response.json(categories.find((c) => c.id === id));
+        }
+        const created = {
+          ...categories[0],
+          ...body,
+          id: `cat-${categories.length}`,
+          archived: false,
+        };
+        categories = [...categories, created as (typeof categories)[number]];
+        return Response.json(created, { status: 201 });
+      },
+    });
+    return { api, writes };
+  }
+  const every = SUGGESTED_CATEGORIES.map((s) => s.key);
+
+  it("brings back suggestions that exist only archived, instead of skipping them", async () => {
+    const { api, writes } = fakeApi(
+      SUGGESTED_CATEGORIES.map((s) => ({ name: s.names.es, archived: true })),
+    );
+    await createSuggestions(api, new Set(every), "es");
+    expect(writes).toHaveLength(8);
+    expect(
+      writes.every(
+        (w) => w.startsWith("PATCH /v1/categories/") && w.endsWith('{"archived":false}'),
+      ),
+    ).toBe(true);
+  });
+
+  it("leaves active ones alone, restores archived ones and makes the missing ones", async () => {
+    const { api, writes } = fakeApi([
+      { name: "Supermercado", archived: false },
+      { name: "restaurante", archived: true },
+    ]);
+    await createSuggestions(api, new Set(every), "es");
+    expect(writes.filter((w) => w.startsWith("PATCH"))).toEqual([
+      'PATCH /v1/categories/cat-1 {"archived":false}',
+    ]);
+    expect(writes.filter((w) => w.startsWith("POST"))).toHaveLength(6);
+    expect(writes.some((w) => w.includes('"name":"Supermercado"'))).toBe(false);
   });
 });

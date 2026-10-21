@@ -3,9 +3,11 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
 import { expectTarget } from "../../../.storybook/story-utils.ts";
+import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { BudgetsStep } from "./BudgetsStep.tsx";
 import { CategoriesStep } from "./CategoriesStep.tsx";
 import { CurrencyStep } from "./CurrencyStep.tsx";
+import { categoryChips } from "./category-chips.ts";
 import { ImportStep } from "./ImportStep.tsx";
 import type { ImportState } from "./import-state.ts";
 import { SAMPLE_PREVIEW, WelcomeStage } from "./story-harness.tsx";
@@ -127,9 +129,24 @@ export const Currency: Story = {
 // -- Categories ------------------------------------------------------------------------------------
 
 function CategoriesHarness({ onNext }: { onNext(): void }) {
-  const [selected, setSelected] = useState(() => new Set(SUGGESTED_CATEGORIES.map((c) => c.key)));
+  const { locale } = useLocale();
+  const chips = [
+    {
+      id: "own-1",
+      source: "category" as const,
+      name: "Mascotas",
+      glyph: "🐶",
+      tint: "#2fd388",
+      kind: "expense" as const,
+    },
+    ...categoryChips([], locale),
+  ];
+  const [selected, setSelected] = useState(
+    () => new Set(chips.filter((c) => c.source === "suggestion").map((c) => c.id)),
+  );
   return (
     <CategoriesStep
+      chips={chips}
       selected={selected}
       onToggle={(key) =>
         setSelected((current) => {
@@ -139,8 +156,10 @@ function CategoriesHarness({ onNext }: { onNext(): void }) {
           return next;
         })
       }
-      custom={[{ id: "own-1", name: "Mascotas", glyph: "🐶", kind: "expense" }]}
       onCreate={async () => {}}
+      onEdit={async () => {}}
+      onRemove={async () => {}}
+      transactionsOf={async () => ({ count: 0, capped: false })}
       errorText={() => ""}
       onBack={() => {}}
       onSkip={() => {}}
@@ -154,7 +173,7 @@ export const CategoriesPreselected: Story = {
   render: (args) => <CategoriesHarness onNext={args.onNext} />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Paso 2 de 4")).toBeVisible();
+    await expect(canvas.getByText("Paso 3 de 4")).toBeVisible();
     for (const c of SUGGESTED_CATEGORIES) {
       await expect(canvas.getByRole("button", { name: c.names.es })).toHaveAttribute(
         "aria-pressed",
@@ -191,6 +210,8 @@ export const CategoriesInEnglish: Story = {
     ).toBeVisible();
     const spending = canvas.getByRole("group", { name: "Spending" });
     await expect(within(spending).getAllByRole("button")).toHaveLength(8);
+    // Their own category first, then the suggestions.
+    await expect(within(spending).getAllByRole("button")[0]).toHaveAccessibleName("Mascotas");
     const income = canvas.getByRole("group", { name: "Income" });
     await expect(within(income).getByRole("button", { name: "Salary" })).toHaveAttribute(
       "aria-pressed",
@@ -207,10 +228,12 @@ function ImportHarness({
   state: initial,
   currency = "EUR",
   prefillBasis,
+  onSkip = () => {},
 }: {
   state: ImportState;
   currency?: string;
   prefillBasis?: string;
+  onSkip?: () => void;
 }) {
   const [state, setState] = useState(initial);
   return (
@@ -223,21 +246,26 @@ function ImportHarness({
       onDiscard={() => {}}
       prefillBasis={prefillBasis ?? null}
       onBack={() => {}}
-      onSkip={() => {}}
+      onSkip={onSkip}
       onNext={() => {}}
     />
   );
 }
 
-/** "¿Traes tu historial?": Budge opens; Excel/CSV, Buddy and other apps are "Pronto". */
+/**
+ * "¿Vienes de otra app?" (step 2, before the categories): Budge opens; Excel/CSV, Buddy and other
+ * apps are "Pronto"; "No, empiezo de cero" moves on.
+ */
 export const ImportSources: Story = {
-  render: () => <ImportHarness state={{ phase: "sources" }} />,
-  play: async ({ canvasElement }) => {
+  render: (args) => <ImportHarness state={{ phase: "sources" }} onSkip={args.onSkip} />,
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Paso 3 de 4")).toBeVisible();
+    await expect(canvas.getByText("Paso 2 de 4")).toBeVisible();
     await expect(
-      canvas.getByRole("heading", { level: 1, name: "¿Traes tu historial?" }),
+      canvas.getByRole("heading", { level: 1, name: "¿Vienes de otra app?" }),
     ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "No, empiezo de cero" }));
+    await expect(args.onSkip).toHaveBeenCalled();
     const list = canvas.getByRole("region", { name: "Desde dónde" });
     for (const name of ["Excel, Google Sheets o CSV", "Buddy", "Otras apps"]) {
       const row = within(list).getByText(name).closest("li") as HTMLElement;
@@ -511,8 +539,8 @@ export const FlowSkipEveryStep: Story = {
     await userEvent.click(await canvas.findByRole("button", { name: "Configurar en 1 minuto" }));
     for (const title of [
       "¿En qué moneda llevas tus cuentas?",
+      "¿Vienes de otra app?",
       "¿En qué se te va el dinero?",
-      "¿Traes tu historial?",
       "¿Cuánto quieres gastar al mes?",
     ]) {
       const h1 = await heading(canvas, title);
@@ -595,6 +623,8 @@ export const FlowImportSwitchesCurrency: Story = {
     await expect(onRequest).toHaveBeenCalledWith("POST /api/v1/imports/preview-2/confirm");
     await expect(onRequest).not.toHaveBeenCalledWith("POST /api/v1/imports/preview-1/confirm");
     await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
+    await heading(canvas, "¿En qué se te va el dinero?");
+    await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
     await expect(
       await canvas.findByRole("textbox", { name: "Presupuesto de Supermercado" }),
     ).toHaveValue("35,89");
@@ -636,7 +666,7 @@ export const FlowSkipImportWithPreview: Story = {
     await upload(canvas);
     await canvas.findByRole("button", { name: "Importar 22 movimientos" });
     await userEvent.click(canvas.getByRole("button", { name: "Saltar" }));
-    await heading(canvas, "¿Cuánto quieres gastar al mes?");
+    await heading(canvas, "¿En qué se te va el dinero?");
     await expect(args.onRequest).toHaveBeenCalledWith("DELETE /api/v1/imports/preview-2");
     await expect(args.onRequest).toHaveBeenCalledWith('PATCH /api/v1/me {"currency":"COP"}');
     await expect(args.onRequest).not.toHaveBeenCalledWith("POST /api/v1/imports/preview-2/confirm");
@@ -693,6 +723,8 @@ export const FlowOldExport: Story = {
     await expect(
       await canvas.findByText("Basado en tus últimos 3 meses con movimientos"),
     ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
+    await heading(canvas, "¿En qué se te va el dinero?");
     await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
     await heading(canvas, "¿Cuánto quieres gastar al mes?");
     await expect(canvas.getByText("Basado en tus últimos 3 meses con movimientos")).toBeVisible();
@@ -840,7 +872,7 @@ export const FlowSkipCategoriesAfterCustom: Story = {
     }
 
     await userEvent.click(canvas.getByRole("button", { name: "Saltar" }));
-    await heading(canvas, "¿Traes tu historial?");
+    await heading(canvas, "¿Cuánto quieres gastar al mes?");
     // Mascotas, then the eight suggestions; nothing archived.
     await expect(categoryPosts(args.onRequest)).toHaveLength(9);
     await expect(calls(args.onRequest).some((l) => l.includes('"archived":true'))).toBe(false);
@@ -923,6 +955,212 @@ export const FlowEnterDirectlyAfterDeselectingAll: Story = {
     await expect(restored).toHaveLength(SUGGESTED_CATEGORIES.length);
     await expect(calls(args.onRequest).at(-1)).toBe(
       'PATCH /api/v1/me {"onboardingCompleted":true}',
+    );
+  },
+};
+
+// -- Task 10e: import before categories, editable categories ------------------------------------------
+
+/** The new order: currency, "¿Vienes de otra app?", then the categories; "empiezo de cero" skips. */
+export const FlowNewOrder: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome"
+      currency="EUR"
+      categories="none"
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Configurar en 1 minuto" }));
+    await heading(canvas, "¿En qué moneda llevas tus cuentas?");
+    await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
+    const importTitle = await heading(canvas, "¿Vienes de otra app?");
+    await waitFor(() => expect(importTitle).toHaveFocus());
+    await expect(canvas.getByText("Paso 2 de 4")).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "No, empiezo de cero" }));
+    const categoriesTitle = await heading(canvas, "¿En qué se te va el dinero?");
+    await waitFor(() => expect(categoriesTitle).toHaveFocus());
+    await expect(canvas.getByText("Paso 3 de 4")).toBeVisible();
+    // Nothing imported: the suggestions, pre-selected.
+    await expect(canvas.getByRole("button", { name: "Supermercado" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
+    await heading(canvas, "¿Cuánto quieres gastar al mes?");
+  },
+};
+
+/**
+ * Import first: the categories step starts from what the file brought (chosen), then the
+ * suggestions it doesn't cover (not chosen). "supermercado" and "Salário" cover "Supermercado" and
+ * "Salario": no duplicates.
+ */
+export const FlowImportFirst: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/import"
+      currency="EUR"
+      categories="none"
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Budge" }));
+    await upload(canvas);
+    await userEvent.click(await canvas.findByRole("button", { name: "Importar 22 movimientos" }));
+    await canvas.findByRole("heading", { name: "Importamos 22 movimientos." });
+    await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
+    await heading(canvas, "¿En qué se te va el dinero?");
+
+    const spending = within(canvas.getByRole("group", { name: "Gastos" }));
+    // The visible name (the emoji tile is decorative).
+    const label = (b: HTMLElement) => b.querySelector(".truncate")?.textContent?.trim();
+    const names = spending.getAllByRole("button").map(label);
+    await expect(names).toEqual([
+      "supermercado",
+      "Ocio",
+      "Taxes",
+      "Restaurante",
+      "Casa",
+      "Transporte",
+      "Suscripciones",
+      "Vida",
+    ]);
+    for (const name of ["supermercado", "Ocio", "Taxes"]) {
+      await expect(spending.getByRole("button", { name })).toHaveAttribute("aria-pressed", "true");
+    }
+    await expect(spending.getByRole("button", { name: "Restaurante" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    const income = within(canvas.getByRole("group", { name: "Ingresos" }));
+    await expect(income.getAllByRole("button").map(label)).toEqual(["Salário"]);
+  },
+};
+
+const openEdit = async (canvas: Canvas, name: string) => {
+  const toggle = canvas.queryByRole("button", { name: "Editar categorías" });
+  if (toggle) await userEvent.click(toggle);
+  await userEvent.click(await canvas.findByRole("button", { name: `Editar ${name}` }));
+  return within(await screen.findByRole("dialog", { name: "Editar categoría" }));
+};
+const sheetClosed = () =>
+  waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 4000 });
+
+/** Rename, emoji and tint in the edit sheet; then delete it (no transactions, so it can go). */
+export const FlowEditAndDeleteCategory: Story = {
+  render: (args) => (
+    <WelcomeStage initialEntry="/welcome/categories" currency="EUR" onRequest={args.onRequest} />
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await heading(canvas, "¿En qué se te va el dinero?");
+    let sheet = await openEdit(canvas, "Supermercado");
+    await expect(sheet.getByRole("textbox", { name: "Nombre" })).toHaveValue("Supermercado");
+    await expect(
+      await sheet.findByRole("button", { name: "Eliminar categoría" }, { timeout: 3000 }),
+    ).toBeVisible();
+    const name = sheet.getByRole("textbox", { name: "Nombre" });
+    await userEvent.clear(name);
+    await userEvent.type(name, "Mercado");
+    await userEvent.click(sheet.getByRole("radio", { name: "🧾" }));
+    await userEvent.click(sheet.getByRole("radio", { name: "Azul" }));
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
+    await sheetClosed();
+    await expect(args.onRequest).toHaveBeenCalledWith(
+      'PATCH /api/v1/categories/cat-groceries {"name":"Mercado","icon":"🧾","color":"#3fa7ff"}',
+    );
+
+    sheet = await openEdit(canvas, "Mercado");
+    await userEvent.click(
+      await sheet.findByRole("button", { name: "Eliminar categoría" }, { timeout: 3000 }),
+    );
+    await sheetClosed();
+    await expect(args.onRequest).toHaveBeenCalledWith(
+      'PATCH /api/v1/categories/cat-groceries {"archived":true}',
+    );
+    await waitFor(() =>
+      expect(canvas.queryByRole("button", { name: "Editar Mercado" })).toBeNull(),
+    );
+
+    // A suggestion not made yet: editing makes it with the new values; deleting just drops it.
+    sheet = await openEdit(canvas, "Restaurante");
+    const suggestion = sheet.getByRole("textbox", { name: "Nombre" });
+    await userEvent.clear(suggestion);
+    await userEvent.type(suggestion, "Comida fuera");
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
+    await sheetClosed();
+    await expect(
+      calls(args.onRequest).some((l) =>
+        l.startsWith('POST /api/v1/categories {"name":"Comida fuera","kind":"expense"'),
+      ),
+    ).toBe(true);
+    sheet = await openEdit(canvas, "Vida");
+    const before = calls(args.onRequest).length;
+    await userEvent.click(sheet.getByRole("button", { name: "Eliminar categoría" }));
+    await sheetClosed();
+    await expect(calls(args.onRequest)).toHaveLength(before);
+    await expect(canvas.queryByRole("button", { name: "Editar Vida" })).toBeNull();
+  },
+};
+
+/** Spending ↔ income for a category without transactions: archived and made again as the other. */
+export const FlowSwitchKind: Story = {
+  render: (args) => (
+    <WelcomeStage initialEntry="/welcome/categories" currency="EUR" onRequest={args.onRequest} />
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await heading(canvas, "¿En qué se te va el dinero?");
+    const sheet = await openEdit(canvas, "Salario");
+    await sheet.findByRole("button", { name: "Eliminar categoría" }, { timeout: 3000 });
+    await userEvent.click(sheet.getByRole("radio", { name: "Gasto" }));
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
+    await sheetClosed();
+    await expect(args.onRequest).toHaveBeenCalledWith(
+      'PATCH /api/v1/categories/cat-salary {"archived":true}',
+    );
+    await expect(
+      calls(args.onRequest).some((l) =>
+        l.startsWith('POST /api/v1/categories {"name":"Salario","kind":"expense"'),
+      ),
+    ).toBe(true);
+    const spending = within(canvas.getByRole("group", { name: "Gastos" }));
+    await expect(await spending.findByRole("button", { name: "Editar Salario" })).toBeVisible();
+  },
+};
+
+/** With transactions it can't be deleted: the sheet says how many and offers to archive it. */
+export const FlowCategoryWithTransactions: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/categories"
+      currency="EUR"
+      transactionsByName={{ Supermercado: 132 }}
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await heading(canvas, "¿En qué se te va el dinero?");
+    const sheet = await openEdit(canvas, "Supermercado");
+    await expect(
+      await sheet.findByText(
+        "Tiene 132 movimientos; podrás unirla con otra desde Categorías.",
+        {},
+        { timeout: 3000 },
+      ),
+    ).toBeVisible();
+    await expect(sheet.queryByRole("button", { name: "Eliminar categoría" })).toBeNull();
+    await expect(sheet.getByRole("radio", { name: "Ingreso" })).toBeDisabled();
+    await userEvent.click(sheet.getByRole("button", { name: "Archivar categoría" }));
+    await sheetClosed();
+    await expect(args.onRequest).toHaveBeenCalledWith(
+      'PATCH /api/v1/categories/cat-groceries {"archived":true}',
     );
   },
 };

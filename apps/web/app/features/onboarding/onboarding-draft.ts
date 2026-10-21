@@ -13,6 +13,8 @@ export interface OnboardingDraft {
   selected?: string[];
   /** They left the categories step (SIGUIENTE or SALTAR). */
   categoriesDone?: boolean;
+  /** Suggestions they removed from the step ("Eliminar" on one not made yet). */
+  hiddenSuggestions?: string[];
 }
 
 const storageKey = (userId: string) => `lukas.onboarding.${userId}`;
