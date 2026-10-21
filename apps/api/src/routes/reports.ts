@@ -1,5 +1,7 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import {
+  addMonths,
+  costOfLiving,
   effectiveBudget,
   firstDay,
   lastDay,
@@ -7,12 +9,13 @@ import {
   monthSchema,
   monthsBetween,
 } from "@lukas/core";
-import { categories, categoryBudgets, transactions, withUser } from "@lukas/db";
-import { and, eq, gte, isNull, lte, sql } from "@lukas/db/orm";
+import { categories, categoryBudgets, recurrences, transactions, withUser } from "@lukas/db";
+import { and, eq, gte, isNull, lte, or, sql } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { currentMonth } from "../services/time.ts";
 
 const MAX_MONTHS = 36;
 
@@ -172,6 +175,65 @@ export function reportRoutes(deps: AppDeps) {
         return { month, income, expenses, budget };
       });
       return c.json({ months: result }, 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "get",
+      path: "/v1/reports/cost-of-living",
+      request: {
+        query: z.object({ months: z.coerce.number().int().min(1).max(24).default(6) }),
+      },
+      responses: {
+        200: jsonResponse(
+          z.object({
+            months: z.number().int(),
+            total: z.number().int(),
+            fixed: z.number().int(),
+            variable: z.number().int(),
+            categories: z.array(
+              z.object({
+                categoryId: z.uuid(),
+                average: z.number().int(),
+                type: z.enum(["fixed", "variable"]),
+              }),
+            ),
+          }),
+          "Average monthly expenses over the last complete months, split into fixed and variable",
+        ),
+        ...problems(422),
+      },
+    }),
+    async (c) => {
+      const { months: count } = c.req.valid("query");
+      const to = addMonths(currentMonth(c.get("user")), -1);
+      const from = addMonths(to, 1 - count);
+      const { cats, txs, recurring } = await withUser(deps.db, c.get("userId"), async (tx) => ({
+        cats: await tx.select({ id: categories.id, kind: categories.kind }).from(categories),
+        txs: await tx
+          .select({
+            categoryId: transactions.categoryId,
+            amount: transactions.amount,
+            date: transactions.date,
+          })
+          .from(transactions)
+          .where(inRange(from, to)),
+        // Recurrences still running at the start of the window (or later) make a category fixed.
+        recurring: await tx
+          .selectDistinct({ categoryId: recurrences.categoryId })
+          .from(recurrences)
+          .where(or(isNull(recurrences.endDate), gte(recurrences.endDate, firstDay(from)))),
+      }));
+      return c.json(
+        costOfLiving({
+          months: monthsBetween(from, to),
+          categories: cats,
+          fixedCategoryIds: recurring.map((r) => r.categoryId),
+          transactions: txs,
+        }),
+        200,
+      );
     },
   );
 

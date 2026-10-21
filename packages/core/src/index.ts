@@ -1,4 +1,5 @@
 export * from "./budget.ts";
+export * from "./cost-of-living.ts";
 export * from "./dates.ts";
 export * from "./money.ts";
 export * from "./recurrence.ts";
