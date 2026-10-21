@@ -114,7 +114,7 @@ Reference: `docs/design/stage-2-mockups/theme-arcade-day-night.html`.
 
 ### 3.1 Tokens
 
-CSS variables, two themes (`night`, `day`) plus `auto` (follows `prefers-color-scheme`), persisted per device:
+CSS variables, two themes (`night`, `day`) plus `auto` (follows `prefers-color-scheme`), persisted per device. **`night` (purple) is the default for everyone** regardless of the OS setting (founder decision, 2026-10-21); a visible ☾/☀ toggle sits in the landing header and in the app, and settings offer auto/night/day:
 
 | Token | Night | Day | Use |
 |---|---|---|---|
