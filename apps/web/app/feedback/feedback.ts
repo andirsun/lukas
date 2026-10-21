@@ -56,10 +56,13 @@ const SOUND_URLS: Record<FeedbackEvent, string> = {
 const VOLUME = 0.6;
 
 const sounds = new Map<FeedbackEvent, HTMLAudioElement>();
+/** Elements whose silent unlock `play()` is still settling (see `unlockSounds`). */
+const unlocking = new Set<HTMLAudioElement>();
 
 /** Forgets the loaded audio elements, so a test starts as a fresh page would. */
 export function __resetFeedbackForTests(): void {
   sounds.clear();
+  unlocking.clear();
 }
 
 function soundMuted(): boolean {
@@ -71,8 +74,8 @@ function soundMuted(): boolean {
   }
 }
 
-function playSound(event: FeedbackEvent): void {
-  if (typeof Audio === "undefined" || soundMuted()) return;
+/** The event's audio element, created (and so fetched) the first time it is needed. */
+function soundFor(event: FeedbackEvent): HTMLAudioElement {
   let audio = sounds.get(event);
   if (!audio) {
     audio = new Audio(SOUND_URLS[event]);
@@ -80,9 +83,66 @@ function playSound(event: FeedbackEvent): void {
     audio.volume = VOLUME;
     sounds.set(event, audio);
   }
+  return audio;
+}
+
+function playSound(event: FeedbackEvent): void {
+  if (typeof Audio === "undefined" || soundMuted()) return;
+  const audio = soundFor(event);
+  // A real sound takes over from a silent unlock still settling on this element.
+  if (unlocking.delete(audio)) audio.muted = false;
   audio.currentTime = 0;
   // play() rejects when the browser blocks it (no gesture yet, no audio device): not an error here.
   audio.play()?.catch(() => {});
+}
+
+/**
+ * iOS Safari only lets an `Audio` element start playing if its first `play()` happens inside a
+ * user gesture. Events that resolve later (a server answer, a limit crossed after a save) would
+ * then be silent the first time. So, in a gesture, every sound element is created and played once
+ * muted, then paused: from then on `play()` works at any time. Call it from a gesture handler.
+ */
+export function unlockSounds(): void {
+  if (typeof Audio === "undefined") return;
+  for (const event of Object.keys(SOUND_URLS) as FeedbackEvent[]) {
+    try {
+      const audio = soundFor(event);
+      if (!audio.paused) continue; // Already playing for real.
+      audio.muted = true;
+      unlocking.add(audio);
+      const settle = () => {
+        // Gone from the set means a real sound took the element over: leave it playing.
+        if (!unlocking.delete(audio)) return;
+        audio.pause();
+        audio.currentTime = 0;
+        audio.muted = false;
+      };
+      Promise.resolve(audio.play()).then(settle, settle);
+    } catch {
+      // A browser that refuses even this: sounds just stay as they were.
+    }
+  }
+}
+
+/** Capture phase, so a handler that stops propagation cannot hide the gesture. */
+const CAPTURE = { capture: true };
+
+/**
+ * Unlocks the sounds on the first `pointerdown` or `keydown` anywhere, then removes itself.
+ * Nothing is loaded before that gesture. Returns a function that removes the listeners.
+ */
+export function installSoundUnlock(): () => void {
+  if (typeof window === "undefined") return () => {};
+  const gestures = ["pointerdown", "keydown"] as const;
+  const remove = () => {
+    for (const type of gestures) window.removeEventListener(type, onGesture, CAPTURE);
+  };
+  function onGesture() {
+    remove();
+    unlockSounds();
+  }
+  for (const type of gestures) window.addEventListener(type, onGesture, CAPTURE);
+  return remove;
 }
 
 function vibrate(event: FeedbackEvent): void {

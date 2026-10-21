@@ -40,18 +40,14 @@ const BURST: readonly Piece[] = Array.from({ length: PIECES }, (_, index) => {
 /**
  * Confetti and a celebrating Lukitas, shown when `feedback()` reports something worth
  * celebrating. Purely decorative (hidden from assistive technology: the toast or screen already
- * says what happened) and it never takes a tap. Under reduced motion it is skipped. Mounted once,
- * in the app layout.
+ * says what happened) and it never takes a tap. Under reduced motion there is no confetti: Lukitas
+ * shows as his still celebrating frame and only fades in and out. Mounted once, in the app layout.
  */
 export function Celebration() {
   const reduceMotion = useReducedMotionPreference();
   const [shown, setShown] = useState<{ id: number } | null>(null);
 
   useEffect(() => {
-    if (reduceMotion) {
-      setShown(null);
-      return;
-    }
     let id = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const onFeedback = (event: Event) => {
@@ -68,27 +64,33 @@ export function Celebration() {
       window.removeEventListener(FEEDBACK_DOM_EVENT, onFeedback);
       clearTimeout(timer);
     };
-  }, [reduceMotion]);
+  }, []);
 
   if (!shown) return null;
   return (
     // The key restarts the animation when another event arrives mid-celebration.
-    <div key={shown.id} className="lk-celebration" aria-hidden="true" data-testid="celebration">
+    <div
+      key={shown.id}
+      className={`lk-celebration${reduceMotion ? " is-reduced" : ""}`}
+      aria-hidden="true"
+      data-testid="celebration"
+    >
       <div className="lk-celebration-burst">
-        {BURST.map((piece, index) => (
-          <span
-            key={index}
-            className={`lk-confetti is-${piece.tone}${piece.round ? " is-round" : ""}`}
-            style={
-              {
-                "--lk-dx": `${piece.dx}px`,
-                "--lk-rise": `${piece.rise}px`,
-                "--lk-fall": `${piece.fall}px`,
-                "--lk-spin": `${piece.spin}deg`,
-              } as CSSProperties
-            }
-          />
-        ))}
+        {!reduceMotion &&
+          BURST.map((piece, index) => (
+            <span
+              key={index}
+              className={`lk-confetti is-${piece.tone}${piece.round ? " is-round" : ""}`}
+              style={
+                {
+                  "--lk-dx": `${piece.dx}px`,
+                  "--lk-rise": `${piece.rise}px`,
+                  "--lk-fall": `${piece.fall}px`,
+                  "--lk-spin": `${piece.spin}deg`,
+                } as CSSProperties
+              }
+            />
+          ))}
         <span className="lk-celebration-lukas">
           <Lukas mood="celebrating" size={120} decorative />
         </span>

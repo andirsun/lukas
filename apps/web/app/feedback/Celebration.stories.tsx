@@ -77,14 +77,31 @@ export const NearLimit: Story = {
   },
 };
 
-/** Under reduced motion there is no confetti and no Lukitas. */
+/** Under reduced motion there is no confetti: Lukitas shows as a still frame and only fades. */
 export const ReducedMotion: Story = {
   parameters: { reducedMotion: true },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "paid" }));
-    await sleep(150);
-    await expect(canvas.queryByTestId("celebration")).toBeNull();
+
+    const overlay = await canvas.findByTestId("celebration");
+    await expect(overlay).toHaveClass("is-reduced");
+    await expect(overlay).toHaveAttribute("aria-hidden", "true");
+    await expect(overlay.querySelectorAll(".lk-confetti")).toHaveLength(0);
+
+    // His still celebrating frame (frame 4 of the 4x2 sheet), not the playing loop.
+    const sheet = overlay.querySelector(".lk-lukas.is-celebrating .lk-lukas-sprite") as HTMLElement;
+    await expect(sheet).not.toBeNull();
+    await expect(sheet).not.toHaveClass("is-playing");
+    await expect(sheet.style.backgroundPosition).toBe("0% 100%");
+
+    // Only a fade runs: no pop and no confetti burst.
+    const running = overlay
+      .getAnimations({ subtree: true })
+      .map((animation) => (animation as CSSAnimation).animationName);
+    await expect(running).toEqual(["lk-celebration-fade"]);
+
+    await waitFor(() => expect(canvas.queryByTestId("celebration")).toBeNull(), { timeout: 3000 });
   },
 };
 

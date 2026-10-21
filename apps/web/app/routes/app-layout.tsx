@@ -1,6 +1,7 @@
 import { Outlet } from "react-router";
 import { ApiProvider } from "../api/ApiProvider.tsx";
 import { Celebration } from "../feedback/Celebration.tsx";
+import { useFeedbackWarmup } from "../feedback/warmup.ts";
 import { ToastProvider } from "../ui/Toast.tsx";
 
 /**
@@ -12,6 +13,7 @@ import { ToastProvider } from "../ui/Toast.tsx";
  * The demo is not nested here: it wraps its own routes in `<ApiProvider mode="demo" fetch={...}>`.
  */
 export default function AppLayout() {
+  useFeedbackWarmup();
   return (
     <ApiProvider>
       <ToastProvider>

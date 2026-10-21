@@ -19,4 +19,6 @@ The notes (frequency in Hz, length in seconds) are listed in that script.
 | `undo.mp3`         | `undo`                     | two notes, falling                      |
 
 All are under 4 KB. They are not loaded with the page: `feedback()` creates each `Audio` element
-the first time its event happens (always from a user gesture, so autoplay policies allow it).
+the first time its event happens. Because iOS Safari only lets an element start playing inside a
+gesture, `useFeedbackWarmup()` (app layout) creates and silently plays every element once on the
+first `pointerdown` or `keydown`, so later calls work even after a server response.

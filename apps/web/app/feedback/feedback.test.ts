@@ -5,21 +5,36 @@ import {
   type FeedbackDetail,
   type FeedbackEvent,
   feedback,
+  installSoundUnlock,
   SOUND_STORAGE_KEY,
+  unlockSounds,
   VIBRATION_PATTERNS,
 } from "./feedback.ts";
 
-const play = vi.fn(() => Promise.resolve());
+const play = vi.fn((): Promise<void> | undefined => Promise.resolve());
 const created: string[] = [];
+
+const pause = vi.fn();
+const instances: FakeAudio[] = [];
 
 class FakeAudio {
   currentTime = 0;
   volume = 1;
   preload = "";
+  muted = false;
+  paused = true;
   constructor(src?: string) {
     created.push(src ?? "");
+    instances.push(this);
   }
-  play = play;
+  play() {
+    this.paused = false;
+    return play();
+  }
+  pause() {
+    this.paused = true;
+    pause();
+  }
 }
 
 function stubStorage(value: string | null) {
@@ -30,7 +45,9 @@ function stubStorage(value: string | null) {
 
 beforeEach(() => {
   play.mockClear();
+  pause.mockClear();
   created.length = 0;
+  instances.length = 0;
   __resetFeedbackForTests();
   stubStorage(null);
   vi.stubGlobal("Audio", FakeAudio);
@@ -157,5 +174,88 @@ describe("feedback: DOM event", () => {
     window.addEventListener(FEEDBACK_DOM_EVENT, listener);
     feedback("paid");
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("feedback: unlocking sound for iOS Safari", () => {
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it("loads nothing before the first gesture", () => {
+    installSoundUnlock();
+    expect(created).toHaveLength(0);
+    expect(play).not.toHaveBeenCalled();
+  });
+
+  for (const type of ["pointerdown", "keydown"]) {
+    it(`on the first ${type}, plays every sound once, muted, then pauses it`, async () => {
+      installSoundUnlock();
+      const mutedWhilePlaying: boolean[] = [];
+      play.mockImplementation(() => {
+        mutedWhilePlaying.push(instances[play.mock.calls.length - 1]?.muted ?? false);
+        return Promise.resolve();
+      });
+      window.dispatchEvent(new Event(type));
+      expect(created).toHaveLength(7);
+      expect(new Set(created).size).toBe(7);
+      expect(play).toHaveBeenCalledTimes(7);
+      expect(mutedWhilePlaying).toEqual(Array(7).fill(true));
+      await settle();
+      expect(pause).toHaveBeenCalledTimes(7);
+      for (const audio of instances) {
+        expect(audio.muted).toBe(false);
+        expect(audio.paused).toBe(true);
+        expect(audio.currentTime).toBe(0);
+      }
+      play.mockImplementation(() => Promise.resolve());
+    });
+  }
+
+  it("unlocks only once and removes its listeners", async () => {
+    installSoundUnlock();
+    window.dispatchEvent(new Event("pointerdown"));
+    await settle();
+    play.mockClear();
+    window.dispatchEvent(new Event("pointerdown"));
+    window.dispatchEvent(new Event("keydown"));
+    expect(play).not.toHaveBeenCalled();
+  });
+
+  it("can be cancelled before any gesture", () => {
+    const remove = installSoundUnlock();
+    remove();
+    window.dispatchEvent(new Event("pointerdown"));
+    expect(created).toHaveLength(0);
+  });
+
+  it("reuses the unlocked elements for later sounds", async () => {
+    unlockSounds();
+    await settle();
+    feedback("paid");
+    expect(created).toHaveLength(7);
+    expect(play).toHaveBeenCalledTimes(8);
+  });
+
+  it("lets a real sound that starts while unlocking keep playing", async () => {
+    unlockSounds();
+    feedback("paid"); // Before the silent play() has settled.
+    await settle();
+    const paid = instances.find((audio) => audio.muted === false && audio.paused === false);
+    expect(paid).toBeDefined();
+    expect(pause).toHaveBeenCalledTimes(6);
+  });
+
+  it("does not throw when play() rejects or returns nothing", async () => {
+    play.mockImplementationOnce(() => Promise.reject(new Error("NotAllowedError")));
+    play.mockImplementationOnce(() => undefined);
+    expect(() => unlockSounds()).not.toThrow();
+    await settle();
+    for (const audio of instances) expect(audio.muted).toBe(false);
+  });
+
+  it("does nothing without Audio or window", () => {
+    vi.stubGlobal("Audio", undefined);
+    expect(() => unlockSounds()).not.toThrow();
+    vi.stubGlobal("window", undefined);
+    expect(() => installSoundUnlock()()).not.toThrow();
   });
 });

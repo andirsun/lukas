@@ -27,6 +27,11 @@
   animation: lk-celebration-pop var(--celebrate) ease-out both;
 }
 
+/* Reduced motion: the same stay, but Lukitas only fades (his sprite shows its still frame). */
+.lk-celebration.is-reduced .lk-celebration-lukas {
+  animation-name: lk-celebration-fade;
+}
+
 .lk-confetti {
   position: absolute;
   left: 0;
@@ -86,5 +91,18 @@
   100% {
     opacity: 0;
     transform: translate(var(--lk-dx), var(--lk-fall)) rotate(var(--lk-spin));
+  }
+}
+
+@keyframes lk-celebration-fade {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }
