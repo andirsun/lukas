@@ -14,10 +14,12 @@ export interface ImportStepProps extends StepNavProps {
   onConfirm(): void;
   /** Drops the preview, to pick another file. */
   onDiscard(): void;
-  /** Back to the budgets, after they were prefilled. */
-  onReviewBudgets(): void;
+  /** From the list of sources to Budge's how-to and picker, and back. */
+  onSource(source: "budge" | null): void;
   /** After an import whose follow-up (reading the categories again) failed. */
   onRetry?: () => void;
+  /** Where prefilled budgets came from, shown under the result. */
+  prefillBasis?: string | null;
 }
 
 /** Rejected rows listed before "y N más". */
@@ -41,21 +43,27 @@ function formatDate(iso: string, locale: Locale): string {
 }
 
 /**
- * Step 4, optional: upload a Budge export (CSV), see what it holds (transactions, duplicates,
- * rows with problems, new categories) and confirm. Without a file, Continue reads "Saltar".
+ * "¿Traes tu historial?": a list of sources. Budge opens a short how-to and the file picker, then
+ * the preview (transactions, duplicates, rows with problems, new categories) and the confirm. The
+ * others are "Pronto" for now. SALTAR moves on without importing (dropping a pending preview).
  */
 export function ImportStep({
   state,
   onFile,
   onConfirm,
   onDiscard,
-  onReviewBudgets,
+  onSource,
   onRetry,
+  prefillBasis,
   onBack,
   onNext,
+  onSkip,
+  busy = false,
 }: ImportStepProps) {
   const t = useTranslations("onboarding");
   const tCommon = useTranslations("common");
+  const sourcesHeading = useRef<HTMLHeadingElement>(null);
+  const budgeHeading = useRef<HTMLHeadingElement>(null);
   const pickerInput = useRef<HTMLInputElement>(null);
   const previewHeading = useRef<HTMLHeadingElement>(null);
   const importedHeading = useRef<HTMLHeadingElement>(null);
@@ -65,32 +73,39 @@ export function ImportStep({
   // takes it instead: the preview and the result by their headings (read out by screen readers),
   // the picker again after "Usar otro archivo". (On arriving at the step, the title has it.)
   useEffect(() => {
-    if (shownPhase.current === state.phase) return;
+    const previous = shownPhase.current;
+    if (previous === state.phase) return;
     shownPhase.current = state.phase;
     if (state.phase === "preview") previewHeading.current?.focus();
     else if (state.phase === "imported") importedHeading.current?.focus();
-    else if (state.phase === "idle") pickerInput.current?.focus();
+    else if (state.phase === "sources") sourcesHeading.current?.focus();
+    else if (state.phase === "idle") {
+      // After "Usar otro archivo", straight back to the picker; from the list, to the how-to.
+      if (previous === "preview") pickerInput.current?.focus();
+      else budgeHeading.current?.focus();
+    }
   }, [state.phase]);
 
+  const skip = { label: t("skip"), onClick: onSkip, disabled: busy };
   const next = (() => {
+    const plain = { label: t("next"), onClick: onNext, disabled: busy };
     switch (state.phase) {
+      case "sources":
       case "idle":
-        return { label: t("skip"), onClick: onNext, variant: "secondary" as const };
+        return plain;
       case "reading":
         return { label: t("import.reading"), onClick: () => {}, disabled: true };
       case "preview": {
         const count = newRows(state.preview);
-        if (count === 0) {
-          return { label: t("skip"), onClick: onNext, variant: "secondary" as const };
-        }
+        if (count === 0) return plain;
         return {
           label: state.confirming ? t("import.importing") : t("import.confirm", { count }),
           onClick: onConfirm,
-          disabled: state.confirming || state.discarding,
+          disabled: state.confirming || state.discarding || busy,
         };
       }
       case "imported":
-        return { label: t("continue"), onClick: onNext, disabled: state.retrying };
+        return { ...plain, disabled: state.retrying || busy };
     }
   })();
 
@@ -98,12 +113,22 @@ export function ImportStep({
     <StepFrame
       step="import"
       title={t("import.title")}
-      lead={state.phase === "idle" || state.phase === "reading" ? t("import.lead") : undefined}
+      lead={state.phase === "sources" ? t("import.lead") : undefined}
       onBack={onBack}
+      skip={state.phase === "imported" ? undefined : skip}
       next={next}
     >
+      {state.phase === "sources" && (
+        <Sources headingRef={sourcesHeading} onBudge={() => onSource("budge")} />
+      )}
       {state.phase === "idle" && (
-        <FilePicker inputRef={pickerInput} onFile={onFile} error={state.error ?? null} />
+        <BudgeHowTo
+          headingRef={budgeHeading}
+          inputRef={pickerInput}
+          onFile={onFile}
+          onOtherSource={() => onSource(null)}
+          error={state.error ?? null}
+        />
       )}
       {state.phase === "reading" && (
         <p role="status" className="text-ink-muted">
@@ -151,10 +176,7 @@ export function ImportStep({
           {state.prefilled && (
             <>
               <p className="text-ink">{t("import.prefilled")}</p>
-              <p className="text-[15px] text-ink-muted">{t("prefill_basis")}</p>
-              <PressButton variant="secondary" onClick={onReviewBudgets}>
-                {t("import.review_budgets")}
-              </PressButton>
+              {prefillBasis && <p className="text-[15px] text-ink-muted">{prefillBasis}</p>}
             </>
           )}
         </div>
@@ -163,20 +185,89 @@ export function ImportStep({
   );
 }
 
-function FilePicker({
+/** A source in the list: Budge opens its how-to; the rest say "Pronto" and do nothing yet. */
+function Sources({
+  headingRef,
+  onBudge,
+}: {
+  headingRef: RefObject<HTMLHeadingElement | null>;
+  onBudge(): void;
+}) {
+  const t = useTranslations("onboarding.import");
+  const headingId = useId();
+  const soon = (label: string) => (
+    <li className="flex min-h-11 items-center justify-between gap-(--space-3) rounded-lg border-2 border-stroke px-(--space-4) py-(--space-3) text-ink-muted">
+      <span>{label}</span>
+      <span className="rounded-pill bg-surface-sunken px-(--space-2) py-(--space-1) text-[13px] text-ink-muted">
+        {t("soon")}
+      </span>
+    </li>
+  );
+  return (
+    <section aria-labelledby={headingId} className="flex flex-col gap-(--space-2)">
+      <h2
+        ref={headingRef}
+        id={headingId}
+        tabIndex={-1}
+        className="font-display text-[18px] font-bold text-ink outline-none"
+      >
+        {t("sources_label")}
+      </h2>
+      <ul className="flex flex-col gap-(--space-2)">
+        <li>
+          <button
+            type="button"
+            onClick={onBudge}
+            className="lk-rowcard lk-press flex min-h-11 w-full items-center justify-between gap-(--space-3) px-(--space-4) py-(--space-3) text-left font-display text-[18px] font-bold text-ink focus-visible:outline-3 focus-visible:outline-focus focus-visible:outline-offset-2"
+          >
+            {t("source_budge")}
+            <ChevronIcon />
+          </button>
+        </li>
+        {/* Task 10d makes this one an upload with column mapping. */}
+        {soon(t("source_sheet"))}
+        {soon(t("source_buddy"))}
+        {soon(t("source_other"))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * How to get the CSV out of Budge, then the picker.
+ * The steps are deliberately neutral: the founder still has to confirm Budge's exact menu path,
+ * and then `budge_step_1` in the catalogs gets the real one.
+ */
+function BudgeHowTo({
+  headingRef,
   inputRef,
   onFile,
+  onOtherSource,
   error,
 }: {
+  headingRef: RefObject<HTMLHeadingElement | null>;
   inputRef: RefObject<HTMLInputElement | null>;
   onFile(file: File): void;
+  onOtherSource(): void;
   error: string | null;
 }) {
-  const t = useTranslations("onboarding");
+  const t = useTranslations("onboarding.import");
   const errorId = useId();
   return (
-    <>
-      <label className="lk-btn lk-btn-primary inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-(--space-2) has-focus-visible:outline-3 has-focus-visible:outline-focus has-focus-visible:outline-offset-2">
+    <div className="flex flex-col gap-(--space-3)">
+      <h2
+        ref={headingRef}
+        tabIndex={-1}
+        className="font-display text-[20px] font-bold text-ink outline-none"
+      >
+        {t("budge_title")}
+      </h2>
+      <ol className="flex list-decimal flex-col gap-(--space-2) pl-(--space-5) text-ink marker:font-display marker:text-ink-muted">
+        <li>{t("budge_step_1")}</li>
+        <li>{t("budge_step_2")}</li>
+        <li>{t("budge_step_3")}</li>
+      </ol>
+      <label className="lk-btn lk-btn-secondary inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-(--space-2) has-focus-visible:outline-3 has-focus-visible:outline-focus has-focus-visible:outline-offset-2">
         <input
           ref={inputRef}
           type="file"
@@ -191,10 +282,31 @@ function FilePicker({
           }}
         />
         <UploadIcon />
-        {t("import.choose")}
+        {t("choose")}
       </label>
       {error && <StepError id={errorId}>{error}</StepError>}
-    </>
+      <PressButton variant="ghost" className="self-start" onClick={onOtherSource}>
+        {t("other_source")}
+      </PressButton>
+    </div>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m9 5 7 7-7 7" />
+    </svg>
   );
 }
 

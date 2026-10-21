@@ -118,7 +118,8 @@ test("a soft-deleted transaction still locks the currency", async () => {
 
 test("unsupported currencies are rejected", async () => {
   const e = await t.signIn("e@lukas.test");
-  for (const currency of ["JPY", "cop", "", 5]) {
+  // COP, USD and EUR only at launch (spec §2.4): the other Latin American currencies wait.
+  for (const currency of ["JPY", "MXN", "ARS", "CLP", "PEN", "cop", "", 5]) {
     const res = await t.request("PATCH", "/v1/me", { headers: e.headers, body: { currency } });
     expect(res.status, String(currency)).toBe(422);
   }

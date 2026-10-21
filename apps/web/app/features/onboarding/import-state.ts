@@ -11,8 +11,12 @@ export type ImportDto =
  */
 export type CurrencyNote = { kind: "switched" | "locked"; file: string; account: string } | null;
 
-/** The import step, from no file to a confirmed import. */
+/**
+ * The import step: the list of sources, then (Budge) the how-to with the file picker (`idle`), from
+ * there to a confirmed import.
+ */
 export type ImportState =
+  | { phase: "sources" }
   | { phase: "idle"; error?: string | null }
   | { phase: "reading"; fileName: string }
   | {

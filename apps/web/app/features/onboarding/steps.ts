@@ -1,32 +1,30 @@
-/** The onboarding's steps (spec §2.4), in order. Step 0 lives at `/welcome`, the rest below it. */
-export const STEPS = ["currency", "passkey", "categories", "budgets", "import", "done"] as const;
+/**
+ * The onboarding's steps (spec §2.4, revised): a welcome with "Configurar en 1 minuto" / "Entrar
+ * directo", then four setup steps, budgets last. The welcome lives at `/welcome`, the rest below it,
+ * so back, forward and a reload keep the step.
+ */
+export const STEPS = ["welcome", "currency", "categories", "import", "budgets"] as const;
 export type StepId = (typeof STEPS)[number];
 
-/** What decides which steps apply: without WebAuthn there is no passkey to offer. */
-export interface StepContext {
-  passkeys: boolean;
-}
+/** The steps counted in the progress ("Paso 1 de 4"): all but the welcome. */
+export const SETUP_STEPS = STEPS.slice(1) as readonly Exclude<StepId, "welcome">[];
 
 export function stepPath(step: StepId): string {
-  return step === "currency" ? "/welcome" : `/welcome/${step}`;
+  return step === "welcome" ? "/welcome" : `/welcome/${step}`;
 }
 
-/** The step a `/welcome/:step?` param names; no param is the first step, an unknown one null. */
+/** The step a `/welcome/:step?` param names; no param is the welcome, an unknown one null. */
 export function stepFromParam(param: string | undefined): StepId | null {
-  if (param === undefined) return "currency";
-  return (STEPS as readonly string[]).includes(param) ? (param as StepId) : null;
+  if (param === undefined) return "welcome";
+  return (STEPS as readonly string[]).includes(param) && param !== "welcome"
+    ? (param as StepId)
+    : null;
 }
 
-const applies = (step: StepId, context: StepContext) => step !== "passkey" || context.passkeys;
-
-export function nextStep(step: StepId, context: StepContext): StepId | null {
-  return STEPS.slice(STEPS.indexOf(step) + 1).find((s) => applies(s, context)) ?? null;
+export function nextStep(step: StepId): StepId | null {
+  return STEPS[STEPS.indexOf(step) + 1] ?? null;
 }
 
-export function previousStep(step: StepId, context: StepContext): StepId | null {
-  return (
-    STEPS.slice(0, STEPS.indexOf(step))
-      .reverse()
-      .find((s) => applies(s, context)) ?? null
-  );
+export function previousStep(step: StepId): StepId | null {
+  return STEPS[STEPS.indexOf(step) - 1] ?? null;
 }

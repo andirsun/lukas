@@ -1,13 +1,9 @@
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@lukas/core";
 
-/** Where each supported currency is used; the euro for the eurozone. */
+/** Where each supported currency is used (COP, USD, EUR at launch); the euro for the eurozone. */
 const BY_REGION: Record<string, SupportedCurrency> = {
   CO: "COP",
-  MX: "MXN",
   US: "USD",
-  AR: "ARS",
-  CL: "CLP",
-  PE: "PEN",
   ...Object.fromEntries(
     [
       "AT",
@@ -47,7 +43,7 @@ function regionOf(tag: string): string | undefined {
 
 /**
  * The currency to preselect from the browser's languages (`navigator.languages`): the first one
- * that names a region we know (es-CO → COP, es-ES → EUR, es-MX → MXN, en-US → USD), else EUR.
+ * that names a region we know (es-CO → COP, es-ES → EUR, en-US → USD), else EUR.
  */
 export function currencyFromLanguages(languages: readonly string[]): SupportedCurrency {
   for (const tag of languages) {

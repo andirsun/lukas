@@ -74,7 +74,7 @@ export interface paths {
                         /** @enum {string} */
                         locale?: "es" | "en";
                         /** @enum {string} */
-                        currency?: "COP" | "EUR" | "USD" | "MXN" | "ARS" | "CLP" | "PEN";
+                        currency?: "COP" | "USD" | "EUR";
                         /** @enum {boolean} */
                         onboardingCompleted?: true;
                     };
@@ -1541,6 +1541,11 @@ export interface paths {
                                     amount: number;
                                 }[];
                                 currency: string | null;
+                                averageWindow: {
+                                    from: string;
+                                    to: string;
+                                    months: number;
+                                } | null;
                                 inserted?: number;
                             };
                         };
@@ -1657,6 +1662,11 @@ export interface paths {
                                     amount: number;
                                 }[];
                                 currency: string | null;
+                                averageWindow: {
+                                    from: string;
+                                    to: string;
+                                    months: number;
+                                } | null;
                                 inserted?: number;
                             };
                         };

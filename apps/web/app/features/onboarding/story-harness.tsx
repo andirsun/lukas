@@ -1,10 +1,14 @@
+import { addMonths, monthOf, todayIn } from "@lukas/core";
 import { useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
 import type { ImportDto } from "./import-state.ts";
-import type { PasskeyAdder } from "./passkey.ts";
 import { Welcome } from "./Welcome.tsx";
+
+/** The last 3 complete months, as the API would report them today. */
+const lastComplete = addMonths(monthOf(todayIn("America/Bogota")), -1);
+const RECENT_WINDOW = { from: addMonths(lastComplete, -2), to: lastComplete, months: 3 };
 
 /** A preview like the sample Budge file's (invented data): 22 rows, one bad date. */
 export const SAMPLE_PREVIEW: ImportDto = {
@@ -22,6 +26,7 @@ export const SAMPLE_PREVIEW: ImportDto = {
       { category: "Supermercado", amount: 3589 },
     ],
     currency: "EUR",
+    averageWindow: RECENT_WINDOW,
   },
 };
 
@@ -41,41 +46,61 @@ interface FakeCategory {
  * account uses another currency, its preview rejects every row (as the real importer does).
  * Every write is reported to `onRequest` as `METHOD /path {json body}` (multipart without body).
  */
-function onboardingFetch(
-  currency: string,
-  onRequest: (line: string) => void,
+interface FakeApiOptions {
+  currency: string;
+  onRequest(line: string): void;
+  failRefreshesAfterConfirm?: number;
+  /** "none": a brand-new account; "some": Supermercado and Salario already there. */
+  categories?: "none" | "some";
+  timezone?: string;
+  /** The file ended long ago: its window is its own last 3 months, not the last 3 complete ones. */
+  oldExport?: boolean;
+}
+
+function onboardingFetch({
+  currency,
+  onRequest,
   failRefreshesAfterConfirm = 0,
-): typeof fetch {
+  categories: start = "some",
+  timezone = "America/Bogota",
+  oldExport = false,
+}: FakeApiOptions): typeof fetch {
+  const window = oldExport
+    ? { from: "2025-01", to: "2025-03", months: 3 }
+    : SAMPLE_PREVIEW.stats.averageWindow;
   let profile = {
     id: "u-new",
     email: "ana@example.com",
-    timezone: "UTC",
+    timezone,
     locale: "es",
     onboardingCompletedAt: null as string | null,
     currency,
   };
-  let categories: FakeCategory[] = [
-    {
-      id: "cat-groceries",
-      name: "Supermercado",
-      kind: "expense",
-      icon: "🛒",
-      color: "#ff9f1c",
-      sortOrder: 0,
-      archived: false,
-      currentBudget: null,
-    },
-    {
-      id: "cat-salary",
-      name: "Salario",
-      kind: "income",
-      icon: "💰",
-      color: "#2fd388",
-      sortOrder: 7,
-      archived: false,
-      currentBudget: null,
-    },
-  ];
+  let categories: FakeCategory[] =
+    start === "none"
+      ? []
+      : [
+          {
+            id: "cat-groceries",
+            name: "Supermercado",
+            kind: "expense",
+            icon: "🛒",
+            color: "#ff9f1c",
+            sortOrder: 0,
+            archived: false,
+            currentBudget: null,
+          },
+          {
+            id: "cat-salary",
+            name: "Salario",
+            kind: "income",
+            icon: "💰",
+            color: "#2fd388",
+            sortOrder: 7,
+            archived: false,
+            currentBudget: null,
+          },
+        ];
   let uploads = 0;
   let failuresLeft = 0;
 
@@ -91,8 +116,9 @@ function onboardingFetch(
 
     if (path === "/api/v1/me") {
       if (request.method === "PATCH") {
-        const patch = body as { currency?: string; onboardingCompleted?: true };
+        const patch = body as { currency?: string; timezone?: string; onboardingCompleted?: true };
         if (patch.currency) profile = { ...profile, currency: patch.currency };
+        if (patch.timezone) profile = { ...profile, timezone: patch.timezone };
         if (patch.onboardingCompleted) {
           profile = { ...profile, onboardingCompletedAt: "2026-10-21T10:00:00.000Z" };
         }
@@ -136,7 +162,7 @@ function onboardingFetch(
       uploads += 1;
       const inCurrency = profile.currency === "EUR";
       const stats = inCurrency
-        ? { ...SAMPLE_PREVIEW.stats, duplicates: 0 }
+        ? { ...SAMPLE_PREVIEW.stats, duplicates: 0, averageWindow: window }
         : {
             ...SAMPLE_PREVIEW.stats,
             transactions: 0,
@@ -146,6 +172,7 @@ function onboardingFetch(
             from: null,
             to: null,
             averageMonthlySpending: [],
+            averageWindow: null,
           };
       return Response.json({ id: `preview-${uploads}`, status: "preview", stats }, { status: 201 });
     }
@@ -155,7 +182,7 @@ function onboardingFetch(
       return Response.json({
         id: confirm[1],
         status: "confirmed",
-        stats: { ...SAMPLE_PREVIEW.stats, duplicates: 0, inserted: 22 },
+        stats: { ...SAMPLE_PREVIEW.stats, duplicates: 0, averageWindow: window, inserted: 22 },
       });
     }
     if (/^\/api\/v1\/imports\/[^/]+$/.test(path) && request.method === "DELETE") {
@@ -165,8 +192,8 @@ function onboardingFetch(
   };
 }
 
-/** No WebAuthn here: the flow skips the passkey step. */
-const NO_PASSKEYS: PasskeyAdder = { available: () => false, add: async () => "failed" };
+/** The browser this stage pretends to be: in Bogotá. */
+const BOGOTA = { zone: "America/Bogota", supported: ["America/Bogota", "Europe/Madrid", "UTC"] };
 
 export interface WelcomeStageProps {
   /** Where the router starts, e.g. `/welcome/import`. */
@@ -176,18 +203,17 @@ export interface WelcomeStageProps {
   onRequest(line: string): void;
   /** How many category reads fail (503) right after a confirm, retries included. */
   failRefreshesAfterConfirm?: number;
+  /** What the account starts with: no categories (new) or a couple. */
+  categories?: "none" | "some";
+  /** The profile's stored time zone; "UTC" is a new profile's default. */
+  timezone?: string;
+  /** The uploaded file ended long ago (see `FakeApiOptions.oldExport`). */
+  oldExport?: boolean;
 }
 
 /** The `/welcome` flow in a memory router, with the fake API, toasts, and a stand-in for /app. */
-export function WelcomeStage({
-  initialEntry,
-  currency,
-  onRequest,
-  failRefreshesAfterConfirm,
-}: WelcomeStageProps) {
-  const [fetchImpl] = useState(() =>
-    onboardingFetch(currency, onRequest, failRefreshesAfterConfirm),
-  );
+export function WelcomeStage({ initialEntry, ...api }: WelcomeStageProps) {
+  const [fetchImpl] = useState(() => onboardingFetch(api));
   return (
     <MemoryRouter initialEntries={[initialEntry]}>
       <ApiProvider fetch={fetchImpl}>
@@ -195,7 +221,7 @@ export function WelcomeStage({
           <Routes>
             <Route
               path="/welcome/:step?"
-              element={<Welcome passkeys={NO_PASSKEYS} languages={["es-CO"]} />}
+              element={<Welcome languages={["es-CO"]} timeZone={BOGOTA} />}
             />
             <Route path="/app" element={<p className="p-(--space-4) text-ink">App (stand-in)</p>} />
           </Routes>

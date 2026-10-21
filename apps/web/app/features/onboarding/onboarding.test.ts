@@ -5,17 +5,19 @@ import { currencyFromLanguages } from "./currency.ts";
 import { passkeyOutcome } from "./passkey.ts";
 import { nextStep, previousStep, STEPS, stepFromParam, stepPath } from "./steps.ts";
 import { SUGGESTED_CATEGORIES, suggestionFor } from "./suggested-categories.ts";
+import { browserTimeZone, timeZoneToSave } from "./timezone.ts";
 
 describe("currencyFromLanguages", () => {
-  it("follows the browser's region", () => {
+  it("follows the browser's region (COP, USD, EUR at launch)", () => {
     expect(currencyFromLanguages(["es-CO"])).toBe("COP");
     expect(currencyFromLanguages(["es-ES"])).toBe("EUR");
-    expect(currencyFromLanguages(["es-MX"])).toBe("MXN");
     expect(currencyFromLanguages(["en-US"])).toBe("USD");
-    expect(currencyFromLanguages(["es-AR"])).toBe("ARS");
-    expect(currencyFromLanguages(["es-CL"])).toBe("CLP");
-    expect(currencyFromLanguages(["es-PE"])).toBe("PEN");
     expect(currencyFromLanguages(["pt-PT"])).toBe("EUR");
+  });
+
+  it("falls back to EUR for regions whose currency is not offered yet", () => {
+    expect(currencyFromLanguages(["es-MX"])).toBe("EUR");
+    expect(currencyFromLanguages(["es-AR", "es-CO"])).toBe("COP");
   });
 
   it("takes the first language that names a region it knows", () => {
@@ -70,25 +72,50 @@ describe("parseBudgetInput", () => {
 });
 
 describe("steps", () => {
-  it("are the six of the spec, in order", () => {
-    expect(STEPS).toEqual(["currency", "passkey", "categories", "budgets", "import", "done"]);
+  it("are the welcome and the four setup steps, budgets last", () => {
+    expect(STEPS).toEqual(["welcome", "currency", "categories", "import", "budgets"]);
   });
 
   it("map to /welcome paths and back", () => {
-    expect(stepPath("currency")).toBe("/welcome");
-    expect(stepPath("budgets")).toBe("/welcome/budgets");
-    expect(stepFromParam(undefined)).toBe("currency");
+    expect(stepPath("welcome")).toBe("/welcome");
+    expect(stepPath("currency")).toBe("/welcome/currency");
+    expect(stepFromParam(undefined)).toBe("welcome");
     expect(stepFromParam("import")).toBe("import");
-    expect(stepFromParam("nope")).toBeNull();
+    expect(stepFromParam("welcome")).toBeNull();
+    expect(stepFromParam("passkey")).toBeNull();
+    expect(stepFromParam("done")).toBeNull();
   });
 
-  it("skip the passkey step when the browser has no passkeys", () => {
-    expect(nextStep("currency", { passkeys: true })).toBe("passkey");
-    expect(nextStep("currency", { passkeys: false })).toBe("categories");
-    expect(previousStep("categories", { passkeys: false })).toBe("currency");
-    expect(previousStep("categories", { passkeys: true })).toBe("passkey");
-    expect(previousStep("currency", { passkeys: true })).toBeNull();
-    expect(nextStep("done", { passkeys: true })).toBeNull();
+  it("go forward and back in order", () => {
+    expect(nextStep("welcome")).toBe("currency");
+    expect(nextStep("import")).toBe("budgets");
+    expect(nextStep("budgets")).toBeNull();
+    expect(previousStep("currency")).toBe("welcome");
+    expect(previousStep("welcome")).toBeNull();
+  });
+});
+
+describe("timeZoneToSave", () => {
+  const supported = ["America/Bogota", "Europe/Madrid", "UTC"];
+
+  it("saves the browser's zone while the profile still has the default", () => {
+    expect(timeZoneToSave("UTC", "America/Bogota", supported)).toBe("America/Bogota");
+  });
+
+  it("leaves a zone the person already has", () => {
+    expect(timeZoneToSave("Europe/Madrid", "America/Bogota", supported)).toBeNull();
+  });
+
+  it("ignores a zone the runtime doesn't know, a missing one, or UTC itself", () => {
+    expect(timeZoneToSave("UTC", "Mars/Olympus", supported)).toBeNull();
+    expect(timeZoneToSave("UTC", undefined, supported)).toBeNull();
+    expect(timeZoneToSave("UTC", "UTC", supported)).toBeNull();
+  });
+
+  it("reads the real browser zone from a list the runtime supports", () => {
+    const { zone, supported: known } = browserTimeZone();
+    expect(typeof zone).toBe("string");
+    expect(known.length).toBeGreaterThan(100);
   });
 });
 

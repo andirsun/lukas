@@ -364,28 +364,41 @@
     "meta_title": "Bienvenida · Lukitas",
     "progress": "Paso {current} de {total}",
     "back": "Atrás",
-    "continue": "Continuar",
     "skip": "Saltar",
     "saving": "Guardando…",
     "currency": {
       "title": "¿En qué moneda llevas tus cuentas?",
-      "lead": "La usamos para mostrar tus montos. Si importas desde Budge, usamos la moneda del archivo.",
+      "lead": "La usamos para mostrar tus montos. Si traes tu historial, usamos la moneda del archivo.",
       "label": "Moneda"
-    },
-    "passkey": {
-      "title": "¿Entrar con tu huella la próxima vez?",
-      "lead": "Usa la huella o la cara de este dispositivo y entra sin esperar el código.",
-      "add": "Usar mi huella",
-      "adding": "Esperando tu huella…",
-      "added": "Listo: la próxima vez entras con tu huella.",
-      "failed": "No pudimos guardar tu huella. Inténtalo otra vez o sigue sin ella."
     },
     "categories": {
       "title": "¿En qué se te va el dinero?",
-      "lead": "Elige tus categorías. Puedes cambiarlas cuando quieras.",
+      "lead": "Ya elegimos algunas por ti. Toca una para quitarla, o agrega las tuyas.",
       "expenses": "Gastos",
       "income": "Ingresos",
-      "need_expense": "Elige al menos una categoría de gasto para seguir."
+      "add": "Agregar categoría",
+      "add_title": "Nueva categoría",
+      "name_label": "Nombre",
+      "name_placeholder": "Mascotas",
+      "name_required": "Escribe un nombre para la categoría.",
+      "glyph_label": "Ícono",
+      "tint_label": "Color",
+      "kind_label": "Tipo",
+      "kind_expense": "Gasto",
+      "kind_income": "Ingreso",
+      "save": "Guardar categoría",
+      "tints": {
+        "orange": "Naranja",
+        "red": "Rojo",
+        "purple": "Morado",
+        "indigo": "Índigo",
+        "blue": "Azul",
+        "pink": "Rosado",
+        "amber": "Ámbar",
+        "green": "Verde",
+        "teal": "Turquesa",
+        "gray": "Gris"
+      }
     },
     "budgets": {
       "title": "¿Cuánto quieres gastar al mes?",
@@ -393,11 +406,12 @@
       "amount_label": "Presupuesto de {category}",
       "invalid": "Escribe solo el número, como {example}.",
       "none": "Sin presupuesto",
-      "total_label": "Lo que puedes gastar al mes"
+      "total_label": "Lo que puedes gastar al mes",
+      "empty": "No tienes categorías de gasto. Puedes crearlas después en Categorías."
     },
     "import": {
-      "title": "¿Vienes de Budge?",
-      "lead": "Sube la exportación de Budge (un archivo CSV) y traemos tus movimientos. Si no la tienes, salta este paso.",
+      "title": "¿Traes tu historial?",
+      "lead": "Trae tus movimientos de otra app. Si no tienes nada que traer, salta este paso.",
       "choose": "Subir archivo de Budge",
       "reading": "Leyendo tu archivo…",
       "preview_title": "Esto es lo que vamos a importar",
@@ -424,15 +438,36 @@
       "other_file": "Usar otro archivo",
       "imported": "Importamos {count, plural, one {# movimiento} other {# movimientos}}.",
       "prefilled": "Llenamos tus presupuestos con lo que gastas en promedio cada mes.",
-      "review_budgets": "Revisar presupuestos",
-      "rejected_more": "y {count} más"
+      "rejected_more": "y {count} más",
+      "sources_label": "Desde dónde",
+      "source_budge": "Budge",
+      "source_sheet": "Excel, Google Sheets o CSV",
+      "source_buddy": "Buddy",
+      "source_other": "Otras apps",
+      "soon": "Pronto",
+      "budge_title": "Exporta tus movimientos de Budge",
+      "budge_step_1": "En Budge, abre Ajustes y busca la opción para exportar tus movimientos en CSV.",
+      "budge_step_2": "Guarda el archivo en este dispositivo.",
+      "budge_step_3": "Súbelo aquí: te mostramos qué vamos a importar antes de hacerlo.",
+      "other_source": "Elegir otra fuente"
     },
-    "done": {
-      "title": "¡Todo listo!",
-      "lead": "Ya puedes empezar a anotar tus gastos. Lukitas te avisa cuando te acerques al límite.",
-      "total_label": "Tu presupuesto del mes",
-      "start": "Empezar"
+    "prefill_basis": "Basado en lo que gastaste en {months, plural, one {tu último mes} other {tus últimos # meses}}",
+    "next": "Siguiente",
+    "welcome": {
+      "title": "Te damos la bienvenida a Lukitas",
+      "lead": "Configura tu moneda, tus categorías y tu presupuesto en un minuto, o entra directo y hazlo después.",
+      "setup": "Configurar en 1 minuto",
+      "direct": "Entrar directo",
+      "direct_note": "Si entras directo, usamos la moneda de tu región y las categorías sugeridas. Puedes cambiarlas cuando quieras."
     },
-    "prefill_basis": "Basado en lo que gastaste en tus últimos 3 meses"
+    "prefill_basis_activity": "Basado en {months, plural, one {tu último mes} other {tus últimos # meses}} con movimientos"
+  },
+  "passkey_offer": {
+    "title": "¿Entrar con tu huella la próxima vez?",
+    "lead": "Usa la huella o la cara de este dispositivo y entra sin esperar el código.",
+    "add": "Usar mi huella",
+    "adding": "Esperando tu huella…",
+    "added": "Listo: la próxima vez entras con tu huella.",
+    "failed": "No pudimos guardar tu huella. Inténtalo otra vez o sigue sin ella."
   }
 }

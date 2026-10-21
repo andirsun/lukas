@@ -364,28 +364,41 @@
     "meta_title": "Welcome · Lukitas",
     "progress": "Step {current} of {total}",
     "back": "Back",
-    "continue": "Continue",
     "skip": "Skip",
     "saving": "Saving…",
     "currency": {
       "title": "Which currency do you use?",
-      "lead": "We use it to show your amounts. If you import from Budge, we use the file's currency.",
+      "lead": "We use it to show your amounts. If you bring your history, we use the file's currency.",
       "label": "Currency"
-    },
-    "passkey": {
-      "title": "Sign in with your fingerprint next time?",
-      "lead": "Use this device's fingerprint or face and sign in without waiting for a code.",
-      "add": "Use my fingerprint",
-      "adding": "Waiting for your fingerprint…",
-      "added": "Done: next time, sign in with your fingerprint.",
-      "failed": "We couldn't save your fingerprint. Try again or continue without it."
     },
     "categories": {
       "title": "Where does your money go?",
-      "lead": "Pick your categories. You can change them anytime.",
+      "lead": "We picked some for you. Tap one to remove it, or add your own.",
       "expenses": "Spending",
       "income": "Income",
-      "need_expense": "Pick at least one spending category to continue."
+      "add": "Add category",
+      "add_title": "New category",
+      "name_label": "Name",
+      "name_placeholder": "Pets",
+      "name_required": "Type a name for the category.",
+      "glyph_label": "Icon",
+      "tint_label": "Color",
+      "kind_label": "Type",
+      "kind_expense": "Spending",
+      "kind_income": "Income",
+      "save": "Save category",
+      "tints": {
+        "orange": "Orange",
+        "red": "Red",
+        "purple": "Purple",
+        "indigo": "Indigo",
+        "blue": "Blue",
+        "pink": "Pink",
+        "amber": "Amber",
+        "green": "Green",
+        "teal": "Teal",
+        "gray": "Gray"
+      }
     },
     "budgets": {
       "title": "How much do you want to spend each month?",
@@ -393,11 +406,12 @@
       "amount_label": "Budget for {category}",
       "invalid": "Type just the number, like {example}.",
       "none": "No budget",
-      "total_label": "What you can spend per month"
+      "total_label": "What you can spend per month",
+      "empty": "You have no spending categories. You can create them later in Categories."
     },
     "import": {
-      "title": "Coming from Budge?",
-      "lead": "Upload your Budge export (a CSV file) and we'll bring your transactions. If you don't have one, skip this step.",
+      "title": "Bringing your history?",
+      "lead": "Bring your transactions from another app. If you have nothing to bring, skip this step.",
       "choose": "Upload a Budge file",
       "reading": "Reading your file…",
       "preview_title": "Here's what we'll import",
@@ -424,15 +438,36 @@
       "other_file": "Use another file",
       "imported": "We imported {count, plural, one {# transaction} other {# transactions}}.",
       "prefilled": "We filled in your budgets with what you spend on average each month.",
-      "review_budgets": "Review budgets",
-      "rejected_more": "and {count} more"
+      "rejected_more": "and {count} more",
+      "sources_label": "Where from",
+      "source_budge": "Budge",
+      "source_sheet": "Excel, Google Sheets or CSV",
+      "source_buddy": "Buddy",
+      "source_other": "Other apps",
+      "soon": "Soon",
+      "budge_title": "Export your transactions from Budge",
+      "budge_step_1": "In Budge, open Settings and look for the option to export your transactions as CSV.",
+      "budge_step_2": "Save the file on this device.",
+      "budge_step_3": "Upload it here: we show you what we'll import before we do.",
+      "other_source": "Pick another source"
     },
-    "done": {
-      "title": "You're all set!",
-      "lead": "You can start logging your spending. Lukitas lets you know when you get close to a limit.",
-      "total_label": "Your monthly budget",
-      "start": "Let's go"
+    "prefill_basis": "Based on what you spent in {months, plural, one {your last month} other {your last # months}}",
+    "next": "Next",
+    "welcome": {
+      "title": "Welcome to Lukitas",
+      "lead": "Set up your currency, categories and budget in a minute, or go straight in and do it later.",
+      "setup": "Set up in 1 minute",
+      "direct": "Go straight in",
+      "direct_note": "If you go straight in, we use your region's currency and the suggested categories. You can change them anytime."
     },
-    "prefill_basis": "Based on what you spent in your last 3 months"
+    "prefill_basis_activity": "Based on {months, plural, one {your last month} other {your last # months}} with activity"
+  },
+  "passkey_offer": {
+    "title": "Sign in with your fingerprint next time?",
+    "lead": "Use this device's fingerprint or face and sign in without waiting for a code.",
+    "add": "Use my fingerprint",
+    "adding": "Waiting for your fingerprint…",
+    "added": "Done: next time, sign in with your fingerprint.",
+    "failed": "We couldn't save your fingerprint. Try again or continue without it."
   }
 }

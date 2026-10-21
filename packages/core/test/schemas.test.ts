@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import {
   createRecurrenceSchema,
   createTransactionSchema,
+  SUPPORTED_CURRENCIES,
   updateProfileSchema,
   updateTransactionSchema,
 } from "../src/index.ts";
@@ -75,4 +76,10 @@ test("updateProfileSchema validates time zones", () => {
     timezone: "America/Bogota",
     locale: "en",
   });
+});
+
+test("the supported currencies are COP, USD and EUR", () => {
+  expect([...SUPPORTED_CURRENCIES]).toEqual(["COP", "USD", "EUR"]);
+  expect(updateProfileSchema.safeParse({ currency: "MXN" }).success).toBe(false);
+  expect(updateProfileSchema.safeParse({ currency: "USD" }).success).toBe(true);
 });

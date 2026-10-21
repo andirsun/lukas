@@ -4,21 +4,24 @@ import { Lukas, type LukasMood } from "../../lukas/Lukas.tsx";
 import { cx } from "../../ui/cx.ts";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
-import { STEPS, type StepId } from "./steps.ts";
+import { SETUP_STEPS, type StepId } from "./steps.ts";
 
-/** What every step gets from the flow: where Back and Continue go. No `onBack` on the first step. */
+/**
+ * What every setup step gets from the flow: Back (none on the first), SALTAR (move on with this
+ * step's defaults, nothing typed is required) and SIGUIENTE (apply what is on screen).
+ */
 export interface StepNavProps {
   onBack?: (() => void) | undefined;
+  onSkip(): void;
   onNext(): void;
+  /** While the step's write is in flight: the buttons wait. */
+  busy?: boolean;
 }
 
 export interface StepAction {
   label: string;
   onClick(): void;
   disabled?: boolean;
-  variant?: "primary" | "secondary";
-  /** Id of the text that says why the action is disabled. */
-  describedBy?: string | undefined;
 }
 
 export interface StepFrameProps {
@@ -27,8 +30,11 @@ export interface StepFrameProps {
   lead?: ReactNode;
   mood?: LukasMood;
   onBack?: (() => void) | undefined;
-  next: StepAction;
-  /** Shown above Back / Continue, so it stays in view while the content scrolls (a running total). */
+  /** SALTAR. */
+  skip?: StepAction | undefined;
+  /** SIGUIENTE, or the step's own main action (e.g. "Importar 22 movimientos"). */
+  next?: StepAction | undefined;
+  /** Shown above the buttons, so it stays in view while the content scrolls (a running total). */
   summary?: ReactNode;
   children?: ReactNode;
 }
@@ -38,9 +44,9 @@ const MASCOT_PX = 72;
 
 /**
  * The frame of an onboarding step: the wordmark and the day/night switch, the progress ("Paso 2 de
- * 6"), Lukitas beside the title, the step's content, and Back / Continue at the bottom (they stay
- * in reach while the content scrolls). The title takes focus when the step shows, so a screen
- * reader starts there and keyboard users continue from it.
+ * 4", not on the welcome), Lukitas beside the title, the content, and Back / SALTAR / SIGUIENTE at
+ * the bottom (they stay in reach while the content scrolls). The title takes focus when the step
+ * shows, so a screen reader starts there and keyboard users continue from it.
  */
 export function StepFrame({
   step,
@@ -48,6 +54,7 @@ export function StepFrame({
   lead,
   mood = "happy",
   onBack,
+  skip,
   next,
   summary,
   children,
@@ -55,7 +62,8 @@ export function StepFrame({
   const t = useTranslations("onboarding");
   const heading = useRef<HTMLHeadingElement>(null);
   const progressId = useId();
-  const current = STEPS.indexOf(step) + 1;
+  const current = (SETUP_STEPS as readonly StepId[]).indexOf(step) + 1;
+  const counted = current > 0;
 
   useEffect(() => {
     heading.current?.focus();
@@ -68,20 +76,24 @@ export function StepFrame({
         <ThemeToggle />
       </header>
       <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col px-(--space-4)">
-        <p id={progressId} className="text-[15px] text-ink-muted">
-          {t("progress", { current, total: STEPS.length })}
-        </p>
-        <div className="mt-(--space-2) flex gap-(--space-1)" aria-hidden="true">
-          {STEPS.map((s, index) => (
-            <span
-              key={s}
-              className={cx(
-                "h-1.5 flex-1 rounded-pill",
-                index < current ? "bg-brand-glow" : "bg-stroke",
-              )}
-            />
-          ))}
-        </div>
+        {counted && (
+          <>
+            <p id={progressId} className="text-[15px] text-ink-muted">
+              {t("progress", { current, total: SETUP_STEPS.length })}
+            </p>
+            <div className="mt-(--space-2) flex gap-(--space-1)" aria-hidden="true">
+              {SETUP_STEPS.map((s, index) => (
+                <span
+                  key={s}
+                  className={cx(
+                    "h-1.5 flex-1 rounded-pill",
+                    index < current ? "bg-brand-glow" : "bg-stroke",
+                  )}
+                />
+              ))}
+            </div>
+          </>
+        )}
         <div className="mt-(--space-4) flex items-center gap-(--space-3)">
           <span className="shrink-0">
             <Lukas mood={mood} size={MASCOT_PX} />
@@ -89,7 +101,7 @@ export function StepFrame({
           <h1
             ref={heading}
             tabIndex={-1}
-            aria-describedby={progressId}
+            aria-describedby={counted ? progressId : undefined}
             className="font-display text-[26px] leading-tight font-bold text-ink outline-none"
           >
             {title}
@@ -99,28 +111,40 @@ export function StepFrame({
         <div className="mt-(--space-4) flex flex-1 flex-col gap-(--space-4) pb-(--space-4)">
           {children}
         </div>
-        <div className="sticky bottom-0 -mx-(--space-4) flex flex-col gap-(--space-3) bg-bg px-(--space-4) pt-(--space-3) pb-[max(var(--space-4),env(safe-area-inset-bottom))]">
-          {summary}
-          <div className="flex items-center gap-(--space-3)">
-            {onBack && (
-              <PressButton variant="ghost" onClick={onBack}>
-                {t("back")}
-              </PressButton>
-            )}
-            <PressButton
-              variant={next.variant ?? "primary"}
-              className="flex-1"
-              disabled={next.disabled}
-              aria-describedby={next.describedBy}
-              onClick={next.onClick}
-            >
-              {next.label}
-            </PressButton>
+        {(next || skip || summary) && (
+          <div className="sticky bottom-0 -mx-(--space-4) flex flex-col gap-(--space-3) bg-bg px-(--space-4) pt-(--space-3) pb-[max(var(--space-4),env(safe-area-inset-bottom))]">
+            {summary}
+            <div className="flex items-center gap-(--space-2)">
+              {onBack && (
+                <PressButton variant="ghost" aria-label={t("back")} onClick={onBack}>
+                  <BackIcon />
+                </PressButton>
+              )}
+              {skip && (
+                <PressButton variant="ghost" disabled={skip.disabled} onClick={skip.onClick}>
+                  {skip.label}
+                </PressButton>
+              )}
+              {next && (
+                <PressButton className="flex-1" disabled={next.disabled} onClick={next.onClick}>
+                  {next.label}
+                </PressButton>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
+}
+
+/** The SALTAR and SIGUIENTE of a step that has nothing special about them. */
+export function useStepActions({ onSkip, onNext, busy = false }: StepNavProps) {
+  const t = useTranslations("onboarding");
+  return {
+    skip: { label: t("skip"), onClick: onSkip, disabled: busy },
+    next: { label: busy ? t("saving") : t("next"), onClick: onNext, disabled: busy },
+  };
 }
 
 /** An error under the control it is about, read out when it appears. */
@@ -129,5 +153,23 @@ export function StepError({ id, children }: { id?: string; children: ReactNode }
     <p id={id} role="alert" className="text-[15px] text-over">
       {children}
     </p>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M15 5l-7 7 7 7" />
+    </svg>
   );
 }

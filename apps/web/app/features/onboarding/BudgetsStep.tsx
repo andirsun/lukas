@@ -4,7 +4,7 @@ import { formatMoney, type Locale, lukasHint } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { cx } from "../../ui/cx.ts";
 import { budgetExample, parseBudgetInput } from "./budget-input.ts";
-import { StepFrame, type StepNavProps } from "./StepFrame.tsx";
+import { StepError, StepFrame, type StepNavProps, useStepActions } from "./StepFrame.tsx";
 
 export interface BudgetCategory {
   id: string;
@@ -20,8 +20,9 @@ export interface BudgetsStepProps extends StepNavProps {
   drafts: Readonly<Record<string, string>>;
   onChange(id: string, text: string): void;
   currency: string;
-  /** The amounts came from an import's recent months: say so. */
-  prefilled?: boolean;
+  /** Where prefilled amounts came from ("Basado en lo que gastaste en tus últimos 3 meses"). */
+  prefillBasis?: string | null;
+  error?: string | null;
 }
 
 /** A draft read as hundredths: null when empty, `"invalid"` when it is not an amount. */
@@ -75,22 +76,23 @@ export function AmountWithHint({
 }
 
 /**
- * Step 3: an amount per chosen spending category, typed in the locale's way (`300.000`, `120,50`),
- * with what it comes to under the field and, for COP, the lukas hint. The running total is "what
- * you can spend per month". An empty field means no budget; a field that is not an amount says so
- * and holds Continue back.
+ * The last step: an amount per chosen spending category, typed in the locale's way (`300.000`,
+ * `120,50`), with what it comes to under the field and, for COP, the lukas hint. The running total
+ * is "what you can spend per month". An empty field means no budget; a field that is not an amount
+ * says so and holds SIGUIENTE back (SALTAR still finishes, without budgets).
  */
 export function BudgetsStep({
   categories,
   drafts,
   onChange,
   currency,
-  prefilled = false,
-  onBack,
-  onNext,
+  prefillBasis,
+  error,
+  ...nav
 }: BudgetsStepProps) {
   const t = useTranslations("onboarding");
   const { locale } = useLocale();
+  const actions = useStepActions(nav);
   const invalid = categories.some((c) => readDraft(drafts[c.id], locale) === "invalid");
   const total = draftsTotal(categories, drafts, locale);
 
@@ -99,8 +101,9 @@ export function BudgetsStep({
       step="budgets"
       title={t("budgets.title")}
       lead={t("budgets.lead")}
-      onBack={onBack}
-      next={{ label: t("continue"), onClick: onNext, disabled: invalid }}
+      onBack={nav.onBack}
+      skip={actions.skip}
+      next={{ ...actions.next, disabled: actions.next.disabled || invalid }}
       summary={
         <div
           role="status"
@@ -115,7 +118,8 @@ export function BudgetsStep({
         </div>
       }
     >
-      {prefilled && <p className="text-[15px] text-ink-muted">{t("prefill_basis")}</p>}
+      {prefillBasis && <p className="text-[15px] text-ink-muted">{prefillBasis}</p>}
+      {categories.length === 0 && <p className="text-ink-muted">{t("budgets.empty")}</p>}
       <ul className="flex flex-col gap-(--space-2)">
         {categories.map((category) => (
           <BudgetRow
@@ -127,6 +131,7 @@ export function BudgetsStep({
           />
         ))}
       </ul>
+      {error && <StepError>{error}</StepError>}
     </StepFrame>
   );
 }

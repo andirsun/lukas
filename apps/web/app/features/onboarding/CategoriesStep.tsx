@@ -1,41 +1,51 @@
-import { type ReactNode, useId } from "react";
+import type { CategoryKind } from "@lukas/core";
+import { type ReactNode, useId, useState } from "react";
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { CategoryChip } from "../../ui/CategoryChip.tsx";
-import { StepFrame, type StepNavProps } from "./StepFrame.tsx";
-import { SUGGESTED_CATEGORIES, type SuggestedCategory } from "./suggested-categories.ts";
+import { PressButton } from "../../ui/PressButton.tsx";
+import { AddCategorySheet, type NewCategory } from "./AddCategorySheet.tsx";
+import { StepError, StepFrame, type StepNavProps, useStepActions } from "./StepFrame.tsx";
+import { SUGGESTED_CATEGORIES } from "./suggested-categories.ts";
+
+/** A category the person made themselves (or an import brought), shown next to the suggestions. */
+export interface CustomCategory {
+  id: string;
+  name: string;
+  glyph: string;
+  kind: CategoryKind;
+}
 
 export interface CategoriesStepProps extends StepNavProps {
-  /** Keys of the chosen suggestions. */
+  /** Suggestion keys and custom category ids that are chosen. */
   selected: ReadonlySet<string>;
-  onToggle(key: string): void;
-  busy?: boolean;
+  onToggle(keyOrId: string): void;
+  custom: CustomCategory[];
+  onCreate(category: NewCategory): Promise<void>;
+  errorText(problem: unknown): string;
   error?: string | null;
 }
 
-/** True when the choice has at least one spending category (income alone has nothing to budget). */
-export function hasExpense(selected: ReadonlySet<string>): boolean {
-  return SUGGESTED_CATEGORIES.some((c) => c.kind === "expense" && selected.has(c.key));
-}
-
 /**
- * Step 2: the suggested categories as toggles, spending apart from income. Continue needs at least
- * one spending category; until then a line says so.
+ * The categories: the suggestions come pre-selected (SIGUIENTE works with no input, tapping one
+ * deselects it), the person's own ones beside them, spending apart from income, and
+ * "＋ Agregar categoría" to make a new one.
  */
 export function CategoriesStep({
   selected,
   onToggle,
-  busy = false,
+  custom,
+  onCreate,
+  errorText,
   error,
-  onBack,
-  onNext,
+  ...nav
 }: CategoriesStepProps) {
   const t = useTranslations("onboarding");
   const { locale } = useLocale();
-  const hintId = useId();
-  const ready = hasExpense(selected);
+  const { skip, next } = useStepActions(nav);
+  const [adding, setAdding] = useState(false);
 
-  const group = (kind: SuggestedCategory["kind"], label: string) => (
+  const group = (kind: CategoryKind, label: string) => (
     <ChipGroup label={label}>
       {SUGGESTED_CATEGORIES.filter((c) => c.kind === kind).map((c) => (
         <CategoryChip
@@ -46,6 +56,17 @@ export function CategoriesStep({
           onSelect={() => onToggle(c.key)}
         />
       ))}
+      {custom
+        .filter((c) => c.kind === kind)
+        .map((c) => (
+          <CategoryChip
+            key={c.id}
+            glyph={c.glyph}
+            label={c.name}
+            selected={selected.has(c.id)}
+            onSelect={() => onToggle(c.id)}
+          />
+        ))}
     </ChipGroup>
   );
 
@@ -54,26 +75,23 @@ export function CategoriesStep({
       step="categories"
       title={t("categories.title")}
       lead={t("categories.lead")}
-      onBack={onBack}
-      next={{
-        label: busy ? t("saving") : t("continue"),
-        onClick: onNext,
-        disabled: !ready || busy,
-        describedBy: ready ? undefined : hintId,
-      }}
+      onBack={nav.onBack}
+      skip={skip}
+      next={next}
     >
       {group("expense", t("categories.expenses"))}
       {group("income", t("categories.income"))}
-      {!ready && (
-        <p id={hintId} className="text-[15px] text-ink-muted">
-          {t("categories.need_expense")}
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="text-[15px] text-over">
-          {error}
-        </p>
-      )}
+      <PressButton variant="secondary" className="w-full" onClick={() => setAdding(true)}>
+        <span aria-hidden="true">＋</span>
+        {t("categories.add")}
+      </PressButton>
+      {error && <StepError>{error}</StepError>}
+      <AddCategorySheet
+        open={adding}
+        onClose={() => setAdding(false)}
+        onSave={onCreate}
+        errorText={errorText}
+      />
     </StepFrame>
   );
 }

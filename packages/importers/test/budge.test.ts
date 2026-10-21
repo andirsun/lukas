@@ -3,6 +3,7 @@ import { addMonths } from "@lukas/core";
 import { describe, expect, test } from "vitest";
 import {
   averageMonthlySpending,
+  averageWindow,
   type BudgeRow,
   fileCurrency,
   inferCategoryKinds,
@@ -150,5 +151,46 @@ describe("averageMonthlySpending over the most recent months", () => {
     // 36 months; the 120 € tax payment spread over all of them.
     expect(amountOf(all, "Impuestos")).toBe(Math.round(120_000 / 36));
     expect(amountOf(all, "Gimnasio")).toBe(Math.round((14 * 3_000) / 36));
+  });
+});
+
+describe("a short history", () => {
+  // Invented: two months of groceries, September and October 2026.
+  const rows: BudgeRow[] = ["2026-09-10", "2026-10-10"].map((date) => ({
+    line: 0,
+    date,
+    name: "groceries",
+    amount: -30_000,
+    currency: "EUR",
+    category: "Supermercado",
+    note: null,
+    status: "paid",
+  }));
+
+  test("the window starts at the file's first month and divides by the months it has", () => {
+    // In November the 3-month window would be Aug–Oct; the file starts in September.
+    expect(averageWindow(rows, { months: 3, until: "2026-11" })).toEqual({
+      from: "2026-09",
+      to: "2026-10",
+      months: 2,
+    });
+    expect(averageMonthlySpending(rows, { months: 3, until: "2026-11" })).toEqual([
+      { category: "Supermercado", amount: 30_000 },
+    ]);
+  });
+
+  test("a file of the running month alone has no complete month to average", () => {
+    const october = rows.slice(1);
+    expect(averageWindow(october, { months: 3, until: "2026-10" })).toBeNull();
+    expect(averageMonthlySpending(october, { months: 3, until: "2026-10" })).toEqual([]);
+  });
+
+  test("a long history keeps the full window", () => {
+    const long = [...rows, { ...(rows[0] as BudgeRow), date: "2024-01-05" }];
+    expect(averageWindow(long, { months: 3, until: "2026-10" })).toEqual({
+      from: "2026-07",
+      to: "2026-09",
+      months: 3,
+    });
   });
 });

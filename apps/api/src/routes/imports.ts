@@ -4,6 +4,7 @@ import { categories, imports, type Tx, transactions, withUser } from "@lukas/db"
 import { and, eq, inArray, ne } from "@lukas/db/orm";
 import {
   averageMonthlySpending,
+  averageWindow,
   type BudgeRow,
   categoryStyle,
   fileCurrency,
@@ -47,6 +48,13 @@ const statsSchema = z.object({
    * currency and read the file again. Null for a file without rows (and for older previews).
    */
   currency: z.string().nullable(),
+  /**
+   * The months `averageMonthlySpending` covers: up to the last 3 complete ones, starting no earlier
+   * than the file. Null when no complete month is left (and for older previews).
+   */
+  averageWindow: z
+    .object({ from: z.string(), to: z.string(), months: z.number().int() })
+    .nullable(),
   inserted: z.number().int().optional(),
 });
 type ImportStats = z.infer<typeof statsSchema>;
@@ -56,8 +64,17 @@ const importDto = z.object({
   stats: statsSchema,
 });
 const toDto = (row: ImportRow) => {
-  const stats = row.stats as Omit<ImportStats, "currency"> & { currency?: string | null };
-  return { id: row.id, status: row.status, stats: { ...stats, currency: stats.currency ?? null } };
+  const stats = row.stats as Omit<ImportStats, "currency" | "averageWindow"> &
+    Partial<Pick<ImportStats, "currency" | "averageWindow">>;
+  return {
+    id: row.id,
+    status: row.status,
+    stats: {
+      ...stats,
+      currency: stats.currency ?? null,
+      averageWindow: stats.averageWindow ?? null,
+    },
+  };
 };
 
 async function existingHashes(tx: Tx, hashes: string[]): Promise<Set<string>> {
@@ -160,6 +177,7 @@ export function importRoutes(deps: AppDeps) {
           ).values(),
         ];
         const dates = rows.map((r) => r.date).sort();
+        const recent = { months: AVERAGE_MONTHS, until: currentMonth(c.get("user")) };
         const stats: ImportStats = {
           transactions: rows.length,
           duplicates: hashes.filter((h) => known.has(h)).length,
@@ -167,10 +185,8 @@ export function importRoutes(deps: AppDeps) {
           rejected,
           from: dates[0] ?? null,
           to: dates.at(-1) ?? null,
-          averageMonthlySpending: averageMonthlySpending(rows, {
-            months: AVERAGE_MONTHS,
-            until: currentMonth(c.get("user")),
-          }),
+          averageMonthlySpending: averageMonthlySpending(rows, recent),
+          averageWindow: averageWindow(rows, recent),
           currency: fileCurrency(parsed.rows),
         };
         const payload: PayloadRow[] = rows.map((r, i) => ({ ...r, hash: hashes[i] as string }));
@@ -195,14 +211,15 @@ export function importRoutes(deps: AppDeps) {
       const { id } = c.req.valid("param");
       const userId = c.get("userId");
       const row = await withUser(deps.db, userId, async (tx) => {
+        // Locked before anything is read: a currency change waits for these inserts, then finds
+        // the account no longer empty (see `setCurrency` in me.ts), and a second confirm of the
+        // same preview waits too, then reads it as confirmed below and changes nothing.
+        const account = await defaultAccount(tx, { lock: true });
         const imp = await findImport(tx, id);
         if (imp.status !== "preview")
           throw new ApiError(409, "import_not_in_preview", "This import is not a preview");
         await assertFileNotImported(tx, imp.fileHash, imp.id);
         const rows = (imp.payload ?? []) as PayloadRow[];
-        // Locked until commit: a currency change waits for these inserts, then finds the account
-        // no longer empty (see `setCurrency` in me.ts).
-        const account = await defaultAccount(tx, { lock: true });
         // The preview kept only rows in the account's currency of that moment. If the currency
         // changed since (the account was still empty), they would go in under the wrong one.
         if (rows.some((r) => r.currency !== account.currency)) {

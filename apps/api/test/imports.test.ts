@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { accounts, type Tx, transactions, withUser } from "@lukas/db";
+import { accounts, imports, type Tx, transactions, withUser } from "@lukas/db";
 import { eq } from "@lukas/db/orm";
 import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { createTestApp, type TestApp } from "./harness.ts";
@@ -33,6 +33,7 @@ interface Preview {
     to: string;
     averageMonthlySpending: { category: string; amount: number }[];
     currency: string | null;
+    averageWindow?: { from: string; to: string; months: number } | null;
   };
 }
 
@@ -316,8 +317,7 @@ describe("the preview's monthly averages", () => {
     vi.setSystemTime(new Date(now));
     try {
       const { headers } = await t.signIn(email);
-      return ((await (await upload(headers, FIXTURE)).json()) as Preview).stats
-        .averageMonthlySpending;
+      return ((await (await upload(headers, FIXTURE)).json()) as Preview).stats;
     } finally {
       vi.useRealTimers();
     }
@@ -325,19 +325,51 @@ describe("the preview's monthly averages", () => {
   const amountOf = (averages: { category: string; amount: number }[], category: string) =>
     averages.find((a) => a.category === category)?.amount;
 
-  test("cover the last 3 complete months, not the file's whole span", async () => {
-    // In November the sample's September and October count, plus an empty August: over 3.
-    const averages = await previewAt("2026-11-15T12:00:00Z", "avg-nov@lukas.test");
-    // Ocio: 9,50 − 5 (a refund) + 120 = 124,50 € over 3 months.
-    expect(averages[0]).toEqual({ category: "Ocio", amount: 4150 });
-    expect(amountOf(averages, "Restaurante")).toBe(1660);
+  test("cover the last complete months the file has, up to 3", async () => {
+    // In November the window would be Aug–Oct; the sample starts in September, so Sep–Oct, over 2.
+    const stats = await previewAt("2026-11-15T12:00:00Z", "avg-nov@lukas.test");
+    expect(stats.averageWindow).toEqual({ from: "2026-09", to: "2026-10", months: 2 });
+    const averages = stats.averageMonthlySpending;
+    // Ocio: 9,50 − 5 (a refund) + 120 = 124,50 € over 2 months.
+    expect(averages[0]).toEqual({ category: "Ocio", amount: 6225 });
+    expect(amountOf(averages, "Restaurante")).toBe(2490);
     expect(amountOf(averages, "Salário")).toBeUndefined();
   });
 
   test("leave out the month still running", async () => {
-    // On 21 October: July to September. The 120 € flight in October doesn't count yet.
-    const averages = await previewAt("2026-10-21T12:00:00Z", "avg-oct@lukas.test");
-    expect(amountOf(averages, "Ocio")).toBe(150);
-    expect(amountOf(averages, "Taxes")).toBeUndefined();
+    // On 21 October only September is complete. The 120 € flight in October doesn't count yet.
+    const stats = await previewAt("2026-10-21T12:00:00Z", "avg-oct@lukas.test");
+    expect(stats.averageWindow).toEqual({ from: "2026-09", to: "2026-09", months: 1 });
+    expect(amountOf(stats.averageMonthlySpending, "Ocio")).toBe(450);
+    expect(amountOf(stats.averageMonthlySpending, "Taxes")).toBeUndefined();
+  });
+});
+
+describe("two confirms of the same preview at once", () => {
+  test("the second finds it confirmed and changes nothing", async () => {
+    const { userId, headers } = await t.signIn("double-confirm@lukas.test");
+    const preview = (await (await upload(headers, FIXTURE)).json()) as Preview;
+    let both: Promise<Response[]> | undefined;
+    await withUser(t.db, userId, async (tx) => {
+      // Both requests start while the account is locked, so both read the preview before the lock.
+      await tx.select().from(accounts).where(eq(accounts.isDefault, true)).for("update");
+      both = Promise.all([
+        t.request("POST", `/v1/imports/${preview.id}/confirm`, { headers }),
+        t.request("POST", `/v1/imports/${preview.id}/confirm`, { headers }),
+      ]);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+    });
+    const results = await (both as Promise<Response[]>);
+    const statuses = results.map((r) => r.status).sort();
+    expect(statuses).toEqual([200, 409]);
+    const won = results.find((r) => r.status === 200) as Response;
+    expect(await won.json()).toMatchObject({ stats: { inserted: 22 } });
+    const lost = results.find((r) => r.status === 409) as Response;
+    expect(await lost.json()).toMatchObject({ code: "import_not_in_preview" });
+    const [row] = await withUser(t.db, userId, (tx) =>
+      tx.select().from(imports).where(eq(imports.id, preview.id)),
+    );
+    expect((row?.stats as { inserted?: number }).inserted).toBe(22);
+    expect(await countTransactions(headers)).toBe(22);
   });
 });

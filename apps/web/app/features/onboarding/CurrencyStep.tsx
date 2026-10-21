@@ -1,13 +1,11 @@
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@lukas/core";
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
-import { StepFrame, type StepNavProps } from "./StepFrame.tsx";
+import { StepFrame, type StepNavProps, useStepActions } from "./StepFrame.tsx";
 
 export interface CurrencyStepProps extends StepNavProps {
   value: SupportedCurrency;
   onChange(currency: SupportedCurrency): void;
-  /** While the choice is saved. */
-  busy?: boolean;
   error?: string | null;
 }
 
@@ -17,24 +15,19 @@ function currencyName(code: string, locale: string): string {
   return name.charAt(0).toLocaleUpperCase(locale) + name.slice(1);
 }
 
-/** Step 0: the account's currency, one radio per supported currency, preselected by the flow. */
-export function CurrencyStep({
-  value,
-  onChange,
-  onBack,
-  onNext,
-  busy = false,
-  error,
-}: CurrencyStepProps) {
+/** The account's currency: one radio per supported currency (COP, USD, EUR), preselected. */
+export function CurrencyStep({ value, onChange, error, ...nav }: CurrencyStepProps) {
   const t = useTranslations("onboarding");
   const { locale } = useLocale();
+  const { skip, next } = useStepActions(nav);
   return (
     <StepFrame
       step="currency"
       title={t("currency.title")}
       lead={t("currency.lead")}
-      onBack={onBack}
-      next={{ label: busy ? t("saving") : t("continue"), onClick: onNext, disabled: busy }}
+      onBack={nav.onBack}
+      skip={skip}
+      next={next}
     >
       <fieldset className="flex flex-col gap-(--space-2)">
         <legend className="sr-only">{t("currency.label")}</legend>

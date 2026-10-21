@@ -1,7 +1,6 @@
 import { redirect, type ShouldRevalidateFunctionArgs } from "react-router";
 import { createTranslator } from "use-intl/core";
 import { requireSession } from "../auth/session.ts";
-import { livePasskeys } from "../features/onboarding/passkey.ts";
 import { Welcome } from "../features/onboarding/Welcome.tsx";
 import es from "../i18n/messages/es.json" with { type: "json" };
 import type { Route } from "./+types/welcome";
@@ -36,12 +35,7 @@ export function HydrateFallback() {
   return <div className="lk-screen min-h-dvh" />;
 }
 
-/** `/welcome/:step?`: the onboarding (currency, passkey, categories, budgets, import, done). */
+/** `/welcome/:step?`: the optional onboarding (welcome, currency, categories, import, budgets). */
 export default function WelcomeRoute() {
-  return (
-    <Welcome
-      passkeys={livePasskeys}
-      languages={typeof navigator === "undefined" ? [] : navigator.languages}
-    />
-  );
+  return <Welcome languages={typeof navigator === "undefined" ? [] : navigator.languages} />;
 }
