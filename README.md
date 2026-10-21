@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/brand/lukas-banner.png" alt="Lukas, the gold coin mascot, waving next to the Lukas wordmark: Tus lukas, por fin claras." width="100%"></p>
+
 # Lukas
 
 **Personal finance that feels like a game.** A monthly budget, an Android app with widgets to log expenses in seconds, a web dashboard with charts, and an MCP server so your AI assistant (Claude, ChatGPT…) can help you with your money.
