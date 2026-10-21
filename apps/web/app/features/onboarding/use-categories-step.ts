@@ -15,6 +15,11 @@ import {
 import type { OnboardingDraft } from "./onboarding-draft.ts";
 import { SUGGESTED_CATEGORIES } from "./suggested-categories.ts";
 
+/** Why a chip stayed chosen when tapped. */
+export type CategoryNotice =
+  | { kind: "has_transactions"; name: string; count: number; capped: boolean }
+  | { kind: "unknown"; name: string };
+
 export interface CategoriesStepDeps {
   /** The person's active categories (as `useCategories` has them); undefined while loading. */
   categories: Category[] | undefined;
@@ -40,6 +45,7 @@ export function useCategoriesStep({
 }: CategoriesStepDeps) {
   const api = useApi();
   const [selected, setSelected] = useState<Set<string> | null>(null);
+  const [notice, setNotice] = useState<CategoryNotice | null>(null);
 
   const hidden = new Set(draft?.hiddenSuggestions ?? []);
   const chips: CategoryChipModel[] = categories
@@ -76,10 +82,34 @@ export function useCategoriesStep({
   return {
     chips,
     selected,
-    toggle(id: string) {
+    notice,
+
+    /**
+     * Chooses or drops a chip. One of their categories with transactions can't be dropped (that
+     * would archive it with its history out of sight): it stays chosen and the notice says why.
+     */
+    async toggle(id: string) {
+      setNotice(null);
+      const chip = chips.find((c) => c.id === id);
       const next = new Set(current());
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (!next.has(id)) {
+        next.add(id);
+        choose(next);
+        return;
+      }
+      if (chip?.source === "category") {
+        try {
+          const { count, capped } = await countCategoryTransactions(api, id);
+          if (count > 0) {
+            setNotice({ kind: "has_transactions", name: chip.name, count, capped });
+            return;
+          }
+        } catch {
+          setNotice({ kind: "unknown", name: chip.name });
+          return;
+        }
+      }
+      next.delete(id);
       choose(next);
     },
 
@@ -109,7 +139,7 @@ export function useCategoriesStep({
 
     /**
      * Saves an edit. A suggestion is made right away with the edited values; one of their
-     * categories is changed (and, for a new kind, made again: its id changes).
+     * categories is changed in one PATCH (the API refuses a kind change while it has transactions).
      */
     async edit(chipId: string, values: CategoryEdit) {
       const chip = chips.find((c) => c.id === chipId);
@@ -124,8 +154,7 @@ export function useCategoriesStep({
       } else {
         const category = byId(chipId);
         if (!category) return;
-        const saved = await saveCategoryEdit(api, category, values);
-        if (saved.id !== chipId) replace(chipId, saved.id);
+        await saveCategoryEdit(api, category, values);
       }
       await refreshCategories();
     },

@@ -22,6 +22,7 @@ import {
   dataOf,
   type Profile,
   patchCurrency,
+  saveBudgets,
   useHasTransactions,
 } from "./onboarding-api.ts";
 import { clearOnboardingDraft, useOnboardingDraft } from "./onboarding-draft.ts";
@@ -287,20 +288,7 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
   /** SIGUIENTE on the budgets: saves the ones typed or prefilled, then finishes. */
   const finish = () =>
     run(async () => {
-      const month = monthOf(todayIn(profile.timezone));
-      const byId = new Map(categories.map((c) => [c.id, c]));
-      await Promise.all(
-        spending.map(async (c) => {
-          const amount = readDraft(drafts[c.id], locale);
-          if (typeof amount !== "number" || byId.get(c.id)?.currentBudget === amount) return;
-          dataOf(
-            await api.PUT("/v1/categories/{id}/budget", {
-              params: { path: { id: c.id } },
-              body: { amount, effectiveFrom: month },
-            }),
-          );
-        }),
-      );
+      await saveBudgets(api, categories, drafts, locale, profile.timezone);
       await complete();
     });
 
@@ -337,6 +325,7 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
           chips={categoriesStep.chips}
           selected={selected}
           onToggle={categoriesStep.toggle}
+          notice={categoriesStep.notice}
           onCreate={categoriesStep.create}
           onEdit={categoriesStep.edit}
           onRemove={categoriesStep.remove}

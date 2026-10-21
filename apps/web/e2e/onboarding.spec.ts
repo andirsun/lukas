@@ -97,12 +97,19 @@ test.describe("from Colombia, in Bogotá", () => {
     await expect(
       page.getByRole("heading", { name: "Esto es lo que vamos a importar" }),
     ).toBeFocused();
-    // Still empty, so the file's currency (EUR) wins here too.
+    // Still empty, so the file's currency (EUR) wins here too, but only once imported.
     await expect(
-      page.getByText("Tu archivo está en EUR, así que tu cuenta ahora usa EUR."),
+      page.getByText("Tu archivo está en EUR: al importarlo, tu cuenta pasará a usar EUR."),
     ).toBeVisible();
+    expect((await profileOf(page)).currency).toBe("COP");
     await page.getByRole("button", { name: "Importar 22 movimientos" }).click();
-    await expect(page.getByRole("heading", { name: "Importamos 22 movimientos." })).toBeFocused();
+    await expect(page.getByRole("heading", { name: "Importamos 22 movimientos." })).toBeVisible();
+    // It ends with the budgets, as onboarding does, and saves them only when asked.
+    await expect(page.getByRole("heading", { name: "Tus presupuestos" })).toBeFocused();
+    await page.getByRole("button", { name: "Guardar presupuestos" }).click();
+    await expect(page.getByText("Guardamos tus presupuestos.")).toBeVisible();
+    const budgeted = (await categoriesOf(page)).filter((c) => c.currentBudget !== null);
+    expect(budgeted.length).toBeGreaterThan(0);
     await page.getByRole("link", { name: "Ir al inicio" }).click();
     await expect(page).toHaveURL(/\/app$/);
     expect((await profileOf(page)).currency).toBe("EUR");
@@ -132,11 +139,13 @@ test.describe("from Colombia, in Bogotá", () => {
     });
     await uploadSample(page);
     await expect(
-      page.getByText("Tu archivo está en EUR, así que tu cuenta ahora usa EUR."),
+      page.getByText("Tu archivo está en EUR: al importarlo, tu cuenta pasará a usar EUR."),
     ).toBeVisible();
-    expect((await profileOf(page)).currency).toBe("EUR");
+    // Nothing changes before the confirm; the API switches the currency with the import.
+    expect((await profileOf(page)).currency).toBe("COP");
     await page.getByRole("button", { name: "Importar 22 movimientos" }).click();
     await expect(page.getByRole("heading", { name: "Importamos 22 movimientos." })).toBeFocused();
+    expect((await profileOf(page)).currency).toBe("EUR");
 
     const october = (await (
       await page.request.get("/api/v1/transactions?month=2026-10&limit=200")
@@ -195,16 +204,21 @@ test.describe("from Spain", () => {
     await expect(page.getByRole("heading", { name: "Importamos 22 movimientos." })).toBeFocused();
     await next(page).click();
 
-    // Categories: the file's first, all chosen; the suggestions it covers don't repeat. A reload
-    // keeps the step and the choice. One is taken out.
+    // Categories: the file's first, all chosen; the suggestions it covers don't repeat. One with
+    // transactions can't be taken out: it stays chosen and the step says why. A reload keeps the
+    // step.
     await expect(page).toHaveURL(/\/welcome\/categories$/);
     const things = page.getByRole("button", { name: "Things", exact: true });
     await expect(things).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("button", { name: "Supermercado", exact: true })).toHaveCount(1);
     await things.click();
+    await expect(
+      page.getByText(/^«Things» no se puede quitar porque tiene 1 movimiento\./),
+    ).toBeVisible();
+    await expect(things).toHaveAttribute("aria-pressed", "true");
     await page.reload();
     await expect(heading(page, "¿En qué se te va el dinero?")).toBeFocused();
-    await expect(things).toHaveAttribute("aria-pressed", "false");
+    await expect(things).toHaveAttribute("aria-pressed", "true");
     await next(page).click();
 
     // Budgets last: a typed amount and the running total.
@@ -236,8 +250,8 @@ test.describe("from Spain", () => {
     );
     const categories = await categoriesOf(page);
     expect(categories.find((c) => c.name === "Casa")?.currentBudget).toBe(60000);
-    // Things was taken out (archived); the rest of the file's categories stay.
-    expect(categories.some((c) => c.name === "Things")).toBe(false);
+    // Things has transactions: it was never archived.
+    expect(categories.some((c) => c.name === "Things")).toBe(true);
     expect(categories.some((c) => c.name === "Ocio")).toBe(true);
   });
 });

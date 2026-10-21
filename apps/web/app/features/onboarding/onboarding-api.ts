@@ -1,10 +1,11 @@
-import type { SupportedCurrency } from "@lukas/core";
+import { monthOf, type SupportedCurrency, todayIn } from "@lukas/core";
 import { useQuery } from "@tanstack/react-query";
 import { useApi } from "../../api/ApiProvider.tsx";
 import type { ApiClient } from "../../api/client.ts";
 import { ApiProblem } from "../../api/errors.ts";
 import type { paths } from "../../api/schema";
 import type { Locale } from "../../i18n/format.ts";
+import { parseBudgetInput } from "./budget-input.ts";
 import type { ImportDto } from "./import-state.ts";
 import {
   SUGGESTED_CATEGORIES,
@@ -140,39 +141,24 @@ export async function countCategoryTransactions(
 }
 
 /**
- * Saves an edit of one of the person's categories. Name, emoji and tint are a PATCH. The API has
- * no way to change a category's kind, so for one with no transactions (the only ones whose kind can
- * change here) it is archived and made again with the new kind under the same name (names are
- * unique among active categories only). Returns the category as it now is (a new id after that).
+ * Saves an edit of one of the person's categories, in one PATCH: name, emoji, tint, and the kind
+ * when it changed. The API refuses a kind change (409 `category_has_transactions`) while the
+ * category has transactions, so the count the sheet shows is only a hint.
  */
 export async function saveCategoryEdit(
   api: ApiClient,
   category: Category,
   edit: CategoryEdit,
 ): Promise<Category> {
-  if (edit.kind !== category.kind) {
-    dataOf(
-      await api.PATCH("/v1/categories/{id}", {
-        params: { path: { id: category.id } },
-        body: { archived: true },
-      }),
-    );
-    return dataOf(
-      await api.POST("/v1/categories", {
-        body: {
-          name: edit.name,
-          kind: edit.kind,
-          icon: edit.glyph,
-          color: edit.tint,
-          sortOrder: category.sortOrder,
-        },
-      }),
-    );
-  }
   return dataOf(
     await api.PATCH("/v1/categories/{id}", {
       params: { path: { id: category.id } },
-      body: { name: edit.name, icon: edit.glyph, color: edit.tint },
+      body: {
+        name: edit.name,
+        icon: edit.glyph,
+        color: edit.tint,
+        ...(edit.kind !== category.kind ? { kind: edit.kind } : {}),
+      },
     }),
   );
 }
@@ -223,4 +209,37 @@ export async function applyCategorySelection(
     );
   }
   await Promise.all(writes);
+}
+
+/**
+ * Saves the budgets typed or prefilled, from this month on (in the profile's time zone): each
+ * valid amount that differs from what the category already has. Empty fields write nothing.
+ */
+export async function saveBudgets(
+  api: ApiClient,
+  categories: readonly Category[],
+  drafts: Readonly<Record<string, string>>,
+  locale: Locale,
+  timezone: string,
+): Promise<void> {
+  const month = monthOf(todayIn(timezone));
+  await Promise.all(
+    categories
+      .filter((c) => c.kind === "expense" && !c.archived)
+      .map(async (c) => {
+        let amount: number | null;
+        try {
+          amount = parseBudgetInput(drafts[c.id] ?? "", locale);
+        } catch {
+          return;
+        }
+        if (amount === null || c.currentBudget === amount) return;
+        dataOf(
+          await api.PUT("/v1/categories/{id}/budget", {
+            params: { path: { id: c.id } },
+            body: { amount, effectiveFrom: month },
+          }),
+        );
+      }),
+  );
 }

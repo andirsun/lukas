@@ -5,11 +5,18 @@ export type ImportDto =
   paths["/v1/imports"]["post"]["responses"][201]["content"]["application/json"];
 
 /**
- * What happened with the file's currency. `switched`: the account was still empty and now uses the
- * file's currency (`account` is the one it had before, to put back if the file is dropped).
- * `locked`: the account already has transactions in `account`, so the file's rows are rejected.
+ * What the import does with the file's currency, from the preview's stats. `switching`: the
+ * account is still empty, so confirming switches it to the file's currency (the API does it in the
+ * same transaction as the inserts; `dropsBudgets` when budgets in the old one go with it).
+ * `switched`: it did. `locked`: the account already has transactions in `account`, so the file's
+ * rows are rejected. Nothing changes the currency before the confirm.
  */
-export type CurrencyNote = { kind: "switched" | "locked"; file: string; account: string } | null;
+export type CurrencyNote = {
+  kind: "switching" | "switched" | "locked";
+  file: string;
+  account: string;
+  dropsBudgets?: boolean;
+} | null;
 
 /**
  * The import step: the list of sources, then (Budge) the how-to with the file picker (`idle`), from

@@ -39,7 +39,20 @@ const FALLBACK_TINT = IMPORTER_TINTS.gray as string;
 
 /** The tints a person can pick for a category, by name (the catalogs name them for screen readers). */
 export const CATEGORY_TINTS = (
-  ["orange", "red", "purple", "indigo", "blue", "pink", "amber", "green", "teal", "gray"] as const
+  [
+    "orange",
+    "red",
+    "purple",
+    "indigo",
+    "blue",
+    "sky",
+    "pink",
+    "amber",
+    "yellow",
+    "green",
+    "teal",
+    "gray",
+  ] as const
 ).map((name) => ({ name, value: IMPORTER_TINTS[name] as string }));
 
 /** Emoji a person can pick for a category: the suggestions' and a few common ones. */

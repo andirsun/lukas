@@ -1,5 +1,5 @@
 import type { CategoryKind } from "@lukas/core";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useId, useRef, useState } from "react";
 import { useTranslations } from "use-intl";
 import { CategoryChip } from "../../ui/CategoryChip.tsx";
 import { cx } from "../../ui/cx.ts";
@@ -7,13 +7,16 @@ import { PressButton } from "../../ui/PressButton.tsx";
 import { type CategoryRemoval, CategorySheet, type NewCategory } from "./CategorySheet.tsx";
 import type { CategoryChipModel } from "./category-chips.ts";
 import { StepError, StepFrame, type StepNavProps, useStepActions } from "./StepFrame.tsx";
+import type { CategoryNotice } from "./use-categories-step.ts";
 
 export interface CategoriesStepProps extends StepNavProps {
   /** Their categories first (after an import, the file's), then the suggestions not covered. */
   chips: CategoryChipModel[];
   /** Chip ids that are chosen. */
   selected: ReadonlySet<string>;
-  onToggle(chipId: string): void;
+  onToggle(chipId: string): void | Promise<void>;
+  /** Why a tapped chip stayed chosen (it has transactions), if one did. */
+  notice?: CategoryNotice | null;
   onCreate(category: NewCategory): Promise<void>;
   onEdit(chipId: string, category: NewCategory): Promise<void>;
   /** Deletes (archives) or archives a category; a suggestion just leaves the step. */
@@ -40,6 +43,7 @@ export function CategoriesStep({
   chips,
   selected,
   onToggle,
+  notice = null,
   onCreate,
   onEdit,
   onRemove,
@@ -53,11 +57,29 @@ export function CategoriesStep({
   const [editing, setEditing] = useState(false);
   const [sheet, setSheet] = useState<SheetState>({ mode: "closed" });
   const [opened, setOpened] = useState(0);
+  const toggleRow = useRef<HTMLDivElement>(null);
+  // After a save or a delete the chip that opened the sheet may be gone (or a new one): focus
+  // goes to the edit toggle instead of a detached node.
+  const refocus = useRef(false);
+  const after =
+    <A extends unknown[]>(write: (...args: A) => Promise<void>) =>
+    async (...args: A) => {
+      await write(...args);
+      refocus.current = true;
+    };
+  const closeSheet = () => {
+    setSheet({ mode: "closed" });
+    if (refocus.current) {
+      refocus.current = false;
+      // After the sheet's own focus return.
+      requestAnimationFrame(() => toggleRow.current?.querySelector("button")?.focus());
+    }
+  };
 
   function openEdit(chip: CategoryChipModel) {
     setOpened((n) => n + 1);
     setSheet({ mode: "edit", chip, removal: { kind: "counting" } });
-    const remove = () => onRemove(chip.id);
+    const remove = after(() => onRemove(chip.id));
     transactionsOf(chip.id).then(
       ({ count, capped }) =>
         setSheet((current) =>
@@ -75,7 +97,7 @@ export function CategoriesStep({
       () =>
         setSheet((current) =>
           current.mode === "edit" && current.chip.id === chip.id
-            ? { ...current, removal: { kind: "archive", count: 0, capped: true, onRemove: remove } }
+            ? { ...current, removal: { kind: "unknown", onRemove: remove } }
             : current,
         ),
     );
@@ -120,12 +142,16 @@ export function CategoriesStep({
     <StepFrame
       step="categories"
       title={t("categories.title")}
-      lead={t("categories.lead")}
+      lead={
+        chips.some((c) => c.source === "category")
+          ? t("categories.lead")
+          : t("categories.lead_fresh")
+      }
       onBack={nav.onBack}
       skip={skip}
       next={next}
     >
-      <div className="flex items-center justify-between gap-(--space-2)">
+      <div ref={toggleRow} className="flex items-center justify-between gap-(--space-2)">
         <p className={cx("text-[15px] text-ink-muted", !editing && "sr-only")} aria-live="polite">
           {editing ? t("categories.edit_hint") : ""}
         </p>
@@ -138,6 +164,13 @@ export function CategoriesStep({
           {editing ? t("categories.edit_done") : t("categories.edit_toggle")}
         </PressButton>
       </div>
+      <p role="status" className={cx("text-[15px] text-ink", !notice && "sr-only")}>
+        {notice?.kind === "has_transactions"
+          ? t("categories.cant_remove", { name: notice.name, count: notice.count })
+          : notice?.kind === "unknown"
+            ? t("categories.cant_remove_unknown", { name: notice.name })
+            : ""}
+      </p>
       {group("expense", t("categories.expenses"))}
       {group("income", t("categories.income"))}
       <PressButton
@@ -155,7 +188,7 @@ export function CategoriesStep({
       <CategorySheet
         key={opened}
         open={sheet.mode !== "closed"}
-        onClose={() => setSheet({ mode: "closed" })}
+        onClose={closeSheet}
         initial={
           sheet.mode === "edit"
             ? {
@@ -167,9 +200,9 @@ export function CategoriesStep({
             : undefined
         }
         removal={sheet.mode === "edit" ? sheet.removal : undefined}
-        onSave={(values) =>
-          sheet.mode === "edit" ? onEdit(sheet.chip.id, values) : onCreate(values)
-        }
+        onSave={after((values: NewCategory) =>
+          sheet.mode === "edit" ? onEdit(sheet.chip.id, values) : onCreate(values),
+        )}
         errorText={errorText}
       />
     </StepFrame>

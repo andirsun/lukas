@@ -178,12 +178,16 @@ describe("the file's currency", () => {
   const setCurrency = (currency: string) =>
     t.request("PATCH", "/v1/me", { headers: c, body: { currency } });
 
-  test("the preview reports it, even when the account uses another one", async () => {
+  test("the preview reports it; an empty account's preview counts the file's rows in it", async () => {
     expect((await setCurrency("COP")).status).toBe(200);
-    const preview = (await (await upload(c, FIXTURE)).json()) as Preview;
-    expect(preview.stats.currency).toBe("EUR");
-    expect(preview.stats.transactions).toBe(0);
-    expect(preview.stats.rejected).toContainEqual({ line: 7, reason: "currency_mismatch" });
+    const preview = (await (await upload(c, FIXTURE)).json()) as Preview & {
+      stats: { adoptsCurrency: boolean };
+    };
+    expect(preview.stats).toMatchObject({
+      currency: "EUR",
+      transactions: 22,
+      adoptsCurrency: true,
+    });
   });
 
   test("a preview read before the account's currency changed cannot be confirmed", async () => {
@@ -371,5 +375,160 @@ describe("two confirms of the same preview at once", () => {
     );
     expect((row?.stats as { inserted?: number }).inserted).toBe(22);
     expect(await countTransactions(headers)).toBe(22);
+  });
+});
+
+describe("archived categories on import", () => {
+  const categoriesOf = async (headers: { authorization: string }) =>
+    (await (await t.request("GET", "/v1/categories?includeArchived=true", { headers })).json()) as {
+      id: string;
+      name: string;
+      archived: boolean;
+    }[];
+  const create = async (headers: { authorization: string }, name: string) =>
+    (
+      (await (
+        await t.request("POST", "/v1/categories", {
+          headers,
+          body: { name, kind: "expense", icon: "⭐", color: "#a66bff" },
+        })
+      ).json()) as { id: string }
+    ).id;
+  const archive = (headers: { authorization: string }, id: string) =>
+    t.request("PATCH", `/v1/categories/${id}`, { headers, body: { archived: true } });
+  const rowsIn = async (headers: { authorization: string }, categoryId: string) =>
+    (
+      (await (
+        await t.request("GET", `/v1/transactions?category=${categoryId}&limit=200`, { headers })
+      ).json()) as { items: unknown[] }
+    ).items.length;
+
+  test("a category that exists only archived is brought back and used", async () => {
+    const { headers } = await t.signIn("archived-only@lukas.test");
+    const ocio = await create(headers, "Ocio");
+    await archive(headers, ocio);
+    const preview = (await (await upload(headers, FIXTURE)).json()) as Preview;
+    expect(preview.stats.newCategories).not.toContain("Ocio");
+    expect((await t.request("POST", `/v1/imports/${preview.id}/confirm`, { headers })).status).toBe(
+      200,
+    );
+    const after = await categoriesOf(headers);
+    expect(after.filter((c) => c.name.toLowerCase() === "ocio")).toEqual([
+      expect.objectContaining({ id: ocio, archived: false }),
+    ]);
+    expect(await rowsIn(headers, ocio)).toBe(3);
+  });
+
+  test("an active match wins over an archived twin", async () => {
+    const { headers } = await t.signIn("archived-twin@lukas.test");
+    const old = await create(headers, "ocio");
+    await archive(headers, old);
+    const active = await create(headers, "Ocio");
+    const preview = (await (await upload(headers, FIXTURE)).json()) as Preview;
+    await t.request("POST", `/v1/imports/${preview.id}/confirm`, { headers });
+    expect(await rowsIn(headers, active)).toBe(3);
+    const twin = (await categoriesOf(headers)).find((c) => c.id === old);
+    expect(twin?.archived).toBe(true);
+  });
+});
+
+describe("adopting the file's currency on confirm", () => {
+  test("the preview of an empty account anticipates the file's currency, and confirm adopts it", async () => {
+    const { headers } = await t.signIn("adopt@lukas.test");
+    await t.request("PATCH", "/v1/me", { headers, body: { currency: "COP" } });
+    const groceries = (await (
+      await t.request("POST", "/v1/categories", {
+        headers,
+        body: { name: "Supermercado", kind: "expense", icon: "🛒", color: "#ff9f1c" },
+      })
+    ).json()) as { id: string };
+    await t.request("PUT", `/v1/categories/${groceries.id}/budget`, {
+      headers,
+      body: { amount: 30_000_000, effectiveFrom: "2026-10" },
+    });
+    const preview = (await (await upload(headers, FIXTURE)).json()) as Preview & {
+      stats: { adoptsCurrency: boolean; dropsBudgets: boolean };
+    };
+    expect(preview.stats).toMatchObject({
+      currency: "EUR",
+      transactions: 22,
+      adoptsCurrency: true,
+      dropsBudgets: true,
+    });
+
+    // Without consent the currencies don't match: nothing happens.
+    const refused = await t.request("POST", `/v1/imports/${preview.id}/confirm`, { headers });
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toMatchObject({ code: "import_currency_changed" });
+    const meBefore = (await (await t.request("GET", "/v1/me", { headers })).json()) as {
+      currency: string;
+    };
+    expect(meBefore.currency).toBe("COP");
+
+    const res = await t.request("POST", `/v1/imports/${preview.id}/confirm`, {
+      headers,
+      body: { adoptFileCurrency: true },
+    });
+    expect(res.status).toBe(200);
+    const me = (await (await t.request("GET", "/v1/me", { headers })).json()) as {
+      currency: string;
+    };
+    expect(me.currency).toBe("EUR");
+    expect(await countTransactions(headers)).toBe(22);
+    // The budget in pesos is gone with the switch.
+    const cats = (await (await t.request("GET", "/v1/categories", { headers })).json()) as {
+      id: string;
+      currentBudget: number | null;
+    }[];
+    expect(cats.find((c) => c.id === groceries.id)?.currentBudget).toBeNull();
+  });
+
+  test("an account that got transactions since can't adopt: currency_locked, nothing imported", async () => {
+    const { headers } = await t.signIn("adopt-locked@lukas.test");
+    await t.request("PATCH", "/v1/me", { headers, body: { currency: "COP" } });
+    const preview = (await (await upload(headers, FIXTURE)).json()) as Preview & {
+      stats: { adoptsCurrency: boolean };
+    };
+    expect(preview.stats.adoptsCurrency).toBe(true);
+    const cat = (await (
+      await t.request("POST", "/v1/categories", {
+        headers,
+        body: { name: "Varios", kind: "expense", icon: "🏷️", color: "#8e87b8" },
+      })
+    ).json()) as { id: string };
+    await t.request("POST", "/v1/transactions", {
+      headers,
+      body: { name: "algo", amount: -100_000, categoryId: cat.id, date: "2026-10-01" },
+    });
+    const res = await t.request("POST", `/v1/imports/${preview.id}/confirm`, {
+      headers,
+      body: { adoptFileCurrency: true },
+    });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "currency_locked" });
+    expect(await countTransactions(headers)).toBe(1);
+  });
+
+  test("an account with transactions previews in its own currency (rows rejected)", async () => {
+    const { headers } = await t.signIn("adopt-has-tx@lukas.test");
+    await t.request("PATCH", "/v1/me", { headers, body: { currency: "COP" } });
+    const cat = (await (
+      await t.request("POST", "/v1/categories", {
+        headers,
+        body: { name: "Varios", kind: "expense", icon: "🏷️", color: "#8e87b8" },
+      })
+    ).json()) as { id: string };
+    await t.request("POST", "/v1/transactions", {
+      headers,
+      body: { name: "algo", amount: -100_000, categoryId: cat.id, date: "2026-10-01" },
+    });
+    const preview = (await (await upload(headers, FIXTURE)).json()) as Preview & {
+      stats: { adoptsCurrency: boolean };
+    };
+    expect(preview.stats).toMatchObject({
+      currency: "EUR",
+      transactions: 0,
+      adoptsCurrency: false,
+    });
   });
 });

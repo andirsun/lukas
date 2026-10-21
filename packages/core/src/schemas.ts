@@ -57,8 +57,9 @@ export const createCategorySchema = z.object({
 });
 export type CreateCategory = z.infer<typeof createCategorySchema>;
 
+/** `kind` can change only while the category has no live transactions (the API checks). */
 export const updateCategorySchema = z
-  .object({ ...categoryFields, archived: z.boolean() })
+  .object({ ...categoryFields, kind: kindSchema, archived: z.boolean() })
   .partial()
   .refine(atLeastOne, AT_LEAST_ONE);
 export type UpdateCategory = z.infer<typeof updateCategorySchema>;

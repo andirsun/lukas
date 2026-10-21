@@ -185,6 +185,7 @@
     "validation_failed": "Hay datos que no son válidos. Revísalos e inténtalo otra vez.",
     "range_too_large": "Ese rango es demasiado largo. Elige menos meses.",
     "category_name_taken": "Ya tienes una categoría con ese nombre.",
+    "category_has_transactions": "Esta categoría ya tiene movimientos, así que su tipo no puede cambiar.",
     "category_not_found": "Elige una de tus categorías activas.",
     "currency_locked": "Ya tienes movimientos en esta cuenta, así que no puedes cambiar la moneda.",
     "budget_category_not_expense": "Solo las categorías de gasto pueden tener presupuesto.",
@@ -432,7 +433,8 @@
     },
     "categories": {
       "title": "¿En qué se te va el dinero?",
-      "lead": "Si trajiste tu historial, aquí están tus categorías. Toca una para quitarla, edítalas o agrega las tuyas.",
+      "lead": "Estas son tus categorías. Toca una para quitarla, edítalas o agrega las tuyas.",
+      "lead_fresh": "Ya elegimos algunas por ti. Toca una para quitarla, edítalas o agrega las tuyas.",
       "expenses": "Gastos",
       "income": "Ingresos",
       "add": "Agregar categoría",
@@ -456,7 +458,9 @@
         "amber": "Ámbar",
         "green": "Verde",
         "teal": "Turquesa",
-        "gray": "Gris"
+        "gray": "Gris",
+        "yellow": "Amarillo",
+        "sky": "Celeste"
       },
       "edit_toggle": "Editar categorías",
       "edit_done": "Listo",
@@ -466,8 +470,11 @@
       "counting": "Contando sus movimientos…",
       "delete": "Eliminar categoría",
       "archive": "Archivar categoría",
-      "has_transactions": "Tiene {count, plural, one {# movimiento} other {# movimientos}}; podrás unirla con otra desde Categorías.",
-      "has_many_transactions": "Tiene más de {count} movimientos; podrás unirla con otra desde Categorías.",
+      "has_transactions": "No se puede borrar porque tiene {count, plural, one {# movimiento} other {# movimientos}}. Puedes archivarla para que no aparezca al anotar.",
+      "has_many_transactions": "No se puede borrar porque tiene más de {count} movimientos. Puedes archivarla para que no aparezca al anotar.",
+      "count_failed": "No pudimos contar sus movimientos. Puedes archivarla para que no aparezca al anotar.",
+      "cant_remove": "«{name}» no se puede quitar porque tiene {count, plural, one {# movimiento} other {# movimientos}}. Puedes archivarla en Editar categorías para que no aparezca al anotar.",
+      "cant_remove_unknown": "No pudimos comprobar si «{name}» tiene movimientos, así que sigue elegida.",
       "kind_locked": "Con movimientos, su tipo no se puede cambiar aquí."
     },
     "budgets": {
@@ -502,6 +509,8 @@
         "other": "no se pudo leer"
       },
       "currency_switched": "Tu archivo está en {currency}, así que tu cuenta ahora usa {currency}.",
+      "currency_switching": "Tu archivo está en {currency}: al importarlo, tu cuenta pasará a usar {currency}.",
+      "budgets_dropped": "Tus presupuestos en {old} se borrarán al cambiar a {currency}.",
       "currency_locked": "Tu archivo está en {file}, pero tu cuenta ya usa {account}: esas filas no se importan.",
       "confirm": "Importar {count, plural, one {# movimiento} other {# movimientos}}",
       "importing": "Importando…",
@@ -523,7 +532,11 @@
       "fresh": "No, empiezo de cero",
       "page_title": "Trae tu historial",
       "page_lead": "Trae tus movimientos de otra app.",
-      "go_home": "Ir al inicio"
+      "go_home": "Ir al inicio",
+      "page_budgets_title": "Tus presupuestos",
+      "page_budgets_lead": "Revísalos y guárdalos. Puedes dejar alguno vacío.",
+      "save_budgets": "Guardar presupuestos",
+      "budgets_saved": "Guardamos tus presupuestos."
     },
     "prefill_basis": "Basado en lo que gastaste en {months, plural, one {tu último mes} other {tus últimos # meses}}",
     "next": "Siguiente",

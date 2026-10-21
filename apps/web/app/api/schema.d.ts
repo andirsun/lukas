@@ -333,6 +333,8 @@ export interface paths {
                         icon?: string;
                         color?: string;
                         sortOrder?: number;
+                        /** @enum {string} */
+                        kind?: "expense" | "income";
                         archived?: boolean;
                     };
                 };
@@ -1546,6 +1548,8 @@ export interface paths {
                                     to: string;
                                     months: number;
                                 } | null;
+                                adoptsCurrency: boolean;
+                                dropsBudgets: boolean;
                                 inserted?: number;
                             };
                         };
@@ -1634,7 +1638,13 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": {
+                        adoptFileCurrency?: boolean;
+                    };
+                };
+            };
             responses: {
                 /** @description Imported */
                 200: {
@@ -1667,6 +1677,8 @@ export interface paths {
                                     to: string;
                                     months: number;
                                 } | null;
+                                adoptsCurrency: boolean;
+                                dropsBudgets: boolean;
                                 inserted?: number;
                             };
                         };

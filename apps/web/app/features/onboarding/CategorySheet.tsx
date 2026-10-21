@@ -23,7 +23,9 @@ export interface NewCategory {
 export type CategoryRemoval =
   | { kind: "counting" }
   | { kind: "delete"; onRemove(): Promise<void> }
-  | { kind: "archive"; count: number; capped: boolean; onRemove(): Promise<void> };
+  | { kind: "archive"; count: number; capped: boolean; onRemove(): Promise<void> }
+  /** The count failed: only archiving is safe. */
+  | { kind: "unknown"; onRemove(): Promise<void> };
 
 export interface CategorySheetProps {
   open: boolean;
@@ -71,7 +73,8 @@ export function CategorySheet({
   const [values, setValues] = useState<NewCategory>(() => initial ?? DEFAULT);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const kindLocked = removal?.kind === "archive" || removal?.kind === "counting";
+  const kindLocked =
+    removal?.kind === "archive" || removal?.kind === "counting" || removal?.kind === "unknown";
   const set = (patch: Partial<NewCategory>) => setValues((current) => ({ ...current, ...patch }));
 
   const close = () => {
@@ -143,7 +146,7 @@ export function CategorySheet({
               </label>
             ))}
           </div>
-          {removal?.kind === "archive" && (
+          {(removal?.kind === "archive" || removal?.kind === "unknown") && (
             <p className="text-[15px] text-ink-muted">{t("kind_locked")}</p>
           )}
         </fieldset>
@@ -170,7 +173,7 @@ export function CategorySheet({
 
         <fieldset className="flex flex-col gap-(--space-2)">
           <legend className="pb-(--space-1) text-[15px] text-ink-muted">{t("tint_label")}</legend>
-          <div className="grid grid-cols-5 gap-(--space-2)">
+          <div className="grid grid-cols-6 gap-(--space-2)">
             {CATEGORY_TINTS.map(({ name, value }) => (
               <label
                 key={name}
@@ -211,12 +214,14 @@ export function CategorySheet({
             {t("delete")}
           </PressButton>
         )}
-        {removal?.kind === "archive" && (
+        {(removal?.kind === "archive" || removal?.kind === "unknown") && (
           <div className="flex flex-col gap-(--space-2)">
             <p className="text-[15px] text-ink">
-              {removal.capped
-                ? t("has_many_transactions", { count: removal.count })
-                : t("has_transactions", { count: removal.count })}
+              {removal.kind === "unknown"
+                ? t("count_failed")
+                : removal.capped
+                  ? t("has_many_transactions", { count: removal.count })
+                  : t("has_transactions", { count: removal.count })}
             </p>
             <PressButton
               variant="secondary"

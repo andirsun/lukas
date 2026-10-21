@@ -4,7 +4,7 @@ import { createApiClient } from "../../api/client.ts";
 import { budgetExample, draftFromCents, parseBudgetInput } from "./budget-input.ts";
 import { categoryChips } from "./category-chips.ts";
 import { defaultCurrency } from "./currency.ts";
-import { createSuggestions } from "./onboarding-api.ts";
+import { countCategoryTransactions, createSuggestions } from "./onboarding-api.ts";
 import { passkeyOutcome } from "./passkey.ts";
 import { nextStep, previousStep, STEPS, stepFromParam, stepPath } from "./steps.ts";
 import { normalizeName, SUGGESTED_CATEGORIES, suggestionFor } from "./suggested-categories.ts";
@@ -312,5 +312,57 @@ describe("createSuggestions", () => {
     ]);
     expect(writes.filter((w) => w.startsWith("POST"))).toHaveLength(6);
     expect(writes.some((w) => w.includes('"name":"Supermercado"'))).toBe(false);
+  });
+});
+
+describe("countCategoryTransactions", () => {
+  /** A client whose transaction list has `total` rows for the category, 200 per page. */
+  function pagedApi(total: number) {
+    const requests: string[] = [];
+    const api = createApiClient({
+      baseUrl: "http://test/api",
+      onUnauthorized: () => {},
+      fetch: async (input) => {
+        const url = new URL((input as Request).url);
+        requests.push(url.search);
+        const page = Number(url.searchParams.get("cursor") ?? 0);
+        const left = total - page * 200;
+        return Response.json({
+          items: Array.from({ length: Math.max(0, Math.min(200, left)) }, (_, i) => ({ id: i })),
+          nextCursor: left > 200 ? String(page + 1) : null,
+        });
+      },
+    });
+    return { api, requests };
+  }
+
+  it("counts across pages", async () => {
+    const { api, requests } = pagedApi(450);
+    await expect(countCategoryTransactions(api, "c1")).resolves.toEqual({
+      count: 450,
+      capped: false,
+    });
+    expect(requests).toHaveLength(3);
+    expect(requests[0]).toContain("category=c1");
+  });
+
+  it("stops at the cap and says so", async () => {
+    const { api, requests } = pagedApi(5000);
+    await expect(countCategoryTransactions(api, "c1", 400)).resolves.toEqual({
+      count: 400,
+      capped: true,
+    });
+    expect(requests).toHaveLength(2);
+  });
+
+  it("throws when a page fails (the sheet then offers only Archivar)", async () => {
+    const api = createApiClient({
+      baseUrl: "http://test/api",
+      onUnauthorized: () => {},
+      fetch: async () => Response.json({ code: "internal_error" }, { status: 503 }),
+    });
+    await expect(countCategoryTransactions(api, "c1")).rejects.toMatchObject({
+      code: "internal_error",
+    });
   });
 });

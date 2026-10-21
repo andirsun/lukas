@@ -122,6 +122,11 @@ export interface ImportPanelProps {
   onFresh?: (() => void) | undefined;
   /** The confirm inside the panel (the app's import page); onboarding has it in the footer. */
   onConfirm?: (() => void) | undefined;
+  /**
+   * Say that budgets were prefilled (onboarding, whose budgets step follows). The app's page shows
+   * the budgets themselves, with their own save, instead.
+   */
+  showPrefill?: boolean;
 }
 
 /**
@@ -139,6 +144,7 @@ export function ImportPanel({
   prefillBasis,
   onFresh,
   onConfirm,
+  showPrefill = true,
 }: ImportPanelProps) {
   const t = useTranslations("onboarding");
   const tCommon = useTranslations("common");
@@ -238,7 +244,7 @@ export function ImportPanel({
               </PressButton>
             </>
           )}
-          {state.prefilled && (
+          {state.prefilled && showPrefill && (
             <>
               <p className="text-ink">{t("import.prefilled")}</p>
               {prefillBasis && <p className="text-[15px] text-ink-muted">{prefillBasis}</p>}
@@ -378,11 +384,20 @@ function ChevronIcon() {
 function CurrencyLine({ note }: { note: NonNullable<CurrencyNote> }) {
   const t = useTranslations("onboarding");
   return (
-    <p className="rounded-md border-2 border-gold px-(--space-3) py-(--space-2) text-[15px] text-ink">
-      {note.kind === "switched"
-        ? t("import.currency_switched", { currency: note.file })
-        : t("import.currency_locked", { file: note.file, account: note.account })}
-    </p>
+    <div className="flex flex-col gap-(--space-1) rounded-md border-2 border-gold px-(--space-3) py-(--space-2) text-[15px] text-ink">
+      <p>
+        {note.kind === "switched"
+          ? t("import.currency_switched", { currency: note.file })
+          : note.kind === "switching"
+            ? t("import.currency_switching", { currency: note.file })
+            : t("import.currency_locked", { file: note.file, account: note.account })}
+      </p>
+      {note.kind === "switching" && note.dropsBudgets && (
+        <p className="font-extrabold">
+          {t("import.budgets_dropped", { old: note.account, currency: note.file })}
+        </p>
+      )}
+    </div>
   );
 }
 

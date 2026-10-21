@@ -104,21 +104,48 @@ export function BudgetsStep({
       onBack={nav.onBack}
       skip={actions.skip}
       next={{ ...actions.next, disabled: actions.next.disabled || invalid }}
-      summary={
-        <div
-          role="status"
-          className="flex flex-wrap items-baseline justify-between gap-x-(--space-3) border-t-2 border-stroke pt-(--space-3)"
-        >
-          <span className="text-[15px] text-ink-muted">{t("budgets.total_label")}</span>
-          <AmountWithHint
-            cents={total}
-            currency={currency}
-            className="font-display text-[24px] font-bold text-good"
-          />
-        </div>
-      }
+      summary={<BudgetsTotal total={total} currency={currency} />}
     >
       {prefillBasis && <p className="text-[15px] text-ink-muted">{prefillBasis}</p>}
+      <BudgetsList
+        categories={categories}
+        drafts={drafts}
+        onChange={onChange}
+        currency={currency}
+      />
+      {error && <StepError>{error}</StepError>}
+    </StepFrame>
+  );
+}
+
+/** "Lo que puedes gastar al mes": the running total, read out as it changes. */
+export function BudgetsTotal({ total, currency }: { total: number; currency: string }) {
+  const t = useTranslations("onboarding");
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-baseline justify-between gap-x-(--space-3) border-t-2 border-stroke pt-(--space-3)"
+    >
+      <span className="text-[15px] text-ink-muted">{t("budgets.total_label")}</span>
+      <AmountWithHint
+        cents={total}
+        currency={currency}
+        className="font-display text-[24px] font-bold text-good"
+      />
+    </div>
+  );
+}
+
+/** One budget field per spending category (shared by the step and the app's import page). */
+export function BudgetsList({
+  categories,
+  drafts,
+  onChange,
+  currency,
+}: Pick<BudgetsStepProps, "categories" | "drafts" | "onChange" | "currency">) {
+  const t = useTranslations("onboarding");
+  return (
+    <>
       {categories.length === 0 && <p className="text-ink-muted">{t("budgets.empty")}</p>}
       <ul className="flex flex-col gap-(--space-2)">
         {categories.map((category) => (
@@ -131,8 +158,7 @@ export function BudgetsStep({
           />
         ))}
       </ul>
-      {error && <StepError>{error}</StepError>}
-    </StepFrame>
+    </>
   );
 }
 

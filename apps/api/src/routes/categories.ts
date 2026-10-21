@@ -9,8 +9,8 @@ import {
   setBudgetSchema,
   updateCategorySchema,
 } from "@lukas/core";
-import { categories, categoryBudgets, type Tx, withUser } from "@lukas/db";
-import { asc, eq, isNull } from "@lukas/db/orm";
+import { categories, categoryBudgets, type Tx, transactions, withUser } from "@lukas/db";
+import { and, asc, eq, isNull } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { isUniqueViolation } from "../http/db-errors.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
@@ -120,6 +120,22 @@ export function categoryRoutes(deps: AppDeps) {
       const month = currentMonth(c.get("user"));
       const dto = await withUser(deps.db, c.get("userId"), async (tx) => {
         const existing = await findCategory(tx, id);
+        // Spending ↔ income only while nothing is booked under it: its transactions' signs and
+        // the budgets would no longer mean what they meant.
+        if (fields.kind && fields.kind !== existing.kind) {
+          const [booked] = await tx
+            .select({ id: transactions.id })
+            .from(transactions)
+            .where(and(eq(transactions.categoryId, id), isNull(transactions.deletedAt)))
+            .limit(1);
+          if (booked) {
+            throw new ApiError(
+              409,
+              "category_has_transactions",
+              "A category with transactions cannot change its kind",
+            );
+          }
+        }
         const archivedAt =
           archived === undefined
             ? existing.archivedAt

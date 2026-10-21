@@ -10,7 +10,7 @@ import { CurrencyStep } from "./CurrencyStep.tsx";
 import { categoryChips } from "./category-chips.ts";
 import { ImportStep } from "./ImportStep.tsx";
 import type { ImportState } from "./import-state.ts";
-import { SAMPLE_PREVIEW, WelcomeStage } from "./story-harness.tsx";
+import { ImportPageStage, SAMPLE_PREVIEW, WelcomeStage } from "./story-harness.tsx";
 import { SUGGESTED_CATEGORIES } from "./suggested-categories.ts";
 import { WelcomeStep } from "./WelcomeStep.tsx";
 
@@ -589,9 +589,9 @@ export const FlowAddCustomCategory: Story = {
 };
 
 /**
- * A COP account uploads a EUR file: the account (still empty) switches to EUR, the stale preview
- * is dropped and the file is read again; the confirmed preview is in EUR, and the budgets that
- * follow are prefilled from the recent months, in euros.
+ * A COP account uploads a EUR file: the preview says the (still empty) account will switch to
+ * EUR on import; nothing changes until the confirm, which asks the API to adopt the file's currency
+ * in the same transaction. The budgets that follow are prefilled from the recent months, in euros.
  */
 export const FlowImportSwitchesCurrency: Story = {
   render: (args) => (
@@ -603,7 +603,9 @@ export const FlowImportSwitchesCurrency: Story = {
     await userEvent.click(await canvas.findByRole("button", { name: "Budge" }));
     await upload(canvas);
     await expect(
-      await canvas.findByText("Tu archivo está en EUR, así que tu cuenta ahora usa EUR."),
+      await canvas.findByText(
+        "Tu archivo está en EUR: al importarlo, tu cuenta pasará a usar EUR.",
+      ),
     ).toBeVisible();
     // The result takes focus, so a screen reader reads it out.
     await waitFor(() =>
@@ -611,17 +613,18 @@ export const FlowImportSwitchesCurrency: Story = {
         canvas.getByRole("heading", { name: "Esto es lo que vamos a importar" }),
       ).toHaveFocus(),
     );
-    await expect(calls(onRequest)).toEqual([
-      "POST /api/v1/imports",
-      'PATCH /api/v1/me {"currency":"EUR"}',
-      "DELETE /api/v1/imports/preview-1",
-      "POST /api/v1/imports",
-    ]);
+    // Reading the file changed nothing.
+    await expect(calls(onRequest)).toEqual(["POST /api/v1/imports"]);
     await userEvent.click(canvas.getByRole("button", { name: "Importar 22 movimientos" }));
     const imported = await canvas.findByRole("heading", { name: "Importamos 22 movimientos." });
     await waitFor(() => expect(imported).toHaveFocus());
-    await expect(onRequest).toHaveBeenCalledWith("POST /api/v1/imports/preview-2/confirm");
-    await expect(onRequest).not.toHaveBeenCalledWith("POST /api/v1/imports/preview-1/confirm");
+    await expect(calls(onRequest)).toEqual([
+      "POST /api/v1/imports",
+      'POST /api/v1/imports/preview-1/confirm {"adoptFileCurrency":true}',
+    ]);
+    await expect(
+      canvas.getByText("Tu archivo está en EUR, así que tu cuenta ahora usa EUR."),
+    ).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
     await heading(canvas, "¿En qué se te va el dinero?");
     await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
@@ -634,8 +637,8 @@ export const FlowImportSwitchesCurrency: Story = {
   },
 };
 
-/** "Usar otro archivo" after a switch drops the preview and puts the account's currency back. */
-export const FlowDiscardRestoresCurrency: Story = {
+/** "Usar otro archivo" drops the preview; the currency was never touched, so nothing to undo. */
+export const FlowDiscardChangesNothing: Story = {
   render: (args) => (
     <WelcomeStage initialEntry="/welcome/import" currency="COP" onRequest={args.onRequest} />
   ),
@@ -646,16 +649,18 @@ export const FlowDiscardRestoresCurrency: Story = {
     await upload(canvas);
     await userEvent.click(await canvas.findByRole("button", { name: "Usar otro archivo" }));
     await waitFor(() =>
-      expect(onRequest).toHaveBeenCalledWith('PATCH /api/v1/me {"currency":"COP"}'),
+      expect(calls(onRequest)).toEqual([
+        "POST /api/v1/imports",
+        "DELETE /api/v1/imports/preview-1",
+      ]),
     );
-    await expect(onRequest).toHaveBeenCalledWith("DELETE /api/v1/imports/preview-2");
     // Back to the picker, with focus on it.
     const picker = await canvas.findByLabelText("Subir archivo de Budge");
     await waitFor(() => expect(picker).toHaveFocus());
   },
 };
 
-/** SALTAR with a preview open drops it (and its currency switch) and moves on. */
+/** SALTAR with a preview open drops it and moves on; the currency stays as it was. */
 export const FlowSkipImportWithPreview: Story = {
   render: (args) => (
     <WelcomeStage initialEntry="/welcome/import" currency="COP" onRequest={args.onRequest} />
@@ -667,9 +672,10 @@ export const FlowSkipImportWithPreview: Story = {
     await canvas.findByRole("button", { name: "Importar 22 movimientos" });
     await userEvent.click(canvas.getByRole("button", { name: "Saltar" }));
     await heading(canvas, "¿En qué se te va el dinero?");
-    await expect(args.onRequest).toHaveBeenCalledWith("DELETE /api/v1/imports/preview-2");
-    await expect(args.onRequest).toHaveBeenCalledWith('PATCH /api/v1/me {"currency":"COP"}');
-    await expect(args.onRequest).not.toHaveBeenCalledWith("POST /api/v1/imports/preview-2/confirm");
+    await expect(calls(args.onRequest)).toEqual([
+      "POST /api/v1/imports",
+      "DELETE /api/v1/imports/preview-1",
+    ]);
   },
 };
 
@@ -1108,7 +1114,7 @@ export const FlowEditAndDeleteCategory: Story = {
   },
 };
 
-/** Spending ↔ income for a category without transactions: archived and made again as the other. */
+/** Spending ↔ income for a category without transactions: one PATCH with the kind, same id. */
 export const FlowSwitchKind: Story = {
   render: (args) => (
     <WelcomeStage initialEntry="/welcome/categories" currency="EUR" onRequest={args.onRequest} />
@@ -1121,20 +1127,20 @@ export const FlowSwitchKind: Story = {
     await userEvent.click(sheet.getByRole("radio", { name: "Gasto" }));
     await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
     await sheetClosed();
-    await expect(args.onRequest).toHaveBeenCalledWith(
-      'PATCH /api/v1/categories/cat-salary {"archived":true}',
-    );
-    await expect(
-      calls(args.onRequest).some((l) =>
-        l.startsWith('POST /api/v1/categories {"name":"Salario","kind":"expense"'),
-      ),
-    ).toBe(true);
+    await expect(calls(args.onRequest)).toEqual([
+      'PATCH /api/v1/categories/cat-salary {"name":"Salario","icon":"💰","color":"#2fd388","kind":"expense"}',
+    ]);
     const spending = within(canvas.getByRole("group", { name: "Gastos" }));
     await expect(await spending.findByRole("button", { name: "Editar Salario" })).toBeVisible();
+    // The chip may have moved: focus goes to the edit toggle, not a detached node.
+    await waitFor(() => expect(canvas.getByRole("button", { name: "Listo" })).toHaveFocus());
   },
 };
 
-/** With transactions it can't be deleted: the sheet says how many and offers to archive it. */
+/**
+ * With transactions it can't be deleted: the sheet says how many and offers to archive it; and a
+ * plain tap doesn't drop it either (it stays chosen, with the same reason).
+ */
 export const FlowCategoryWithTransactions: Story = {
   render: (args) => (
     <WelcomeStage
@@ -1147,10 +1153,19 @@ export const FlowCategoryWithTransactions: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await heading(canvas, "¿En qué se te va el dinero?");
+    const chip = canvas.getByRole("button", { name: "Supermercado" });
+    await userEvent.click(chip);
+    await expect(
+      await canvas.findByText(
+        "«Supermercado» no se puede quitar porque tiene 132 movimientos. Puedes archivarla en Editar categorías para que no aparezca al anotar.",
+      ),
+    ).toBeVisible();
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+
     const sheet = await openEdit(canvas, "Supermercado");
     await expect(
       await sheet.findByText(
-        "Tiene 132 movimientos; podrás unirla con otra desde Categorías.",
+        "No se puede borrar porque tiene 132 movimientos. Puedes archivarla para que no aparezca al anotar.",
         {},
         { timeout: 3000 },
       ),
@@ -1162,5 +1177,159 @@ export const FlowCategoryWithTransactions: Story = {
     await expect(args.onRequest).toHaveBeenCalledWith(
       'PATCH /api/v1/categories/cat-groceries {"archived":true}',
     );
+  },
+};
+
+// -- Task 10e fix round 1: the app's import page, honest counts, tints, leads -------------------------
+
+const pageImport = async (canvas: Canvas) => {
+  await userEvent.click(await canvas.findByRole("button", { name: "Budge" }));
+  await upload(canvas);
+};
+
+/**
+ * `/app/import` ends with the budgets, as onboarding does: prefilled from the recent months, shown
+ * as a form, and written only by "Guardar presupuestos". No "Llenamos…" line before that.
+ */
+export const ImportPageSavesBudgets: Story = {
+  render: (args) => <ImportPageStage currency="EUR" onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const title = await canvas.findByRole("heading", { level: 1, name: "Trae tu historial" });
+    await waitFor(() => expect(title).toHaveFocus());
+    await pageImport(canvas);
+    await userEvent.click(await canvas.findByRole("button", { name: "Importar 22 movimientos" }));
+    const budgets = await canvas.findByRole("heading", { name: "Tus presupuestos" });
+    await waitFor(() => expect(budgets).toHaveFocus());
+    await expect(canvas.queryByText(/^Llenamos tus presupuestos/)).toBeNull();
+    await expect(
+      canvas.getByText("Basado en lo que gastaste en tus últimos 3 meses"),
+    ).toBeVisible();
+    await expect(canvas.getByRole("textbox", { name: "Presupuesto de Supermercado" })).toHaveValue(
+      "35,89",
+    );
+    await expect(calls(args.onRequest).some((l) => l.includes("/budget"))).toBe(false);
+    await userEvent.click(canvas.getByRole("button", { name: "Guardar presupuestos" }));
+    await expect(await canvas.findByText("Guardamos tus presupuestos.")).toBeVisible();
+    await expect(calls(args.onRequest)).toContain(
+      `PUT /api/v1/categories/cat-groceries/budget {"amount":3589,"effectiveFrom":"${monthOf(todayIn("America/Bogota"))}"}`,
+    );
+    await userEvent.click(canvas.getByRole("link", { name: "Ir al inicio" }));
+    await expect(await canvas.findByText("App (stand-in)")).toBeVisible();
+  },
+};
+
+/**
+ * A COP account with budgets, a EUR file: the preview warns that the budgets in COP go with the
+ * switch. Dropping the preview (or leaving) changes nothing: only the DELETE of the preview.
+ */
+export const ImportPageWarnsBeforeSwitching: Story = {
+  render: (args) => <ImportPageStage currency="COP" budgeted onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await pageImport(canvas);
+    await expect(
+      await canvas.findByText("Tus presupuestos en COP se borrarán al cambiar a EUR."),
+    ).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Usar otro archivo" }));
+    await waitFor(() =>
+      expect(calls(args.onRequest)).toEqual([
+        "POST /api/v1/imports",
+        "DELETE /api/v1/imports/preview-1",
+      ]),
+    );
+  },
+};
+
+/** The confirm fails: the preview stays with the reason, and importing again works. */
+export const ImportPageConfirmFails: Story = {
+  render: (args) => <ImportPageStage currency="EUR" failConfirmOnce onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await pageImport(canvas);
+    await userEvent.click(await canvas.findByRole("button", { name: "Importar 22 movimientos" }));
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Tuvimos un problema de nuestro lado",
+    );
+    await expect(canvas.queryByRole("heading", { name: "Tus presupuestos" })).toBeNull();
+    await userEvent.click(canvas.getByRole("button", { name: "Importar 22 movimientos" }));
+    await expect(await canvas.findByRole("heading", { name: "Tus presupuestos" })).toBeVisible();
+  },
+};
+
+/** Saving the budgets fails: nothing claims they were saved, and trying again does. */
+export const ImportPageBudgetsSaveFails: Story = {
+  render: (args) => <ImportPageStage currency="EUR" failBudgetOnce onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await pageImport(canvas);
+    await userEvent.click(await canvas.findByRole("button", { name: "Importar 22 movimientos" }));
+    const save = await canvas.findByRole("button", { name: "Guardar presupuestos" });
+    await userEvent.click(save);
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Tuvimos un problema de nuestro lado",
+    );
+    await expect(canvas.queryByText("Guardamos tus presupuestos.")).toBeNull();
+    await userEvent.click(canvas.getByRole("button", { name: "Guardar presupuestos" }));
+    await expect(await canvas.findByText("Guardamos tus presupuestos.")).toBeVisible();
+  },
+};
+
+/** The count fails: no "más de 0", just that it couldn't be counted, and only Archivar. */
+export const FlowCountFails: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/categories"
+      currency="EUR"
+      failCount
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await heading(canvas, "¿En qué se te va el dinero?");
+    const sheet = await openEdit(canvas, "Supermercado");
+    await expect(
+      await sheet.findByText(
+        "No pudimos contar sus movimientos. Puedes archivarla para que no aparezca al anotar.",
+        {},
+        { timeout: 3000 },
+      ),
+    ).toBeVisible();
+    await expect(sheet.queryByText(/más de 0/)).toBeNull();
+    await expect(sheet.queryByRole("button", { name: "Eliminar categoría" })).toBeNull();
+    await expect(sheet.getByRole("button", { name: "Archivar categoría" })).toBeVisible();
+  },
+};
+
+/**
+ * After an import the lead speaks of their categories (fresh, of the suggestions), and an
+ * importer tint such as yellow shows as its picker radio.
+ */
+export const FlowImportedLeadAndTints: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/import"
+      currency="EUR"
+      categories="none"
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "No, empiezo de cero" }));
+    await heading(canvas, "¿En qué se te va el dinero?");
+    await expect(canvas.getByText(/^Ya elegimos algunas por ti/)).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Atrás" }));
+    await heading(canvas, "¿Vienes de otra app?");
+    await userEvent.click(await canvas.findByRole("button", { name: "Budge" }));
+    await upload(canvas);
+    await userEvent.click(await canvas.findByRole("button", { name: "Importar 22 movimientos" }));
+    await canvas.findByRole("heading", { name: "Importamos 22 movimientos." });
+    await userEvent.click(canvas.getByRole("button", { name: "Siguiente" }));
+    await heading(canvas, "¿En qué se te va el dinero?");
+    await expect(canvas.getByText(/^Estas son tus categorías/)).toBeVisible();
+    const sheet = await openEdit(canvas, "Taxes");
+    await expect(sheet.getByRole("radio", { name: "Amarillo" })).toBeChecked();
   },
 };

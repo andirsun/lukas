@@ -185,6 +185,7 @@
     "validation_failed": "Some of the data isn't valid. Check it and try again.",
     "range_too_large": "That range is too long. Pick fewer months.",
     "category_name_taken": "You already have a category with that name.",
+    "category_has_transactions": "This category already has transactions, so its type can't change.",
     "category_not_found": "Pick one of your active categories.",
     "currency_locked": "This account already has transactions, so its currency can't be changed.",
     "budget_category_not_expense": "Only expense categories can have a budget.",
@@ -432,7 +433,8 @@
     },
     "categories": {
       "title": "Where does your money go?",
-      "lead": "If you brought your history, here are your categories. Tap one to remove it, edit them, or add your own.",
+      "lead": "These are your categories. Tap one to remove it, edit them, or add your own.",
+      "lead_fresh": "We picked some for you. Tap one to remove it, edit them, or add your own.",
       "expenses": "Spending",
       "income": "Income",
       "add": "Add category",
@@ -456,7 +458,9 @@
         "amber": "Amber",
         "green": "Green",
         "teal": "Teal",
-        "gray": "Gray"
+        "gray": "Gray",
+        "yellow": "Yellow",
+        "sky": "Sky blue"
       },
       "edit_toggle": "Edit categories",
       "edit_done": "Done",
@@ -466,8 +470,11 @@
       "counting": "Counting its transactions…",
       "delete": "Delete category",
       "archive": "Archive category",
-      "has_transactions": "It has {count, plural, one {# transaction} other {# transactions}}; you'll be able to merge it with another from Categories.",
-      "has_many_transactions": "It has more than {count} transactions; you'll be able to merge it with another from Categories.",
+      "has_transactions": "It can't be deleted because it has {count, plural, one {# transaction} other {# transactions}}. You can archive it so it doesn't show up when you add one.",
+      "has_many_transactions": "It can't be deleted because it has more than {count} transactions. You can archive it so it doesn't show up when you add one.",
+      "count_failed": "We couldn't count its transactions. You can archive it so it doesn't show up when you add one.",
+      "cant_remove": "“{name}” can't be removed because it has {count, plural, one {# transaction} other {# transactions}}. You can archive it in Edit categories so it doesn't show up when you add one.",
+      "cant_remove_unknown": "We couldn't check whether “{name}” has transactions, so it stays chosen.",
       "kind_locked": "With transactions, its type can't change here."
     },
     "budgets": {
@@ -502,6 +509,8 @@
         "other": "couldn't be read"
       },
       "currency_switched": "Your file is in {currency}, so your account now uses {currency}.",
+      "currency_switching": "Your file is in {currency}: importing it switches your account to {currency}.",
+      "budgets_dropped": "Your budgets in {old} will be deleted when you switch to {currency}.",
       "currency_locked": "Your file is in {file}, but your account already uses {account}: those rows won't be imported.",
       "confirm": "Import {count, plural, one {# transaction} other {# transactions}}",
       "importing": "Importing…",
@@ -523,7 +532,11 @@
       "fresh": "No, I'm starting fresh",
       "page_title": "Bring your history",
       "page_lead": "Bring your transactions from another app.",
-      "go_home": "Go home"
+      "go_home": "Go home",
+      "page_budgets_title": "Your budgets",
+      "page_budgets_lead": "Check them and save them. You can leave some empty.",
+      "save_budgets": "Save budgets",
+      "budgets_saved": "Your budgets are saved."
     },
     "prefill_basis": "Based on what you spent in {months, plural, one {your last month} other {your last # months}}",
     "next": "Next",

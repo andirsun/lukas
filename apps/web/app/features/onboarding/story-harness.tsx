@@ -3,6 +3,7 @@ import { useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
+import { ImportPage } from "./ImportPage.tsx";
 import type { ImportDto } from "./import-state.ts";
 import {
   clearOnboardingDraft,
@@ -33,6 +34,8 @@ export const SAMPLE_PREVIEW: ImportDto = {
     ],
     currency: "EUR",
     averageWindow: RECENT_WINDOW,
+    adoptsCurrency: false,
+    dropsBudgets: false,
   },
 };
 
@@ -77,6 +80,14 @@ interface FakeApiOptions {
   confirmDelayMs?: number;
   /** Transactions per category name (the categories step counts them before a delete). */
   transactionsByName?: Record<string, number>;
+  /** Counting a category's transactions fails (503). */
+  failCount?: boolean;
+  /** The first confirm fails (503). */
+  failConfirmOnce?: boolean;
+  /** The first budget save fails (503). */
+  failBudgetOnce?: boolean;
+  /** Supermercado starts with a budget (300.000 in the account's currency). */
+  budgeted?: boolean;
 }
 
 function onboardingFetch({
@@ -91,7 +102,13 @@ function onboardingFetch({
   confirmDelayMs = 0,
   hasTransactions = false,
   transactionsByName = {},
+  failCount = false,
+  failConfirmOnce = false,
+  failBudgetOnce = false,
+  budgeted = false,
 }: FakeApiOptions): typeof fetch {
+  let confirmFails = failConfirmOnce;
+  let budgetFails = failBudgetOnce;
   let categoryPosts = 0;
   let confirmed = false;
   const window = oldExport
@@ -128,7 +145,7 @@ function onboardingFetch({
               color: "#ff9f1c",
               sortOrder: 0,
               archived: false,
-              currentBudget: null,
+              currentBudget: budgeted ? 30_000_000 : null,
             },
             {
               id: "cat-salary",
@@ -197,6 +214,7 @@ function onboardingFetch({
     if (path === "/api/v1/transactions" && request.method === "GET") {
       const categoryId = url.searchParams.get("category");
       if (categoryId) {
+        if (failCount) return Response.json({ code: "internal_error" }, { status: 503 });
         const name = categories.find((c) => c.id === categoryId)?.name ?? "";
         const count = transactionsByName[name] ?? 0;
         return Response.json({
@@ -211,6 +229,10 @@ function onboardingFetch({
     }
     const budget = /^\/api\/v1\/categories\/([^/]+)\/budget$/.exec(path);
     if (budget) {
+      if (budgetFails) {
+        budgetFails = false;
+        return Response.json({ code: "internal_error" }, { status: 503 });
+      }
       const amount = (body as { amount: number }).amount;
       categories = categories.map((c) =>
         c.id === budget[1] ? { ...c, currentBudget: amount } : c,
@@ -219,6 +241,12 @@ function onboardingFetch({
     }
     const category = /^\/api\/v1\/categories\/([^/]+)$/.exec(path);
     if (category && request.method === "PATCH") {
+      const patch = body as Partial<FakeCategory>;
+      const before = categories.find((c) => c.id === category[1]);
+      // Like the API: the kind changes only without transactions.
+      if (before && patch.kind && patch.kind !== before.kind && transactionsByName[before.name]) {
+        return Response.json({ code: "category_has_transactions" }, { status: 409 });
+      }
       categories = categories.map((c) =>
         c.id === category[1] ? { ...c, ...(body as Partial<FakeCategory>) } : c,
       );
@@ -226,25 +254,47 @@ function onboardingFetch({
     }
     if (path === "/api/v1/imports" && request.method === "POST") {
       uploads += 1;
-      const inCurrency = profile.currency === "EUR";
-      const stats = inCurrency
-        ? { ...SAMPLE_PREVIEW.stats, duplicates: 0, averageWindow: window }
-        : {
-            ...SAMPLE_PREVIEW.stats,
-            transactions: 0,
-            duplicates: 0,
-            newCategories: [],
-            rejected: [{ line: 7, reason: "currency_mismatch" }],
-            from: null,
-            to: null,
-            averageMonthlySpending: [],
-            averageWindow: null,
-          };
+      // The file is in EUR. Like the API: an empty account in another currency would adopt it on
+      // confirm, so the preview counts the rows; with transactions they're rejected.
+      const empty = !confirmed && !hasTransactions;
+      const adopts = profile.currency !== "EUR" && empty;
+      const stats =
+        profile.currency === "EUR" || adopts
+          ? {
+              ...SAMPLE_PREVIEW.stats,
+              duplicates: 0,
+              averageWindow: window,
+              adoptsCurrency: adopts,
+              dropsBudgets: adopts && categories.some((c) => c.currentBudget !== null),
+            }
+          : {
+              ...SAMPLE_PREVIEW.stats,
+              transactions: 0,
+              duplicates: 0,
+              newCategories: [],
+              rejected: [{ line: 7, reason: "currency_mismatch" }],
+              from: null,
+              to: null,
+              averageMonthlySpending: [],
+              averageWindow: null,
+            };
       return Response.json({ id: `preview-${uploads}`, status: "preview", stats }, { status: 201 });
     }
     const confirm = /^\/api\/v1\/imports\/([^/]+)\/confirm$/.exec(path);
     if (confirm) {
       if (confirmDelayMs) await new Promise((resolve) => setTimeout(resolve, confirmDelayMs));
+      if (confirmFails) {
+        confirmFails = false;
+        return Response.json({ code: "internal_error" }, { status: 503 });
+      }
+      if (profile.currency !== "EUR") {
+        // Like the API: a mismatch goes in only by adopting the file's currency, atomically,
+        // which drops the budgets in the old one.
+        const adopt = (body as { adoptFileCurrency?: boolean } | undefined)?.adoptFileCurrency;
+        if (!adopt) return Response.json({ code: "import_currency_changed" }, { status: 409 });
+        profile = { ...profile, currency: "EUR" };
+        categories = categories.map((c) => ({ ...c, currentBudget: null }));
+      }
       confirmed = true;
       // Like the importer: the file's categories that don't exist yet (by name, any case) are made,
       // as the file writes them ("supermercado" in lower case, "Salário" with its accent).
@@ -260,7 +310,7 @@ function onboardingFetch({
             name,
             kind,
             icon,
-            color: "orange",
+            color: name === "Taxes" ? "yellow" : "orange",
             sortOrder: 0,
             archived: false,
             currentBudget: null,
@@ -327,6 +377,26 @@ export function WelcomeStage({ initialEntry, draft, ...api }: WelcomeStageProps)
               path="/welcome/:step?"
               element={<Welcome languages={["es-CO"]} timeZone={BOGOTA} />}
             />
+            <Route path="/app" element={<p className="p-(--space-4) text-ink">App (stand-in)</p>} />
+          </Routes>
+        </ToastProvider>
+      </ApiProvider>
+    </MemoryRouter>
+  );
+}
+
+/** `/app/import` on its own, with the fake API, toasts, and a stand-in for /app. */
+export function ImportPageStage({
+  initialEntry = "/app/import",
+  ...api
+}: Partial<WelcomeStageProps> & FakeApiOptions) {
+  const [fetchImpl] = useState(() => onboardingFetch(api));
+  return (
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <ApiProvider fetch={fetchImpl}>
+        <ToastProvider>
+          <Routes>
+            <Route path="/app/import" element={<ImportPage />} />
             <Route path="/app" element={<p className="p-(--space-4) text-ink">App (stand-in)</p>} />
           </Routes>
         </ToastProvider>

@@ -36,8 +36,8 @@ export interface ImportFlowDeps {
 }
 
 /**
- * The import step's state and writes: reading a Budge file (switching an empty account to the
- * file's currency, then reading it again), discarding, confirming, the follow-up refresh with its
+ * The import step's state and writes: reading a Budge file, discarding, confirming (with the
+ * account adopting the file's currency when the preview says so), the follow-up refresh with its
  * prefill, and skipping. While a file is read, confirmed or discarded the step is `locked`: SALTAR
  * and Back wait, so nobody leaves (or reverts) an import halfway.
  */
@@ -53,44 +53,28 @@ export function useImportFlow(deps: ImportFlowDeps) {
     (state.phase === "preview" && (state.confirming || Boolean(state.discarding))) ||
     (state.phase === "imported" && Boolean(state.retrying));
 
-  async function switchCurrency(code: SupportedCurrency) {
-    queryClient.setQueryData(queryKeys.me(), await patchCurrency(api, code));
-    onCurrency(code);
-  }
-
   /**
-   * Reads the file. The importer only takes rows in the account's currency, so when the file is in
-   * another one and the account is still empty, the file wins: the account switches, the first
-   * preview (made under the old currency, so with its rows rejected) is dropped and the file is
-   * read again. The preview the person confirms is always one made under the final currency.
+   * Reads the file. The preview says what confirming would do with the currency: an empty account
+   * takes the file's (`adoptsCurrency`, switched by the API on confirm, atomically); one with
+   * transactions keeps its own and the file's rows are rejected. Nothing changes until the
+   * confirm, so leaving or dropping the preview leaves the account as it was.
    */
   async function readFile(file: File) {
     if (locked) return;
     setState({ phase: "reading", fileName: file.name });
     try {
-      let preview = await uploadImport(api, file);
-      let note: CurrencyNote = null;
+      const preview = await uploadImport(api, file);
+      const { currency: fileCurrency, adoptsCurrency, dropsBudgets } = preview.stats;
       const account = profile.currency;
-      const fileCurrency = preview.stats.currency;
-      if (fileCurrency && fileCurrency !== account) {
-        note = { kind: "locked", file: fileCurrency, account };
-        if (isSupportedCurrency(fileCurrency)) {
-          try {
-            await switchCurrency(fileCurrency);
-            note = { kind: "switched", file: fileCurrency, account };
-            // The stale preview is only clutter; failing to drop it changes nothing.
-            await api
-              .DELETE("/v1/imports/{id}", { params: { path: { id: preview.id } } })
-              .catch(() => {});
-            preview = await uploadImport(api, file);
-          } catch (problem) {
-            // Transactions already: the currency stays, and so does the preview (rows rejected).
-            if (!(problem instanceof ApiProblem && problem.code === "currency_locked")) {
-              throw problem;
+      const note: CurrencyNote =
+        fileCurrency && fileCurrency !== account
+          ? {
+              kind: adoptsCurrency ? "switching" : "locked",
+              file: fileCurrency,
+              account,
+              dropsBudgets,
             }
-          }
-        }
-      }
+          : null;
       setState({
         phase: "preview",
         fileName: file.name,
@@ -103,20 +87,13 @@ export function useImportFlow(deps: ImportFlowDeps) {
     }
   }
 
-  /**
-   * Drops the preview (never one being confirmed); a currency switched for it goes back to what it
-   * was. True when it is gone; on failure the step says why and stays.
-   */
+  /** Drops the preview (never one being confirmed). True when it is gone; on failure it says why. */
   async function discard(): Promise<boolean> {
     if (state.phase !== "preview" || state.confirming || state.discarding) return false;
     const current = state;
     setState({ ...current, discarding: true, error: null });
     try {
       await api.DELETE("/v1/imports/{id}", { params: { path: { id: current.preview.id } } });
-      const note = current.currencyNote;
-      if (note?.kind === "switched" && isSupportedCurrency(note.account)) {
-        await switchCurrency(note.account);
-      }
       setState({ phase: "idle" });
       return true;
     } catch (problem) {
@@ -131,18 +108,26 @@ export function useImportFlow(deps: ImportFlowDeps) {
     setState({ ...current, confirming: true, error: null });
     let result: ImportDto;
     try {
+      const switching = current.currencyNote?.kind === "switching";
       result = dataOf(
         await api.POST("/v1/imports/{id}/confirm", {
           params: { path: { id: current.preview.id } },
+          ...(switching ? { body: { adoptFileCurrency: true } } : {}),
         }),
       );
     } catch (problem) {
       setState({ ...current, confirming: false, error: message(problem) });
       return;
     }
+    const note = current.currencyNote;
+    const switched = note?.kind === "switching" ? { ...note, kind: "switched" as const } : note;
+    if (switched?.kind === "switched" && isSupportedCurrency(switched.file)) {
+      onCurrency(switched.file);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.me() });
+    }
     // From here the rows are in: whatever happens next, the step says so (confirming again could
     // only fail), and a failed follow-up gets a retry.
-    await afterImport(result, current.currencyNote);
+    await afterImport(result, switched);
   }
 
   /**
