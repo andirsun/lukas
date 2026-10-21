@@ -1,0 +1,95 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  .wrap { display: grid; grid-template-columns: 300px 1fr; gap: 26px; align-items: start; margin-top: 16px; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  .phone { width: 290px; margin: 0 auto; border-radius: 38px; padding: 10px; background: #0c0a1d; box-shadow: 0 18px 40px rgba(0,0,0,.2); }
+  .scr, .desk { color: #f3f0ff; font-family: "Nunito", sans-serif; background: radial-gradient(120% 50% at 50% 0%, #3a1f6e 0%, #15122b 60%); }
+  .scr { border-radius: 30px; height: 640px; overflow: hidden; }
+  .desk { border-radius: 18px; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.2); }
+  .nav { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; }
+  .logo { font-family: "Fredoka"; font-weight: 700; font-size: 22px; background: linear-gradient(90deg,#ffe66d,#ff8fd8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .login { font-size: 12px; font-weight: 900; padding: 6px 12px; border-radius: 12px; background: #2a2450; box-shadow: 0 3px 0 #120f26; }
+  .mascot { width: 150px; height: 150px; margin: 0 auto; background: url('../../brand/lukas-mascot-concept.webp') 0% 40% / 470px auto no-repeat; border-radius: 30px; filter: drop-shadow(0 12px 24px rgba(139,92,255,.35)); }
+  .hero { text-align: center; padding: 6px 18px 0; }
+  .q { font-family: "Fredoka"; font-weight: 700; line-height: 1.12; }
+  .q .strike { position: relative; color: #b9b2e0; }
+  .q .strike::after { content: ""; position: absolute; left: -2%; right: -2%; top: 52%; height: 3px; background: #ff5c7a; border-radius: 3px; transform: rotate(-4deg); }
+  .claim { font-family: "Fredoka"; font-weight: 700; color: #7cffb2; text-shadow: 0 0 18px rgba(124,255,178,.3); }
+  .sub { font-weight: 700; opacity: .8; }
+  .cta { display: inline-block; border-radius: 20px; font-family: "Fredoka"; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: .7px;
+         background: linear-gradient(180deg,#8b5cff,#6a3df0); box-shadow: 0 6px 0 #3f22a3, 0 12px 28px rgba(139,92,255,.45); cursor: pointer; transition: transform .08s, box-shadow .08s; }
+  .cta:active { transform: translateY(5px); box-shadow: 0 1px 0 #3f22a3; }
+  .soon { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .soon span { font-size: 11px; font-weight: 900; padding: 7px 11px; border-radius: 14px; background: #1f1a3e; border: 2px solid #2d2660; box-shadow: 0 3px 0 #0f0c22; opacity: .85; }
+  .soon em { font-style: normal; color: #ffb547; margin-left: 4px; }
+  .feature { background: #241f48; border-radius: 20px; padding: 12px; box-shadow: 0 5px 0 #0f0c22; }
+  .feature h4 { margin: 0 0 4px; font-family: "Fredoka"; font-size: 15px; }
+  .feature p { margin: 0; font-size: 11px; font-weight: 700; opacity: .75; }
+  .donut { width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(#ff8fd8 0 59%, #ff5c7a 0 71%, #ffb547 0 82%, #7cffb2 0 91%, #8b5cff 0 100%); position: relative; flex: none; }
+  .donut::after { content: ""; position: absolute; inset: 14px; border-radius: 50%; background: #241f48; }
+  .rows { display: flex; flex-direction: column; gap: 10px; padding: 0 14px; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .opt { background: #1f1a3e; border: 2px solid #2d2660; border-radius: 20px; padding: 14px; box-shadow: 0 5px 0 #0f0c22; }
+  .opt h4 { margin: 6px 0 4px; font-family: "Fredoka"; font-size: 16px; }
+  .opt p { margin: 0 0 10px; font-size: 12px; font-weight: 700; opacity: .75; }
+  .opt .tag { font-size: 10px; font-weight: 900; color: #ffb547; border: 1.5px solid #ffb547; border-radius: 99px; padding: 2px 8px; }
+  .headlines { margin-top: 28px; }
+</style>
+
+<h2>La portada de Lukas</h2>
+<p class="subtitle">Teléfono a la izquierda, computadora a la derecha. El mensaje: se acabaron las preguntas sin respuesta. Una sola acción principal (empezar en la web) y lo que viene después, visible pero sin estorbar.</p>
+
+<div class="wrap">
+  <!-- Mobile -->
+  <div class="phone"><div class="scr">
+    <div class="nav"><span class="logo">Lukas</span><span class="login">Entrar</span></div>
+    <div class="mascot"></div>
+    <div class="hero">
+      <div class="q" style="font-size:19px"><span class="strike">¿En qué se me va la plata?</span></div>
+      <div class="q" style="font-size:19px;margin-top:4px"><span class="strike">¿Cuánto me cuesta vivir?</span></div>
+      <div class="claim" style="font-size:24px;margin-top:10px">Ya no más preguntas sin respuesta.</div>
+      <p class="sub" style="font-size:12px;margin:8px 0 14px">Lukas convierte tu presupuesto en un juego que da gusto jugar: registra en segundos y mira en qué se va cada luka.</p>
+      <span class="cta" style="padding:14px 26px;font-size:15px">Empieza gratis</span>
+      <p class="sub" style="font-size:10px;margin:10px 0 8px">Sin contraseñas · Importa tu historial de Budge</p>
+      <div class="soon"><span>📱 App Android<em>pronto</em></span><span>✨ Claude / ChatGPT<em>pronto</em></span></div>
+    </div>
+    <div class="rows" style="margin-top:16px">
+      <div class="feature" style="display:flex;gap:12px;align-items:center"><div class="donut"></div><div><h4>¿En qué se me va?</h4><p>Cada gasto en su categoría, con barras que se llenan y avisos antes de pasarte.</p></div></div>
+    </div>
+  </div></div>
+
+  <!-- Desktop -->
+  <div class="desk">
+    <div class="nav" style="padding:18px 26px"><span class="logo" style="font-size:26px">Lukas</span><span style="display:flex;gap:18px;align-items:center;font-size:13px;font-weight:800;opacity:.85"><span>Cómo funciona</span><span>Preguntas</span><span class="login">Entrar</span></span></div>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:10px;align-items:center;padding:6px 34px 24px">
+      <div>
+        <div class="q" style="font-size:30px"><span class="strike">¿En qué se me va la plata?</span></div>
+        <div class="q" style="font-size:30px;margin-top:4px"><span class="strike">¿Cuánto me cuesta vivir?</span></div>
+        <div class="claim" style="font-size:38px;margin-top:12px">Ya no más preguntas<br>sin respuesta.</div>
+        <p class="sub" style="font-size:14px;margin:12px 0 20px;max-width:420px">Lukas convierte tu presupuesto en un juego que da gusto jugar: registra en segundos, mira en qué se va cada luka y haz de tus finanzas tu mejor amigo.</p>
+        <span class="cta" style="padding:16px 34px;font-size:17px">Empieza gratis</span>
+        <span class="sub" style="font-size:12px;margin-left:14px">Sin contraseñas · Importa tu historial de Budge</span>
+      </div>
+      <div class="mascot" style="width:270px;height:270px;background-size:840px auto"></div>
+    </div>
+    <div style="padding:0 34px 30px">
+      <div style="font-family:Fredoka;font-weight:700;font-size:18px;margin-bottom:12px">Úsalo como prefieras</div>
+      <div class="opts">
+        <div class="opt"><div style="font-size:22px">🌐</div><h4>En la web</h4><p>En tu teléfono o computadora. Instálala en tu pantalla de inicio.</p><span class="cta" style="padding:9px 16px;font-size:12px">Empezar</span></div>
+        <div class="opt"><div style="font-size:22px">📱</div><h4>App Android</h4><p>Con widget para anotar un gasto sin abrir la app.</p><span class="tag">PRONTO</span></div>
+        <div class="opt"><div style="font-size:22px">✨</div><h4>Con tu IA</h4><p>"Lukas, ¿cuánto llevo en restaurantes?" en Claude o ChatGPT.</p><span class="tag">PRONTO</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="headlines">
+  <h3>¿Qué frase principal te gusta más?</h3>
+  <div class="options">
+    <div class="option" data-choice="h1" onclick="toggleSelect(this)"><div class="letter">1</div><div class="content"><h3>Ya no más preguntas sin respuesta.</h3><p>Las dos preguntas tachadas arriba, y esta como respuesta (lo que ves en el mockup).</p></div></div>
+    <div class="option" data-choice="h2" onclick="toggleSelect(this)"><div class="letter">2</div><div class="content"><h3>Haz de tu presupuesto tu mejor amigo.</h3><p>Más cálido; pone a Lukas como compañero.</p></div></div>
+    <div class="option" data-choice="h3" onclick="toggleSelect(this)"><div class="letter">3</div><div class="content"><h3>Tus lukas, por fin claras.</h3><p>Corto y con el juego de palabras del nombre.</p></div></div>
+  </div>
+</div>

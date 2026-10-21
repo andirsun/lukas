@@ -1,0 +1,109 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  .flow { display: flex; gap: 18px; overflow-x: auto; padding: 8px 2px 14px; }
+  .step { flex: none; width: 230px; }
+  .phone { width: 230px; border-radius: 32px; padding: 9px; background: #0c0a1d; box-shadow: 0 14px 30px rgba(0,0,0,.16); }
+  .screen { border-radius: 24px; height: 470px; overflow: hidden; position: relative; display: flex; flex-direction: column;
+            background: radial-gradient(120% 60% at 50% 0%, #3a1f6e 0%, #15122b 55%); color: #f3f0ff; font-family: "Nunito", sans-serif; }
+  .dim { position: absolute; inset: 0; background: rgba(8,6,20,.55); }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #1b1638; border-radius: 22px 22px 0 0; padding: 12px 11px; display: flex; flex-direction: column; gap: 8px; }
+  .grab { width: 34px; height: 4px; border-radius: 99px; background: #3a3370; margin: 0 auto; }
+  .kind { display: flex; background: #120f26; border-radius: 12px; padding: 3px; gap: 3px; }
+  .kind span { flex: 1; text-align: center; font-size: 10px; font-weight: 900; padding: 5px 0; border-radius: 9px; opacity: .55; }
+  .kind span.on { background: #2a2450; opacity: 1; color: #ff8fa3; }
+  .amount { font-family: "Fredoka"; font-weight: 700; font-size: 32px; text-align: center; color: #ff8fa3; line-height: 1.1; }
+  .amount small { font-size: 15px; opacity: .7; }
+  .name { display: flex; align-items: center; gap: 6px; background: #120f26; border: 2px solid #2d2660; border-radius: 13px; padding: 7px 9px; font-size: 12px; font-weight: 800; }
+  .name .ph { opacity: .45; font-style: italic; }
+  .name.active { border-color: #8b5cff; box-shadow: 0 0 0 3px rgba(139,92,255,.25); }
+  .name .caret { width: 2px; height: 14px; background: #ffe66d; }
+  .recent { display: flex; gap: 5px; overflow: hidden; }
+  .recent span { flex: none; font-size: 10px; font-weight: 800; background: #2a2450; border-radius: 99px; padding: 4px 8px; box-shadow: 0 2px 0 #0f0c22; }
+  .recent span.hit { background: #3b2f7a; color: #ffe66d; }
+  .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .chip { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 8.5px; font-weight: 800; }
+  .chip .b { width: 38px; height: 38px; border-radius: 13px; display: grid; place-items: center; font-size: 18px; box-shadow: 0 3px 0 #0f0c22; }
+  .chip.sel .b { outline: 3px solid #ffe66d; outline-offset: 1px; }
+  .keys { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .keys span { background: #2a2450; border-radius: 11px; box-shadow: 0 3px 0 #0f0c22; text-align: center; font-family: "Fredoka"; font-weight: 600; font-size: 15px; padding: 6px 0; }
+  .go { border-radius: 15px; padding: 10px; text-align: center; font-family: "Fredoka"; font-weight: 700; font-size: 13px; color: #fff; text-transform: uppercase; letter-spacing: .6px; background: linear-gradient(180deg,#8b5cff,#6a3df0); box-shadow: 0 4px 0 #3f22a3; }
+  .kb { background: #2b2752; border-radius: 10px; padding: 6px; display: grid; grid-template-columns: repeat(10,1fr); gap: 3px; }
+  .kb span { background: #3b3570; border-radius: 4px; font-size: 8px; text-align: center; padding: 4px 0; font-weight: 800; }
+  .toast { position: absolute; left: 10px; right: 10px; bottom: 14px; background: #241f48; border-radius: 16px; padding: 10px 11px; box-shadow: 0 5px 0 #0f0c22; display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; }
+  .toast .act { margin-left: auto; color: #ffe66d; }
+  .cap { text-align: center; margin-top: 8px; font-size: 12px; }
+  .cap b { display: block; font-size: 13px; }
+</style>
+
+<h2>Nombre opcional, pero a un toque</h2>
+<p class="subtitle">El campo de nombre siempre está visible encima del monto. Si no escribes nada, el gasto se llama como su categoría. Debajo aparecen tus nombres recientes como atajos: tocar uno pone el nombre <b>y</b> la categoría a la vez.</p>
+
+<div class="flow">
+  <div class="step">
+    <div class="phone"><div class="screen"><div class="dim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="kind"><span class="on">Gasto</span><span>Ingreso</span></div>
+        <div class="amount">−6,08 <small>€</small></div>
+        <div class="name">✏️ <span class="ph">Supermercado</span></div>
+        <div class="recent"><span>continente</span><span>pingo doce</span><span>lidl</span><span>café</span></div>
+        <div class="chips">
+          <div class="chip sel"><div class="b" style="background:#4a2140">🛒</div>Super</div>
+          <div class="chip"><div class="b" style="background:#4a2a30">🍽️</div>Resta.</div>
+          <div class="chip"><div class="b" style="background:#3b2560">⭐</div>Ocio</div>
+          <div class="chip"><div class="b" style="background:#2b2a5a">🚗</div>Transp.</div>
+        </div>
+        <div class="keys"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>,</span><span>0</span><span>⌫</span></div>
+        <div class="go">Guardar</div>
+      </div></div></div>
+    <div class="cap"><b>1. Sin escribir nombre</b>El campo muestra en gris cómo se va a llamar ("Supermercado"). Guardas y listo.</div>
+  </div>
+
+  <div class="step">
+    <div class="phone"><div class="screen"><div class="dim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="kind"><span class="on">Gasto</span><span>Ingreso</span></div>
+        <div class="amount">−6,08 <small>€</small></div>
+        <div class="name">✏️ continente</div>
+        <div class="recent"><span class="hit">continente ✓</span><span>pingo doce</span><span>lidl</span><span>café</span></div>
+        <div class="chips">
+          <div class="chip sel"><div class="b" style="background:#4a2140">🛒</div>Super</div>
+          <div class="chip"><div class="b" style="background:#4a2a30">🍽️</div>Resta.</div>
+          <div class="chip"><div class="b" style="background:#3b2560">⭐</div>Ocio</div>
+          <div class="chip"><div class="b" style="background:#2b2a5a">🚗</div>Transp.</div>
+        </div>
+        <div class="keys"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>,</span><span>0</span><span>⌫</span></div>
+        <div class="go">Guardar</div>
+      </div></div></div>
+    <div class="cap"><b>2. Un toque en un reciente</b>"continente" llena el nombre y elige Supermercado sola. Los atajos se aprenden de tu historial (incluido lo importado de Budge).</div>
+  </div>
+
+  <div class="step">
+    <div class="phone"><div class="screen"><div class="dim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="amount" style="font-size:22px">−6,08 <small>€</small></div>
+        <div class="name active">✏️ pin<span class="caret"></span></div>
+        <div class="recent"><span class="hit">pingo doce · 🛒</span><span>pintura · 🏠</span></div>
+        <div class="kb"><span>q</span><span>w</span><span>e</span><span>r</span><span>t</span><span>y</span><span>u</span><span>i</span><span>o</span><span>p</span><span>a</span><span>s</span><span>d</span><span>f</span><span>g</span><span>h</span><span>j</span><span>k</span><span>l</span><span>ñ</span></div>
+        <div class="go">Listo</div>
+      </div></div></div>
+    <div class="cap"><b>3. Escribir es opcional</b>Al tocar el campo sale el teclado y los atajos se filtran mientras escribes, con su categoría al lado.</div>
+  </div>
+
+  <div class="step">
+    <div class="phone"><div class="screen">
+      <div style="padding:14px 12px;display:flex;flex-direction:column;gap:8px;opacity:.5">
+        <div style="font-family:Fredoka;font-weight:700;font-size:18px">Lukas</div>
+        <div style="background:#241f48;border-radius:18px;height:80px"></div>
+        <div style="background:#1f1a3e;border-radius:14px;height:40px"></div>
+        <div style="background:#1f1a3e;border-radius:14px;height:40px"></div>
+      </div>
+      <div class="toast">🪙 Supermercado · −6,08 € <span class="act">Ponerle nombre</span></div>
+    </div></div>
+    <div class="cap"><b>4. Después, si quieres</b>El aviso de "¡Anotado!" trae "Ponerle nombre" además de "Deshacer". También puedes tocar el movimiento en la lista cuando quieras.</div>
+  </div>
+</div>

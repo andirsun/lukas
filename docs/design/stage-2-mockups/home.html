@@ -1,0 +1,113 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 26px; margin-top: 18px; }
+  .phone { width: 270px; margin: 0 auto; border-radius: 36px; padding: 12px; background: #0c0a1d; box-shadow: 0 18px 40px rgba(0,0,0,.18); cursor: pointer; }
+  .screen { border-radius: 26px; height: 600px; display: flex; flex-direction: column; overflow: hidden; position: relative;
+            background: radial-gradient(120% 60% at 50% 0%, #3a1f6e 0%, #15122b 55%); color: #f3f0ff; font-family: "Nunito", sans-serif; }
+  .content { padding: 14px 13px 6px; display: flex; flex-direction: column; gap: 9px; flex: 1; overflow: hidden; }
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: "Fredoka"; font-weight: 700; font-size: 19px; background: linear-gradient(90deg,#ffe66d,#ff8fd8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .pill { font-weight: 800; font-size: 11px; background: #2a2450; border-radius: 99px; padding: 3px 9px; box-shadow: 0 3px 0 #120f26; }
+  .avatar { width: 26px; height: 26px; border-radius: 50%; background: #2a2450; display: grid; place-items: center; font-size: 13px; box-shadow: 0 3px 0 #120f26; }
+  .hero { background: #241f48; border-radius: 20px; padding: 11px 12px; box-shadow: 0 5px 0 #0f0c22; }
+  .hero small { font-weight: 800; font-size: 11px; opacity: .7; }
+  .big { font-family: "Fredoka"; font-weight: 700; font-size: 30px; line-height: 1.05; color: #7cffb2; text-shadow: 0 0 16px rgba(124,255,178,.3); }
+  .bar { height: 10px; border-radius: 99px; background: #120f26; overflow: hidden; margin-top: 6px; }
+  .bar span { display: block; width: 80%; height: 100%; background: linear-gradient(90deg,#7cffb2,#ffe66d); }
+  .meta-line { display: flex; justify-content: space-between; font-size: 10px; font-weight: 800; opacity: .7; margin-top: 4px; }
+  .seg { display: flex; background: #120f26; border-radius: 14px; padding: 3px; gap: 3px; }
+  .seg span { flex: 1; text-align: center; font-size: 11px; font-weight: 900; padding: 7px 0; border-radius: 11px; opacity: .55; }
+  .seg span.on { background: #2a2450; opacity: 1; color: #ffe66d; box-shadow: 0 2px 0 #0b0920; }
+  .cat { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 15px; background: #1f1a3e; box-shadow: 0 3px 0 #0f0c22; border: 2px solid #2d2660; }
+  .ico { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; font-size: 15px; flex: none; }
+  .m { flex: 1; min-width: 0; }
+  .top { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; }
+  .left { font-size: 10px; font-weight: 800; opacity: .75; }
+  .left.over { color: #ff5c7a; opacity: 1; }
+  .left.near { color: #ffb547; opacity: 1; }
+  .mini { height: 7px; border-radius: 99px; margin-top: 4px; background: #120f26; overflow: hidden; }
+  .mini span { display: block; height: 100%; border-radius: 99px; }
+  .day { display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; opacity: .6; text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+  .tx { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 15px; background: #1f1a3e; box-shadow: 0 3px 0 #0f0c22; border: 2px solid #2d2660; }
+  .tx .amt { font-family: "Fredoka"; font-weight: 600; font-size: 13px; }
+  .tx .pend { font-size: 9px; font-weight: 900; color: #ffb547; border: 1.5px solid #ffb547; border-radius: 99px; padding: 1px 6px; }
+  .tabbar { display: flex; justify-content: space-around; align-items: flex-end; padding: 8px 6px 12px; background: #120f26; border-top: 1px solid #2a2450; }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 9px; font-weight: 800; opacity: .55; width: 70px; }
+  .tab .i { font-size: 17px; }
+  .tab.on { opacity: 1; color: #ffe66d; }
+  .plus { width: 54px; height: 54px; border-radius: 18px; background: linear-gradient(180deg,#8b5cff,#6a3df0); box-shadow: 0 5px 0 #3f22a3; display: grid; place-items: center; font-size: 28px; color: #fff; margin-top: -26px; font-weight: 700; }
+  .compact .cat { padding: 6px 9px; }
+  .compact .ico { width: 24px; height: 24px; font-size: 12px; }
+  .label { text-align: center; margin-top: 12px; }
+</style>
+
+<h2>Inicio: presupuestos y movimientos del día</h2>
+<p class="subtitle">Las dos primeras son la <b>misma pantalla</b> con un selector arriba de la lista (cambias con un toque o deslizando). La tercera muestra todo junto para que compares qué tan cargado se siente. La barra inferior queda mínima: Inicio · ＋ · Análisis.</p>
+
+<div class="phones">
+  <!-- 1: toggle on budgets -->
+  <div>
+    <div class="phone" data-choice="toggle" onclick="toggleSelect(this)">
+      <div class="screen">
+        <div class="content">
+          <div class="row"><span class="logo">Lukas</span><span class="pill">Octubre ▾</span><span class="avatar">🙂</span></div>
+          <div class="hero"><small>Te quedan este mes</small><div class="big">562,92 €</div><div class="bar"><span></span></div><div class="meta-line"><span>Gastado 2.237 €</span><span>de 2.800 €</span></div></div>
+          <div class="seg"><span class="on">Presupuestos</span><span>Movimientos</span></div>
+          <div class="cat"><div class="ico" style="background:#4a2140">🛒</div><div class="m"><div class="top"><span>Supermercado</span><span>180 €</span></div><div class="left over">Te pasaste 14,12 €</div><div class="mini"><span style="width:100%;background:#ff5c7a"></span></div></div></div>
+          <div class="cat"><div class="ico" style="background:#4a2a30">🍽️</div><div class="m"><div class="top"><span>Restaurante</span><span>300 €</span></div><div class="left near">Quedan 46,33 €</div><div class="mini"><span style="width:85%;background:#ffb547"></span></div></div></div>
+          <div class="cat"><div class="ico" style="background:#3b2560">⭐</div><div class="m"><div class="top"><span>Ocio</span><span>650 €</span></div><div class="left">Quedan 387,20 €</div><div class="mini"><span style="width:40%;background:#7cffb2"></span></div></div></div>
+          <div class="cat"><div class="ico" style="background:#2b2a5a">🚗</div><div class="m"><div class="top"><span>Transporte</span><span>90 €</span></div><div class="left">Quedan 90,00 €</div><div class="mini"><span style="width:0%;background:#7cffb2"></span></div></div></div>
+        </div>
+        <div class="tabbar"><div class="tab on"><span class="i">🏠</span>Inicio</div><div class="plus">＋</div><div class="tab"><span class="i">📊</span>Análisis</div></div>
+      </div>
+    </div>
+    <div class="label"><h3>1 · Selector en "Presupuestos"</h3><p class="subtitle">Cada categoría con su barra (se llena con lo gastado) y lo que te queda en palabras.</p></div>
+  </div>
+
+  <!-- 2: toggle on transactions -->
+  <div>
+    <div class="phone" data-choice="toggle" onclick="toggleSelect(this)">
+      <div class="screen">
+        <div class="content">
+          <div class="row"><span class="logo">Lukas</span><span class="pill">Octubre ▾</span><span class="avatar">🙂</span></div>
+          <div class="hero"><small>Te quedan este mes</small><div class="big">562,92 €</div><div class="bar"><span></span></div><div class="meta-line"><span>Gastado 2.237 €</span><span>de 2.800 €</span></div></div>
+          <div class="seg"><span>Presupuestos</span><span class="on">Movimientos</span></div>
+          <div class="day"><span>Hoy · mar 21</span><span>−10,83 €</span></div>
+          <div class="tx"><div class="ico" style="background:#4a2140">🛒</div><div class="m"><div class="top"><span>continente</span><span class="amt">−6,08 €</span></div><div class="left">Supermercado</div></div></div>
+          <div class="tx"><div class="ico" style="background:#4a2a30">🍽️</div><div class="m"><div class="top"><span>desayuno</span><span class="amt">−4,75 €</span></div><div class="left">Restaurante</div></div></div>
+          <div class="day"><span>Jue 23 · próximo</span><span>−3,53 €</span></div>
+          <div class="tx"><div class="ico" style="background:#3a2450">☂️</div><div class="m"><div class="top"><span>Spotify</span><span class="amt">−3,53 €</span></div><div class="left">suscripciones <span class="pend">PENDIENTE</span></div></div></div>
+          <div class="day"><span>Lun 20</span><span>−76,50 €</span></div>
+          <div class="tx"><div class="ico" style="background:#4a4020">📄</div><div class="m"><div class="top"><span>contador Octubre</span><span class="amt">−61,50 €</span></div><div class="left">Taxes</div></div></div>
+        </div>
+        <div class="tabbar"><div class="tab on"><span class="i">🏠</span>Inicio</div><div class="plus">＋</div><div class="tab"><span class="i">📊</span>Análisis</div></div>
+      </div>
+    </div>
+    <div class="label"><h3>2 · Selector en "Movimientos"</h3><p class="subtitle">Hoy arriba, los próximos pendientes marcados, y hacia abajo los días anteriores del mes.</p></div>
+  </div>
+
+  <!-- 3: everything together -->
+  <div>
+    <div class="phone compact" data-choice="together" onclick="toggleSelect(this)">
+      <div class="screen">
+        <div class="content">
+          <div class="row"><span class="logo">Lukas</span><span class="pill">Octubre ▾</span><span class="avatar">🙂</span></div>
+          <div class="hero"><small>Te quedan este mes</small><div class="big">562,92 €</div><div class="bar"><span></span></div></div>
+          <div class="day"><span>Hoy</span><span>−10,83 €</span></div>
+          <div class="tx"><div class="ico" style="background:#4a2140">🛒</div><div class="m"><div class="top"><span>continente</span><span class="amt">−6,08 €</span></div></div></div>
+          <div class="tx"><div class="ico" style="background:#4a2a30">🍽️</div><div class="m"><div class="top"><span>desayuno</span><span class="amt">−4,75 €</span></div></div></div>
+          <div class="day"><span>Presupuestos</span><span>ver todo ›</span></div>
+          <div class="cat"><div class="ico" style="background:#4a2140">🛒</div><div class="m"><div class="top"><span>Supermercado</span><span class="left over">−14,12 €</span></div><div class="mini"><span style="width:100%;background:#ff5c7a"></span></div></div></div>
+          <div class="cat"><div class="ico" style="background:#4a2a30">🍽️</div><div class="m"><div class="top"><span>Restaurante</span><span class="left near">46,33 €</span></div><div class="mini"><span style="width:85%;background:#ffb547"></span></div></div></div>
+          <div class="cat"><div class="ico" style="background:#3b2560">⭐</div><div class="m"><div class="top"><span>Ocio</span><span class="left">387,20 €</span></div><div class="mini"><span style="width:40%;background:#7cffb2"></span></div></div></div>
+        </div>
+        <div class="tabbar"><div class="tab on"><span class="i">🏠</span>Inicio</div><div class="plus">＋</div><div class="tab"><span class="i">📊</span>Análisis</div></div>
+      </div>
+    </div>
+    <div class="label"><h3>3 · Todo junto, más compacto</h3><p class="subtitle">Hoy arriba y presupuestos abajo, en filas más pequeñas. Se ve todo sin tocar nada, pero más apretado.</p></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:20px">Tocar una categoría abre su detalle (sus movimientos y editar el presupuesto). Recurrentes, categorías y ajustes viven en el menú del avatar 🙂.</p>
