@@ -1,4 +1,5 @@
 import { useTranslations } from "use-intl";
+import { LukasSpot } from "./LukasSpot.tsx";
 
 /** The questions, in order. `privacy` is also the footer's privacy link target. */
 const QUESTIONS = ["what", "budge", "passwords", "privacy", "free", "languages"] as const;
@@ -11,7 +12,10 @@ export function Faq() {
   const t = useTranslations("landing.faq");
   return (
     <section id="faq" className="lk-landing-section" aria-labelledby="faq-title">
-      <h2 id="faq-title">{t("title")}</h2>
+      <div className="lk-landing-section-head">
+        <h2 id="faq-title">{t("title")}</h2>
+        <LukasSpot id="faq" pose="point" />
+      </div>
       <ul className="lk-landing-faq">
         {QUESTIONS.map((key) => (
           <li key={key}>

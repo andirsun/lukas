@@ -4,6 +4,8 @@
  */
 @layer components {
   .lk-landing {
+    /* The 3D Lukas' layer is positioned in this box's coordinates. */
+    position: relative;
     min-height: 100dvh;
     overflow-x: clip;
   }
@@ -33,6 +35,47 @@
   .lk-landing-section {
     padding-block: var(--space-6);
     scroll-margin-top: var(--space-4);
+  }
+
+  /*
+   * Lukas spots: where the 3D Lukas stands per section (empty boxes without him). Section spots
+   * sit at the end of the heading row, his feet on the content's top edge; the heading keeps clear
+   * of them. Once he is live, the 2D Lukas in a spot (hero, closing) steps aside.
+   */
+  .lk-landing-section-head {
+    --lk-spot: 92px;
+    --lk-head-gap: var(--space-4);
+    position: relative;
+    margin-bottom: var(--lk-head-gap);
+    padding-inline-end: calc(var(--lk-spot) + var(--space-2));
+  }
+  .lk-landing .lk-landing-section-head h2 {
+    margin: 0;
+  }
+  .lk-landing-spot {
+    display: block;
+    pointer-events: none;
+  }
+  .lk-landing-section-head .lk-landing-spot {
+    position: absolute;
+    right: 0;
+    /* A little lower than the content's top edge: his soles sit near the bottom of the box. */
+    bottom: calc(-1 * var(--lk-head-gap) - var(--lk-spot) * 0.07);
+    width: var(--lk-spot);
+    height: var(--lk-spot);
+  }
+  .lk-landing-spot.is-closing {
+    width: 128px;
+    height: 128px;
+  }
+  [data-lukas-spot] > .lk-lukas {
+    transition:
+      opacity var(--sheet) ease,
+      visibility 0s linear var(--sheet);
+  }
+  html[data-lukas3d="live"] [data-lukas-spot] > .lk-lukas {
+    opacity: 0;
+    visibility: hidden;
   }
 
   /* Text links (header nav, footer): no edge, they dip like ghost buttons. */
@@ -526,6 +569,14 @@
       font-size: 32px;
       margin-bottom: var(--space-5);
     }
+    .lk-landing-section-head {
+      --lk-spot: 180px;
+      --lk-head-gap: var(--space-5);
+    }
+    .lk-landing-spot.is-closing {
+      width: 180px;
+      height: 180px;
+    }
     .lk-landing-nav-section {
       display: inline-flex;
     }
@@ -566,6 +617,21 @@
     }
     .lk-landing-section {
       padding-block: var(--space-6) calc(var(--space-6) * 1.5);
+    }
+  }
+}
+
+/* Wide enough for a free column beside the FAQ list (max 760px): Lukas stands there, next to the
+ * first questions. */
+@media (min-width: 1100px) {
+  @layer components {
+    .lk-landing-section-head .lk-landing-spot.is-faq {
+      --lk-faq-spot: 220px;
+      top: calc(100% + var(--lk-head-gap));
+      bottom: auto;
+      right: calc((100% - 760px) / 2 - var(--lk-faq-spot) / 2);
+      width: var(--lk-faq-spot);
+      height: var(--lk-faq-spot);
     }
   }
 }

@@ -9,7 +9,15 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   // Pre-bundled up front: discovering them mid-run makes Vite reload the browser and fail the run.
   optimizeDeps: {
-    include: ["motion/react", "react-router", "use-intl", "@lukas/core > zod"],
+    include: [
+      "motion/react",
+      "react-router",
+      "use-intl",
+      "@lukas/core > zod",
+      "three",
+      "@react-three/fiber",
+      "three/examples/jsm/environments/RoomEnvironment.js",
+    ],
   },
   test: {
     projects: [

@@ -3,6 +3,7 @@ import { useTranslations } from "use-intl";
 import { formatMoney } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { Lukas } from "../../lukas/Lukas.tsx";
+import { LukasSpot } from "./LukasSpot.tsx";
 
 /** Sample figures for the illustrations (cents, euros). */
 const DEMO = {
@@ -37,7 +38,10 @@ export function HowItWorks() {
 
   return (
     <section id="how" className="lk-landing-section" aria-labelledby="how-title">
-      <h2 id="how-title">{t("title")}</h2>
+      <div className="lk-landing-section-head">
+        <h2 id="how-title">{t("title")}</h2>
+        <LukasSpot id="how" pose="carry" />
+      </div>
       <ul className="lk-landing-cards is-how">
         <Step
           title={t("log.title")}

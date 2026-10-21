@@ -1,7 +1,9 @@
+import { lazy, Suspense } from "react";
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { Lukas } from "../../lukas/Lukas.tsx";
+import { Lukas3DBoundary, useLukas3DReady } from "../../lukas/lukas3d-support.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { Faq } from "./Faq.tsx";
 import { Footer } from "./Footer.tsx";
@@ -38,14 +40,41 @@ function Header() {
   );
 }
 
-/** The last nudge, next to the place where Task 17's 3D Lukas lands to celebrate. */
+/** three.js and the model: their own chunk, fetched only when `useLukas3DReady` says so. */
+const Lukas3D = lazy(() => import("../../lukas/Lukas3D.tsx"));
+
+/**
+ * The 3D Lukas, loaded once the page has rendered and the browser is idle. He travels over the
+ * page's Lukas spots (hero → ways → how it works → FAQ → closing). Until then, and whenever he
+ * can't or shouldn't move, the prerendered 2D Lukas stays.
+ */
+function TravelingLukas() {
+  const ready = useLukas3DReady();
+  if (!ready) return null;
+  return (
+    <Lukas3DBoundary>
+      <Suspense fallback={null}>
+        <Lukas3D />
+      </Suspense>
+    </Lukas3DBoundary>
+  );
+}
+
+/** The last nudge, where Lukas lands to celebrate. */
 function Closing() {
   const t = useTranslations("landing");
   const { locale } = useLocale();
   return (
-    <section className="lk-landing-section" aria-labelledby="closing-title">
+    <section id="closing" className="lk-landing-section" aria-labelledby="closing-title">
       <div className="lk-landing-closing">
-        <Lukas mood="celebrating" size={104} decorative />
+        <span
+          className="lk-landing-spot is-closing"
+          data-lukas-spot="closing"
+          data-lukas-pose="celebrate"
+          aria-hidden="true"
+        >
+          <Lukas mood="celebrating" size="100%" decorative />
+        </span>
         <h2 id="closing-title">{t("closing.title")}</h2>
         <p>{t("closing.body")}</p>
         <PressLink to={signInHref(locale)}>{t("hero.cta")}</PressLink>
@@ -70,6 +99,7 @@ export function Landing() {
         <Closing />
       </main>
       <Footer />
+      <TravelingLukas />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
+import { LukasSpot } from "./LukasSpot.tsx";
 import { signInHref } from "./links.ts";
 
 function Icon({ tone, children }: { tone: "gold" | "candy" | "good"; children: ReactNode }) {
@@ -22,7 +23,10 @@ export function UseItYourWay() {
   const { locale } = useLocale();
   return (
     <section id="ways" className="lk-landing-section" aria-labelledby="ways-title">
-      <h2 id="ways-title">{t("title")}</h2>
+      <div className="lk-landing-section-head">
+        <h2 id="ways-title">{t("title")}</h2>
+        <LukasSpot id="ways" pose="point" />
+      </div>
       <ul className="lk-landing-cards is-ways">
         <li className="lk-landing-card is-live">
           <div className="lk-landing-card-head">

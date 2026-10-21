@@ -10,7 +10,7 @@ const baseURL = "http://localhost:4180";
 
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: /landing\.spec\.ts$/,
+  testMatch: /landing(-3d)?\.spec\.ts$/,
   outputDir: "test-results/built",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
