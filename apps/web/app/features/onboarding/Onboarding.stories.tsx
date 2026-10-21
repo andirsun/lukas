@@ -878,3 +878,51 @@ export const FlowChosenCurrencySurvivesReload: Story = {
     await expect(await canvas.findByRole("radio", { name: /EUR/ })).toBeChecked();
   },
 };
+
+/**
+ * A reload after a EUR import that switched a COP choice: the account is locked to EUR, so the
+ * currency step shows EUR, not the COP still in the session's draft.
+ */
+export const FlowLockedCurrencyWinsOverDraft: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/currency"
+      currency="EUR"
+      hasTransactions
+      draft={{ currency: "COP", categoriesDone: true }}
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("radio", { name: /EUR/ }, { timeout: 3000 }),
+    ).toBeChecked();
+    await expect(canvas.getByRole("radio", { name: /COP/ })).not.toBeChecked();
+  },
+};
+
+/**
+ * ENTRAR DIRECTO when every suggestion was deselected (and archived) in an earlier visit: it never
+ * leaves the account without categories; the suggestions come back.
+ */
+export const FlowEnterDirectlyAfterDeselectingAll: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome"
+      currency="EUR"
+      categories="archived"
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Entrar directo" }));
+    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    const restored = calls(args.onRequest).filter((l) => l.endsWith('{"archived":false}'));
+    await expect(restored).toHaveLength(SUGGESTED_CATEGORIES.length);
+    await expect(calls(args.onRequest).at(-1)).toBe(
+      'PATCH /api/v1/me {"onboardingCompleted":true}',
+    );
+  },
+};

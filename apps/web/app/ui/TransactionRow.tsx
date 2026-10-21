@@ -20,6 +20,11 @@ export interface TransactionRowProps {
   onOpen(): void;
   /** Marks a pending transaction paid. Without it a pending row shows a plain label. */
   onPay?(): Promise<void>;
+  /**
+   * Paid from this row just now: the badge stays (showing "✓ Pagado") although `status` is
+   * already `paid`, so the change is seen and announced where it happened.
+   */
+  paidHere?: boolean;
 }
 
 /**
@@ -36,6 +41,7 @@ export function TransactionRow({
   status,
   onOpen,
   onPay,
+  paidHere = false,
 }: TransactionRowProps) {
   const t = useTranslations("common");
   const { locale } = useLocale();
@@ -65,7 +71,7 @@ export function TransactionRow({
         </div>
         <div className="lk-status flex flex-wrap items-center gap-x-(--space-2)">
           <span id={`${id}-category`}>{categoryName}</span>
-          {status === "pending" &&
+          {(status === "pending" || (paidHere && onPay)) &&
             (onPay ? (
               <span className="lk-row-control -my-(--space-3)">
                 <PendingBadge onPay={onPay} />

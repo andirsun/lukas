@@ -2,6 +2,7 @@ import { InvalidAmountError } from "@lukas/core";
 import { describe, expect, it } from "vitest";
 import {
   detectLocale,
+  formatAmountInput,
   formatDay,
   formatMoney,
   formatMonth,
@@ -181,5 +182,23 @@ describe("parseAmountInput", () => {
   it("rejects garbage", () => {
     expect(() => parseAmountInput("abc", "es")).toThrow(InvalidAmountError);
     expect(() => parseAmountInput("", "en")).toThrow(InvalidAmountError);
+  });
+});
+
+describe("formatAmountInput", () => {
+  it("shows what is being typed as money, keeping a trailing separator or zero", () => {
+    expect(formatAmountInput("", "EUR", "es")).toBe(`0${NBSP}€`);
+    expect(formatAmountInput("6", "EUR", "es")).toBe(`6${NBSP}€`);
+    expect(formatAmountInput("6,", "EUR", "es")).toBe(`6,${NBSP}€`);
+    expect(formatAmountInput("6,0", "EUR", "es")).toBe(`6,0${NBSP}€`);
+    expect(formatAmountInput("6,08", "EUR", "es")).toBe(`6,08${NBSP}€`);
+    expect(formatAmountInput("6.5", "EUR", "en")).toBe("€6.5");
+  });
+
+  it("groups thousands like formatMoney does", () => {
+    expect(formatAmountInput("50000", "COP", "es")).toBe("$50.000");
+    expect(formatAmountInput("4300000", "COP", "es")).toBe("$4.300.000");
+    expect(formatAmountInput("50000", "COP", "en")).toBe(`COP${NBSP}50,000`);
+    expect(formatAmountInput("12345,6", "EUR", "es")).toBe(`12.345,6${NBSP}€`);
   });
 });

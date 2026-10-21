@@ -36,10 +36,17 @@ const TOAST_MS = 5000;
 
 const ToastContext = createContext<ToastApi | null>(null);
 
+/** Lets a modal (the Sheet) host the toasts while it is open: see `useToastHost`. */
+const ToastHostContext = createContext<((host: HTMLElement | null) => void) | null>(null);
+
 /**
  * Hosts one toast at a time at the bottom of the screen; a new one replaces the current one.
  * Toasts leave after `dismissAfterMs` (5 seconds; paused while hovered or focused) or when an
  * action is taken. Info toasts live in a polite `status` region, errors in an `alert` region.
+ *
+ * While a modal sheet is open, a toast shows inside it (`useToastHost`): outside an
+ * `aria-modal` dialog it would be hidden from assistive technology and out of the dialog's focus
+ * trap. The (empty) regions stay on the page otherwise, and the toast moves back when it closes.
  */
 export function ToastProvider({
   children,
@@ -52,6 +59,7 @@ export function ToastProvider({
   const [toast, setToast] = useState<(ToastOptions & { id: number }) | null>(null);
   const [paused, setPaused] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [host, setHost] = useState<HTMLElement | null>(null);
   const nextId = useRef(0);
   const reduceMotion = useReducedMotionPreference();
 
@@ -75,6 +83,8 @@ export function ToastProvider({
   }, [toast, paused, dismiss, dismissAfterMs]);
 
   const api = useMemo(() => ({ show }), [show]);
+  // Inside an open modal only while there is a toast: empty regions stay out of the dialog.
+  const inSheet = host !== null && toast !== null;
 
   const render = (tone: "info" | "error") => {
     const current = toast && (toast.tone ?? "info") === tone ? toast : null;
@@ -124,10 +134,17 @@ export function ToastProvider({
 
   return (
     <ToastContext.Provider value={api}>
-      {children}
+      <ToastHostContext.Provider value={setHost}>{children}</ToastHostContext.Provider>
       {mounted &&
         createPortal(
-          <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex flex-col items-center px-(--space-4) pb-[max(var(--space-4),env(safe-area-inset-bottom))]">
+          <div
+            className={cx(
+              "pointer-events-none flex flex-col items-center",
+              inSheet
+                ? "pt-(--space-2)"
+                : "fixed inset-x-0 bottom-0 z-50 px-(--space-4) pb-[calc(max(var(--space-4),env(safe-area-inset-bottom))+var(--toast-lift,0px))]",
+            )}
+          >
             <div role="status" className="w-full max-w-[480px]">
               {render("info")}
             </div>
@@ -135,7 +152,7 @@ export function ToastProvider({
               {render("error")}
             </div>
           </div>,
-          document.body,
+          inSheet ? host : document.body,
         )}
     </ToastContext.Provider>
   );
@@ -145,4 +162,12 @@ export function useToast(): ToastApi {
   const value = useContext(ToastContext);
   if (!value) throw new Error("useToast must be used inside <ToastProvider>");
   return value;
+}
+
+/**
+ * For a modal: returns a setter to call with the element the toasts should render in while the
+ * modal is open (and with null when it closes). Null outside a `ToastProvider`.
+ */
+export function useToastHost(): ((host: HTMLElement | null) => void) | null {
+  return useContext(ToastHostContext);
 }

@@ -34,6 +34,20 @@ function press(value: string, key: Key, separator: string): string {
 }
 
 /**
+ * The value after typing `key` (a `KeyboardEvent.key`) on a physical keyboard: digits, either
+ * decimal separator (`,` or `.`, so a desktop numpad works in both languages) and Backspace. Null
+ * when the key is not one of those.
+ */
+export function typeOnKeypad(value: string, key: string, locale: Locale): string | null {
+  if (/^[0-9]$/.test(key))
+    return press(value, { kind: "digit", digit: key }, decimalSeparator(locale));
+  if (key === "," || key === ".")
+    return press(value, { kind: "decimal" }, decimalSeparator(locale));
+  if (key === "Backspace") return press(value, { kind: "backspace" }, decimalSeparator(locale));
+  return null;
+}
+
+/**
  * The add sheet's numeric keypad: digits, the locale's decimal key (`,` es, `.` en) and
  * backspace, at most two decimals. It edits the raw text and reports every change; keys that
  * would not change it (a third decimal, a second separator) are ignored.

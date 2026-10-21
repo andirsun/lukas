@@ -7,6 +7,8 @@ export interface SidebarProps {
   current: string;
   /** Opens the add sheet. */
   onAdd(): void;
+  /** Sections whose screen does not exist yet: listed, marked "pronto", and not links. */
+  soon?: readonly string[];
 }
 
 const LINKS = [
@@ -21,7 +23,7 @@ const LINKS = [
  * Desktop navigation, in place of the bottom bar: the wordmark, the five sections (the current
  * one raised) and a primary "Agregar" that opens the add sheet.
  */
-export function Sidebar({ current, onAdd }: SidebarProps) {
+export function Sidebar({ current, onAdd, soon = [] }: SidebarProps) {
   const t = useTranslations();
   return (
     <nav
@@ -29,16 +31,23 @@ export function Sidebar({ current, onAdd }: SidebarProps) {
       className="flex w-56 flex-none flex-col gap-(--space-2) border-stroke border-r-2 bg-surface-sunken p-(--space-4)"
     >
       <span className="lk-logo px-(--space-3) pb-(--space-4)">{t("app.name")}</span>
-      {LINKS.map(({ key, to }) => (
-        <Link
-          key={key}
-          to={to}
-          className="lk-side-link"
-          aria-current={current === key ? "page" : undefined}
-        >
-          {t(`nav.${key}`)}
-        </Link>
-      ))}
+      {LINKS.map(({ key, to }) =>
+        soon.includes(key) ? (
+          <span key={key} className="lk-side-link is-soon">
+            {t(`nav.${key}`)}
+            <span className="lk-soon ml-auto">{t("nav.soon")}</span>
+          </span>
+        ) : (
+          <Link
+            key={key}
+            to={to}
+            className="lk-side-link"
+            aria-current={current === key ? "page" : undefined}
+          >
+            {t(`nav.${key}`)}
+          </Link>
+        ),
+      )}
       <PressButton className="mt-(--space-4)" onClick={onAdd}>
         {t("nav.add")}
       </PressButton>

@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { useTranslations } from "use-intl";
 import { durationToken, useReducedMotionPreference } from "./motion-tokens.ts";
 import { PressButton } from "./PressButton.tsx";
+import { useToastHost } from "./Toast.tsx";
 
 export interface SheetProps {
   open: boolean;
@@ -40,7 +41,7 @@ function focusables(root: HTMLElement): HTMLElement[] {
  * A bottom sheet (`lk-sheet`) over a dimmed backdrop: a modal dialog named by `title`. Opening
  * moves focus into it and Tab stays inside; Escape, the close button, the backdrop and dragging
  * the header down all call `onClose`. Focus returns to whatever had it before. Slides over
- * `--sheet`; under reduced motion it only fades.
+ * `--sheet`; under reduced motion it only fades. While open it hosts the toasts (`useToastHost`).
  */
 export function Sheet({ open, onClose, title, children }: SheetProps) {
   const t = useTranslations("common");
@@ -51,6 +52,15 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
   const [mounted, setMounted] = useState(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const setToastHost = useToastHost();
+  const [toastSlot, setToastSlot] = useState<HTMLDivElement | null>(null);
+
+  // While open, toasts render inside the dialog (announced, and reachable in its focus trap).
+  useEffect(() => {
+    if (!open || !toastSlot || !setToastHost) return;
+    setToastHost(toastSlot);
+    return () => setToastHost(null);
+  }, [open, toastSlot, setToastHost]);
 
   useEffect(() => setMounted(true), []);
 
@@ -150,6 +160,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
               </div>
             </div>
             {children}
+            <div ref={setToastSlot} className="sticky bottom-0 z-10" />
           </motion.div>
         </div>
       )}

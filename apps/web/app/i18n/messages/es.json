@@ -34,10 +34,64 @@
       "transactions": "Movimientos"
     },
     "spent_label": "Gastado este mes",
-    "of_budget": "de {amount}"
+    "of_budget": "de {amount}",
+    "meta_title": "Inicio · Lukitas",
+    "remaining_label": "Te quedan este mes",
+    "remaining_label_past": "Te quedaron en {month}",
+    "over_label": "Te pasaste este mes",
+    "over_label_past": "Te pasaste en {month}",
+    "spent_label_past": "Gastado en {month}",
+    "spent": "Gastado {amount}",
+    "spent_meter": "Gastado {spent} de {budget}",
+    "no_budget_meta": "Sin presupuestos todavía",
+    "day_today": "Hoy · {day}",
+    "day_yesterday": "Ayer · {day}",
+    "day_upcoming": "{day} · próximo",
+    "empty_transactions": "Aún no hay movimientos en {month}. Toca ＋ y anota el primero.",
+    "no_categories_title": "Aún no tienes categorías",
+    "no_categories_lead": "Las necesitas para anotar tus gastos. Empieza con las sugeridas y cámbialas cuando quieras.",
+    "use_suggested": "Usar las sugeridas",
+    "no_expense_categories": "No tienes categorías de gasto activas.",
+    "lukas_empty": "¡Hola! Anota tu primer gasto con el ＋ y yo llevo la cuenta.",
+    "lukas_no_budget": "Este mes llevas {spent} en gastos. Cada apunte cuenta.",
+    "lukas_over_total": "Este mes vas {over} por encima de tus presupuestos. Aquí lo tienes todo a la vista.",
+    "nudges_label": "Para empezar",
+    "nudge_budgets_title": "Ponle presupuesto a tus categorías",
+    "nudge_budgets_lead": "Así Lukitas te avisa antes de que te pases. Pronto lo harás desde cada categoría.",
+    "nudge_import_title": "Trae tu historial",
+    "nudge_import_lead": "Importa lo que llevas en Budge y empieza con tus números de verdad. Pronto desde Ajustes.",
+    "nudge_dismiss": "Ahora no: {title}",
+    "account": "Tu cuenta",
+    "sign_out": "Cerrar sesión"
   },
   "transaction": {
-    "add_expense": "Agregar gasto"
+    "add_expense": "Agregar gasto",
+    "title_expense": "Nuevo gasto",
+    "title_income": "Nuevo ingreso",
+    "title_edit": "Editar movimiento",
+    "kind_label": "Tipo de movimiento",
+    "expense": "Gasto",
+    "income": "Ingreso",
+    "category_label": "Categoría",
+    "more_categories": "Más",
+    "fewer_categories": "Menos",
+    "more_options": "Más opciones",
+    "date_label": "Fecha",
+    "today": "Hoy",
+    "pending_label": "Pendiente (aún no lo pagas)",
+    "note_label": "Nota (opcional)",
+    "save_changes": "Guardar cambios",
+    "delete": "Eliminar",
+    "saved_expense": "Gasto en {category}: {amount}",
+    "saved_income": "Ingreso de {category}: {amount}",
+    "updated": "Cambios guardados: {name}",
+    "deleted": "Eliminado: {name}",
+    "undone": "Quitado: {name}",
+    "restored": "De vuelta: {name}",
+    "name_it": "Ponerle nombre",
+    "paid": "Pagado: {name} · {amount}",
+    "no_categories_expense": "Aún no tienes categorías de gasto.",
+    "no_categories_income": "Aún no tienes categorías de ingreso."
   },
   "lukas": {
     "first_of_day": {
@@ -48,7 +102,7 @@
     "on_track": {
       "1": "Vas muy bien: te quedan {remaining} para {daysLeft, plural, one {# día} other {# días}}.",
       "2": "Todo en orden. Quedan {remaining} y {daysLeft, plural, one {# día} other {# días}} de mes.",
-      "3": "Buen ritmo, tú sigues así: {remaining} libres, {daysLeft, plural, one {# día} other {# días}} por delante."
+      "3": "Buen ritmo: {remaining} libres, {daysLeft, plural, one {# día} other {# días}} por delante."
     },
     "near_limit": {
       "1": "Cuidado, a {category} solo le quedan {remaining}.",
@@ -56,14 +110,14 @@
       "3": "Despacito con {category}: te quedan {remaining}."
     },
     "over_budget": {
-      "1": "¡Ojo! Te pasaste {over} en {category}.",
-      "2": "{category} se desbordó por {over}. Toca ajustar el resto del mes.",
-      "3": "Nos pasamos {over} en {category}. Sin drama: mañana se compensa."
+      "1": "En {category} vas {over} por encima. Nada grave: ya lo sabes.",
+      "2": "{category} pasó su presupuesto por {over}. Verlo ya es un paso.",
+      "3": "Nos pasamos {over} en {category}. Sin drama: aquí lo tienes a la vista."
     },
     "income_received": {
       "1": "¡Entró dinero! {amount} más en tu cuenta.",
       "2": "Ingreso anotado: {amount}. ¡Buena noticia!",
-      "3": "Llegaron {amount}. Úsalos con cabeza, tú puedes."
+      "3": "Llegaron {amount} a tu cuenta. ¡Bien!"
     },
     "pending_paid": {
       "1": "Pagado: {amount} menos de pendientes. ¡Qué alivio!",
@@ -73,7 +127,7 @@
     "month_last_day": {
       "1": "¡Último día del mes! Te sobran {remaining}.",
       "2": "Hoy cierra el mes con {remaining} a tu favor. ¡Casi lo logras!",
-      "3": "Última curva del mes: {remaining} de margen. Aguanta un día más."
+      "3": "Última curva del mes: {remaining} de margen."
     },
     "month_closed_green": {
       "1": "¡Mes cerrado en verde! Te sobraron {remaining}.",
@@ -109,7 +163,8 @@
     "recurring": "Recurrentes",
     "categories": "Categorías",
     "settings": "Ajustes",
-    "add": "Agregar"
+    "add": "Agregar",
+    "soon": "Pronto"
   },
   "mascot": {
     "happy": "Lukitas, contento",

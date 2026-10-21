@@ -34,10 +34,64 @@
       "transactions": "Transactions"
     },
     "spent_label": "Spent this month",
-    "of_budget": "of {amount}"
+    "of_budget": "of {amount}",
+    "meta_title": "Home · Lukitas",
+    "remaining_label": "Left this month",
+    "remaining_label_past": "Left in {month}",
+    "over_label": "Over this month",
+    "over_label_past": "Over in {month}",
+    "spent_label_past": "Spent in {month}",
+    "spent": "Spent {amount}",
+    "spent_meter": "Spent {spent} of {budget}",
+    "no_budget_meta": "No budgets yet",
+    "day_today": "Today · {day}",
+    "day_yesterday": "Yesterday · {day}",
+    "day_upcoming": "{day} · upcoming",
+    "empty_transactions": "No transactions in {month} yet. Tap ＋ and log the first one.",
+    "no_categories_title": "You have no categories yet",
+    "no_categories_lead": "You need them to log your spending. Start with the suggested ones and change them whenever you like.",
+    "use_suggested": "Use the suggested ones",
+    "no_expense_categories": "You have no active spending categories.",
+    "lukas_empty": "Hi! Log your first expense with ＋ and I'll keep count.",
+    "lukas_no_budget": "You've spent {spent} this month. Every entry counts.",
+    "lukas_over_total": "This month you're {over} above your budgets. It's all right here to see.",
+    "nudges_label": "To get started",
+    "nudge_budgets_title": "Give your categories a budget",
+    "nudge_budgets_lead": "Then Lukitas can tell you before you go over. Soon you'll set it from each category.",
+    "nudge_import_title": "Bring your history",
+    "nudge_import_lead": "Import what you have in Budge and start with your real numbers. Soon from Settings.",
+    "nudge_dismiss": "Not now: {title}",
+    "account": "Your account",
+    "sign_out": "Sign out"
   },
   "transaction": {
-    "add_expense": "Add expense"
+    "add_expense": "Add expense",
+    "title_expense": "New expense",
+    "title_income": "New income",
+    "title_edit": "Edit transaction",
+    "kind_label": "Transaction type",
+    "expense": "Expense",
+    "income": "Income",
+    "category_label": "Category",
+    "more_categories": "More",
+    "fewer_categories": "Fewer",
+    "more_options": "More options",
+    "date_label": "Date",
+    "today": "Today",
+    "pending_label": "Pending (not paid yet)",
+    "note_label": "Note (optional)",
+    "save_changes": "Save changes",
+    "delete": "Delete",
+    "saved_expense": "Expense in {category}: {amount}",
+    "saved_income": "Income from {category}: {amount}",
+    "updated": "Changes saved: {name}",
+    "deleted": "Deleted: {name}",
+    "undone": "Removed: {name}",
+    "restored": "Back: {name}",
+    "name_it": "Name it",
+    "paid": "Paid: {name} · {amount}",
+    "no_categories_expense": "You have no spending categories yet.",
+    "no_categories_income": "You have no income categories yet."
   },
   "lukas": {
     "first_of_day": {
@@ -48,7 +102,7 @@
     "on_track": {
       "1": "You're doing great: {remaining} left for {daysLeft, plural, one {# day} other {# days}}.",
       "2": "All good here. {remaining} left and {daysLeft, plural, one {# day} other {# days}} to go.",
-      "3": "Nice pace, keep it up: {remaining} free, {daysLeft, plural, one {# day} other {# days}} ahead."
+      "3": "Nice pace: {remaining} free, {daysLeft, plural, one {# day} other {# days}} ahead."
     },
     "near_limit": {
       "1": "Careful, {category} only has {remaining} left.",
@@ -56,14 +110,14 @@
       "3": "Easy on {category}: you have {remaining} left."
     },
     "over_budget": {
-      "1": "Heads up! You went {over} over in {category}.",
-      "2": "{category} overflowed by {over}. Time to trim the rest of the month.",
-      "3": "We overshot {category} by {over}. No drama: tomorrow evens it out."
+      "1": "{category} is {over} over budget. No big deal: now you know.",
+      "2": "{category} went {over} past its budget. Seeing it is already a step.",
+      "3": "We went {over} over in {category}. No drama: it's all here to see."
     },
     "income_received": {
       "1": "Money in! {amount} more in your account.",
       "2": "Income logged: {amount}. Good news!",
-      "3": "{amount} just landed. Spend it wisely, you've got this."
+      "3": "{amount} just landed in your account. Nice!"
     },
     "pending_paid": {
       "1": "Paid: {amount} off your pending list. What a relief!",
@@ -73,7 +127,7 @@
     "month_last_day": {
       "1": "Last day of the month! You have {remaining} to spare.",
       "2": "The month ends today with {remaining} on your side. Almost there!",
-      "3": "Final stretch: {remaining} of cushion. Hang on one more day."
+      "3": "Final stretch of the month: {remaining} of cushion."
     },
     "month_closed_green": {
       "1": "Month closed in the green! You saved {remaining}.",
@@ -109,7 +163,8 @@
     "recurring": "Recurring",
     "categories": "Categories",
     "settings": "Settings",
-    "add": "Add"
+    "add": "Add",
+    "soon": "Soon"
   },
   "mascot": {
     "happy": "Lukitas, happy",

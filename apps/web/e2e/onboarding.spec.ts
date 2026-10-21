@@ -74,6 +74,7 @@ test.describe("from Colombia, in Bogotá", () => {
     await signUpNewUser(page);
     await page.getByRole("button", { name: "Entrar directo" }).click();
     await expect(page).toHaveURL(/\/app$/);
+    // No budgets yet: home shows what was spent, not what is left.
     await expect(page.getByRole("region", { name: "Gastado este mes" })).toContainText("$0");
 
     const me = await profileOf(page);
@@ -201,8 +202,9 @@ test.describe("from Spain", () => {
       spent: number;
     };
     expect(summary.spent).toBeGreaterThan(0);
-    await expect(page.getByRole("region", { name: "Gastado este mes" })).toContainText(
-      `${(summary.spent / 100).toFixed(2).replace(".", ",")} €`,
+    // With a budget, home leads with what is left and says what was spent under it.
+    await expect(page.getByRole("region", { name: "Te quedan este mes" })).toContainText(
+      `Gastado ${(summary.spent / 100).toFixed(2).replace(".", ",")} €`,
     );
     const categories = await categoriesOf(page);
     expect(categories.find((c) => c.name === "Casa")?.currentBudget).toBe(60000);

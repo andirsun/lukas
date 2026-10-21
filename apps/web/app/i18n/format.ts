@@ -28,6 +28,32 @@ const MINOR_UNIT = 100;
 /** Currencies shown without decimals; stored in hundredths like the rest. */
 const WHOLE_UNIT_CURRENCIES = new Set(["COP", "CLP"]);
 
+/** The formatter `formatMoney` uses for a currency and locale (before its own fix-ups). */
+function moneyFormat(
+  currency: string,
+  locale: Locale,
+  extra: Intl.NumberFormatOptions = {},
+): { format: Intl.NumberFormat; colombian: boolean } {
+  // Colombians write pesos as "$50.000": `es-CO` with the narrow symbol, scoped to COP so the
+  // other currencies keep the plain `es` conventions (EUR stays "562,92 €"). In English the COP
+  // code stays, because "$50,000" would read as dollars.
+  const colombian = currency === "COP" && locale === "es";
+  const format = new Intl.NumberFormat(colombian ? "es-CO" : locale, {
+    style: "currency",
+    currency,
+    ...(colombian ? { currencyDisplay: "narrowSymbol" as const } : {}),
+    ...(WHOLE_UNIT_CURRENCIES.has(currency)
+      ? { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+      : {}),
+    ...extra,
+  });
+  return { format, colombian };
+}
+
+/** `es-CO` puts a (non-breaking) space after the symbol; the spec writes "$50.000". */
+const tightPeso = (text: string, colombian: boolean) =>
+  colombian ? text.replace(/\$\s/, "$") : text;
+
 /**
  * Formats integer minor units (hundredths). Negatives use the real minus sign (U+2212) rather
  * than the hyphen-minus `Intl` emits, so "−6,08 €" never breaks or reads as a dash.
@@ -38,22 +64,38 @@ export function formatMoney(
   locale: Locale,
   opts: { sign?: "auto" | "always" } = {},
 ): string {
-  // Colombians write pesos as "$50.000": `es-CO` with the narrow symbol, scoped to COP so the
-  // other currencies keep the plain `es` conventions (EUR stays "562,92 €"). In English the COP
-  // code stays, because "$50,000" would read as dollars.
-  const colombian = currency === "COP" && locale === "es";
-  const format = new Intl.NumberFormat(colombian ? "es-CO" : locale, {
-    style: "currency",
-    currency,
+  const { format, colombian } = moneyFormat(currency, locale, {
     signDisplay: opts.sign === "always" ? "exceptZero" : "negative",
-    ...(colombian ? { currencyDisplay: "narrowSymbol" as const } : {}),
-    ...(WHOLE_UNIT_CURRENCIES.has(currency)
-      ? { minimumFractionDigits: 0, maximumFractionDigits: 0 }
-      : {}),
   });
-  const text = format.format(cents / MINOR_UNIT).replaceAll("-", MINUS);
-  // `es-CO` puts a (non-breaking) space after the symbol; the spec writes "$50.000".
-  return colombian ? text.replace(/\$\s/, "$") : text;
+  return tightPeso(format.format(cents / MINOR_UNIT).replaceAll("-", MINUS), colombian);
+}
+
+/**
+ * What is being typed on the keypad (`6,0`, raw, in the locale's decimal separator) shown as
+ * money, the way `formatMoney` writes it (`6,0 €`, `$50.000`, `€6.5`): the whole part is grouped
+ * and the decimals stay exactly as typed, a trailing separator or zero included. Empty is 0.
+ */
+export function formatAmountInput(raw: string, currency: string, locale: Locale): string {
+  const separator = locale === "es" ? "," : ".";
+  const [whole = "", decimals] = raw.split(separator);
+  const { format, colombian } = moneyFormat(currency, locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+  let text = "";
+  let placed = false;
+  const parts = format.formatToParts(Number(whole || "0"));
+  parts.forEach((part, index) => {
+    text += part.value;
+    const lastNumber =
+      (part.type === "integer" || part.type === "group") &&
+      !parts.slice(index + 1).some((p) => p.type === "integer");
+    if (lastNumber && decimals !== undefined && !placed) {
+      text += separator + decimals;
+      placed = true;
+    }
+  });
+  return tightPeso(text, colombian);
 }
 
 /**

@@ -88,13 +88,14 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * The currency to preselect: one they chose this session; else, with transactions (the currency
-   * is locked), the account's; else the default for where they are (CO → COP, Europe → EUR, USD).
+   * The currency to preselect: with transactions (the currency is locked), the account's, even
+   * over a choice in the draft (an import may have switched it since); else one they chose this
+   * session; else the default for where they are (CO → COP, Europe → EUR, else USD).
    */
   const preset = (): SupportedCurrency | null => {
     if (!me.data || !draft || hasTransactions.data === undefined) return null;
-    if (draft.currency) return draft.currency;
     if (hasTransactions.data && isSupportedCurrency(me.data.currency)) return me.data.currency;
+    if (draft.currency) return draft.currency;
     return defaultCurrency(languages, browser.zone);
   };
   if (currency === null) {
@@ -246,14 +247,35 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
   /**
    * ENTRAR DIRECTO: the preselected currency, the suggested categories, no budgets, then the app.
    * Safe to tap again after a failure: the suggestions are re-read before creating the missing ones.
+   * It never leaves the account without categories: if every one is archived (all deselected in
+   * an earlier visit), the suggestions come back.
    */
   const enterDirectly = () =>
     run(async () => {
       if (!hasTransactions.data) await applyCurrency(currency);
       await createSuggestions(api, ALL_SUGGESTIONS, locale);
+      await restoreSuggestionsIfNoneActive();
       await refreshCategories();
       await complete();
     });
+
+  /** Brings back the archived suggestions when no category at all is active. */
+  async function restoreSuggestionsIfNoneActive() {
+    const all = await allCategories(api);
+    if (all.some((c) => !c.archived)) return;
+    await Promise.all(
+      all
+        .filter((c) => suggestionFor(c.name))
+        .map(async (c) =>
+          dataOf(
+            await api.PATCH("/v1/categories/{id}", {
+              params: { path: { id: c.id } },
+              body: { archived: false },
+            }),
+          ),
+        ),
+    );
+  }
 
   const saveCurrency = () =>
     run(async () => {

@@ -5,6 +5,8 @@ export interface BottomBarProps {
   current: "home" | "insights";
   /** Opens the add sheet. */
   onAdd(): void;
+  /** Tabs whose screen does not exist yet: shown, marked "pronto", and not a link. */
+  soon?: readonly ("home" | "insights")[];
 }
 
 const TABS = [
@@ -17,10 +19,21 @@ const TABS = [
  * the add sheet; recurring, categories and settings live in the avatar menu. On wide screens the
  * layout shows `Sidebar` instead.
  */
-export function BottomBar({ current, onAdd }: BottomBarProps) {
+export function BottomBar({ current, onAdd, soon = [] }: BottomBarProps) {
   const t = useTranslations("nav");
   const tab = (key: (typeof TABS)[number]["key"]) => {
     const { to, glyph } = TABS.find((x) => x.key === key) as (typeof TABS)[number];
+    if (soon.includes(key)) {
+      return (
+        <span className="lk-tab is-soon">
+          <span className="lk-tab-ico" aria-hidden="true">
+            {glyph}
+          </span>
+          {t(key)}
+          <span className="lk-soon">{t("soon")}</span>
+        </span>
+      );
+    }
     return (
       <Link to={to} className="lk-tab" aria-current={current === key ? "page" : undefined}>
         <span className="lk-tab-ico" aria-hidden="true">

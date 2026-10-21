@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { expect, fireEvent, fn, screen, userEvent, waitFor, within } from "storybook/test";
 import { useTranslations } from "use-intl";
 import { Money } from "./Money.tsx";
 import { PressButton } from "./PressButton.tsx";
+import { Sheet } from "./Sheet.tsx";
 import { ToastProvider, useToast } from "./Toast.tsx";
 
 function SavedToastDemo({ onUndo, auto = false }: { onUndo?: () => void; auto?: boolean }) {
@@ -259,5 +260,37 @@ export const ReducedMotion: Story = {
       expect(getComputedStyle(toast).opacity).toBe("1");
     });
     await expect(offsets.every((y) => y === 0)).toBe(true);
+  },
+};
+
+function SheetWithFailingSave() {
+  const toast = useToast();
+  const [open, setOpen] = useState(true);
+  return (
+    <Sheet open={open} onClose={() => setOpen(false)} title="Nuevo gasto">
+      <PressButton
+        onClick={() => toast.show({ tone: "error", message: "Sin conexión. Inténtalo de nuevo." })}
+      >
+        Guardar
+      </PressButton>
+    </Sheet>
+  );
+}
+
+/**
+ * An error while a modal sheet is open shows inside the dialog: announced as an alert (the
+ * rest of the page is hidden from assistive technology) and reachable with Tab in its focus trap.
+ * When the sheet closes, the toast moves back to the page.
+ */
+export const ErrorInsideSheet: Story = {
+  render: () => <SheetWithFailingSave />,
+  play: async () => {
+    const dialog = await screen.findByRole("dialog", { name: "Nuevo gasto" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "Guardar" }));
+    const alert = await within(dialog).findByRole("alert");
+    await expect(alert).toHaveTextContent("Sin conexión. Inténtalo de nuevo.");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 4000 });
+    await expect(screen.getByRole("alert")).toHaveTextContent("Sin conexión. Inténtalo de nuevo.");
   },
 };

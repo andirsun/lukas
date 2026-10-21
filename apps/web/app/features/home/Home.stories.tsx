@@ -1,0 +1,519 @@
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, fireEvent, fn, screen, userEvent, waitFor, within } from "storybook/test";
+import { expectTarget } from "../../../.storybook/story-utils.ts";
+import { HomeStage } from "./story-harness.tsx";
+
+/**
+ * Home (spec §2.5) and the add/edit sheet (§2.6) against a fake API: this month's budgets and
+ * transactions, adding, editing, undoing, paying a pending one, and the cards around them.
+ */
+
+interface Spies {
+  onRequest(line: string, headers: Record<string, string>): void;
+}
+
+const meta = {
+  title: "Home/Home",
+  args: { onRequest: fn() },
+  // Phone first: the stories run at 390×844 (the vitest addon sizes the page from this global).
+  parameters: {
+    viewport: {
+      options: {
+        phone: { name: "Phone", styles: { width: "390px", height: "844px" }, type: "mobile" },
+        desktop: { name: "Desktop", styles: { width: "1280px", height: "800px" }, type: "desktop" },
+      },
+    },
+  },
+  globals: { viewport: { value: "phone", isRotated: false } },
+} satisfies Meta<Spies>;
+
+export default meta;
+type Story = StoryObj<Spies>;
+
+type Canvas = ReturnType<typeof within>;
+
+const calls = (spy: Spies["onRequest"]) =>
+  (spy as unknown as ReturnType<typeof fn>).mock.calls.map(
+    (call) => [call[0] as string, call[1] as Record<string, string>] as const,
+  );
+const posts = (spy: Spies["onRequest"]) =>
+  calls(spy).filter(([line]) => line.startsWith("POST /api/v1/transactions "));
+
+const NBSP = " ";
+const eur = (text: string) => `${text}${NBSP}€`;
+/** An accessible name ending in an amount in euros (any space before the sign). */
+const endsInEuros = (start: string, amount: string) => new RegExp(`^${start} ${amount}\\s€$`);
+
+/** Waits for a toast (the regions exist, empty, before any toast shows) and returns it. */
+async function toastSaying(text: string, role: "status" | "alert" = "status") {
+  let found: HTMLElement | null = null;
+  await waitFor(
+    () => {
+      const region = screen.getByRole(role);
+      expect(region).toHaveTextContent(text);
+      const toast = region.querySelector<HTMLElement>(".lk-toast");
+      expect(toast && getComputedStyle(toast).opacity).toBe("1");
+      found = toast;
+    },
+    { timeout: 4000 },
+  );
+  return within(found as unknown as HTMLElement);
+}
+
+const hero = (canvas: Canvas) =>
+  canvas.findByRole("region", { name: "Te quedan este mes" }, { timeout: 4000 });
+
+/** Opens the add sheet from the bottom bar's ＋. */
+async function openAdd(canvas: Canvas) {
+  await userEvent.click(await canvas.findByRole("button", { name: "Agregar" }));
+  return within(await screen.findByRole("dialog", { name: "Nuevo gasto" }));
+}
+
+/** Picks a category chip in the sheet (the default is the month's most used, Restaurante). */
+async function pickCategory(sheet: Canvas, name: string) {
+  await userEvent.click(
+    within(sheet.getByRole("group", { name: "Categoría" })).getByRole("button", { name }),
+  );
+}
+
+/** Types an amount on the sheet's keypad: digits and the decimal comma. */
+async function typeAmount(sheet: Canvas, text: string) {
+  const keypad = within(sheet.getByRole("group", { name: "Teclado numérico" }));
+  for (const key of text) {
+    await userEvent.click(keypad.getByRole("button", { name: key === "," ? "Coma decimal" : key }));
+  }
+}
+
+/** The sheet slides out (`--sheet`); on a loaded machine its frames come late, so wait long. */
+const dialogGone = () =>
+  waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 8000 });
+
+// -- Home ------------------------------------------------------------------------------------------
+
+/** The month at a glance: what is left, Lukitas, and one row per spending category. */
+export const Budgets: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const region = await hero(canvas);
+    await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
+    await expect(region).toHaveTextContent(`Gastado ${eur("718,87")}`);
+    await expect(region).toHaveTextContent(`de ${eur("1220,00")}`);
+    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    const panel = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    // Status in words, never color alone.
+    await expect(
+      panel.getByRole("button", { name: endsInEuros("Supermercado Te pasaste", "14,12") }),
+    ).toBeVisible();
+    await expect(
+      panel.getByRole("button", { name: endsInEuros("Restaurante Quedan", "41,58") }),
+    ).toBeVisible();
+    // Lukitas talks about the month (the worst category first).
+    await expect(canvas.getByText(/Supermercado/, { selector: ".lk-bubble" })).toBeVisible();
+    await expectTarget(canvas.getByRole("button", { name: "Agregar" }));
+    await expectTarget(canvas.getByRole("button", { name: "Tu cuenta" }));
+  },
+};
+
+/** The same month by day: today on top, the upcoming pending next, then the past. */
+export const Transactions: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));
+    const days = await panel.findAllByRole("region");
+    await expect(days[0]).toHaveAccessibleName(/^Hoy · /);
+    await expect(
+      within(days[0] as HTMLElement).getByRole("button", { name: /^desayuno/ }),
+    ).toBeVisible();
+    // Paying the pending subscription: the badge turns "Pagado" and a status toast says so.
+    const pay = panel.getByRole("button", { name: "Pendiente, marcar como pagado" });
+    await expectTarget(pay);
+    await userEvent.click(pay);
+    await expect(await panel.findByText("Pagado")).toBeVisible();
+    await toastSaying(`Pagado: Spotify · −${eur("3,53")}`);
+    await waitFor(() =>
+      expect(calls(args.onRequest).map(([line]) => line)).toContainEqual(
+        expect.stringMatching(/^PATCH \/api\/v1\/transactions\/\S+ \{"status":"paid"\}$/),
+      ),
+    );
+  },
+};
+
+/** The choice of list is remembered on this device, and a sideways swipe switches it. */
+export const ViewRememberedAndSwiped: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const panel = canvas.getByRole("tabpanel", { name: "Presupuestos" });
+    // Swipe left (finger moves right to left): Movimientos.
+    fireEvent.pointerDown(panel, { clientX: 300, clientY: 400, pointerType: "touch" });
+    fireEvent.pointerUp(panel, { clientX: 140, clientY: 410, pointerType: "touch" });
+    await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await userEvent.click(canvas.getByRole("button", { name: "Recargar (stand-in)" }));
+    await hero(canvas);
+    await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    // A mostly vertical drag is a scroll, not a swipe.
+    const list = canvas.getByRole("tabpanel", { name: "Movimientos" });
+    fireEvent.pointerDown(list, { clientX: 140, clientY: 200, pointerType: "touch" });
+    fireEvent.pointerUp(list, { clientX: 300, clientY: 500, pointerType: "touch" });
+    await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  },
+};
+
+// -- The add sheet ---------------------------------------------------------------------------------
+
+/** A recent name fills the name and picks its usual category; the other shortcuts stay. */
+export const ShortcutPicksCategory: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    const chips = within(sheet.getByRole("group", { name: "Categoría" }));
+    const shortcuts = within(await sheet.findByRole("group", { name: "Nombres recientes" }));
+    await userEvent.click(chips.getByRole("button", { name: "Ocio" }));
+    await userEvent.click(await shortcuts.findByRole("button", { name: "continente" }));
+    await expect(sheet.getByRole("textbox", { name: "Nombre (opcional)" })).toHaveValue(
+      "continente",
+    );
+    await expect(chips.getByRole("button", { name: "Supermercado" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(chips.getByRole("button", { name: "Ocio" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    // The full list stays after a pick (the API filters only while typing).
+    await expect(await shortcuts.findByRole("button", { name: "cine" })).toBeVisible();
+  },
+};
+
+/** Nothing to save at 0: Guardar waits for an amount. */
+export const SaveDisabledAtZero: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    const save = sheet.getByRole("button", { name: "Guardar" });
+    await expect(save).toBeDisabled();
+    await typeAmount(sheet, "0,0");
+    await expect(save).toBeDisabled();
+    await typeAmount(sheet, "5");
+    await expect(save).toBeEnabled();
+    await userEvent.click(sheet.getByRole("button", { name: "Borrar" }));
+    await expect(save).toBeDisabled();
+  },
+};
+
+/** Two quick taps on Guardar make one request, with the key the sheet got when it opened. */
+export const DoubleClickSavesOnce: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} createDelayMs={300} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "6,08");
+    await pickCategory(sheet, "Supermercado");
+    await userEvent.dblClick(sheet.getByRole("button", { name: "Guardar" }));
+    await toastSaying(`Gasto en Supermercado: ${eur("6,08")}`);
+    const sent = posts(args.onRequest);
+    await expect(sent).toHaveLength(1);
+    await expect(sent[0]?.[1]["idempotency-key"]).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    await expect(sent[0]?.[0]).toContain('"amount":-608');
+    await expect(sent[0]?.[0]).toContain('"name":"Supermercado"');
+  },
+};
+
+/** The API says no: what is left goes back to what it was, and the error is announced. */
+export const FailingCreateRollsBack: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} failCreate createDelayMs={400} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const region = await hero(canvas);
+    await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "6,08");
+    await pickCategory(sheet, "Supermercado");
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    // Optimistic: it shows at once...
+    await waitFor(() => expect(region).toHaveTextContent(eur("495,05")));
+    // ...and goes back when the API fails.
+    await toastSaying("Tuvimos un problema de nuestro lado", "alert");
+    await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
+  },
+};
+
+/** Deshacer on the saved toast deletes what was just saved. */
+export const UndoDeletes: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const region = await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "6,08");
+    await pickCategory(sheet, "Supermercado");
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    const toast = await toastSaying(`Gasto en Supermercado: ${eur("6,08")}`);
+    // Saved without a name: it can get one later.
+    await expect(toast.getByRole("button", { name: "Ponerle nombre" })).toBeVisible();
+    await userEvent.click(await toast.findByRole("button", { name: "Deshacer" }));
+    await waitFor(() =>
+      expect(calls(args.onRequest).map(([line]) => line)).toContainEqual(
+        expect.stringMatching(/^DELETE \/api\/v1\/transactions\/\S+$/),
+      ),
+    );
+    await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
+  },
+};
+
+/** "Ponerle nombre" opens the saved transaction with the name field ready to type. */
+export const NameItLater: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "12");
+    await pickCategory(sheet, "Supermercado");
+
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    const toast = await toastSaying("Gasto en Supermercado");
+    await userEvent.click(await toast.findByRole("button", { name: "Ponerle nombre" }));
+    const edit = within(await screen.findByRole("dialog", { name: "Editar movimiento" }));
+    const name = edit.getByRole("textbox", { name: "Nombre (opcional)" });
+    await waitFor(() => expect(name).toHaveFocus());
+    await userEvent.type(name, "lidl");
+    await userEvent.click(edit.getByRole("button", { name: "Guardar cambios" }));
+    await dialogGone();
+    await waitFor(() =>
+      expect(calls(args.onRequest).map(([line]) => line)).toContainEqual(
+        expect.stringMatching(/^PATCH \/api\/v1\/transactions\/\S+ \{"name":"lidl"\}$/),
+      ),
+    );
+  },
+};
+
+/** An income: the toggle, the income categories, and its own words in the toast. */
+export const AddIncome: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await userEvent.click(sheet.getByRole("tab", { name: "Ingreso" }));
+    const income = within(await screen.findByRole("dialog", { name: "Nuevo ingreso" }));
+    const chips = within(income.getByRole("group", { name: "Categoría" }));
+    await expect(chips.getByRole("button", { name: "Salario" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(chips.queryByRole("button", { name: "Supermercado" })).toBeNull();
+    await typeAmount(income, "100");
+    await userEvent.click(income.getByRole("button", { name: "Guardar" }));
+    await toastSaying(`Ingreso de Salario: ${eur("100,00")}`);
+    await expect(posts(args.onRequest)[0]?.[0]).toContain('"amount":10000');
+  },
+};
+
+/** "Más opciones": another date and pending, kept in what is sent. */
+export const MoreOptions: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "39,9");
+    await pickCategory(sheet, "Supermercado");
+
+    const more = sheet.getByRole("button", { name: /^Más opciones/ });
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(more);
+    await userEvent.click(sheet.getByRole("checkbox", { name: "Pendiente (aún no lo pagas)" }));
+    const date = sheet.getByLabelText("Fecha");
+    await expect(date).toHaveValue(
+      new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date()),
+    );
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    await toastSaying("Gasto en Supermercado");
+    await expect(posts(args.onRequest)[0]?.[0]).toContain('"status":"pending"');
+  },
+};
+
+/** In pesos the sheet adds the lukas hint, small, and so does the saved toast. */
+export const PesosHint: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} currency="COP" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "50000");
+    const amount = sheet.getByTestId("amount");
+    await expect(amount).toHaveTextContent("$50.000 (50 lukas)");
+    await expect(within(amount).getByText("(50 lukas)")).toHaveClass("text-ink-muted");
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    await toastSaying("Gasto en Comida: $50.000 (50 lukas)");
+  },
+};
+
+/** Tapping a row edits it; Eliminar removes it with Deshacer, which brings it back. */
+export const EditAndDelete: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));
+    await userEvent.click(await panel.findByRole("button", { name: /^cine/ }));
+    const edit = within(await screen.findByRole("dialog", { name: "Editar movimiento" }));
+    await expect(edit.getByTestId("amount")).toHaveTextContent(eur("262,80"));
+    await expect(
+      within(edit.getByRole("group", { name: "Categoría" })).getByRole("button", { name: "Ocio" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(edit.getByRole("button", { name: "Eliminar" }));
+    await dialogGone();
+    const toast = await toastSaying("Eliminado: cine");
+    await waitFor(() => expect(panel.queryByRole("button", { name: /^cine/ })).toBeNull());
+    await userEvent.click(toast.getByRole("button", { name: "Deshacer" }));
+    await expect(await panel.findByRole("button", { name: /^cine/ })).toBeVisible();
+    const lines = calls(args.onRequest).map(([line]) => line);
+    await expect(lines).toContainEqual(expect.stringMatching(/^DELETE /));
+    await expect(lines).toContainEqual(expect.stringMatching(/\/restore$/));
+  },
+};
+
+// -- Empty states and the rest ------------------------------------------------------------------------
+
+/**
+ * A new account that skipped the setup: no budgets, no transactions. What was spent instead of
+ * what is left, an invitation to the first entry, and two gentle nudges.
+ */
+export const EmptyMonth: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} data="empty" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const region = await canvas.findByRole(
+      "region",
+      { name: "Gastado este mes" },
+      { timeout: 4000 },
+    );
+    await expect(region).toHaveTextContent(eur("0,00"));
+    await expect(await canvas.findByText("Ponle presupuesto a tus categorías")).toBeVisible();
+    await expect(await canvas.findByText("Trae tu historial")).toBeVisible();
+    await userEvent.click(canvas.getByRole("button", { name: "Ahora no: Trae tu historial" }));
+    await waitFor(() => expect(canvas.queryByText("Trae tu historial")).toBeNull());
+    await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));
+    await expect(panel.getByText(/Aún no hay movimientos/)).toBeVisible();
+    await userEvent.click(panel.getByRole("button", { name: "Agregar gasto" }));
+    await expect(await screen.findByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
+  },
+};
+
+/** No categories at all (everything deselected in the setup): one tap brings the suggestions. */
+export const NoCategories: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} data="no-categories" />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const use = await canvas.findByRole(
+      "button",
+      { name: "Usar las sugeridas" },
+      { timeout: 4000 },
+    );
+    await userEvent.click(use);
+    await waitFor(() =>
+      expect(
+        calls(args.onRequest).filter(([line]) => line.startsWith("POST /api/v1/categories")),
+      ).toHaveLength(8),
+    );
+    await expect(
+      await canvas.findByRole("button", { name: /^Supermercado/ }, { timeout: 4000 }),
+    ).toBeVisible();
+  },
+};
+
+/** Day theme: the a11y checks (contrast included) run on the whole screen. */
+export const DayTheme: Story = {
+  globals: { theme: "day" },
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const region = await hero(canvas);
+    await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
+    await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));
+    await canvas.findAllByRole("region", { name: /^Hoy/ });
+  },
+};
+
+/** The sheet in day theme, open, for the a11y checks. */
+export const SheetDayTheme: Story = {
+  globals: { theme: "day" },
+  render: (args) => <HomeStage onRequest={args.onRequest} currency="COP" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "15500");
+    await expect(sheet.getByTestId("amount")).toHaveTextContent("$15.500 (15,5 lukas)");
+  },
+};
+
+/** The avatar menu: the theme switch, sign-out, and the sections that come soon. */
+export const AvatarMenu: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const avatar = canvas.getByRole("button", { name: "Tu cuenta" });
+    await expect(avatar).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(avatar);
+    await expect(avatar).toHaveAttribute("aria-expanded", "true");
+    await expect(canvas.getByRole("button", { name: "Cambiar a modo día" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
+    await expect(
+      within(canvasElement.querySelector(".lk-menu") as HTMLElement).getByText(/Ajustes/),
+    ).toBeVisible();
+    await userEvent.keyboard("{Escape}");
+    await expect(avatar).toHaveAttribute("aria-expanded", "false");
+    await expect(avatar).toHaveFocus();
+  },
+};
+
+/** Wide screens: the sidebar instead of the bottom bar, and both lists side by side. */
+export const Desktop: Story = {
+  globals: { viewport: { value: "desktop", isRotated: false } },
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    await expect(canvas.queryByRole("tab", { name: "Movimientos" })).toBeNull();
+    await expect(canvas.getByRole("tabpanel", { name: "Presupuestos" })).toBeVisible();
+    await expect(canvas.getByRole("tabpanel", { name: "Movimientos" })).toBeVisible();
+    const nav = within(canvas.getByRole("navigation", { name: "Navegación principal" }));
+    await expect(nav.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
+    // Sections still to come are listed, not links.
+    await expect(nav.queryByRole("link", { name: /Análisis/ })).toBeNull();
+    await expect(nav.getByText("Análisis")).toBeVisible();
+    await userEvent.click(nav.getByRole("button", { name: "Agregar" }));
+    await expect(await screen.findByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
+  },
+};

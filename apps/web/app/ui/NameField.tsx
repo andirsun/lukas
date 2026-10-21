@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { type Ref, useId } from "react";
 import { useTranslations } from "use-intl";
 import { cx } from "./cx.ts";
 
@@ -16,6 +16,8 @@ export interface NameFieldProps<S extends NameSuggestion = NameSuggestion> {
   onChange(value: string): void;
   /** A shortcut was tapped: the caller fills the name and selects its category. */
   onPick(suggestion: S): void;
+  /** The text input, e.g. to focus it ("Ponerle nombre"). */
+  inputRef?: Ref<HTMLInputElement>;
 }
 
 /**
@@ -28,6 +30,7 @@ export function NameField<S extends NameSuggestion>({
   suggestions,
   onChange,
   onPick,
+  inputRef,
 }: NameFieldProps<S>) {
   const t = useTranslations("name_field");
   const inputId = useId();
@@ -43,6 +46,7 @@ export function NameField<S extends NameSuggestion>({
       <div className="lk-input min-h-11">
         <span aria-hidden="true">✏️</span>
         <input
+          ref={inputRef}
           id={inputId}
           type="text"
           value={value}

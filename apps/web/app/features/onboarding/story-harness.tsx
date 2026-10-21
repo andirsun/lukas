@@ -4,7 +4,12 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
 import type { ImportDto } from "./import-state.ts";
-import { clearOnboardingDraft } from "./onboarding-draft.ts";
+import {
+  clearOnboardingDraft,
+  type OnboardingDraft,
+  saveOnboardingDraft,
+} from "./onboarding-draft.ts";
+import { SUGGESTED_CATEGORIES } from "./suggested-categories.ts";
 import { Welcome } from "./Welcome.tsx";
 
 /** The last 3 complete months, as the API would report them today. */
@@ -51,8 +56,13 @@ interface FakeApiOptions {
   currency: string;
   onRequest(line: string): void;
   failRefreshesAfterConfirm?: number;
-  /** "none": a brand-new account; "some": Supermercado and Salario already there. */
-  categories?: "none" | "some";
+  /**
+   * "none": a brand-new account; "some": Supermercado and Salario already there; "archived": every
+   * suggestion there but archived (all of them deselected in an earlier visit).
+   */
+  categories?: "none" | "some" | "archived";
+  /** The account already has transactions (its currency is locked). */
+  hasTransactions?: boolean;
   timezone?: string;
   /** The file ended long ago: its window is its own last 3 months, not the last 3 complete ones. */
   oldExport?: boolean;
@@ -77,6 +87,7 @@ function onboardingFetch({
   failCategoryPost,
   takenNames = [],
   confirmDelayMs = 0,
+  hasTransactions = false,
 }: FakeApiOptions): typeof fetch {
   let categoryPosts = 0;
   let confirmed = false;
@@ -94,28 +105,39 @@ function onboardingFetch({
   let categories: FakeCategory[] =
     start === "none"
       ? []
-      : [
-          {
-            id: "cat-groceries",
-            name: "Supermercado",
-            kind: "expense",
-            icon: "🛒",
-            color: "#ff9f1c",
-            sortOrder: 0,
-            archived: false,
+      : start === "archived"
+        ? SUGGESTED_CATEGORIES.map((c, index) => ({
+            id: `cat-${c.key}`,
+            name: c.names.es,
+            kind: c.kind,
+            icon: c.glyph,
+            color: c.tint,
+            sortOrder: index,
+            archived: true,
             currentBudget: null,
-          },
-          {
-            id: "cat-salary",
-            name: "Salario",
-            kind: "income",
-            icon: "💰",
-            color: "#2fd388",
-            sortOrder: 7,
-            archived: false,
-            currentBudget: null,
-          },
-        ];
+          }))
+        : [
+            {
+              id: "cat-groceries",
+              name: "Supermercado",
+              kind: "expense",
+              icon: "🛒",
+              color: "#ff9f1c",
+              sortOrder: 0,
+              archived: false,
+              currentBudget: null,
+            },
+            {
+              id: "cat-salary",
+              name: "Salario",
+              kind: "income",
+              icon: "💰",
+              color: "#2fd388",
+              sortOrder: 7,
+              archived: false,
+              currentBudget: null,
+            },
+          ];
   let uploads = 0;
   let failuresLeft = 0;
 
@@ -170,7 +192,10 @@ function onboardingFetch({
       return Response.json(created, { status: 201 });
     }
     if (path === "/api/v1/transactions" && request.method === "GET") {
-      return Response.json({ items: confirmed ? [{ id: "t-1" }] : [], nextCursor: null });
+      return Response.json({
+        items: confirmed || hasTransactions ? [{ id: "t-1" }] : [],
+        nextCursor: null,
+      });
     }
     const budget = /^\/api\/v1\/categories\/([^/]+)\/budget$/.exec(path);
     if (budget) {
@@ -232,13 +257,16 @@ const BOGOTA = { zone: "America/Bogota", supported: ["America/Bogota", "Europe/M
 /** Where the router starts (e.g. `/welcome/import`), and how the fake API behaves. */
 export interface WelcomeStageProps extends FakeApiOptions {
   initialEntry: string;
+  /** What this browser session already remembers (as after a reload mid-onboarding). */
+  draft?: OnboardingDraft;
 }
 
 /** The `/welcome` flow in a memory router, with the fake API, toasts, and a stand-in for /app. */
-export function WelcomeStage({ initialEntry, ...api }: WelcomeStageProps) {
+export function WelcomeStage({ initialEntry, draft, ...api }: WelcomeStageProps) {
   const [fetchImpl] = useState(() => {
     // Each story starts a fresh session; "Recargar" below keeps it, as a real reload would.
     clearOnboardingDraft(FAKE_USER_ID);
+    if (draft) saveOnboardingDraft(FAKE_USER_ID, draft);
     return onboardingFetch(api);
   });
   const [reloads, setReloads] = useState(0);

@@ -243,22 +243,30 @@ function draftFrom(qc: QueryClient, input: NewTransaction): TransactionDto {
   };
 }
 
+export interface CreateTransactionVars {
+  input: NewTransaction;
+  /**
+   * Lets the API drop a duplicate if this intent is ever sent twice. A form holds one key per
+   * intent (the add sheet makes one when it opens), so a retry of the same save is deduplicated;
+   * without one, each call gets a new key.
+   */
+  idempotencyKey?: string;
+}
+
 export function useCreateTransaction() {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation(
     mutation(
       qc,
-      async (input: NewTransaction) =>
+      async ({ input, idempotencyKey = crypto.randomUUID() }: CreateTransactionVars) =>
         dataOf(
           await api.POST("/v1/transactions", {
             body: input,
-            // Lets the API drop a duplicate if this request is ever sent twice. (A new key per call:
-            // a form that wants a manual re-tap deduplicated must hold one key per intent.)
-            headers: { "Idempotency-Key": crypto.randomUUID() },
+            headers: { "Idempotency-Key": idempotencyKey },
           }),
         ),
-      (input) => ({
+      ({ input }) => ({
         months: [monthOf(input.date)],
         apply: () => optimisticAdd(qc, draftFrom(qc, input)),
       }),

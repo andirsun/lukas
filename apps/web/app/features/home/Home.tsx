@@ -1,0 +1,613 @@
+import {
+  type CategoryDto,
+  type Month,
+  type MonthSummary,
+  monthOf,
+  type TransactionDto,
+  todayIn,
+} from "@lukas/core";
+import { useQueryClient } from "@tanstack/react-query";
+import { type PointerEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useTranslations } from "use-intl";
+import { useApi } from "../../api/ApiProvider.tsx";
+import { ApiProblem, problemMessage, type Translator } from "../../api/errors.ts";
+import { queryKeys, useCategories, useMe, useSummary, useTransactions } from "../../api/queries.ts";
+import { formatDay, formatMoney, formatMonth } from "../../i18n/format.ts";
+import { useLocale } from "../../i18n/IntlProvider.tsx";
+import { moodFor } from "../../lukas/mood.ts";
+import { BudgetBar } from "../../ui/BudgetBar.tsx";
+import { CategoryRow } from "../../ui/CategoryRow.tsx";
+import { categoryLook } from "../../ui/category-look.ts";
+import { cx } from "../../ui/cx.ts";
+import { LukasBubble } from "../../ui/LukasBubble.tsx";
+import { Money } from "../../ui/Money.tsx";
+import { PressButton } from "../../ui/PressButton.tsx";
+import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
+import { useToast } from "../../ui/Toast.tsx";
+import { TransactionRow } from "../../ui/TransactionRow.tsx";
+import { useTransactionSheet } from "../add-transaction/TransactionSheetProvider.tsx";
+import { createSuggestions, useHasTransactions } from "../onboarding/onboarding-api.ts";
+import { SUGGESTED_CATEGORIES } from "../onboarding/suggested-categories.ts";
+import { HomeHeader } from "./HomeHeader.tsx";
+import { type DayGroup, groupByDay, homeLukasLine, overallState } from "./home-model.ts";
+import { type HomeView, useDismissed, useHomeView } from "./home-storage.ts";
+
+/** How long Lukitas celebrates after a save or a payment. */
+const CELEBRATE_MS = 2500;
+/** A sideways move of at least this much (px), and clearly more sideways than down, is a swipe. */
+const SWIPE_PX = 60;
+
+/**
+ * Home (`/app`, spec §2.5): the month (the person's current one by default, earlier ones
+ * browsable), Lukitas with a line about it, what is left (or, without budgets, what was spent),
+ * and two lists: Presupuestos (one row per spending category) and Movimientos (by day: today on
+ * top, the upcoming pending ones next, then the past). On phones a segmented control (or a
+ * sideways swipe) switches between them and the choice is remembered on the device; on wide
+ * screens they sit side by side. Around them, gentle cards for an account that skipped the setup.
+ */
+export function Home() {
+  const me = useMe().data;
+  if (!me) throw new Error("Home renders inside AppShell, which waits for the profile");
+  const today = todayIn(me.timezone);
+  const current = monthOf(today);
+  const [month, setMonth] = useState<Month>(current);
+  return (
+    <MonthView
+      key={me.id}
+      userId={me.id}
+      currency={me.currency}
+      today={today}
+      current={current}
+      month={month}
+      onMonth={setMonth}
+    />
+  );
+}
+
+interface MonthViewProps {
+  userId: string;
+  currency: string;
+  today: string;
+  current: Month;
+  month: Month;
+  onMonth(month: Month): void;
+}
+
+function MonthView({ userId, currency, today, current, month, onMonth }: MonthViewProps) {
+  const t = useTranslations("home");
+  const { locale } = useLocale();
+  const summary = useSummary(month);
+  const transactions = useTransactions(month);
+  const categories = useCategories();
+  const [view, setView] = useHomeView();
+
+  if (summary.error && !summary.data) throw summary.error;
+  if (transactions.error && !transactions.data) throw transactions.error;
+  if (categories.error && !categories.data) throw categories.error;
+
+  const active = categories.data?.filter((c) => !c.archived);
+  const money = (cents: number) => formatMoney(cents, currency, locale);
+  const monthName = formatMonth(month, locale);
+
+  return (
+    <div className="mx-auto flex w-full max-w-[480px] flex-col gap-(--space-3) px-(--space-4) pt-(--space-3) lg:max-w-[1040px] lg:px-(--space-6) lg:pt-(--space-5)">
+      <HomeHeader month={month} onMonth={onMonth} max={current} />
+      <main className="flex flex-col gap-(--space-3)">
+        {summary.data && categories.data && transactions.data ? (
+          <>
+            <Lukitas
+              summary={summary.data}
+              categories={categories.data}
+              items={transactions.data.items}
+              today={today}
+              current={current}
+              money={money}
+            />
+            <Hero
+              summary={summary.data}
+              currency={currency}
+              past={month < current}
+              monthName={monthName}
+            />
+          </>
+        ) : (
+          <div className="lk-hero min-h-[140px]" aria-busy="true" />
+        )}
+        {active && active.length === 0 ? (
+          <NoCategories />
+        ) : (
+          <>
+            {active && summary.data && (
+              <Nudges userId={userId} categories={active} summary={summary.data} />
+            )}
+            <Lists
+              view={view}
+              onView={setView}
+              summary={summary.data}
+              categories={categories.data}
+              items={transactions.data?.items}
+              today={today}
+              currency={currency}
+              monthName={monthName}
+            />
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+// -- Lukitas ---------------------------------------------------------------------------------------
+
+function Lukitas({
+  summary,
+  categories,
+  items,
+  today,
+  current,
+  money,
+}: {
+  summary: MonthSummary;
+  categories: CategoryDto[];
+  items: TransactionDto[];
+  today: string;
+  current: Month;
+  money(cents: number): string;
+}) {
+  const tRoot = useTranslations();
+  const { lastEvent } = useTransactionSheet();
+  const event = lastEvent && lastEvent.month === summary.month ? lastEvent : null;
+  const names = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
+
+  const line = homeLukasLine({
+    summary,
+    today,
+    todayCount: items.filter((tx) => tx.date === today).length,
+    event: event
+      ? { kind: event.kind, categoryId: event.categoryId, amount: event.amount }
+      : undefined,
+    categoryName: (id) => names.get(id) ?? "",
+    money,
+  });
+  // One of the key's variants, picked again only when the situation changes.
+  const variant = useMemo(
+    () => 1 + Math.floor(Math.random() * 3),
+    [line.key, event?.id, summary.month],
+  );
+  const message = tRoot(
+    (line.varied ? `${line.key}.${variant}` : line.key) as never,
+    line.params as never,
+  );
+
+  const [celebrating, setCelebrating] = useState(false);
+  // Only a new event starts a celebration (not near or over a limit: no party for that).
+  useEffect(() => {
+    if (!event) return;
+    const state = summary.categories.find((c) => c.categoryId === event.categoryId)?.state;
+    if (state === "near" || state === "over") return;
+    setCelebrating(true);
+    const timer = setTimeout(() => setCelebrating(false), CELEBRATE_MS);
+    return () => clearTimeout(timer);
+  }, [event?.id]);
+  const closedGreen = summary.month < current && summary.budgetTotal > 0 && summary.remaining >= 0;
+
+  return <LukasBubble message={message} mood={moodFor(summary, celebrating || closedGreen)} />;
+}
+
+// -- What is left ----------------------------------------------------------------------------------
+
+function Hero({
+  summary,
+  currency,
+  past,
+  monthName,
+}: {
+  summary: MonthSummary;
+  currency: string;
+  past: boolean;
+  monthName: string;
+}) {
+  const t = useTranslations("home");
+  const { locale } = useLocale();
+  const labelId = useId();
+  const money = (cents: number) => formatMoney(cents, currency, locale);
+  const hasBudget = summary.budgetTotal > 0;
+  const over = hasBudget && summary.remaining < 0;
+  const label = !hasBudget
+    ? past
+      ? t("spent_label_past", { month: monthName })
+      : t("spent_label")
+    : over
+      ? past
+        ? t("over_label_past", { month: monthName })
+        : t("over_label")
+      : past
+        ? t("remaining_label_past", { month: monthName })
+        : t("remaining_label");
+
+  return (
+    <section aria-labelledby={labelId} className="lk-hero">
+      <h1 id={labelId} className="lk-hero-label m-0 text-[13px]">
+        {label}
+      </h1>
+      <p className={cx("lk-hero-amount m-0", over && "text-over", !hasBudget && "text-ink")}>
+        <Money
+          cents={hasBudget ? Math.abs(summary.remaining) : summary.spent}
+          currency={currency}
+          animate
+        />
+      </p>
+      {hasBudget ? (
+        <>
+          <div className="mt-(--space-2)">
+            <BudgetBar
+              spent={summary.spent}
+              budget={summary.budgetTotal}
+              state={overallState(summary.budgetTotal, summary.spent)}
+              label={t("spent_meter", {
+                spent: money(summary.spent),
+                budget: money(summary.budgetTotal),
+              })}
+            />
+          </div>
+          <p className="lk-hero-meta mb-0">
+            <span>{t("spent", { amount: money(summary.spent) })}</span>
+            <span>{t("of_budget", { amount: money(summary.budgetTotal) })}</span>
+          </p>
+        </>
+      ) : (
+        <p className="lk-hero-meta mb-0">
+          <span>{t("no_budget_meta")}</span>
+        </p>
+      )}
+    </section>
+  );
+}
+
+// -- Cards -----------------------------------------------------------------------------------------
+
+/** For an account that skipped the setup: budgets, and bringing a history. Each can be put away. */
+function Nudges({
+  userId,
+  categories,
+  summary,
+}: {
+  userId: string;
+  categories: CategoryDto[];
+  summary: MonthSummary;
+}) {
+  const t = useTranslations("home");
+  const hasTransactions = useHasTransactions();
+  const [dismissed, dismiss] = useDismissed(userId);
+  const noBudgets =
+    summary.budgetTotal === 0 &&
+    categories.some((c) => c.kind === "expense") &&
+    categories.every((c) => c.currentBudget === null);
+  const cards = [
+    noBudgets && !dismissed.has("budgets")
+      ? { id: "budgets", title: t("nudge_budgets_title"), lead: t("nudge_budgets_lead") }
+      : null,
+    hasTransactions.data === false && !dismissed.has("import")
+      ? { id: "import", title: t("nudge_import_title"), lead: t("nudge_import_lead") }
+      : null,
+  ].filter((card) => card !== null);
+  if (cards.length === 0) return null;
+
+  return (
+    <aside aria-label={t("nudges_label")} className="flex flex-col gap-(--space-2)">
+      {cards.map((card) => (
+        <Nudge key={card.id} {...card} onDismiss={() => dismiss(card.id)} />
+      ))}
+    </aside>
+  );
+}
+
+function Nudge({ title, lead, onDismiss }: { title: string; lead: string; onDismiss(): void }) {
+  const t = useTranslations();
+  const titleId = useId();
+  return (
+    <section aria-labelledby={titleId} className="lk-nudge">
+      <div className="flex min-w-0 flex-1 flex-col gap-(--space-1)">
+        <h2
+          id={titleId}
+          className="m-0 flex flex-wrap items-center gap-(--space-2) text-[14px] font-extrabold text-ink"
+        >
+          {title}
+          <span className="lk-soon">{t("nav.soon")}</span>
+        </h2>
+        <p className="m-0 text-[12px] font-bold text-ink-muted">{lead}</p>
+      </div>
+      <PressButton
+        variant="ghost"
+        size="sm"
+        aria-label={t("home.nudge_dismiss", { title })}
+        onClick={onDismiss}
+      >
+        {t("common.not_now")}
+      </PressButton>
+    </section>
+  );
+}
+
+/** No category at all (everything was deselected in the setup): one tap brings the suggestions. */
+function NoCategories() {
+  const t = useTranslations("home");
+  const tRoot = useTranslations() as unknown as Translator;
+  const { locale } = useLocale();
+  const api = useApi();
+  const qc = useQueryClient();
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const titleId = useId();
+
+  const useSuggested = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await createSuggestions(api, new Set(SUGGESTED_CATEGORIES.map((c) => c.key)), locale);
+      await qc.invalidateQueries({ queryKey: queryKeys.categories() });
+      await qc.invalidateQueries({ queryKey: ["summary"] });
+    } catch (problem) {
+      toast.show({
+        tone: "error",
+        message:
+          problem instanceof ApiProblem ? problemMessage(problem, tRoot) : tRoot("errors.generic"),
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section aria-labelledby={titleId} className="lk-hero flex flex-col gap-(--space-2)">
+      <h2 id={titleId} className="m-0 font-display text-[20px] font-bold text-ink">
+        {t("no_categories_title")}
+      </h2>
+      <p className="m-0 text-[14px] font-bold text-ink-muted">{t("no_categories_lead")}</p>
+      <PressButton onClick={() => void useSuggested()} disabled={busy} aria-busy={busy}>
+        {t("use_suggested")}
+      </PressButton>
+    </section>
+  );
+}
+
+// -- The lists -------------------------------------------------------------------------------------
+
+interface ListsProps {
+  view: HomeView;
+  onView(view: HomeView): void;
+  summary: MonthSummary | undefined;
+  categories: CategoryDto[] | undefined;
+  items: TransactionDto[] | undefined;
+  today: string;
+  currency: string;
+  monthName: string;
+}
+
+function Lists({
+  view,
+  onView,
+  summary,
+  categories,
+  items,
+  today,
+  currency,
+  monthName,
+}: ListsProps) {
+  const t = useTranslations("home");
+  const start = useRef<{ x: number; y: number } | null>(null);
+
+  // A sideways swipe on the list switches it (left: Movimientos, right: Presupuestos).
+  const onPointerDown = (event: PointerEvent<HTMLElement>) => {
+    start.current = event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY };
+  };
+  const onPointerUp = (event: PointerEvent<HTMLElement>) => {
+    const from = start.current;
+    start.current = null;
+    if (!from) return;
+    const dx = event.clientX - from.x;
+    const dy = event.clientY - from.y;
+    if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < 2 * Math.abs(dy)) return;
+    onView(dx < 0 ? "transactions" : "budgets");
+  };
+  const swipe = { onPointerDown, onPointerUp, onPointerCancel: () => (start.current = null) };
+
+  return (
+    <>
+      <div className="lg:hidden">
+        <SegmentedControl<HomeView>
+          label={t("view.label")}
+          value={view}
+          options={[
+            { value: "budgets", label: t("view.budgets") },
+            { value: "transactions", label: t("view.transactions") },
+          ]}
+          onChange={onView}
+        />
+      </div>
+      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-(--space-6)">
+        <section
+          role="tabpanel"
+          aria-label={t("view.budgets")}
+          className={cx("lk-panel", view === "budgets" ? "flex" : "hidden lg:flex")}
+          {...swipe}
+        >
+          <h2 className="lk-panel-title">{t("view.budgets")}</h2>
+          <Budgets summary={summary} categories={categories} currency={currency} />
+        </section>
+        <section
+          role="tabpanel"
+          aria-label={t("view.transactions")}
+          className={cx("lk-panel", view === "transactions" ? "flex" : "hidden lg:flex")}
+          {...swipe}
+        >
+          <h2 className="lk-panel-title">{t("view.transactions")}</h2>
+          <Transactions
+            items={items}
+            categories={categories}
+            today={today}
+            currency={currency}
+            monthName={monthName}
+          />
+        </section>
+      </div>
+    </>
+  );
+}
+
+function Budgets({
+  summary,
+  categories,
+  currency,
+}: {
+  summary: MonthSummary | undefined;
+  categories: CategoryDto[] | undefined;
+  currency: string;
+}) {
+  const t = useTranslations("home");
+  const { openAdd } = useTransactionSheet();
+  if (!summary || !categories) return <div className="min-h-[120px]" aria-busy="true" />;
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  const rows = summary.categories
+    .flatMap((s) => {
+      const category = byId.get(s.categoryId);
+      return category && !category.archived && category.kind === "expense" ? [{ s, category }] : [];
+    })
+    .sort((a, b) => a.category.sortOrder - b.category.sortOrder);
+  if (rows.length === 0) {
+    return <p className="m-0 text-[14px] font-bold text-ink-muted">{t("no_expense_categories")}</p>;
+  }
+  return (
+    <>
+      {rows.map(({ s, category }) => {
+        const look = categoryLook(category);
+        return (
+          <CategoryRow
+            key={category.id}
+            name={category.name}
+            glyph={look.glyph}
+            tint={look.tint}
+            budget={s.budget}
+            spent={s.spent}
+            remaining={s.remaining}
+            state={s.state}
+            currency={currency}
+            // Until the category detail exists (Task 13), a row starts an expense in it.
+            onOpen={() => openAdd(category.id)}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function Transactions({
+  items,
+  categories,
+  today,
+  currency,
+  monthName,
+}: {
+  items: TransactionDto[] | undefined;
+  categories: CategoryDto[] | undefined;
+  today: string;
+  currency: string;
+  monthName: string;
+}) {
+  const t = useTranslations();
+  const { openAdd } = useTransactionSheet();
+  if (!items || !categories) return <div className="min-h-[120px]" aria-busy="true" />;
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-start gap-(--space-3)">
+        <p className="m-0 text-[14px] font-bold text-ink-muted">
+          {t("home.empty_transactions", { month: monthName })}
+        </p>
+        <PressButton variant="secondary" onClick={() => openAdd()}>
+          {t("transaction.add_expense")}
+        </PressButton>
+      </div>
+    );
+  }
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  return (
+    <>
+      {groupByDay(items, today).map((group) => (
+        <Day key={group.date} group={group} byId={byId} currency={currency} />
+      ))}
+    </>
+  );
+}
+
+function Day({
+  group,
+  byId,
+  currency,
+}: {
+  group: DayGroup;
+  byId: Map<string, CategoryDto>;
+  currency: string;
+}) {
+  const t = useTranslations("home");
+  const { locale } = useLocale();
+  const { openEdit, actions } = useTransactionSheet();
+  const [paidHere, setPaidHere] = useState<ReadonlySet<string>>(new Set());
+  const headingId = useId();
+  const day = formatDay(group.date, locale);
+  const label =
+    group.when === "today"
+      ? t("day_today", { day })
+      : group.when === "yesterday"
+        ? t("day_yesterday", { day })
+        : group.when === "upcoming"
+          ? t("day_upcoming", { day })
+          : day;
+
+  const pay = async (tx: TransactionDto) => {
+    setPaidHere((current) => new Set(current).add(tx.id));
+    try {
+      await actions.markPaid(tx);
+    } catch (problem) {
+      setPaidHere((current) => {
+        const next = new Set(current);
+        next.delete(tx.id);
+        return next;
+      });
+      throw problem;
+    }
+  };
+
+  return (
+    <section aria-labelledby={headingId} className="flex flex-col gap-(--space-2)">
+      <h3 id={headingId} className="lk-overline m-0 mt-(--space-1)">
+        <span>{label}</span>
+        <span className="lk-num">
+          {formatMoney(group.total, currency, locale, {
+            sign: group.total > 0 ? "always" : "auto",
+          })}
+        </span>
+      </h3>
+      {group.items.map((tx) => {
+        const category = byId.get(tx.categoryId);
+        // A row the API has not confirmed yet cannot be edited or paid.
+        const draft = tx.id.startsWith("pending-");
+        return (
+          <TransactionRow
+            key={tx.id}
+            name={tx.name}
+            categoryName={category?.name ?? ""}
+            glyph={category ? categoryLook(category).glyph : "🏷️"}
+            amount={tx.amount}
+            currency={currency}
+            status={tx.status}
+            paidHere={paidHere.has(tx.id)}
+            onOpen={() => {
+              if (!draft) openEdit(tx);
+            }}
+            {...(draft ? {} : { onPay: () => pay(tx) })}
+          />
+        );
+      })}
+    </section>
+  );
+}

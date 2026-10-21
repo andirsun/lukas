@@ -23,8 +23,8 @@ export default [
           route("sign-in", "routes/sign-in.tsx"),
           route("auth/verify", "routes/auth.verify.tsx"),
           route("welcome/:step?", "routes/welcome.tsx"),
-          // A stand-in until the home screen (Task 12) takes over /app.
-          route("app", "routes/app-placeholder.tsx"),
+          // The signed-in app: its shell (bottom bar or sidebar, the add sheet) and home.
+          route("app", "routes/app.tsx", [index("routes/app._index.tsx")]),
         ]),
       ]),
 ] satisfies RouteConfig;
