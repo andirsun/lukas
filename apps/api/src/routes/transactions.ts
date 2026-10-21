@@ -2,6 +2,7 @@ import { createRoute, z } from "@hono/zod-openapi";
 import {
   createTransactionSchema,
   firstDay,
+  isIsoDate,
   lastDay,
   monthSchema,
   transactionDto,
@@ -36,7 +37,7 @@ const encodeCursor = (row: TransactionRow) =>
   Buffer.from(`${row.date}|${row.id}`).toString("base64url");
 function decodeCursor(cursor: string): { date: string; id: string } {
   const [date, id] = Buffer.from(cursor, "base64url").toString().split("|");
-  if (!date || !id || !z.uuid().safeParse(id).success) {
+  if (!date || !isIsoDate(date) || !id || !z.uuid().safeParse(id).success) {
     throw new ApiError(422, "validation_failed", "Invalid cursor", [
       { path: "cursor", message: "Invalid cursor" },
     ]);

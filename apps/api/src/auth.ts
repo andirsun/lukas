@@ -105,6 +105,7 @@ export function createAuth(deps: AppDeps) {
         otpLength: 6,
         expiresIn: CODE_TTL_SECONDS,
         allowedAttempts: 3,
+        storeOTP: "hashed",
         disableSignUp: false,
         async sendVerificationOTP({ email, otp, type }) {
           if (type !== "sign-in") return;
