@@ -126,7 +126,7 @@ Each stage gets its own spec → plan → implementation.
 
 1. **Core & accounts** (detailed in this document, §4–§10).
 2. **Web v1:** onboarding, home, transactions, budget, analysis, import, "Connect your assistant".
-3. **Mobile + widget:** onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget **with a microphone button** that opens voice quick capture (founder decision, 2026-10-21; see Quick capture below).
+3. **Mobile + widget:** guest mode first (see Guest mode below), onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget **with a microphone button** that opens voice quick capture (founder decision, 2026-10-21; see Quick capture below).
 4. **MCP:** remote server with OAuth; tools to read, create and edit transactions, generate reports and adjust budgets.
 5. **Advanced gamification:** streaks, achievements, rewards.
 6. **Automatic capture:** bank alerts and wallet payments become transactions without typing. It comes after Stage 4; its order relative to Stage 5 will be decided later. See Automatic capture below.
@@ -161,6 +161,31 @@ It is inspired by the "smart assistant" of an unrelated app. Capture design is n
     - Honest privacy copy: the sentence is sent to an AI provider.
     - A cheap model with a per-user monthly quota and a project-wide spend cap. Over the cap the app keeps working with the parser alone, so "free forever" holds.
   - Users who connect their own assistant through MCP get the same capability at no cost to the project. The in-app version is for people who don't.
+
+#### Guest mode (founder decision, 2026-10-21)
+
+People can start without an email: no login wall after installing the app or on the web.
+
+- **Built on anonymous accounts:** Better Auth's anonymous plugin creates a real server-side user with no email, and the device keeps the session. The API stays the single source of truth, with no local-only data path and no merge step.
+- **Upgrading:** "Guarda tu progreso" links an email (code or magic link) or a passkey to the same user. Nothing is copied, and nothing is lost.
+- **Works without an email:** categories, budgets, transactions, recurring payments, the widget and microphone quick capture (no AI), Budge import, and export.
+- **Requires an email:**
+  - **Sync to a second device:** web and phone, or a new phone. The other device needs a way to sign in.
+  - **AI features:** every call costs money, and per-user quotas and abuse control need an identity.
+  - **Connecting an assistant through MCP:** the OAuth flow needs a real, recoverable identity.
+- **Honest nudges, no nagging:**
+  - The nudge comes after about the 10th transaction or the 3rd day, and from settings any time.
+  - It says plainly that without an email, losing the phone or deleting the app loses the data.
+  - One dismissible reminder per week at most.
+- **Cleanup:**
+  - Anonymous users inactive for 60 days are deleted together with their data.
+  - Beforehand, the app shows an in-app warning on the next open after 45 days ("Tus datos se borrarán en 15 días si no agregas tu correo").
+  - Users with an email are never auto-deleted.
+- **Abuse limits:** a per-IP rate limit on anonymous sign-up, plus the existing per-user limits.
+- **The web demo stays separate:** `/demo` is invented data that resets on reload. Guest mode is your own data without an email.
+- **Schedule:**
+  - The backend (anonymous plugin, account linking, cleanup job, `isAnonymous` on `GET /v1/me`) can ship before Stage 3.
+  - The client flows (mobile first run, web "Empieza ahora" without email, upgrade sheet, gating of sync/AI/MCP) land at the start of Stage 3, for both mobile and web.
 
 #### Automatic capture (founder request, 2026-10-21; Stage 6)
 
