@@ -1,4 +1,4 @@
-# Deploying the landing page (Cloudflare Pages)
+# Deploying the landing page (Cloudflare)
 
 Until the app exists, Lukitas can ship as the landing page alone: the two prerendered pages (`/` in
 Spanish, `/en` in English), a 404 page and the static files. Every call to action reads "Coming
@@ -17,27 +17,36 @@ VITE_SITE_URL=https://lukitas.andersonlaverde.com pnpm --filter @lukas/web build
 - The script builds with `VITE_LANDING_ONLY=true`. The output is `apps/web/build/client`:
   `index.html`, `en/index.html`, `404.html`, `assets/`, `lukas/`, `og-*.png`, `robots.txt`,
   `sitemap.xml` and `_headers`.
-- There is no `__spa-fallback.html`, and `404.html` is at the top level, so Cloudflare Pages serves
+- There is no `__spa-fallback.html`, and `404.html` is at the top level, so Cloudflare serves
   it (with a 404 status) for any other path instead of treating the site as a single-page app.
 - `public/_headers` sets long immutable caching for `/assets/*`, a short cache for the HTML and the
   basic security headers.
 
 ## Deploy
 
+The landing is served by Cloudflare Workers as static assets: no Worker code, only the files in
+`apps/web/build/client`. (Cloudflare now builds new Pages projects on Workers; creating a classic
+Pages project failed for this account.) The config lives in `deploy/landing/wrangler.jsonc`. Run
+wrangler from that folder so it does not try to auto-configure the web app:
+
 ```sh
-npx wrangler pages deploy apps/web/build/client --project-name lukitas-landing
+cd deploy/landing && npx wrangler@4 deploy
 ```
 
-The first run asks you to sign in to Cloudflare and offers to create the `lukitas-landing` project.
-Every later run publishes a new deployment of it.
+The first run asks you to sign in to Cloudflare (`npx wrangler@4 login`). Every run publishes a new
+version of the `lukitas-landing` Worker.
+
+- `not_found_handling: "404-page"` serves `404.html` with a 404 status for unknown paths.
+- `html_handling: "drop-trailing-slash"` serves `/en` directly (matching the canonical link) and
+  redirects `/en/` to it.
+- `_headers` from the build applies as on Pages.
 
 ## Custom domain
 
-In the Cloudflare dashboard: Workers & Pages, the `lukitas-landing` project, Custom domains, Set up a
-custom domain, and enter `lukitas.andersonlaverde.com`. If the domain's DNS is on Cloudflare, it adds
-the record for you; otherwise add the `CNAME` it shows. When the real domain is ready, add it the
-same way and rebuild with `VITE_SITE_URL` set to it, so the canonical links and the sitemap point to
-the new origin.
+`routes` in the config attaches `lukitas.andersonlaverde.com` as a custom domain on deploy. The
+zone is on the same Cloudflare account, so Cloudflare creates the DNS record and certificate. For
+the real domain later, add it to `routes` and rebuild with `VITE_SITE_URL` set to it, so the
+canonical links and the sitemap point to the new origin.
 
 ## Switching back once the app exists
 
