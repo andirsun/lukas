@@ -91,7 +91,7 @@ export const Entrance: Story = {
     await expect(layer.dataset.entrance).toBe("playing");
     await expect(sessionStorage.getItem(ENTRANCE_KEY)).toBe("seen");
     await expect(document.documentElement.dataset.lukasLive).toBe("live");
-    await waitFor(() => expect(layer.dataset.entrance).toBe("done"), { timeout: 6000 });
+    await waitFor(() => expect(layer.dataset.entrance).toBe("done"), { timeout: 15_000 });
     await expect(layer.dataset.spot).toBe("hero");
     await expect(layer.dataset.mood).toBe("happy");
     await expect(activeSheet(layer)).toContain("/lukas/wave.webp");

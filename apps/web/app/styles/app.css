@@ -855,6 +855,15 @@
     inset: 0;
     background-repeat: no-repeat;
   }
+  /*
+   * A deferred Lukas (`deferUntilNear`) keeps his sheet unfetched while far from the viewport.
+   * Only with scripting: without JavaScript nothing would ever mark him near, so he loads as usual.
+   */
+  @media (scripting: enabled) {
+    .lk-lukas[data-lukas-defer="far"] .lk-lukas-sprite {
+      background-image: none !important;
+    }
+  }
   .lk-lukas-sprite.is-playing {
     animation:
       lk-sprite-x var(--lk-sprite-row-ms) steps(var(--lk-sprite-cols)) infinite,

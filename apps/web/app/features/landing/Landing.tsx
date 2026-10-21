@@ -74,7 +74,7 @@ function Closing() {
           data-lukas-mood="celebrating"
           aria-hidden="true"
         >
-          <Lukas mood="celebrating" size="100%" decorative />
+          <Lukas mood="celebrating" size="100%" decorative deferUntilNear />
         </span>
         <h2 id="closing-title">{t("closing.title")}</h2>
         <p>{t("closing.body")}</p>

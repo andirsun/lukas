@@ -251,6 +251,20 @@ test.describe("2.5D Lukas", () => {
     expect(shift).toBeLessThan(0.01);
   });
 
+  test("steps aside when reduced motion is switched on while the page is open", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => sessionStorage.setItem("lukas:entrance", "seen"));
+    await page.goto("/");
+    await expect(page.locator("[data-lukas-traveler]")).toBeVisible({ timeout: 30_000 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(page.locator("[data-lukas-traveler]")).toHaveCount(0);
+    await expect(page.locator("html")).not.toHaveAttribute("data-lukas-live", /.*/);
+    const sprite = page.locator("#hero [data-slot='hero-mascot'] .lk-lukas-sprite");
+    await expect(sprite).toBeVisible();
+    expect(await sprite.evaluate((el) => el.getAnimations().length)).toBe(0);
+  });
+
   test("keeps the still image under reduced motion", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");

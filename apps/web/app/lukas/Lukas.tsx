@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useTranslations } from "use-intl";
 import { cx } from "../ui/cx.ts";
 import { useReducedMotionPreference } from "../ui/motion-tokens.ts";
@@ -59,6 +59,38 @@ export interface LukasProps {
   decorative?: boolean;
   /** Overrides the art for this mood (final art, the landing page, stories). */
   art?: LukasMoodArt;
+  /**
+   * For a Lukas far down a page: with JavaScript, his sheet is only fetched once he is within
+   * about a screen of the viewport (`data-lukas-defer`, see app.css), so it doesn't weigh on the
+   * first load. Without JavaScript (or `scripting` media support) he loads as usual.
+   */
+  deferUntilNear?: boolean;
+}
+
+/** False until the element comes within `margin` of the viewport (true without IntersectionObserver). */
+function useNearViewport(enabled: boolean, margin = "400px") {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const element = ref.current;
+    if (!enabled || !element) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNear(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: margin },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [enabled, margin]);
+  return { ref, near };
 }
 
 /** `background-position` of a frame: with `background-size: cols·100% rows·100%`, a cell's
@@ -107,8 +139,15 @@ const SPARKLES = [
  * his hands, celebrating jumps among sparkles. Under reduced motion every mood is a still frame.
  * Art with a CSS `treatment` (shiver, hop) adds it on top. Named by its mood unless `decorative`.
  */
-export function Lukas({ mood, size = 96, decorative = false, art }: LukasProps) {
+export function Lukas({
+  mood,
+  size = 96,
+  decorative = false,
+  art,
+  deferUntilNear = false,
+}: LukasProps) {
   const t = useTranslations("mascot");
+  const { ref, near } = useNearViewport(deferUntilNear);
   const reduceMotion = useReducedMotionPreference();
   const { sprite, play, frame, stillFrame, treatment } = art ?? LUKAS_ART[mood];
   const moving = !reduceMotion;
@@ -130,6 +169,8 @@ export function Lukas({ mood, size = 96, decorative = false, art }: LukasProps) 
         moving && treatment === "hop" && "is-hop",
       )}
       style={{ width: size, height: size }}
+      ref={ref}
+      data-lukas-defer={deferUntilNear ? (near ? "near" : "far") : undefined}
       {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": t(mood) })}
     >
       <span className="lk-lukas-body">

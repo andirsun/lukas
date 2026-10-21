@@ -80,6 +80,25 @@ export function TravelingLukas() {
   const [hopping, setHopping] = useState(false);
   const moving = useRef(false);
   const size = useRef(0);
+  // The mood his spot asks for; he shows it once its sheet has loaded (never a blank frame).
+  const wanted = useRef(mood);
+  const sheets = useRef({ ready: new Set<LukasMood>(), loading: new Set<LukasMood>() });
+
+  /** Loads a mood's sheet once; then mounts its layer and, if his spot wants it, shows it. */
+  const load = useCallback((m: LukasMood) => {
+    const { ready, loading } = sheets.current;
+    if (ready.has(m) || loading.has(m)) return;
+    loading.add(m);
+    const image = new Image();
+    image.src = LUKAS_ART[m].sprite.src;
+    const done = () => {
+      loading.delete(m);
+      ready.add(m);
+      setMounted((previous) => (previous.has(m) ? previous : new Set([...previous, m])));
+      if (wanted.current === m) setMood(m);
+    };
+    image.decode().then(done, done);
+  }, []);
 
   const place = useCallback(
     ({ spots, index, y }: { spots: LukasSpot[]; index: number; y: number }) => {
@@ -119,18 +138,22 @@ export function TravelingLukas() {
       }
       setSpotId(spot.id);
       const target = moodOf(spot.element);
-      setMood(target);
-      // Load the next spot's sheet while he is still here, so it is ready when he arrives.
-      const upcoming = moodOf(next?.element);
-      setMounted((previous) =>
-        previous.has(target) && previous.has(upcoming)
-          ? previous
-          : new Set([...previous, target, upcoming]),
-      );
+      wanted.current = target;
+      load(target);
+      // Until the spot's sheet has loaded (an anchor jump on a slow link), he keeps his mood.
+      if (sheets.current.ready.has(target)) setMood(target);
     },
-    [],
+    [load],
   );
   useScrollPose(place);
+
+  // Every spot's sheet starts loading as soon as he is live (the page has loaded and is idle), so
+  // a jump straight to a section (the header's "how it works" link) finds it ready or in flight.
+  useEffect(() => {
+    for (const spot of document.querySelectorAll<HTMLElement>("[data-lukas-spot]")) {
+      load(moodOf(spot));
+    }
+  }, [load]);
 
   // He is live: the prerendered Lukas in the spots steps aside (and comes back when he unmounts).
   useEffect(() => {

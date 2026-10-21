@@ -55,7 +55,7 @@ export function HowItWorks() {
                 <span className="lk-amount lk-landing-demo-expense">{money(DEMO.expense)}</span>
               </div>
               <span className="lk-landing-saved">
-                <Lukas mood="celebrating" size={40} decorative />
+                <Lukas mood="celebrating" size={40} decorative deferUntilNear />
                 {t("log.demo_saved")}
               </span>
             </>
