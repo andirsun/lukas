@@ -92,7 +92,7 @@ const ROADMAP = {
     otherPath: "/en/roadmap",
     title: "Lo que viene",
     titlePart: "Lo que viene",
-    intro: "Esto es lo que tenemos planeado. Puede cambiar según lo que nos cuentes.",
+    intro: "Esto es lo que tenemos planeado. Puede cambiar con el tiempo.",
     columns: [
       {
         label: "En construcción",
@@ -108,7 +108,6 @@ const ROADMAP = {
           "App para iPhone",
           "Captura automática de las alertas de tu banco",
           "Importa desde Buddy y otras apps",
-          "Rachas y logros",
         ],
       },
     ],
@@ -124,7 +123,7 @@ const ROADMAP = {
     otherPath: "/roadmap",
     title: "What's next",
     titlePart: "What's next",
-    intro: "This is what we have planned. It may change depending on what you tell us.",
+    intro: "This is what we have planned. It may change over time.",
     columns: [
       {
         label: "Being built",
@@ -144,7 +143,6 @@ const ROADMAP = {
           "iPhone app",
           "Automatic capture of your bank's alerts",
           "Import from Buddy and other apps",
-          "Streaks and achievements",
         ],
       },
     ],
@@ -589,6 +587,12 @@ for (const l of LOCALES) {
       const footerLink = page.getByRole("contentinfo").getByRole("link", { name: r.navLink });
       await expect(footerLink).toHaveAttribute("href", r.path);
       await expect(footerLink).not.toHaveAttribute("aria-current", /.+/);
+      // The active language is marked the same way on the landing.
+      await expect(
+        page
+          .getByRole("contentinfo")
+          .getByRole("link", { name: l.locale === "es" ? "Español" : "English" }),
+      ).toHaveAttribute("aria-current", "true");
       const headerLink = page.getByRole("banner").getByRole("link", { name: r.navLink });
       // The phone header has no room for it (hidden, so not in the accessibility tree); from
       // 900px it sits among the section links.
@@ -982,6 +986,11 @@ for (const l of LOCALES) {
         "aria-current",
         "page",
       );
+      // Only the page link is "current": the active language is marked another way.
+      await expect(footer.locator('a[aria-current="page"]')).toHaveCount(1);
+      await expect(
+        footer.getByRole("link", { name: l.locale === "es" ? "Español" : "English" }),
+      ).toHaveAttribute("aria-current", "true");
       await expect(footer.getByRole("link", { name: l.privacy })).toHaveAttribute(
         "href",
         `${l.path}#privacy`,

@@ -109,8 +109,12 @@
     transition: transform var(--press) ease;
   }
   .lk-landing-link:hover,
-  .lk-landing-link[aria-current="page"] {
+  .lk-landing-link[aria-current] {
     color: var(--ink);
+  }
+  /* The active language (footer switch): a filled pill, not the page link's gold underline. */
+  .lk-landing-link[aria-current="true"] {
+    background: var(--surface-sunken);
   }
   .lk-landing-link[aria-current="page"] {
     text-decoration: underline;

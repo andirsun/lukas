@@ -193,7 +193,7 @@ export const FooterSection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const english = canvas.getByRole("link", { name: "English" });
-    await expect(english).toHaveAttribute("aria-current", "page");
+    await expect(english).toHaveAttribute("aria-current", "true");
     const spanish = canvas.getByRole("link", { name: "Español" });
     await expect(spanish).toHaveAttribute("href", "/");
     await expect(spanish).toHaveAttribute("hreflang", "es");

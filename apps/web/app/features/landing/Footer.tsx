@@ -9,8 +9,10 @@ const LOCALES: Locale[] = ["es", "en"];
 
 /**
  * Language switch (the same page in the other language), the roadmap and privacy links and the
- * copyright. `page` is the page it sits on (the landing by default): the language switch keeps it,
- * and on the roadmap the privacy link leads to the landing's answer.
+ * copyright. The active language is marked `aria-current="true"` (a filled pill) and the current
+ * page `aria-current="page"` (the gold underline), so the two never look alike. `page` is the page
+ * it sits on (the landing by default): the language switch keeps it, and on the roadmap the privacy
+ * link leads to the landing's answer.
  */
 export function Footer({ page = "landing" }: { page?: SitePage }) {
   const t = useTranslations();
@@ -29,7 +31,7 @@ export function Footer({ page = "landing" }: { page?: SitePage }) {
                     className="lk-landing-link"
                     lang={option}
                     hrefLang={option}
-                    aria-current={option === locale ? "page" : undefined}
+                    aria-current={option === locale ? "true" : undefined}
                   >
                     {t(`language.${option}`)}
                   </Link>

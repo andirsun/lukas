@@ -181,7 +181,7 @@
       "description": "What we have planned for Lukitas: the web app, the Android widget with a microphone, several expenses in one sentence, your AI connected and more. No dates, and it may change."
     },
     "title": "What's next",
-    "intro": "This is what we have planned. It may change depending on what you tell us.",
+    "intro": "This is what we have planned. It may change over time.",
     "status": {
       "done": "Live",
       "building": "Being built",
@@ -228,10 +228,6 @@
       "import_others": {
         "title": "Import from Buddy and other apps",
         "body": "More ways to bring your history."
-      },
-      "streaks": {
-        "title": "Streaks and achievements",
-        "body": "A nudge to make logging a habit."
       }
     }
   },

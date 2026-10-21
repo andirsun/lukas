@@ -26,7 +26,7 @@ export const Page: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent("Lo que viene");
-    await expect(canvas.getByText(/Puede cambiar según lo que nos cuentes/)).toBeVisible();
+    await expect(canvas.getByText(/Puede cambiar con el tiempo/)).toBeVisible();
     const columns = canvas.getAllByRole("heading", { level: 2 });
     await expect(columns.map((heading) => heading.textContent)).toEqual([
       "En construcción",
@@ -45,7 +45,7 @@ export const PageDayEnglish: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent("What's next");
     await expect(canvas.getByRole("heading", { name: "Being built" })).toBeVisible();
-    await expect(canvas.getByRole("heading", { name: "Streaks and achievements" })).toBeVisible();
+    await expect(canvas.getByRole("heading", { name: "iPhone app" })).toBeVisible();
   },
 };
 

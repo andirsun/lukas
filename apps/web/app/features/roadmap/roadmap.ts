@@ -42,7 +42,6 @@ export const ROADMAP_ITEMS: readonly RoadmapItem[] = [
   item("iphone_app", "later", "📱"),
   item("bank_alerts", "later", "🏦"),
   item("import_others", "later", "📂"),
-  item("streaks", "later", "🏆"),
 ];
 
 /** The three items the landing shows in "what's next", in order. */

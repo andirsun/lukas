@@ -181,7 +181,7 @@
       "description": "Lo que tenemos planeado para Lukitas: la web, el widget con micrófono para Android, varios gastos en una frase, tu IA conectada y más. Sin fechas, y puede cambiar."
     },
     "title": "Lo que viene",
-    "intro": "Esto es lo que tenemos planeado. Puede cambiar según lo que nos cuentes.",
+    "intro": "Esto es lo que tenemos planeado. Puede cambiar con el tiempo.",
     "status": {
       "done": "Ya está",
       "building": "En construcción",
@@ -228,10 +228,6 @@
       "import_others": {
         "title": "Importa desde Buddy y otras apps",
         "body": "Más formas de traer tu historial."
-      },
-      "streaks": {
-        "title": "Rachas y logros",
-        "body": "Un empujón para que anotar se vuelva hábito."
       }
     }
   },
