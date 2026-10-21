@@ -39,7 +39,35 @@ test("profile can be read and updated", async () => {
     email: "a@lukas.test",
     timezone: "America/Bogota",
     locale: "en",
+    onboardingCompletedAt: null,
   });
+});
+
+test("onboarding completion is recorded once", async () => {
+  const first = await t.request("PATCH", "/v1/me", {
+    headers: b.headers,
+    body: { onboardingCompleted: true },
+  });
+  expect(first.status).toBe(200);
+  const { onboardingCompletedAt } = (await first.json()) as { onboardingCompletedAt: string };
+  expect(new Date(onboardingCompletedAt).toISOString()).toBe(onboardingCompletedAt);
+
+  const second = await t.request("PATCH", "/v1/me", {
+    headers: b.headers,
+    body: { onboardingCompleted: true },
+  });
+  expect(((await second.json()) as { onboardingCompletedAt: string }).onboardingCompletedAt).toBe(
+    onboardingCompletedAt,
+  );
+});
+
+test("onboarding cannot be un-completed", async () => {
+  const res = await t.request("PATCH", "/v1/me", {
+    headers: a.headers,
+    body: { onboardingCompleted: false },
+  });
+  expect(res.status).toBe(422);
+  expect(((await res.json()) as { code?: string; type?: string }).code).toBe("validation_failed");
 });
 
 test("invalid time zones are rejected", async () => {

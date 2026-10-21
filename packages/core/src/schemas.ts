@@ -111,6 +111,7 @@ export const updateProfileSchema = z
   .object({
     timezone: z.string().refine(isValidTimeZone, "Unknown time zone"),
     locale: z.enum(["es", "en"]),
+    onboardingCompleted: z.literal(true),
   })
   .partial()
   .refine(atLeastOne, AT_LEAST_ONE);

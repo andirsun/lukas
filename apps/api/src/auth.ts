@@ -56,6 +56,7 @@ export function createAuth(deps: AppDeps) {
       additionalFields: {
         timezone: { type: "string", required: false, defaultValue: "UTC", input: false },
         locale: { type: "string", required: false, defaultValue: "es", input: false },
+        onboardingCompletedAt: { type: "date", required: false, input: false },
       },
     },
     advanced: {

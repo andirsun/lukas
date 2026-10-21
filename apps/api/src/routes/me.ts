@@ -9,7 +9,7 @@ import {
   user,
   withUser,
 } from "@lukas/db";
-import { asc, eq, isNull } from "@lukas/db/orm";
+import { asc, eq, isNull, sql } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
@@ -21,6 +21,7 @@ const profileDto = z.object({
   email: z.string(),
   timezone: z.string(),
   locale: z.string(),
+  onboardingCompletedAt: z.string().nullable(),
 });
 
 const csvField = (value: string) =>
@@ -28,11 +29,17 @@ const csvField = (value: string) =>
 
 async function profile(deps: AppDeps, userId: string) {
   const [row] = await deps.db
-    .select({ id: user.id, email: user.email, timezone: user.timezone, locale: user.locale })
+    .select({
+      id: user.id,
+      email: user.email,
+      timezone: user.timezone,
+      locale: user.locale,
+      onboardingCompletedAt: user.onboardingCompletedAt,
+    })
     .from(user)
     .where(eq(user.id, userId));
   if (!row) throw new ApiError(401, "unauthenticated", "Sign in to continue");
-  return row;
+  return { ...row, onboardingCompletedAt: row.onboardingCompletedAt?.toISOString() ?? null };
 }
 
 export function meRoutes(deps: AppDeps) {
@@ -55,9 +62,16 @@ export function meRoutes(deps: AppDeps) {
       responses: { 200: jsonResponse(profileDto, "Updated profile"), ...problems(422) },
     }),
     async (c) => {
+      const { onboardingCompleted, ...fields } = c.req.valid("json");
       await deps.db
         .update(user)
-        .set(c.req.valid("json"))
+        .set({
+          ...fields,
+          // Stamp completion once; later calls keep the first timestamp.
+          ...(onboardingCompleted
+            ? { onboardingCompletedAt: sql`coalesce(${user.onboardingCompletedAt}, now())` }
+            : {}),
+        })
         .where(eq(user.id, c.get("userId")));
       return c.json(await profile(deps, c.get("userId")), 200);
     },
