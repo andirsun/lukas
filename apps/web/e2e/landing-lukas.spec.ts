@@ -251,6 +251,46 @@ test.describe("2.5D Lukas", () => {
     expect(shift).toBeLessThan(0.01);
   });
 
+  test("never leaves a spot empty when a sheet fails to load", async ({ page }) => {
+    await page.route("**/lukas/worried.webp", (route) => route.abort());
+    await page.addInitScript(() => sessionStorage.setItem("lukas:entrance", "seen"));
+    await page.goto("/");
+    await expect(page.locator("[data-lukas-traveler]")).toBeVisible({ timeout: 30_000 });
+    await scrollToSpot(page, "how");
+    // Give the failed sheet time to fail and the layer time to react.
+    await page.waitForTimeout(1500);
+    const state = await page.evaluate(async () => {
+      const layer = document.querySelector<HTMLElement>("[data-lukas-traveler]");
+      if (!layer) {
+        const hero = document.querySelector("#hero [data-slot='hero-mascot'] .lk-lukas");
+        return {
+          steppedAside: true,
+          live: document.documentElement.hasAttribute("data-lukas-live"),
+          heroVisible: hero ? getComputedStyle(hero).visibility === "visible" : false,
+        };
+      }
+      const sprite = layer.querySelector(".lk-traveler-mood.is-active .lk-lukas-sprite");
+      const url = sprite
+        ? /url\("?([^")]+)"?\)/.exec(getComputedStyle(sprite).backgroundImage)?.[1]
+        : undefined;
+      const sheetLoads = await new Promise<boolean>((resolve) => {
+        if (!url) return resolve(false);
+        const image = new Image();
+        image.onload = () => resolve(true);
+        image.onerror = () => resolve(false);
+        image.src = url;
+      });
+      return { steppedAside: false, spot: layer.dataset.spot, sheetLoads };
+    });
+    if (state.steppedAside) {
+      // He stepped aside: the prerendered sprites are back.
+      expect(state).toEqual({ steppedAside: true, live: false, heroVisible: true });
+    } else {
+      // He stands on the spot, showing a sheet that actually loaded (the mood he held).
+      expect(state).toEqual({ steppedAside: false, spot: "how", sheetLoads: true });
+    }
+  });
+
   test("steps aside when reduced motion is switched on while the page is open", async ({
     page,
   }) => {

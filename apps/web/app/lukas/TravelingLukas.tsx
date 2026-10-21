@@ -80,24 +80,44 @@ export function TravelingLukas() {
   const [hopping, setHopping] = useState(false);
   const moving = useRef(false);
   const size = useRef(0);
-  // The mood his spot asks for; he shows it once its sheet has loaded (never a blank frame).
+  // The mood his spot asks for. He switches to it only once its sheet has loaded, and keeps the
+  // mood he shows meanwhile; if the sheet of the mood he shows fails, he steps aside (`broken`)
+  // and the prerendered sprites come back. So a spot never stays empty.
   const wanted = useRef(mood);
-  const sheets = useRef({ ready: new Set<LukasMood>(), loading: new Set<LukasMood>() });
+  const shown = useRef(mood);
+  shown.current = mood;
+  const sheets = useRef({
+    ready: new Set<LukasMood>(),
+    loading: new Set<LukasMood>(),
+    failed: new Set<LukasMood>(),
+  });
+  const [broken, setBroken] = useState(false);
 
-  /** Loads a mood's sheet once; then mounts its layer and, if his spot wants it, shows it. */
-  const load = useCallback((m: LukasMood) => {
-    const { ready, loading } = sheets.current;
-    if (ready.has(m) || loading.has(m)) return;
+  /**
+   * Loads a mood's sheet once; then mounts its layer and, if his spot wants it, shows it. A sheet
+   * that failed isn't tried again until his spot asks for it anew (`retry`).
+   */
+  const load = useCallback((m: LukasMood, retry = false) => {
+    const { ready, loading, failed } = sheets.current;
+    if (retry) failed.delete(m);
+    if (ready.has(m) || loading.has(m) || failed.has(m)) return;
     loading.add(m);
     const image = new Image();
     image.src = LUKAS_ART[m].sprite.src;
-    const done = () => {
-      loading.delete(m);
-      ready.add(m);
-      setMounted((previous) => (previous.has(m) ? previous : new Set([...previous, m])));
-      if (wanted.current === m) setMood(m);
-    };
-    image.decode().then(done, done);
+    image.decode().then(
+      () => {
+        loading.delete(m);
+        ready.add(m);
+        setMounted((previous) => (previous.has(m) ? previous : new Set([...previous, m])));
+        if (wanted.current === m) setMood(m);
+      },
+      () => {
+        loading.delete(m);
+        failed.add(m);
+        // Nothing to hold on to: the mood he shows has no sheet.
+        if (shown.current === m) setBroken(true);
+      },
+    );
   }, []);
 
   const place = useCallback(
@@ -138,8 +158,10 @@ export function TravelingLukas() {
       }
       setSpotId(spot.id);
       const target = moodOf(spot.element);
+      // Arriving at a spot (a new target) retries its sheet if it failed before.
+      const arriving = wanted.current !== target;
       wanted.current = target;
-      load(target);
+      load(target, arriving);
       // Until the spot's sheet has loaded (an anchor jump on a slow link), he keeps his mood.
       if (sheets.current.ready.has(target)) setMood(target);
     },
@@ -155,8 +177,10 @@ export function TravelingLukas() {
     }
   }, [load]);
 
-  // He is live: the prerendered Lukas in the spots steps aside (and comes back when he unmounts).
+  // He is live: the prerendered Lukas in the spots steps aside (and comes back when he unmounts or
+  // steps aside himself).
   useEffect(() => {
+    if (broken) return;
     const frame = requestAnimationFrame(() =>
       document.documentElement.setAttribute(LIVE_ATTRIBUTE, "live"),
     );
@@ -164,7 +188,7 @@ export function TravelingLukas() {
       cancelAnimationFrame(frame);
       document.documentElement.removeAttribute(LIVE_ATTRIBUTE);
     };
-  }, []);
+  }, [broken]);
 
   // The entrance: roll in, settle, unfold, wave; driven per frame from the pure `entranceFrame`.
   useEffect(() => {
@@ -241,6 +265,8 @@ export function TravelingLukas() {
     if (moving.current || entrance === "playing" || hopping) return;
     setHopping(true);
   };
+
+  if (broken) return null;
 
   return (
     <div
