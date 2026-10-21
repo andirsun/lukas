@@ -57,7 +57,7 @@ A signed-out visit to `/app/*` goes to `/sign-in` and returns to the original ro
 
 Reference: `docs/design/stage-2-mockups/landing.html`.
 
-- **Hero:** the two questions shown crossed out, then the headline **"Tus lukas, por fin claras."** and the line **"Tu presupuesto, tu mejor amigo."** (English: "Your money, finally clear." / "Your budget, your best friend."), a short description, and one primary action: **Empieza gratis / Start free** → `/sign-in`. Under it: "Sin contraseñas · Importa tu historial de Budge".
+- **Hero** (revised 2026-10-21 by the founder): a tilted handwritten annotation **"¡Gratis, y siempre lo será!"**, the headline **"Tus lukas, por fin claras."** with "lukas" on a gold marker highlight (English: "Your money, finally clear."), the lead **"Lukas es tu presupuesto, y te va a dar gusto cuidarlo."** plus a short description, and one primary action: **Empieza ahora / Get started** → `/sign-in`. Under it: "Gratis para siempre · Código abierto · Sin contraseñas" (open source links to the GitHub repo). Lukas is never described as a game, the app is free forever and open source, the mobile app is Android and iOS, and imports come from other apps (Budge today, Buddy and others soon). Privacy copy only claims what is true today.
 - **Lukas 3D** (§5.3) beside or above the hero: eyes and body follow the cursor (desktop) or touch / device tilt (phone, where allowed); the character travels with the scroll, changing pose per section; hovering or tapping makes it jump or spin.
 - **"Úsalo como prefieras / Use it your way":** three cards — Web (active, "Start"), Android app ("soon"), With your AI — Claude / ChatGPT ("soon").
 - Sections explaining the product (what you spend on, budgets that warn you, import from Budge), an FAQ, and a footer with language switch and the privacy policy.
@@ -95,6 +95,10 @@ Reference: `docs/design/stage-2-mockups/add-transaction.html`.
 - Category chips (most used first, "more" for the rest); date defaults to today in the user's time zone; optional note; paid/pending.
 - **Save** → sheet closes → celebration (Lukas, confetti, sound, vibration) → toast with the rule-based message, **Undo** and **Name it** (when saved without a name).
 - Edit mode adds delete (soft, with undo).
+
+### 2.6b Try-before-signup demo (added 2026-10-21)
+
+To lower the barrier of creating an account, `/demo` lets anyone use the full app with an invented user, "Valentina (demo)": 3 months of transactions, budgets (one category over, one near), recurring rent/Spotify/salary. Everything works — add/edit/delete transactions, create categories and budgets, mark pending as paid, insights — against an in-memory backend in the browser that applies the same `@lukas/core` rules and answers the same API shapes. Nothing is saved anywhere; reloading the page resets the demo. A sticky banner says it's a demo with invented data and offers "Crear mi cuenta". The landing hero adds a secondary call to action, "Pruébalo sin cuenta". Settings that don't apply (export, delete account, passkeys, import) are disabled with a note.
 
 ### 2.7 Other screens
 
