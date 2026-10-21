@@ -17,8 +17,20 @@ export function localeFromPathname(pathname: string): Locale {
 }
 
 /**
- * Formats integer minor units. Negatives use the real minus sign (U+2212) rather than the
- * hyphen-minus `Intl` emits, so "−6,08 €" never breaks or reads as a dash.
+ * Every amount is stored in hundredths of the currency, whatever the currency's own ISO exponent:
+ * `parseDecimalToMinor` and `formatMinorAsDecimal` in core, the importer and the API all use 100.
+ * So 50.000 COP is stored as 5.000.000. Dividing by `Intl`'s own digit count instead would show
+ * COP 100x too large, and that count is not even stable: it is 2 or 0 depending on the ICU
+ * version of the browser or Node.
+ */
+const MINOR_UNIT = 100;
+
+/** Currencies shown without decimals; stored in hundredths like the rest. */
+const WHOLE_UNIT_CURRENCIES = new Set(["COP", "CLP"]);
+
+/**
+ * Formats integer minor units (hundredths). Negatives use the real minus sign (U+2212) rather
+ * than the hyphen-minus `Intl` emits, so "−6,08 €" never breaks or reads as a dash.
  */
 export function formatMoney(
   cents: number,
@@ -30,9 +42,37 @@ export function formatMoney(
     style: "currency",
     currency,
     signDisplay: opts.sign === "always" ? "exceptZero" : "negative",
+    ...(WHOLE_UNIT_CURRENCIES.has(currency)
+      ? { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+      : {}),
   });
-  const digits = format.resolvedOptions().maximumFractionDigits ?? 2;
-  return format.format(cents / 10 ** digits).replaceAll("-", MINUS);
+  return format.format(cents / MINOR_UNIT).replaceAll("-", MINUS);
+}
+
+/**
+ * The "lukas hint" for COP: 1 luka = $1.000 and 1 palo = $1.000.000 (es), "k" and "M" (en).
+ * `cents` is the stored amount, as `formatMoney` takes it. Returns `null` for any other currency
+ * and under 1.000 pesos. Lukas show at most one decimal, palos at most two; the palos
+ * threshold applies after rounding, so 999.990 pesos is "1 palo". The sign is ignored.
+ */
+export function lukasHint(cents: number, currency: string, locale: Locale): string | null {
+  if (currency !== "COP") return null;
+  const abs = Math.abs(cents);
+  if (abs < 1000 * MINOR_UNIT) return null;
+
+  // Integer divisions only: tenths of a luka (pesos / 100) and hundredths of a palo (pesos / 10.000).
+  const lukaTenths = Math.round(abs / (100 * MINOR_UNIT));
+  const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 2 });
+  if (lukaTenths < 10_000) {
+    const lukas = lukaTenths / 10;
+    return locale === "es"
+      ? `${number.format(lukas)} ${lukas === 1 ? "luka" : "lukas"}`
+      : `${number.format(lukas)}k`;
+  }
+  const palos = Math.round(abs / (10_000 * MINOR_UNIT)) / 100;
+  return locale === "es"
+    ? `${number.format(palos)} ${palos === 1 ? "palo" : "palos"}`
+    : `${number.format(palos)}M`;
 }
 
 function utcDate(iso: string): Date {

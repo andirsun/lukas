@@ -40,7 +40,79 @@ test("profile can be read and updated", async () => {
     timezone: "America/Bogota",
     locale: "en",
     onboardingCompletedAt: null,
+    currency: "EUR",
   });
+});
+
+test("the currency can be chosen while the account has no transactions", async () => {
+  const c = await t.signIn("c@lukas.test");
+  const res = await t.request("PATCH", "/v1/me", { headers: c.headers, body: { currency: "COP" } });
+  expect(res.status).toBe(200);
+  expect(((await res.json()) as { currency: string }).currency).toBe("COP");
+  const me = (await (await t.request("GET", "/v1/me", { headers: c.headers })).json()) as {
+    currency: string;
+  };
+  expect(me.currency).toBe("COP");
+
+  // The account's currency is what new transactions are stored in.
+  const cat = (await (
+    await t.request("POST", "/v1/categories", {
+      headers: c.headers,
+      body: { name: "Comida", kind: "expense", icon: "cart", color: "orange" },
+    })
+  ).json()) as { id: string };
+  const created = await t.request("POST", "/v1/transactions", {
+    headers: c.headers,
+    body: { categoryId: cat.id, name: "Almuerzo", amount: -5000000, date: "2026-10-02" },
+  });
+  expect(((await created.json()) as { currency: string }).currency).toBe("COP");
+});
+
+test("the currency is locked once the account has transactions", async () => {
+  const res = await t.request("PATCH", "/v1/me", {
+    headers: a.headers,
+    body: { currency: "COP", timezone: "America/Bogota" },
+  });
+  expect(res.status).toBe(409);
+  expect(((await res.json()) as { code: string }).code).toBe("currency_locked");
+  const me = (await (await t.request("GET", "/v1/me", { headers: a.headers })).json()) as {
+    currency: string;
+  };
+  expect(me.currency).toBe("EUR");
+
+  // Setting the value it already has is not a change.
+  const same = await t.request("PATCH", "/v1/me", {
+    headers: a.headers,
+    body: { currency: "EUR" },
+  });
+  expect(same.status).toBe(200);
+});
+
+test("a soft-deleted transaction still locks the currency", async () => {
+  const d = await t.signIn("d@lukas.test");
+  const cat = (await (
+    await t.request("POST", "/v1/categories", {
+      headers: d.headers,
+      body: { name: "Comida", kind: "expense", icon: "cart", color: "orange" },
+    })
+  ).json()) as { id: string };
+  const tx = (await (
+    await t.request("POST", "/v1/transactions", {
+      headers: d.headers,
+      body: { categoryId: cat.id, name: "Almuerzo", amount: -1000, date: "2026-10-02" },
+    })
+  ).json()) as { id: string };
+  await t.request("DELETE", `/v1/transactions/${tx.id}`, { headers: d.headers });
+  const res = await t.request("PATCH", "/v1/me", { headers: d.headers, body: { currency: "USD" } });
+  expect(res.status).toBe(409);
+});
+
+test("unsupported currencies are rejected", async () => {
+  const e = await t.signIn("e@lukas.test");
+  for (const currency of ["JPY", "cop", "", 5]) {
+    const res = await t.request("PATCH", "/v1/me", { headers: e.headers, body: { currency } });
+    expect(res.status, String(currency)).toBe(422);
+  }
 });
 
 test("onboarding completion is recorded once", async () => {

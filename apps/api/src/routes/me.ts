@@ -9,7 +9,7 @@ import {
   user,
   withUser,
 } from "@lukas/db";
-import { asc, eq, isNull, sql } from "@lukas/db/orm";
+import { and, asc, eq, isNull, sql } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
@@ -22,6 +22,7 @@ const profileDto = z.object({
   timezone: z.string(),
   locale: z.string(),
   onboardingCompletedAt: z.string().nullable(),
+  currency: z.string(),
 });
 
 const csvField = (value: string) =>
@@ -39,7 +40,48 @@ async function profile(deps: AppDeps, userId: string) {
     .from(user)
     .where(eq(user.id, userId));
   if (!row) throw new ApiError(401, "unauthenticated", "Sign in to continue");
-  return { ...row, onboardingCompletedAt: row.onboardingCompletedAt?.toISOString() ?? null };
+  const [account] = await withUser(deps.db, userId, (tx) =>
+    tx.select({ currency: accounts.currency }).from(accounts).where(eq(accounts.isDefault, true)),
+  );
+  return {
+    ...row,
+    onboardingCompletedAt: row.onboardingCompletedAt?.toISOString() ?? null,
+    currency: account?.currency ?? "EUR",
+  };
+}
+
+/**
+ * Sets the default account's currency, only while it has no transactions (soft-deleted ones
+ * count: they carry the old currency and can be restored). The check and the update are one
+ * statement, so a transaction created in between cannot slip past it.
+ */
+async function setCurrency(deps: AppDeps, userId: string, currency: string) {
+  await withUser(deps.db, userId, async (tx) => {
+    const changed = await tx
+      .update(accounts)
+      .set({ currency })
+      .where(
+        and(
+          eq(accounts.isDefault, true),
+          // Written out: Drizzle renders columns unqualified inside UPDATE, so `id` would be ambiguous.
+          sql`not exists (select 1 from transactions t where t.account_id = accounts.id)`,
+        ),
+      )
+      .returning({ id: accounts.id });
+    if (changed.length > 0) return;
+    // Nothing changed: fine if the account already has that currency, locked otherwise.
+    const [account] = await tx
+      .select({ currency: accounts.currency })
+      .from(accounts)
+      .where(eq(accounts.isDefault, true));
+    if (account?.currency !== currency) {
+      throw new ApiError(
+        409,
+        "currency_locked",
+        "The currency cannot change once the account has transactions",
+      );
+    }
+  });
 }
 
 export function meRoutes(deps: AppDeps) {
@@ -59,20 +101,25 @@ export function meRoutes(deps: AppDeps) {
       method: "patch",
       path: "/v1/me",
       request: { body: jsonBody(updateProfileSchema) },
-      responses: { 200: jsonResponse(profileDto, "Updated profile"), ...problems(422) },
+      responses: { 200: jsonResponse(profileDto, "Updated profile"), ...problems(409, 422) },
     }),
     async (c) => {
-      const { onboardingCompleted, ...fields } = c.req.valid("json");
-      await deps.db
-        .update(user)
-        .set({
-          ...fields,
-          // Stamp completion once; later calls keep the first timestamp.
-          ...(onboardingCompleted
-            ? { onboardingCompletedAt: sql`coalesce(${user.onboardingCompletedAt}, now())` }
-            : {}),
-        })
-        .where(eq(user.id, c.get("userId")));
+      const { onboardingCompleted, currency, ...fields } = c.req.valid("json");
+      // First, so a locked currency rejects the whole request instead of applying part of it.
+      if (currency) await setCurrency(deps, c.get("userId"), currency);
+      const set = {
+        ...fields,
+        // Stamp completion once; later calls keep the first timestamp.
+        ...(onboardingCompleted
+          ? { onboardingCompletedAt: sql`coalesce(${user.onboardingCompletedAt}, now())` }
+          : {}),
+      };
+      if (Object.keys(set).length > 0) {
+        await deps.db
+          .update(user)
+          .set(set)
+          .where(eq(user.id, c.get("userId")));
+      }
       return c.json(await profile(deps, c.get("userId")), 200);
     },
   );

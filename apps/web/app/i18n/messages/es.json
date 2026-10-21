@@ -126,6 +126,7 @@
     "range_too_large": "Ese rango es demasiado largo. Elige menos meses.",
     "category_name_taken": "Ya tienes una categoría con ese nombre.",
     "category_not_found": "Elige una de tus categorías activas.",
+    "currency_locked": "Ya tienes movimientos en esta cuenta, así que no puedes cambiar la moneda.",
     "budget_category_not_expense": "Solo las categorías de gasto pueden tener presupuesto.",
     "idempotency_in_progress": "Seguimos procesando tu solicitud anterior. Espera un momento.",
     "idempotency_key_reused": "Esta solicitud ya se usó con otros datos. Vuelve a intentarlo.",

@@ -32,6 +32,7 @@ export interface paths {
                             timezone: string;
                             locale: string;
                             onboardingCompletedAt: string | null;
+                            currency: string;
                         };
                     };
                 };
@@ -72,6 +73,8 @@ export interface paths {
                         timezone?: string;
                         /** @enum {string} */
                         locale?: "es" | "en";
+                        /** @enum {string} */
+                        currency?: "COP" | "EUR" | "USD" | "MXN" | "ARS" | "CLP" | "PEN";
                         /** @enum {boolean} */
                         onboardingCompleted?: true;
                     };
@@ -90,6 +93,26 @@ export interface paths {
                             timezone: string;
                             locale: string;
                             onboardingCompletedAt: string | null;
+                            currency: string;
+                        };
+                    };
+                };
+                /** @description Problem */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            errors?: {
+                                path: string;
+                                message: string;
+                            }[];
                         };
                     };
                 };

@@ -6,6 +6,7 @@ import {
   formatMoney,
   formatMonth,
   localeFromPathname,
+  lukasHint,
   parseAmountInput,
 } from "./format.ts";
 
@@ -56,8 +57,74 @@ describe("formatMoney", () => {
     expect(formatMoney(-0, "EUR", "en")).toBe("€0.00");
   });
 
-  it("honours the currency's own minor units", () => {
-    expect(formatMoney(1500, "COP", "es")).toContain("15");
+  it("stores every currency in hundredths, so COP shows whole pesos from pesos x 100", () => {
+    // 50.000 pesos are stored as 5.000.000, the same convention as parseAmountInput.
+    expect(formatMoney(5_000_000, "COP", "es")).toBe(`50.000${NBSP}COP`);
+    expect(formatMoney(5_000_000, "COP", "en")).toBe(`COP${NBSP}50,000`);
+    expect(formatMoney(-430_000_000, "COP", "es")).toBe(`−4.300.000${NBSP}COP`);
+    expect(formatMoney(parseAmountInput("50000", "es"), "COP", "es")).toBe(`50.000${NBSP}COP`);
+  });
+});
+
+/** The amount as stored: pesos x 100, like every other currency's minor units. */
+const pesos = (n: number) => n * 100;
+
+describe("lukasHint", () => {
+  it("counts lukas (1.000 pesos) in Spanish", () => {
+    expect(lukasHint(pesos(1000), "COP", "es")).toBe("1 luka");
+    expect(lukasHint(pesos(50000), "COP", "es")).toBe("50 lukas");
+    expect(lukasHint(pesos(15500), "COP", "es")).toBe("15,5 lukas");
+    expect(lukasHint(pesos(15540), "COP", "es")).toBe("15,5 lukas");
+    expect(lukasHint(pesos(15550), "COP", "es")).toBe("15,6 lukas");
+    expect(lukasHint(pesos(15000), "COP", "es")).toBe("15 lukas");
+    expect(lukasHint(pesos(1500), "COP", "es")).toBe("1,5 lukas");
+    expect(lukasHint(pesos(999000), "COP", "es")).toBe("999 lukas");
+  });
+
+  it("counts palos (1.000.000 pesos) in Spanish, up to two decimals", () => {
+    expect(lukasHint(pesos(1_000_000), "COP", "es")).toBe("1 palo");
+    expect(lukasHint(pesos(4_300_000), "COP", "es")).toBe("4,3 palos");
+    expect(lukasHint(pesos(1_250_000), "COP", "es")).toBe("1,25 palos");
+    expect(lukasHint(pesos(1_256_000), "COP", "es")).toBe("1,26 palos");
+    expect(lukasHint(pesos(12_000_000), "COP", "es")).toBe("12 palos");
+  });
+
+  it("moves to palos after rounding", () => {
+    expect(lukasHint(pesos(999_990), "COP", "es")).toBe("1 palo");
+    expect(lukasHint(pesos(999_950), "COP", "es")).toBe("1 palo");
+    expect(lukasHint(pesos(999_940), "COP", "es")).toBe("999,9 lukas");
+  });
+
+  it("uses k and M in English", () => {
+    expect(lukasHint(pesos(50000), "COP", "en")).toBe("50k");
+    expect(lukasHint(pesos(15540), "COP", "en")).toBe("15.5k");
+    expect(lukasHint(pesos(1000), "COP", "en")).toBe("1k");
+    expect(lukasHint(pesos(4_300_000), "COP", "en")).toBe("4.3M");
+    expect(lukasHint(pesos(1_250_000), "COP", "en")).toBe("1.25M");
+    expect(lukasHint(pesos(999_990), "COP", "en")).toBe("1M");
+  });
+
+  it("returns null under 1.000 pesos", () => {
+    expect(lukasHint(0, "COP", "es")).toBeNull();
+    expect(lukasHint(pesos(999), "COP", "es")).toBeNull();
+    expect(lukasHint(99_999, "COP", "es")).toBeNull();
+    expect(lukasHint(pesos(999), "COP", "en")).toBeNull();
+  });
+
+  it("returns null for every other currency", () => {
+    expect(lukasHint(pesos(50000), "EUR", "es")).toBeNull();
+    expect(lukasHint(pesos(50000), "USD", "en")).toBeNull();
+    expect(lukasHint(pesos(50000), "MXN", "es")).toBeNull();
+  });
+
+  it("describes the size of an amount, whatever its sign", () => {
+    expect(lukasHint(-pesos(50000), "COP", "es")).toBe("50 lukas");
+  });
+
+  it("agrees with formatMoney for the same stored integer", () => {
+    const stored = pesos(4_300_000);
+    expect(formatMoney(stored, "COP", "es")).toBe(`4.300.000${NBSP}COP`);
+    expect(lukasHint(stored, "COP", "es")).toBe("4,3 palos");
   });
 });
 

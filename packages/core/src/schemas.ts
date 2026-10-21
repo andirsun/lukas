@@ -107,10 +107,15 @@ export type CreateRecurrence = z.infer<typeof createRecurrenceSchema>;
 export const updateRecurrenceSchema = recurrenceFields.partial().refine(atLeastOne, AT_LEAST_ONE);
 export type UpdateRecurrence = z.infer<typeof updateRecurrenceSchema>;
 
+/** ISO 4217 codes an account can be created in. COP is first: it is the launch market. */
+export const SUPPORTED_CURRENCIES = ["COP", "EUR", "USD", "MXN", "ARS", "CLP", "PEN"] as const;
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+
 export const updateProfileSchema = z
   .object({
     timezone: z.string().refine(isValidTimeZone, "Unknown time zone"),
     locale: z.enum(["es", "en"]),
+    currency: z.enum(SUPPORTED_CURRENCIES),
     onboardingCompleted: z.literal(true),
   })
   .partial()
