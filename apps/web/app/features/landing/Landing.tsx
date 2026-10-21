@@ -2,8 +2,9 @@ import { lazy, Suspense } from "react";
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
+import { useLukas3DReady } from "../../lukas/experimental/lukas3d-support.tsx";
 import { Lukas } from "../../lukas/Lukas.tsx";
-import { Lukas3DBoundary, useLukas3DReady } from "../../lukas/lukas3d-support.tsx";
+import { LiveLukasBoundary } from "../../lukas/live-support.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
 import { Faq } from "./Faq.tsx";
@@ -44,7 +45,7 @@ function Header() {
 }
 
 /** three.js and the model: their own chunk, fetched only when `useLukas3DReady` says so. */
-const Lukas3D = lazy(() => import("../../lukas/Lukas3D.tsx"));
+const Lukas3D = lazy(() => import("../../lukas/experimental/Lukas3D.tsx"));
 
 /**
  * The 3D Lukas, loaded once the page has rendered and the browser is idle. He travels over the
@@ -55,11 +56,11 @@ function TravelingLukas() {
   const ready = useLukas3DReady();
   if (!ready) return null;
   return (
-    <Lukas3DBoundary>
+    <LiveLukasBoundary>
       <Suspense fallback={null}>
         <Lukas3D />
       </Suspense>
-    </Lukas3DBoundary>
+    </LiveLukasBoundary>
   );
 }
 

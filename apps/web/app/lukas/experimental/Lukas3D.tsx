@@ -11,13 +11,13 @@ import {
 } from "react";
 import { type Group, NeutralToneMapping, PMREMGenerator } from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { durationToken } from "../ui/motion-tokens.ts";
+import { durationToken } from "../../ui/motion-tokens.ts";
+import { entrancePhase, markEntranceSeen, rollAt, shouldPlayEntrance } from "../entrance.ts";
+import type { LukasMood } from "../mood.ts";
+import { type LukasSpot, useScrollPose } from "../use-scroll-pose.ts";
 import { type CoinDrive, CoinModel, type CoinPose } from "./coin-model.tsx";
-import { entrancePhase, markEntranceSeen, rollAt, shouldPlayEntrance } from "./entrance.ts";
 import { LUKAS_3D_PALETTE as C } from "./lukas3d-palette.ts";
-import type { LukasMood } from "./mood.ts";
 import { Stage } from "./stage.tsx";
-import { type LukasSpot, useScrollPose } from "./use-scroll-pose.ts";
 import "./lukas3d.css";
 
 /** Loaded only when a GLB replaces the procedural model (it brings the GLTF loader along). */

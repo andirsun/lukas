@@ -19,8 +19,8 @@ import {
   TorusGeometry,
   Vector2,
 } from "three";
+import type { LukasPose } from "../use-scroll-pose.ts";
 import { LUKAS_3D_PALETTE as C } from "./lukas3d-palette.ts";
-import type { LukasPose } from "./use-scroll-pose.ts";
 
 /** Everything the coin can do: the scroll poses, flying between spots, and worried. */
 export type CoinPose = LukasPose | "travel" | "worried";

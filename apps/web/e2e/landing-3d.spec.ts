@@ -253,7 +253,9 @@ test.describe("JavaScript budget", () => {
     expect([...initial].some((file) => manifest[byFile.get(file) ?? ""]?.isEntry)).toBe(true);
 
     // The 3D chunk is a dynamic import only, and three.js never reaches the initial set.
-    const lazy = Object.entries(manifest).find(([key]) => key.endsWith("app/lukas/Lukas3D.tsx"));
+    const lazy = Object.entries(manifest).find(([key]) =>
+      key.endsWith("app/lukas/experimental/Lukas3D.tsx"),
+    );
     expect(lazy, "Lukas3D is its own chunk").toBeDefined();
     const [lazyKey, lazyChunk] = lazy as [string, ManifestChunk];
     expect(lazyChunk.isDynamicEntry).toBe(true);

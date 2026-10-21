@@ -8,7 +8,7 @@ import { Lukas3D } from "./Lukas3D.tsx";
  * spin. On the landing page he travels between the sections' spots instead.
  */
 const meta = {
-  title: "Lukas/Lukas3D",
+  title: "Experimental/Lukas 3D",
   component: Lukas3D,
   args: { mood: "happy" },
   decorators: [
