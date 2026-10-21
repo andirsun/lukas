@@ -24,4 +24,16 @@ export type ImportState =
       discarding?: boolean;
       error?: string | null;
     }
-  | { phase: "imported"; result: ImportDto; prefilled: boolean; currencyNote: CurrencyNote };
+  | {
+      phase: "imported";
+      result: ImportDto;
+      prefilled: boolean;
+      currencyNote: CurrencyNote;
+      /** The import went in, but reading the categories again failed: offer a retry. */
+      error?: string | null;
+      retrying?: boolean;
+    };
+
+/** Rows the import will add: the file's rows minus those already there. */
+export const newRows = (preview: ImportDto) =>
+  Math.max(preview.stats.transactions - preview.stats.duplicates, 0);

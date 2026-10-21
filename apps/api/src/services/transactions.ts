@@ -23,8 +23,15 @@ export function toTransactionDto(row: TransactionRow): TransactionDto {
   };
 }
 
-export async function defaultAccount(tx: Tx) {
-  const [row] = await tx.select().from(accounts).where(eq(accounts.isDefault, true));
+/**
+ * The user's default account. With `lock`, its row stays locked (`FOR UPDATE`) until the
+ * transaction ends. Everything that writes transactions in the account's currency, and the
+ * currency change itself, takes that lock, so they run one after the other: a change cannot slip
+ * between an import's currency check and its inserts.
+ */
+export async function defaultAccount(tx: Tx, { lock = false }: { lock?: boolean } = {}) {
+  const query = tx.select().from(accounts).where(eq(accounts.isDefault, true));
+  const [row] = await (lock ? query.for("update") : query);
   if (!row) throw new Error("User has no default account");
   return row;
 }

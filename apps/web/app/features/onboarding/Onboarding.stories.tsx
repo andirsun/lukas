@@ -33,6 +33,12 @@ const meta = {
 export default meta;
 type Story = StoryObj<Spies>;
 
+/** From the budgets step (where the flows start) on to the import step. */
+async function toImport(canvas: ReturnType<typeof within>) {
+  await userEvent.click(await canvas.findByRole("button", { name: "Continuar" }));
+  await canvas.findByRole("heading", { level: 1, name: "¿Vienes de Budge?" });
+}
+
 const calls = (spy: (line: string) => void) =>
   (spy as unknown as ReturnType<typeof fn>).mock.calls.map((call) => call[0] as string);
 const suggested = (key: string) => {
@@ -324,8 +330,40 @@ export const ImportPreview: Story = {
     await expect(stats.getByText(/Investimento/)).toBeVisible();
     await userEvent.click(stats.getByText("Ver las filas con problemas"));
     await expect(stats.getByText("Línea 19: fecha no válida")).toBeVisible();
-    await expect(canvas.getByRole("button", { name: "Importar 22 movimientos" })).toBeEnabled();
+    // 22 rows, 3 of them already there: 19 to import.
+    await expect(canvas.getByRole("button", { name: "Importar 19 movimientos" })).toBeEnabled();
     await expect(canvas.getByRole("button", { name: "Usar otro archivo" })).toBeVisible();
+  },
+};
+
+/** A file with many bad rows: the list shows 20 and says how many more. */
+export const ImportManyRejected: Story = {
+  render: () => (
+    <ImportHarness
+      state={{
+        phase: "preview",
+        fileName: "budge.csv",
+        preview: {
+          ...SAMPLE_PREVIEW,
+          stats: {
+            ...SAMPLE_PREVIEW.stats,
+            rejected: Array.from({ length: 45 }, (_, i) => ({
+              line: 7 + i,
+              reason: "currency_mismatch",
+            })),
+          },
+        },
+        currencyNote: null,
+        confirming: false,
+      }}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByText("Ver las filas con problemas"));
+    const list = canvas.getByRole("list", { name: "Filas con problemas" });
+    await expect(within(list).getAllByRole("listitem")).toHaveLength(20);
+    await expect(canvas.getByText("y 25 más")).toBeVisible();
   },
 };
 
@@ -373,6 +411,9 @@ export const Imported: Story = {
     await expect(
       canvas.getByText("Llenamos tus presupuestos con lo que gastas en promedio cada mes."),
     ).toBeVisible();
+    await expect(
+      canvas.getByText("Basado en lo que gastaste en tus últimos 3 meses"),
+    ).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Revisar presupuestos" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Continuar" })).toBeEnabled();
   },
@@ -406,16 +447,27 @@ export const Done: Story = {
  */
 export const FlowImportSwitchesCurrency: Story = {
   render: (args) => (
-    <WelcomeStage initialEntry="/welcome/import" currency="COP" onRequest={args.onRequest} />
+    <WelcomeStage initialEntry="/welcome/budgets" currency="COP" onRequest={args.onRequest} />
   ),
   play: async ({ canvasElement, args }) => {
     const { onRequest } = args;
     const canvas = within(canvasElement);
+    await userEvent.type(
+      await canvas.findByRole("textbox", { name: "Presupuesto de Supermercado" }),
+      "300.000",
+    );
+    await toImport(canvas);
     const input = await canvas.findByLabelText("Subir archivo de Budge");
     await userEvent.upload(input, new File(["Date,Payment\n"], "budge.csv", { type: "text/csv" }));
     await expect(
       await canvas.findByText("Tu archivo está en EUR, así que tu cuenta ahora usa EUR."),
     ).toBeVisible();
+    // The result takes focus, so a screen reader reads it out.
+    await waitFor(() =>
+      expect(
+        canvas.getByRole("heading", { name: "Esto es lo que vamos a importar" }),
+      ).toHaveFocus(),
+    );
     await expect(calls(onRequest)).toEqual([
       "POST /api/v1/imports",
       'PATCH /api/v1/me {"currency":"EUR"}',
@@ -423,20 +475,30 @@ export const FlowImportSwitchesCurrency: Story = {
       "POST /api/v1/imports",
     ]);
     await userEvent.click(canvas.getByRole("button", { name: "Importar 22 movimientos" }));
-    await expect(await canvas.findByText("Importamos 22 movimientos.")).toBeVisible();
+    const imported = await canvas.findByRole("heading", { name: "Importamos 22 movimientos." });
+    await waitFor(() => expect(imported).toHaveFocus());
     await expect(onRequest).toHaveBeenCalledWith("POST /api/v1/imports/preview-2/confirm");
     await expect(onRequest).not.toHaveBeenCalledWith("POST /api/v1/imports/preview-1/confirm");
+    // The budget typed in pesos is replaced by the recent average, in euros.
+    await userEvent.click(canvas.getByRole("button", { name: "Revisar presupuestos" }));
+    await expect(
+      await canvas.findByRole("textbox", { name: "Presupuesto de Supermercado" }),
+    ).toHaveValue("35,89");
+    await expect(
+      canvas.getByText("Basado en lo que gastaste en tus últimos 3 meses"),
+    ).toBeVisible();
   },
 };
 
 /** "Usar otro archivo" after a switch drops the preview and puts the account's currency back. */
 export const FlowDiscardRestoresCurrency: Story = {
   render: (args) => (
-    <WelcomeStage initialEntry="/welcome/import" currency="COP" onRequest={args.onRequest} />
+    <WelcomeStage initialEntry="/welcome/budgets" currency="COP" onRequest={args.onRequest} />
   ),
   play: async ({ canvasElement, args }) => {
     const { onRequest } = args;
     const canvas = within(canvasElement);
+    await toImport(canvas);
     await userEvent.upload(
       await canvas.findByLabelText("Subir archivo de Budge"),
       new File(["Date,Payment\n"], "budge.csv", { type: "text/csv" }),
@@ -446,7 +508,58 @@ export const FlowDiscardRestoresCurrency: Story = {
       expect(onRequest).toHaveBeenCalledWith('PATCH /api/v1/me {"currency":"COP"}'),
     );
     await expect(onRequest).toHaveBeenCalledWith("DELETE /api/v1/imports/preview-2");
-    await expect(await canvas.findByLabelText("Subir archivo de Budge")).toBeInTheDocument();
+    // Back to the picker, with focus on it.
+    const picker = await canvas.findByLabelText("Subir archivo de Budge");
+    await waitFor(() => expect(picker).toHaveFocus());
+  },
+};
+
+/**
+ * The import went in, but reading the categories again failed: the step still says it was
+ * imported (pressing Importar again could only fail), shows the problem and offers a retry.
+ */
+export const FlowRefreshFailsAfterConfirm: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/budgets"
+      currency="EUR"
+      onRequest={args.onRequest}
+      failRefreshesAfterConfirm={3}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await toImport(canvas);
+    await userEvent.upload(
+      await canvas.findByLabelText("Subir archivo de Budge"),
+      new File(["Date,Payment\n"], "budge.csv", { type: "text/csv" }),
+    );
+    await userEvent.click(await canvas.findByRole("button", { name: "Importar 22 movimientos" }));
+    await expect(
+      await canvas.findByRole("heading", { name: "Importamos 22 movimientos." }),
+    ).toBeVisible();
+    const alert = await canvas.findByRole("alert", {}, { timeout: 8000 });
+    await expect(alert).toHaveTextContent("Tuvimos un problema de nuestro lado");
+    await expect(canvas.queryByRole("button", { name: /^Importar/ })).toBeNull();
+    await userEvent.click(canvas.getByRole("button", { name: "Reintentar" }));
+    await waitFor(() => expect(canvas.queryByRole("alert")).toBeNull());
+    await expect(
+      canvas.getByText("Llenamos tus presupuestos con lo que gastas en promedio cada mes."),
+    ).toBeVisible();
+  },
+};
+
+/** A reload on the last step (nothing typed this visit) goes back to the budgets first. */
+export const FlowReloadOnDone: Story = {
+  render: (args) => (
+    <WelcomeStage initialEntry="/welcome/done" currency="EUR" onRequest={args.onRequest} />
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByRole("heading", { level: 1, name: "¿Cuánto quieres gastar al mes?" }),
+    ).toBeVisible();
+    await expect(args.onRequest).not.toHaveBeenCalled();
   },
 };
 

@@ -15,7 +15,7 @@ import type { AppDeps } from "../deps.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
-import { toTransactionDto } from "../services/transactions.ts";
+import { defaultAccount, toTransactionDto } from "../services/transactions.ts";
 
 const profileDto = z.object({
   id: z.string(),
@@ -57,6 +57,11 @@ async function profile(deps: AppDeps, userId: string) {
  * itself; it runs in the caller's transaction, so a 409 rolls back the whole PATCH.
  */
 async function setCurrency(tx: Tx, currency: string) {
+  // Wait for any import or new transaction holding the account's lock. Taken in its own statement:
+  // the UPDATE below then reads a fresh snapshot, so its `not exists` sees rows those writers just
+  // committed. (Left to the UPDATE alone, Postgres would re-check the row after the wait but run
+  // the subquery against the old snapshot, and switch an account that now has transactions.)
+  await defaultAccount(tx, { lock: true });
   const changed = await tx
     .update(accounts)
     .set({ currency })

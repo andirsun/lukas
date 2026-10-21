@@ -98,6 +98,9 @@ export function Welcome({ passkeys, languages }: WelcomeProps) {
   const [drafts, setDrafts] = useState<Record<string, string> | null>(null);
   const [importState, setImportState] = useState<ImportState>({ phase: "idle" });
   const [busy, setBusy] = useState(false);
+  // Budgets are drafts until "Empezar". After a reload they are gone, so the steps after the
+  // budgets one send the person back there first rather than finish without them.
+  const [budgetsDone, setBudgetsDone] = useState(false);
   // A ref, not state: two taps in one frame must not both start a write.
   const inFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -136,8 +139,9 @@ export function Welcome({ passkeys, languages }: WelcomeProps) {
     }
   }, [profileLocale, locale, setLocale]);
 
-  if (me.error) throw me.error;
-  if (categoriesQuery.error) throw categoriesQuery.error;
+  // Only a first load that failed goes to the error boundary; a failed refetch keeps the data.
+  if (me.error && !me.data) throw me.error;
+  if (categoriesQuery.error && !categoriesQuery.data) throw categoriesQuery.error;
 
   if (step === null) return <Navigate to={stepPath("currency")} replace />;
   if (step === "passkey" && !passkeysAvailable) {
@@ -151,6 +155,9 @@ export function Welcome({ passkeys, languages }: WelcomeProps) {
   const spending = budgetCategories(categoriesQuery.data);
   if (spending.length === 0 && (step === "budgets" || step === "import" || step === "done")) {
     return <Navigate to={stepPath("categories")} replace />;
+  }
+  if (!budgetsDone && (step === "import" || step === "done")) {
+    return <Navigate to={stepPath("budgets")} replace />;
   }
 
   const message = (problem: unknown) =>
@@ -193,7 +200,11 @@ export function Welcome({ passkeys, languages }: WelcomeProps) {
 
   /** The categories, refetched; the screen and the returned list agree. */
   async function refreshCategories(): Promise<Category[]> {
-    await queryClient.invalidateQueries({ queryKey: queryKeys.categories() });
+    // Throws when the read fails: callers need the fresh list, not a stale one.
+    await queryClient.invalidateQueries(
+      { queryKey: queryKeys.categories() },
+      { throwOnError: true },
+    );
     return queryClient.getQueryData<Category[]>(queryKeys.categories()) ?? [];
   }
 
@@ -342,21 +353,41 @@ export function Welcome({ passkeys, languages }: WelcomeProps) {
     if (importState.phase !== "preview" || importState.confirming) return;
     const current = importState;
     setImportState({ ...current, confirming: true, error: null });
+    let result: ImportDto;
     try {
-      const result = dataOf(
+      result = dataOf(
         await api.POST("/v1/imports/{id}/confirm", {
           params: { path: { id: current.preview.id } },
         }),
       );
+    } catch (problem) {
+      setImportState({ ...current, confirming: false, error: message(problem) });
+      return;
+    }
+    // From here the rows are in: whatever happens next, the step says so (confirming again could
+    // only fail), and a failed follow-up gets a retry.
+    await afterImport(result, current.currencyNote);
+  }
+
+  /**
+   * Refreshes what the import changed, then fills budgets from the file's recent months (the
+   * preview's `averageMonthlySpending`, last 3 complete months): the empty ones, or all of them
+   * when the currency switched (amounts typed in the old currency mean nothing now). Categories
+   * without spending in those months keep no budget.
+   */
+  async function afterImport(result: ImportDto, currencyNote: CurrencyNote) {
+    const imported = { phase: "imported" as const, result, currencyNote };
+    setImportState({ ...imported, prefilled: false, retrying: true });
+    try {
       // Everything built from transactions changed; so did the categories (new ones).
-      await queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         predicate: (query) => query.queryKey[0] !== "me" && query.queryKey[0] !== "categories",
       });
       const categories = await refreshCategories();
       const averages = new Map(
         result.stats.averageMonthlySpending.map((a) => [normalizeName(a.category), a.amount]),
       );
-      const switched = current.currencyNote?.kind === "switched";
+      const switched = currencyNote?.kind === "switched";
       const nextDrafts: Record<string, string> = { ...drafts };
       let prefilled = false;
       for (const c of budgetCategories(categories)) {
@@ -371,14 +402,9 @@ export function Welcome({ passkeys, languages }: WelcomeProps) {
       }
       setDrafts(nextDrafts);
       setSelected((keys) => new Set([...(keys ?? []), ...selectedFrom(categories)]));
-      setImportState({
-        phase: "imported",
-        result,
-        prefilled,
-        currencyNote: current.currencyNote,
-      });
+      setImportState({ ...imported, prefilled });
     } catch (problem) {
-      setImportState({ ...current, confirming: false, error: message(problem) });
+      setImportState({ ...imported, prefilled: false, error: message(problem) });
     }
   }
 
@@ -448,8 +474,12 @@ export function Welcome({ passkeys, languages }: WelcomeProps) {
           drafts={drafts}
           onChange={(id, text) => setDrafts((current) => ({ ...current, [id]: text }))}
           currency={profile.currency}
+          prefilled={importState.phase === "imported" && importState.prefilled}
           onBack={onBack}
-          onNext={forward}
+          onNext={() => {
+            setBudgetsDone(true);
+            forward();
+          }}
         />
       );
     case "import":
@@ -461,6 +491,11 @@ export function Welcome({ passkeys, languages }: WelcomeProps) {
           onConfirm={confirmImport}
           onDiscard={discardImport}
           onReviewBudgets={() => go("budgets")}
+          onRetry={() => {
+            if (importState.phase === "imported") {
+              void afterImport(importState.result, importState.currencyNote);
+            }
+          }}
           onBack={onBack}
           onNext={forward}
         />

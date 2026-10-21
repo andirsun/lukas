@@ -130,16 +130,21 @@ test.describe("from Colombia", () => {
     await page.getByRole("button", { name: "Continuar" }).click();
 
     // The sample is in EUR: the account switches before the preview the person confirms.
+    const previews: {
+      stats: { averageMonthlySpending: { category: string; amount: number }[] };
+    }[] = [];
+    page.on("response", async (response) => {
+      if (response.request().method() === "POST" && response.url().endsWith("/api/v1/imports")) {
+        previews.push(await response.json());
+      }
+    });
     await uploadSample(page);
     await expect(
       page.getByText("Tu archivo está en EUR, así que tu cuenta ahora usa EUR."),
     ).toBeVisible();
     expect((await (await page.request.get("/api/v1/me")).json()).currency).toBe("EUR");
     await page.getByRole("button", { name: "Importar 22 movimientos" }).click();
-    await expect(page.getByText("Importamos 22 movimientos.")).toBeVisible();
-    await expect(
-      page.getByText("Llenamos tus presupuestos con lo que gastas en promedio cada mes."),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Importamos 22 movimientos." })).toBeFocused();
 
     const october = (await (
       await page.request.get("/api/v1/transactions?month=2026-10&limit=200")
@@ -147,10 +152,30 @@ test.describe("from Colombia", () => {
     expect(october.items.length).toBeGreaterThan(0);
     expect(new Set(october.items.map((t) => t.currency))).toEqual(new Set(["EUR"]));
 
-    // The budget typed in pesos is replaced by the file's monthly average, in euros:
-    // Supermercado (30,70 + 41,08) / 2 months = 35,89 €.
-    await page.getByRole("button", { name: "Revisar presupuestos" }).click();
-    await expect(field).toHaveValue("35,89");
+    // The budget typed in pesos is replaced by the file's average over its last 3 complete months,
+    // in euros (the API decides the window from today's date), or emptied without spending there.
+    const groceries = previews
+      .at(-1)
+      ?.stats.averageMonthlySpending.find((a) => a.category === "Supermercado")?.amount;
+    const expected = groceries
+      ? new Intl.NumberFormat("es", {
+          minimumFractionDigits: groceries % 100 === 0 ? 0 : 2,
+          maximumFractionDigits: 2,
+        }).format(groceries / 100)
+      : "";
+    await page.getByRole("button", { name: "Continuar" }).waitFor();
+    if (groceries) {
+      await expect(
+        page.getByText("Llenamos tus presupuestos con lo que gastas en promedio cada mes."),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Revisar presupuestos" }).click();
+      await expect(
+        page.getByText("Basado en lo que gastaste en tus últimos 3 meses"),
+      ).toBeVisible();
+    } else {
+      await page.getByRole("button", { name: "Atrás" }).click();
+    }
+    await expect(field).toHaveValue(expected);
     await expect(page.getByText(/lukas\)/)).toHaveCount(0);
   });
 });

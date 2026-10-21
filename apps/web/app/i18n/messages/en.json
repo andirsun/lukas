@@ -424,13 +424,15 @@
       "other_file": "Use another file",
       "imported": "We imported {count, plural, one {# transaction} other {# transactions}}.",
       "prefilled": "We filled in your budgets with what you spend on average each month.",
-      "review_budgets": "Review budgets"
+      "review_budgets": "Review budgets",
+      "rejected_more": "and {count} more"
     },
     "done": {
       "title": "You're all set!",
       "lead": "You can start logging your spending. Lukitas lets you know when you get close to a limit.",
       "total_label": "Your monthly budget",
       "start": "Let's go"
-    }
+    },
+    "prefill_basis": "Based on what you spent in your last 3 months"
   }
 }

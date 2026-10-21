@@ -17,9 +17,15 @@ import type { AppDeps } from "../deps.ts";
 import { jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { currentMonth } from "../services/time.ts";
 import { defaultAccount } from "../services/transactions.ts";
 
 const MAX_BYTES = 5 * 1024 * 1024;
+/**
+ * The preview's monthly averages (what onboarding prefills budgets with) cover the last 3 complete
+ * months: years of history would otherwise average in categories long dropped.
+ */
+const AVERAGE_MONTHS = 3;
 const INSERT_CHUNK = 500;
 const idParam = z.object({ id: z.uuid() });
 
@@ -33,6 +39,7 @@ const statsSchema = z.object({
   rejected: z.array(z.object({ line: z.number().int(), reason: z.string() })),
   from: z.string().nullable(),
   to: z.string().nullable(),
+  /** Per expense category, the average over the last 3 complete months (the running one excluded). */
   averageMonthlySpending: z.array(z.object({ category: z.string(), amount: z.number().int() })),
   /**
    * The file's currency (what most of its rows use), even when it is not the account's: those
@@ -160,7 +167,10 @@ export function importRoutes(deps: AppDeps) {
           rejected,
           from: dates[0] ?? null,
           to: dates.at(-1) ?? null,
-          averageMonthlySpending: averageMonthlySpending(rows),
+          averageMonthlySpending: averageMonthlySpending(rows, {
+            months: AVERAGE_MONTHS,
+            until: currentMonth(c.get("user")),
+          }),
           currency: fileCurrency(parsed.rows),
         };
         const payload: PayloadRow[] = rows.map((r, i) => ({ ...r, hash: hashes[i] as string }));
@@ -190,7 +200,9 @@ export function importRoutes(deps: AppDeps) {
           throw new ApiError(409, "import_not_in_preview", "This import is not a preview");
         await assertFileNotImported(tx, imp.fileHash, imp.id);
         const rows = (imp.payload ?? []) as PayloadRow[];
-        const account = await defaultAccount(tx);
+        // Locked until commit: a currency change waits for these inserts, then finds the account
+        // no longer empty (see `setCurrency` in me.ts).
+        const account = await defaultAccount(tx, { lock: true });
         // The preview kept only rows in the account's currency of that moment. If the currency
         // changed since (the account was still empty), they would go in under the wrong one.
         if (rows.some((r) => r.currency !== account.currency)) {

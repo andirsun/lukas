@@ -1,9 +1,9 @@
-import { useId } from "react";
+import { type RefObject, useEffect, useId, useRef } from "react";
 import { useTranslations } from "use-intl";
 import type { Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
-import type { CurrencyNote, ImportDto, ImportState } from "./import-state.ts";
+import { type CurrencyNote, type ImportDto, type ImportState, newRows } from "./import-state.ts";
 import { StepError, StepFrame, type StepNavProps } from "./StepFrame.tsx";
 
 export interface ImportStepProps extends StepNavProps {
@@ -16,7 +16,12 @@ export interface ImportStepProps extends StepNavProps {
   onDiscard(): void;
   /** Back to the budgets, after they were prefilled. */
   onReviewBudgets(): void;
+  /** After an import whose follow-up (reading the categories again) failed. */
+  onRetry?: () => void;
 }
+
+/** Rejected rows listed before "y N más". */
+const REJECTED_SHOWN = 20;
 
 const REASONS = [
   "invalid_date",
@@ -45,10 +50,27 @@ export function ImportStep({
   onConfirm,
   onDiscard,
   onReviewBudgets,
+  onRetry,
   onBack,
   onNext,
 }: ImportStepProps) {
   const t = useTranslations("onboarding");
+  const tCommon = useTranslations("common");
+  const pickerInput = useRef<HTMLInputElement>(null);
+  const previewHeading = useRef<HTMLHeadingElement>(null);
+  const importedHeading = useRef<HTMLHeadingElement>(null);
+  const shownPhase = useRef(state.phase);
+
+  // The file input is gone once a file is chosen, so focus would drop to the page. Each new phase
+  // takes it instead: the preview and the result by their headings (read out by screen readers),
+  // the picker again after "Usar otro archivo". (On arriving at the step, the title has it.)
+  useEffect(() => {
+    if (shownPhase.current === state.phase) return;
+    shownPhase.current = state.phase;
+    if (state.phase === "preview") previewHeading.current?.focus();
+    else if (state.phase === "imported") importedHeading.current?.focus();
+    else if (state.phase === "idle") pickerInput.current?.focus();
+  }, [state.phase]);
 
   const next = (() => {
     switch (state.phase) {
@@ -57,7 +79,7 @@ export function ImportStep({
       case "reading":
         return { label: t("import.reading"), onClick: () => {}, disabled: true };
       case "preview": {
-        const count = state.preview.stats.transactions;
+        const count = newRows(state.preview);
         if (count === 0) {
           return { label: t("skip"), onClick: onNext, variant: "secondary" as const };
         }
@@ -68,7 +90,7 @@ export function ImportStep({
         };
       }
       case "imported":
-        return { label: t("continue"), onClick: onNext };
+        return { label: t("continue"), onClick: onNext, disabled: state.retrying };
     }
   })();
 
@@ -80,7 +102,9 @@ export function ImportStep({
       onBack={onBack}
       next={next}
     >
-      {state.phase === "idle" && <FilePicker onFile={onFile} error={state.error ?? null} />}
+      {state.phase === "idle" && (
+        <FilePicker inputRef={pickerInput} onFile={onFile} error={state.error ?? null} />
+      )}
       {state.phase === "reading" && (
         <p role="status" className="text-ink-muted">
           {t("import.reading")}
@@ -89,6 +113,7 @@ export function ImportStep({
       {state.phase === "preview" && (
         <>
           <Preview
+            headingRef={previewHeading}
             preview={state.preview}
             fileName={state.fileName}
             currencyNote={state.currencyNote}
@@ -105,15 +130,28 @@ export function ImportStep({
       )}
       {state.phase === "imported" && (
         <div className="flex flex-col gap-(--space-3)">
-          <p role="status" className="font-display text-[20px] font-bold text-good">
+          <h2
+            ref={importedHeading}
+            tabIndex={-1}
+            className="font-display text-[20px] font-bold text-good outline-none"
+          >
             {t("import.imported", {
-              count: state.result.stats.inserted ?? state.result.stats.transactions,
+              count: state.result.stats.inserted ?? newRows(state.result),
             })}
-          </p>
+          </h2>
           {state.currencyNote?.kind === "switched" && <CurrencyLine note={state.currencyNote} />}
+          {state.error && (
+            <>
+              <StepError>{state.error}</StepError>
+              <PressButton variant="secondary" onClick={onRetry} disabled={state.retrying}>
+                {tCommon("retry")}
+              </PressButton>
+            </>
+          )}
           {state.prefilled && (
             <>
               <p className="text-ink">{t("import.prefilled")}</p>
+              <p className="text-[15px] text-ink-muted">{t("prefill_basis")}</p>
               <PressButton variant="secondary" onClick={onReviewBudgets}>
                 {t("import.review_budgets")}
               </PressButton>
@@ -125,13 +163,22 @@ export function ImportStep({
   );
 }
 
-function FilePicker({ onFile, error }: { onFile(file: File): void; error: string | null }) {
+function FilePicker({
+  inputRef,
+  onFile,
+  error,
+}: {
+  inputRef: RefObject<HTMLInputElement | null>;
+  onFile(file: File): void;
+  error: string | null;
+}) {
   const t = useTranslations("onboarding");
   const errorId = useId();
   return (
     <>
       <label className="lk-btn lk-btn-primary inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-(--space-2) has-focus-visible:outline-3 has-focus-visible:outline-focus has-focus-visible:outline-offset-2">
         <input
+          ref={inputRef}
           type="file"
           accept=".csv,text/csv"
           className="sr-only"
@@ -163,10 +210,12 @@ function CurrencyLine({ note }: { note: NonNullable<CurrencyNote> }) {
 }
 
 function Preview({
+  headingRef,
   preview,
   fileName,
   currencyNote,
 }: {
+  headingRef: RefObject<HTMLHeadingElement | null>;
   preview: ImportDto;
   fileName: string;
   currencyNote: CurrencyNote;
@@ -185,7 +234,12 @@ function Preview({
       aria-labelledby={titleId}
       className="flex flex-col gap-(--space-3) rounded-xl border-2 border-stroke bg-surface p-(--space-4) shadow-edge-md"
     >
-      <h2 id={titleId} className="font-display text-[20px] font-bold text-ink">
+      <h2
+        ref={headingRef}
+        id={titleId}
+        tabIndex={-1}
+        className="font-display text-[20px] font-bold text-ink outline-none"
+      >
         {t("import.preview_title")}
       </h2>
       <div className="text-[15px] text-ink-muted">
@@ -220,13 +274,21 @@ function Preview({
           <summary className="flex min-h-11 cursor-pointer items-center text-ink underline underline-offset-3">
             {t("import.rejected_details")}
           </summary>
-          <ul className="flex flex-col gap-(--space-1) pt-(--space-1) text-ink-muted">
-            {stats.rejected.map((row) => (
+          <ul
+            aria-label={t("import.rejected")}
+            className="flex flex-col gap-(--space-1) pt-(--space-1) text-ink-muted"
+          >
+            {stats.rejected.slice(0, REJECTED_SHOWN).map((row) => (
               <li key={`${row.line}-${row.reason}`}>
                 {t("import.rejected_line", { line: row.line, reason: reason(row.reason) })}
               </li>
             ))}
           </ul>
+          {stats.rejected.length > REJECTED_SHOWN && (
+            <p className="pt-(--space-1) text-ink-muted">
+              {t("import.rejected_more", { count: stats.rejected.length - REJECTED_SHOWN })}
+            </p>
+          )}
         </details>
       )}
     </section>

@@ -20,6 +20,8 @@ export interface BudgetsStepProps extends StepNavProps {
   drafts: Readonly<Record<string, string>>;
   onChange(id: string, text: string): void;
   currency: string;
+  /** The amounts came from an import's recent months: say so. */
+  prefilled?: boolean;
 }
 
 /** A draft read as hundredths: null when empty, `"invalid"` when it is not an amount. */
@@ -83,6 +85,7 @@ export function BudgetsStep({
   drafts,
   onChange,
   currency,
+  prefilled = false,
   onBack,
   onNext,
 }: BudgetsStepProps) {
@@ -112,6 +115,7 @@ export function BudgetsStep({
         </div>
       }
     >
+      {prefilled && <p className="text-[15px] text-ink-muted">{t("prefill_basis")}</p>}
       <ul className="flex flex-col gap-(--space-2)">
         {categories.map((category) => (
           <BudgetRow

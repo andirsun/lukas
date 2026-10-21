@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { type CategoryKind, monthOf, monthsBetween } from "@lukas/core";
+import { addMonths, type CategoryKind, type Month, monthOf, monthsBetween } from "@lukas/core";
 import { normalizeName } from "../category-style.ts";
 import type { BudgeRow } from "./parse.ts";
 
@@ -27,14 +27,45 @@ export function rowHashes(rows: BudgeRow[]): string[] {
   });
 }
 
-/** Average net monthly spending per expense category over the months the rows span. */
-export function averageMonthlySpending(rows: BudgeRow[]): { category: string; amount: number }[] {
+export interface AverageWindow {
+  /** How many complete months to average over, ending with the latest one. */
+  months: number;
+  /**
+   * The first month that does not count, usually the current one (still running). The window ends
+   * earlier when the rows do: an old export is averaged over its own last months.
+   */
+  until?: Month;
+}
+
+/**
+ * Average net monthly spending per expense category, largest first. Without a window, over every
+ * month the rows span. With one, over its last `months` complete months only, divided by
+ * `months` even if some have no rows: a category with no spending there is left out, so a
+ * dropped gym or a one-off payment years ago doesn't become a budget. Kinds come from all rows.
+ */
+export function averageMonthlySpending(
+  rows: BudgeRow[],
+  window?: AverageWindow,
+): { category: string; amount: number }[] {
   if (rows.length === 0) return [];
   const months = rows.map((r) => monthOf(r.date)).sort();
-  const span = monthsBetween(months[0] ?? "", months.at(-1) ?? "").length;
+  const first = months[0] ?? "";
+  const last = months.at(-1) ?? "";
+  let counted = rows;
+  let span = monthsBetween(first, last).length;
+  if (window) {
+    const afterLast = addMonths(last, 1);
+    const end = window.until && window.until < afterLast ? window.until : afterLast;
+    const start = addMonths(end, -window.months);
+    counted = rows.filter((r) => {
+      const month = monthOf(r.date);
+      return month >= start && month < end;
+    });
+    span = window.months;
+  }
   const kinds = inferCategoryKinds(rows);
   const spent = new Map<string, { category: string; total: number }>();
-  for (const row of rows) {
+  for (const row of counted) {
     const key = normalizeName(row.category);
     if (kinds.get(key) !== "expense") continue;
     const entry = spent.get(key) ?? { category: row.category, total: 0 };
@@ -43,6 +74,7 @@ export function averageMonthlySpending(rows: BudgeRow[]): { category: string; am
   }
   return [...spent.values()]
     .map(({ category, total }) => ({ category, amount: Math.round(total / span) }))
+    .filter((a) => !window || a.amount > 0)
     .sort((a, b) => b.amount - a.amount);
 }
 

@@ -185,7 +185,8 @@ export function transactionRoutes(deps: AppDeps) {
       const userId = c.get("userId");
       const row = await withUser(deps.db, userId, async (tx) => {
         await requireActiveCategory(tx, input.categoryId);
-        const account = await defaultAccount(tx);
+        // Locked like the import's: the currency cannot change under this insert.
+        const account = await defaultAccount(tx, { lock: true });
         const [created] = await tx
           .insert(transactions)
           .values({ ...input, userId, accountId: account.id, currency: account.currency })

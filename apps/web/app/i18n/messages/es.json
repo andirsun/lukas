@@ -424,13 +424,15 @@
       "other_file": "Usar otro archivo",
       "imported": "Importamos {count, plural, one {# movimiento} other {# movimientos}}.",
       "prefilled": "Llenamos tus presupuestos con lo que gastas en promedio cada mes.",
-      "review_budgets": "Revisar presupuestos"
+      "review_budgets": "Revisar presupuestos",
+      "rejected_more": "y {count} más"
     },
     "done": {
       "title": "¡Todo listo!",
       "lead": "Ya puedes empezar a anotar tus gastos. Lukitas te avisa cuando te acerques al límite.",
       "total_label": "Tu presupuesto del mes",
       "start": "Empezar"
-    }
+    },
+    "prefill_basis": "Basado en lo que gastaste en tus últimos 3 meses"
   }
 }

@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { accounts, type Tx, transactions, withUser } from "@lukas/db";
+import { eq } from "@lukas/db/orm";
+import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
 import { createTestApp, type TestApp } from "./harness.ts";
 
 const FIXTURE = readFileSync(
@@ -91,7 +93,6 @@ describe("Budge import", () => {
     expect(first.stats.rejected).toEqual([{ line: 19, reason: "invalid_date" }]);
     expect(first.stats.newCategories).toContain("Salário");
     expect(first.stats.newCategories).not.toContain("Ocio");
-    expect(first.stats.averageMonthlySpending[0]).toEqual({ category: "Ocio", amount: 6225 });
     expect(await countTransactions()).toBe(0);
   });
 
@@ -201,5 +202,142 @@ describe("the file's currency", () => {
     const res = await t.request("POST", `/v1/imports/${fresh.id}/confirm`, { headers: c });
     expect(res.status).toBe(200);
     expect(await countTransactions(c)).toBe(22);
+  });
+});
+
+/**
+ * Writing transactions in the account's currency and changing that currency must serialize: the
+ * import confirm and the currency PATCH both take the default account's row lock. Each test holds
+ * that lock in one transaction (as the other side would) while the request runs in parallel.
+ */
+describe("import confirm and currency change race", () => {
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const lockAccount = (tx: Tx) =>
+    tx.select().from(accounts).where(eq(accounts.isDefault, true)).for("update");
+  const settledFlag = (promise: Promise<unknown>) => {
+    const state = { settled: false };
+    void promise.finally(() => {
+      state.settled = true;
+    });
+    return state;
+  };
+  const currencies = async (headers: { authorization: string }) => {
+    const res = await t.request("GET", "/v1/transactions?limit=200", { headers });
+    const page = (await res.json()) as { items: { currency: string }[] };
+    return new Set(page.items.map((i) => i.currency));
+  };
+
+  test("a currency change waits for an import in flight, then finds the account locked", async () => {
+    const { userId, headers } = await t.signIn("race-patch@lukas.test");
+    const category = (await (
+      await t.request("POST", "/v1/categories", {
+        headers,
+        body: { name: "Ocio", kind: "expense", icon: "⭐", color: "#a66bff" },
+      })
+    ).json()) as { id: string };
+    let patch: Promise<Response> | undefined;
+    await withUser(t.db, userId, async (tx) => {
+      // The confirm's side: lock, then insert in the account's currency.
+      const [account] = await lockAccount(tx);
+      patch = t.request("PATCH", "/v1/me", { headers, body: { currency: "COP" } });
+      const flag = settledFlag(patch);
+      await sleep(300);
+      expect(flag.settled).toBe(false);
+      await tx.insert(transactions).values({
+        userId,
+        accountId: account?.id as string,
+        categoryId: category.id,
+        name: "cinema",
+        amount: -950,
+        currency: account?.currency as string,
+        date: "2026-10-05",
+        source: "import",
+      });
+    });
+    const res = await (patch as Promise<Response>);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "currency_locked" });
+    const me = (await (await t.request("GET", "/v1/me", { headers })).json()) as {
+      currency: string;
+    };
+    expect(me.currency).toBe("EUR");
+    expect(await currencies(headers)).toEqual(new Set(["EUR"]));
+  });
+
+  test("an import confirm waits for a currency change in flight, then refuses the stale preview", async () => {
+    const { userId, headers } = await t.signIn("race-confirm@lukas.test");
+    const preview = (await (await upload(headers, FIXTURE)).json()) as Preview;
+    let confirm: Promise<Response> | undefined;
+    await withUser(t.db, userId, async (tx) => {
+      // The PATCH's side: lock, then switch the (still empty) account to COP.
+      await lockAccount(tx);
+      confirm = t.request("POST", `/v1/imports/${preview.id}/confirm`, { headers });
+      const flag = settledFlag(confirm);
+      await sleep(300);
+      expect(flag.settled).toBe(false);
+      await tx.update(accounts).set({ currency: "COP" }).where(eq(accounts.isDefault, true));
+    });
+    const res = await (confirm as Promise<Response>);
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "import_currency_changed" });
+    expect(await countTransactions(headers)).toBe(0);
+  });
+
+  test("fired together, either the import or the currency change wins, never both", async () => {
+    for (let i = 0; i < 4; i++) {
+      const { headers } = await t.signIn(`race-both-${i}@lukas.test`);
+      const preview = (await (await upload(headers, FIXTURE)).json()) as Preview;
+      const [confirm, patch] = await Promise.all([
+        t.request("POST", `/v1/imports/${preview.id}/confirm`, { headers }),
+        t.request("PATCH", "/v1/me", { headers, body: { currency: "COP" } }),
+      ]);
+      const me = (await (await t.request("GET", "/v1/me", { headers })).json()) as {
+        currency: string;
+      };
+      const seen = await currencies(headers);
+      if (confirm.status === 200) {
+        expect(patch.status).toBe(409);
+        expect(me.currency).toBe("EUR");
+        expect(seen).toEqual(new Set(["EUR"]));
+      } else {
+        expect(confirm.status).toBe(409);
+        expect(patch.status).toBe(200);
+        expect(me.currency).toBe("COP");
+        expect(seen.size).toBe(0);
+      }
+    }
+  });
+});
+
+describe("the preview's monthly averages", () => {
+  /** A new user signed in at `now` (sessions and codes follow the faked clock), and their preview. */
+  async function previewAt(now: string, email: string) {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(now));
+    try {
+      const { headers } = await t.signIn(email);
+      return ((await (await upload(headers, FIXTURE)).json()) as Preview).stats
+        .averageMonthlySpending;
+    } finally {
+      vi.useRealTimers();
+    }
+  }
+  const amountOf = (averages: { category: string; amount: number }[], category: string) =>
+    averages.find((a) => a.category === category)?.amount;
+
+  test("cover the last 3 complete months, not the file's whole span", async () => {
+    // In November the sample's September and October count, plus an empty August: over 3.
+    const averages = await previewAt("2026-11-15T12:00:00Z", "avg-nov@lukas.test");
+    // Ocio: 9,50 − 5 (a refund) + 120 = 124,50 € over 3 months.
+    expect(averages[0]).toEqual({ category: "Ocio", amount: 4150 });
+    expect(amountOf(averages, "Restaurante")).toBe(1660);
+    expect(amountOf(averages, "Salário")).toBeUndefined();
+  });
+
+  test("leave out the month still running", async () => {
+    // On 21 October: July to September. The 120 € flight in October doesn't count yet.
+    const averages = await previewAt("2026-10-21T12:00:00Z", "avg-oct@lukas.test");
+    expect(amountOf(averages, "Ocio")).toBe(150);
+    expect(amountOf(averages, "Taxes")).toBeUndefined();
   });
 });

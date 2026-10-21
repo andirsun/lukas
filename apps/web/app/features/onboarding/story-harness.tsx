@@ -41,7 +41,11 @@ interface FakeCategory {
  * account uses another currency, its preview rejects every row (as the real importer does).
  * Every write is reported to `onRequest` as `METHOD /path {json body}` (multipart without body).
  */
-function onboardingFetch(currency: string, onRequest: (line: string) => void): typeof fetch {
+function onboardingFetch(
+  currency: string,
+  onRequest: (line: string) => void,
+  failRefreshesAfterConfirm = 0,
+): typeof fetch {
   let profile = {
     id: "u-new",
     email: "ana@example.com",
@@ -73,6 +77,7 @@ function onboardingFetch(currency: string, onRequest: (line: string) => void): t
     },
   ];
   let uploads = 0;
+  let failuresLeft = 0;
 
   return async (input) => {
     const request = input instanceof Request ? input : new Request(input);
@@ -93,6 +98,10 @@ function onboardingFetch(currency: string, onRequest: (line: string) => void): t
         }
       }
       return Response.json(profile);
+    }
+    if (path === "/api/v1/categories" && request.method === "GET" && failuresLeft > 0) {
+      failuresLeft -= 1;
+      return Response.json({ code: "internal_error" }, { status: 503 });
     }
     if (path === "/api/v1/categories" && request.method === "GET") {
       const all = url.searchParams.get("includeArchived") === "true";
@@ -142,6 +151,7 @@ function onboardingFetch(currency: string, onRequest: (line: string) => void): t
     }
     const confirm = /^\/api\/v1\/imports\/([^/]+)\/confirm$/.exec(path);
     if (confirm) {
+      failuresLeft = failRefreshesAfterConfirm;
       return Response.json({
         id: confirm[1],
         status: "confirmed",
@@ -164,11 +174,20 @@ export interface WelcomeStageProps {
   /** The account's currency. */
   currency: string;
   onRequest(line: string): void;
+  /** How many category reads fail (503) right after a confirm, retries included. */
+  failRefreshesAfterConfirm?: number;
 }
 
 /** The `/welcome` flow in a memory router, with the fake API, toasts, and a stand-in for /app. */
-export function WelcomeStage({ initialEntry, currency, onRequest }: WelcomeStageProps) {
-  const [fetchImpl] = useState(() => onboardingFetch(currency, onRequest));
+export function WelcomeStage({
+  initialEntry,
+  currency,
+  onRequest,
+  failRefreshesAfterConfirm,
+}: WelcomeStageProps) {
+  const [fetchImpl] = useState(() =>
+    onboardingFetch(currency, onRequest, failRefreshesAfterConfirm),
+  );
   return (
     <MemoryRouter initialEntries={[initialEntry]}>
       <ApiProvider fetch={fetchImpl}>
