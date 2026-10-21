@@ -163,7 +163,14 @@ export function createAuth(deps: AppDeps) {
           const next = linkNext(headers?.get(NEXT_HINT_HEADER));
           if (next) params.set("next", next);
           const link = `${config.WEB_URL}/auth/verify?${params}`;
-          await deps.mailer.send({ to: email, ...signInEmail({ code: otp, link, locale }) });
+          const mail = signInEmail({
+            code: otp,
+            link,
+            locale,
+            webUrl: config.WEB_URL,
+            expiresInMinutes: Math.ceil(CODE_TTL_SECONDS / 60),
+          });
+          await deps.mailer.send({ to: email, ...mail });
         },
       }),
       passkey({

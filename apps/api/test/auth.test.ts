@@ -1,6 +1,7 @@
 import { accounts, verification, withUser } from "@lukas/db";
 import { eq, like } from "@lukas/db/orm";
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
+import { CODE_TTL_SECONDS } from "../src/auth.ts";
 import { codeFrom, createTestApp, type TestApp } from "./harness.ts";
 
 let t: TestApp;
@@ -35,9 +36,16 @@ describe("email code + magic link", () => {
   test("the email names the product Lukitas, in the text and in the html", async () => {
     await sendCode("name@lukas.test");
     const mail = t.mailer.lastTo("name@lukas.test");
-    expect(mail?.text).toContain("Usa este código para entrar a Lukitas:");
-    expect(mail?.html).toContain("Usa este código para entrar a Lukitas:");
+    expect(mail?.text).toContain("¡Hola! Este es tu código para entrar");
+    expect(mail?.html).toContain("¡Hola! Este es tu código para entrar");
     expect(`${mail?.subject}\n${mail?.text}\n${mail?.html}`).not.toMatch(/\bLukas\b/);
+  });
+
+  test("the email states the real expiry and loads Lukitas from the web host", async () => {
+    await sendCode("expiry@lukas.test");
+    const mail = t.mailer.lastTo("expiry@lukas.test");
+    expect(mail?.text).toContain(`vencen en ${CODE_TTL_SECONDS / 60} minutos.`);
+    expect(mail?.html).toContain('src="http://localhost:5173/email/lukitas-wave.png"');
   });
 
   test("the passkey relying party is named Lukitas, and its id stays the web host", async () => {
