@@ -447,7 +447,7 @@
       "source_other": "Otras apps",
       "soon": "Pronto",
       "budge_title": "Exporta tus movimientos de Budge",
-      "budge_step_1": "En Budge, abre Ajustes y busca la opción para exportar tus movimientos en CSV.",
+      "budge_step_1": "En Budge, busca la opción para exportar tus movimientos en CSV.",
       "budge_step_2": "Guarda el archivo en este dispositivo.",
       "budge_step_3": "Súbelo aquí: te mostramos qué vamos a importar antes de hacerlo.",
       "other_source": "Elegir otra fuente"
@@ -459,7 +459,7 @@
       "lead": "Configura tu moneda, tus categorías y tu presupuesto en un minuto, o entra directo y hazlo después.",
       "setup": "Configurar en 1 minuto",
       "direct": "Entrar directo",
-      "direct_note": "Si entras directo, usamos la moneda de tu región y las categorías sugeridas. Puedes cambiarlas cuando quieras."
+      "direct_note": "Si entras directo, tu moneda será {currency} y usamos las categorías sugeridas. Puedes cambiarla en Ajustes antes de tu primer movimiento."
     },
     "prefill_basis_activity": "Basado en {months, plural, one {tu último mes} other {tus últimos # meses}} con movimientos"
   },

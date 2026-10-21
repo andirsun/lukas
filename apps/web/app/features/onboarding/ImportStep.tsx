@@ -20,6 +20,8 @@ export interface ImportStepProps extends StepNavProps {
   onRetry?: () => void;
   /** Where prefilled budgets came from, shown under the result. */
   prefillBasis?: string | null;
+  /** A file is being read, confirmed or discarded: SALTAR and Back wait. */
+  locked?: boolean;
 }
 
 /** Rejected rows listed before "y N más". */
@@ -59,6 +61,7 @@ export function ImportStep({
   onNext,
   onSkip,
   busy = false,
+  locked = false,
 }: ImportStepProps) {
   const t = useTranslations("onboarding");
   const tCommon = useTranslations("common");
@@ -86,7 +89,7 @@ export function ImportStep({
     }
   }, [state.phase]);
 
-  const skip = { label: t("skip"), onClick: onSkip, disabled: busy };
+  const skip = { label: t("skip"), onClick: onSkip, disabled: busy || locked };
   const next = (() => {
     const plain = { label: t("next"), onClick: onNext, disabled: busy };
     switch (state.phase) {
@@ -115,6 +118,7 @@ export function ImportStep({
       title={t("import.title")}
       lead={state.phase === "sources" ? t("import.lead") : undefined}
       onBack={onBack}
+      backDisabled={busy || locked}
       skip={state.phase === "imported" ? undefined : skip}
       next={next}
     >
@@ -235,8 +239,8 @@ function Sources({
 
 /**
  * How to get the CSV out of Budge, then the picker.
- * The steps are deliberately neutral: the founder still has to confirm Budge's exact menu path,
- * and then `budge_step_1` in the catalogs gets the real one.
+ * The steps are deliberately neutral (no menu names): the founder still has to confirm Budge's
+ * exact menu path, and then `budge_step_1` in the catalogs gets the real one.
  */
 function BudgeHowTo({
   headingRef,

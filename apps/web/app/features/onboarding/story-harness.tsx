@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
 import type { ImportDto } from "./import-state.ts";
+import { clearOnboardingDraft } from "./onboarding-draft.ts";
 import { Welcome } from "./Welcome.tsx";
 
 /** The last 3 complete months, as the API would report them today. */
@@ -55,6 +56,15 @@ interface FakeApiOptions {
   timezone?: string;
   /** The file ended long ago: its window is its own last 3 months, not the last 3 complete ones. */
   oldExport?: boolean;
+  /**
+   * The Nth category POST (1-based) answers 503, once. `created`: the server made it anyway (the
+   * answer was lost on the way back).
+   */
+  failCategoryPost?: { nth: number; created: boolean };
+  /** Names the server says are taken (409) although no list shows them. */
+  takenNames?: string[];
+  /** How long a confirm takes, in ms. */
+  confirmDelayMs?: number;
 }
 
 function onboardingFetch({
@@ -64,12 +74,17 @@ function onboardingFetch({
   categories: start = "some",
   timezone = "America/Bogota",
   oldExport = false,
+  failCategoryPost,
+  takenNames = [],
+  confirmDelayMs = 0,
 }: FakeApiOptions): typeof fetch {
+  let categoryPosts = 0;
+  let confirmed = false;
   const window = oldExport
     ? { from: "2025-01", to: "2025-03", months: 3 }
     : SAMPLE_PREVIEW.stats.averageWindow;
   let profile = {
-    id: "u-new",
+    id: FAKE_USER_ID,
     email: "ana@example.com",
     timezone,
     locale: "es",
@@ -134,14 +149,28 @@ function onboardingFetch({
       return Response.json(categories.filter((c) => all || !c.archived));
     }
     if (path === "/api/v1/categories" && request.method === "POST") {
+      categoryPosts += 1;
+      const input = body as Omit<FakeCategory, "id" | "archived" | "currentBudget">;
+      const taken = (name: string) => name.toLowerCase() === input.name.toLowerCase();
+      // Like the API: names are unique per person, ignoring case (archived ones too).
+      if (categories.some((c) => taken(c.name)) || takenNames.some(taken)) {
+        return Response.json({ code: "category_name_taken" }, { status: 409 });
+      }
       const created = {
-        ...(body as Omit<FakeCategory, "id" | "archived" | "currentBudget">),
+        ...input,
         id: `cat-${categories.length}`,
         archived: false,
         currentBudget: null,
       };
+      if (failCategoryPost?.nth === categoryPosts) {
+        if (failCategoryPost.created) categories = [...categories, created];
+        return Response.json({ code: "internal_error" }, { status: 503 });
+      }
       categories = [...categories, created];
       return Response.json(created, { status: 201 });
+    }
+    if (path === "/api/v1/transactions" && request.method === "GET") {
+      return Response.json({ items: confirmed ? [{ id: "t-1" }] : [], nextCursor: null });
     }
     const budget = /^\/api\/v1\/categories\/([^/]+)\/budget$/.exec(path);
     if (budget) {
@@ -178,6 +207,8 @@ function onboardingFetch({
     }
     const confirm = /^\/api\/v1\/imports\/([^/]+)\/confirm$/.exec(path);
     if (confirm) {
+      if (confirmDelayMs) await new Promise((resolve) => setTimeout(resolve, confirmDelayMs));
+      confirmed = true;
       failuresLeft = failRefreshesAfterConfirm;
       return Response.json({
         id: confirm[1],
@@ -192,31 +223,35 @@ function onboardingFetch({
   };
 }
 
+/** Who the fake API says is signed in. */
+const FAKE_USER_ID = "u-new";
+
 /** The browser this stage pretends to be: in Bogotá. */
 const BOGOTA = { zone: "America/Bogota", supported: ["America/Bogota", "Europe/Madrid", "UTC"] };
 
-export interface WelcomeStageProps {
-  /** Where the router starts, e.g. `/welcome/import`. */
+/** Where the router starts (e.g. `/welcome/import`), and how the fake API behaves. */
+export interface WelcomeStageProps extends FakeApiOptions {
   initialEntry: string;
-  /** The account's currency. */
-  currency: string;
-  onRequest(line: string): void;
-  /** How many category reads fail (503) right after a confirm, retries included. */
-  failRefreshesAfterConfirm?: number;
-  /** What the account starts with: no categories (new) or a couple. */
-  categories?: "none" | "some";
-  /** The profile's stored time zone; "UTC" is a new profile's default. */
-  timezone?: string;
-  /** The uploaded file ended long ago (see `FakeApiOptions.oldExport`). */
-  oldExport?: boolean;
 }
 
 /** The `/welcome` flow in a memory router, with the fake API, toasts, and a stand-in for /app. */
 export function WelcomeStage({ initialEntry, ...api }: WelcomeStageProps) {
-  const [fetchImpl] = useState(() => onboardingFetch(api));
+  const [fetchImpl] = useState(() => {
+    // Each story starts a fresh session; "Recargar" below keeps it, as a real reload would.
+    clearOnboardingDraft(FAKE_USER_ID);
+    return onboardingFetch(api);
+  });
+  const [reloads, setReloads] = useState(0);
   return (
     <MemoryRouter initialEntries={[initialEntry]}>
-      <ApiProvider fetch={fetchImpl}>
+      <button
+        type="button"
+        className="sr-only focus:not-sr-only"
+        onClick={() => setReloads((n) => n + 1)}
+      >
+        Recargar (stand-in)
+      </button>
+      <ApiProvider key={reloads} fetch={fetchImpl}>
         <ToastProvider>
           <Routes>
             <Route

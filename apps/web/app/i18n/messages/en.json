@@ -447,7 +447,7 @@
       "source_other": "Other apps",
       "soon": "Soon",
       "budge_title": "Export your transactions from Budge",
-      "budge_step_1": "In Budge, open Settings and look for the option to export your transactions as CSV.",
+      "budge_step_1": "In Budge, look for the option to export your transactions as CSV.",
       "budge_step_2": "Save the file on this device.",
       "budge_step_3": "Upload it here: we show you what we'll import before we do.",
       "other_source": "Pick another source"
@@ -459,7 +459,7 @@
       "lead": "Set up your currency, categories and budget in a minute, or go straight in and do it later.",
       "setup": "Set up in 1 minute",
       "direct": "Go straight in",
-      "direct_note": "If you go straight in, we use your region's currency and the suggested categories. You can change them anytime."
+      "direct_note": "If you go straight in, your currency will be {currency} and we use the suggested categories. You can change it in Settings before your first transaction."
     },
     "prefill_basis_activity": "Based on {months, plural, one {your last month} other {your last # months}} with activity"
   },

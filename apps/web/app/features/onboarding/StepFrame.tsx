@@ -30,6 +30,8 @@ export interface StepFrameProps {
   lead?: ReactNode;
   mood?: LukasMood;
   onBack?: (() => void) | undefined;
+  /** Back waits too (e.g. while an import is being read or confirmed). */
+  backDisabled?: boolean;
   /** SALTAR. */
   skip?: StepAction | undefined;
   /** SIGUIENTE, or the step's own main action (e.g. "Importar 22 movimientos"). */
@@ -54,6 +56,7 @@ export function StepFrame({
   lead,
   mood = "happy",
   onBack,
+  backDisabled = false,
   skip,
   next,
   summary,
@@ -116,7 +119,12 @@ export function StepFrame({
             {summary}
             <div className="flex items-center gap-(--space-2)">
               {onBack && (
-                <PressButton variant="ghost" aria-label={t("back")} onClick={onBack}>
+                <PressButton
+                  variant="ghost"
+                  aria-label={t("back")}
+                  disabled={backDisabled}
+                  onClick={onBack}
+                >
                   <BackIcon />
                 </PressButton>
               )}

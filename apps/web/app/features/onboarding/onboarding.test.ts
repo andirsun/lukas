@@ -1,36 +1,42 @@
 import { InvalidAmountError } from "@lukas/core";
 import { describe, expect, it } from "vitest";
 import { budgetExample, draftFromCents, parseBudgetInput } from "./budget-input.ts";
-import { currencyFromLanguages } from "./currency.ts";
+import { defaultCurrency } from "./currency.ts";
 import { passkeyOutcome } from "./passkey.ts";
 import { nextStep, previousStep, STEPS, stepFromParam, stepPath } from "./steps.ts";
 import { SUGGESTED_CATEGORIES, suggestionFor } from "./suggested-categories.ts";
 import { browserTimeZone, timeZoneToSave } from "./timezone.ts";
 
-describe("currencyFromLanguages", () => {
-  it("follows the browser's region (COP, USD, EUR at launch)", () => {
-    expect(currencyFromLanguages(["es-CO"])).toBe("COP");
-    expect(currencyFromLanguages(["es-ES"])).toBe("EUR");
-    expect(currencyFromLanguages(["en-US"])).toBe("USD");
-    expect(currencyFromLanguages(["pt-PT"])).toBe("EUR");
-  });
-
-  it("falls back to EUR for regions whose currency is not offered yet", () => {
-    expect(currencyFromLanguages(["es-MX"])).toBe("EUR");
-    expect(currencyFromLanguages(["es-AR", "es-CO"])).toBe("COP");
-  });
-
-  it("takes the first language that names a region it knows", () => {
-    expect(currencyFromLanguages(["es", "es-CO", "en-US"])).toBe("COP");
-    expect(currencyFromLanguages(["en-GB", "en-US"])).toBe("USD");
-  });
-
-  it("falls back to EUR", () => {
-    expect(currencyFromLanguages([])).toBe("EUR");
-    expect(currencyFromLanguages(["es"])).toBe("EUR");
-    expect(currencyFromLanguages(["en-GB"])).toBe("EUR");
-    expect(currencyFromLanguages(["not a tag"])).toBe("EUR");
-  });
+describe("defaultCurrency", () => {
+  // The rule (founder, 2026-10-21): Colombia → COP; Europe → EUR; anywhere else → USD.
+  const cases: [languages: string[], timeZone: string | undefined, expected: string][] = [
+    [["es-CO"], "America/Bogota", "COP"],
+    [["es-CO"], "Europe/Madrid", "COP"],
+    [["en-US", "es-CO"], "America/New_York", "COP"],
+    [["es"], "America/Bogota", "COP"],
+    [["en-US"], "America/Bogota", "COP"],
+    [["es-ES"], "Europe/Madrid", "EUR"],
+    [["pt-PT"], "Europe/Lisbon", "EUR"],
+    [["en-GB"], "Europe/London", "EUR"],
+    [["de-CH"], "Europe/Zurich", "EUR"],
+    [["es"], "Europe/Madrid", "EUR"],
+    [["en-US"], "Europe/Berlin", "EUR"],
+    [["fr-FR"], undefined, "EUR"],
+    [["en-US"], "America/New_York", "USD"],
+    [["es-MX"], "America/Mexico_City", "USD"],
+    [["es-AR"], "America/Argentina/Buenos_Aires", "USD"],
+    [["es-CL"], "America/Santiago", "USD"],
+    [["es-PE"], "America/Lima", "USD"],
+    [["es"], "America/Mexico_City", "USD"],
+    [["es"], undefined, "USD"],
+    [[], undefined, "USD"],
+    [["not a tag"], "Asia/Tokyo", "USD"],
+  ];
+  for (const [languages, timeZone, expected] of cases) {
+    it(`${languages.join(",") || "(none)"} in ${timeZone ?? "(no zone)"} → ${expected}`, () => {
+      expect(defaultCurrency(languages, timeZone)).toBe(expected);
+    });
+  }
 });
 
 describe("parseBudgetInput", () => {

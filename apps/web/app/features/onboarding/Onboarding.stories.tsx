@@ -61,7 +61,7 @@ const upload = async (canvas: Canvas) =>
 
 /** Two ways in: set up in a minute, or straight in. No progress yet. */
 export const Welcome: Story = {
-  render: (args) => <WelcomeStep onSetup={args.onNext} onDirect={args.onSkip} />,
+  render: (args) => <WelcomeStep currency="COP" onSetup={args.onNext} onDirect={args.onSkip} />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const title = canvas.getByRole("heading", {
@@ -70,6 +70,12 @@ export const Welcome: Story = {
     });
     await waitFor(() => expect(title).toHaveFocus());
     await expect(canvas.queryByText(/^Paso/)).toBeNull();
+    // It names the currency going straight in sets, and tells the truth about changing it.
+    await expect(
+      canvas.getByText(
+        "Si entras directo, tu moneda será COP y usamos las categorías sugeridas. Puedes cambiarla en Ajustes antes de tu primer movimiento.",
+      ),
+    ).toBeVisible();
     const setup = canvas.getByRole("button", { name: "Configurar en 1 minuto" });
     const direct = canvas.getByRole("button", { name: "Entrar directo" });
     await expectTarget(setup);
@@ -247,7 +253,9 @@ export const ImportSources: Story = {
     const howTo = canvas.getByRole("heading", { name: "Exporta tus movimientos de Budge" });
     await waitFor(() => expect(howTo).toHaveFocus());
     await expect(canvas.getAllByRole("listitem")).toHaveLength(3);
-    await expect(canvas.getByText(/abre Ajustes y busca la opción para exportar/)).toBeVisible();
+    // Neutral until the founder confirms Budge's menu path: no menu is named.
+    await expect(canvas.getByText(/busca la opción para exportar tus movimientos/)).toBeVisible();
+    await expect(canvas.queryByText(/Ajustes/)).toBeNull();
     const input = canvas.getByLabelText("Subir archivo de Budge");
     await expect(input).toHaveAttribute("type", "file");
     await expect(input).toHaveAttribute("accept", ".csv,text/csv");
@@ -712,5 +720,161 @@ export const FlowFinish: Story = {
       `PUT /api/v1/categories/cat-groceries/budget {"amount":30000,"effectiveFrom":"${month}"}`,
     );
     await expect(calls(onRequest).at(-1)).toBe('PATCH /api/v1/me {"onboardingCompleted":true}');
+  },
+};
+
+// -- Fix round 1: safe skip, retries, session draft ---------------------------------------------------
+
+/** While a confirm runs, SALTAR and Back wait: nobody leaves or reverts an import halfway. */
+export const FlowSkipLockedWhileConfirming: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/import"
+      currency="EUR"
+      confirmDelayMs={1500}
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Budge" }));
+    await upload(canvas);
+    await userEvent.click(await canvas.findByRole("button", { name: "Importar 22 movimientos" }));
+    await canvas.findByRole("button", { name: "Importando…" });
+    await expect(canvas.getByRole("button", { name: "Saltar" })).toBeDisabled();
+    await expect(canvas.getByRole("button", { name: "Atrás" })).toBeDisabled();
+    await expect(
+      await canvas.findByRole("heading", { name: "Importamos 22 movimientos." }, { timeout: 4000 }),
+    ).toBeVisible();
+    await expect(calls(args.onRequest).some((l) => l.startsWith("DELETE"))).toBe(false);
+  },
+};
+
+const enterDirectlyStage = (
+  args: Spies,
+  options: Partial<Parameters<typeof WelcomeStage>[0]> = {},
+) => (
+  <WelcomeStage
+    initialEntry="/welcome"
+    currency="EUR"
+    categories="none"
+    onRequest={args.onRequest}
+    {...options}
+  />
+);
+const categoryPosts = (spy: (line: string) => void) =>
+  calls(spy).filter((l) => l.startsWith("POST /api/v1/categories "));
+
+/** One category fails to save: the error shows, and tapping again creates only the missing one. */
+export const FlowEnterDirectlyRetries: Story = {
+  render: (args) => enterDirectlyStage(args, { failCategoryPost: { nth: 3, created: false } }),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const direct = await canvas.findByRole("button", { name: "Entrar directo" });
+    await userEvent.click(direct);
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Tuvimos un problema de nuestro lado",
+    );
+    await expect(categoryPosts(args.onRequest)).toHaveLength(8);
+    await userEvent.click(direct);
+    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    await expect(categoryPosts(args.onRequest)).toHaveLength(9);
+  },
+};
+
+/** The answer to one save was lost although it was made: the retry re-reads and creates nothing. */
+export const FlowEnterDirectlyAfterLostAnswer: Story = {
+  render: (args) => enterDirectlyStage(args, { failCategoryPost: { nth: 3, created: true } }),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const direct = await canvas.findByRole("button", { name: "Entrar directo" });
+    await userEvent.click(direct);
+    await canvas.findByRole("alert");
+    await userEvent.click(direct);
+    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    await expect(categoryPosts(args.onRequest)).toHaveLength(8);
+  },
+};
+
+/** A 409 "name taken" for a suggestion means it is already there: not a failure. */
+export const FlowEnterDirectlyNameTaken: Story = {
+  render: (args) => enterDirectlyStage(args, { takenNames: ["Ocio"] }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Entrar directo" }));
+    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+  },
+};
+
+/**
+ * After adding their own category, the chips survive a reload (session draft), and SALTAR keeps
+ * the pre-selected suggestions as well as theirs: it creates the suggestions and archives nothing.
+ */
+export const FlowSkipCategoriesAfterCustom: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/categories"
+      currency="EUR"
+      categories="none"
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Agregar categoría" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Nueva categoría" }));
+    await userEvent.type(sheet.getByRole("textbox", { name: "Nombre" }), "Mascotas");
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 4000 });
+    await within(canvas.getByRole("group", { name: "Gastos" })).findByRole("button", {
+      name: "Mascotas",
+    });
+
+    await userEvent.click(canvas.getByRole("button", { name: "Recargar (stand-in)" }));
+    await heading(canvas, "¿En qué se te va el dinero?");
+    for (const name of [...SUGGESTED_CATEGORIES.map((c) => c.names.es), "Mascotas"]) {
+      await expect(await canvas.findByRole("button", { name })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+    }
+
+    await userEvent.click(canvas.getByRole("button", { name: "Saltar" }));
+    await heading(canvas, "¿Traes tu historial?");
+    // Mascotas, then the eight suggestions; nothing archived.
+    await expect(categoryPosts(args.onRequest)).toHaveLength(9);
+    await expect(calls(args.onRequest).some((l) => l.includes('"archived":true'))).toBe(false);
+  },
+};
+
+/** A deep link to the budgets before any category exists goes to the categories first. */
+export const FlowBudgetsDeepLinkWithoutCategories: Story = {
+  render: (args) => (
+    <WelcomeStage
+      initialEntry="/welcome/budgets"
+      currency="EUR"
+      categories="none"
+      onRequest={args.onRequest}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await heading(canvas, "¿En qué se te va el dinero?")).toBeVisible();
+  },
+};
+
+/** A currency they picked stays picked after a reload (the region's no longer overrides it). */
+export const FlowChosenCurrencySurvivesReload: Story = {
+  render: (args) => (
+    <WelcomeStage initialEntry="/welcome/currency" currency="EUR" onRequest={args.onRequest} />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // In Bogotá the default is COP.
+    await expect(await canvas.findByRole("radio", { name: /COP/ })).toBeChecked();
+    await userEvent.click(canvas.getByRole("radio", { name: /EUR/ }));
+    await userEvent.click(canvas.getByRole("button", { name: "Recargar (stand-in)" }));
+    await heading(canvas, "¿En qué moneda llevas tus cuentas?");
+    await expect(await canvas.findByRole("radio", { name: /EUR/ })).toBeChecked();
   },
 };
