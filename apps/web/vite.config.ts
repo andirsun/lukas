@@ -9,14 +9,10 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      // Same-origin API: Better Auth cookies stay first-party. X-Forwarded-* carry the browser's
-      // host and client IP to the API.
-      "/api": {
-        target: "http://localhost:3000",
-        rewrite: (path) => path.replace(/^\/api/, ""),
-        changeOrigin: false,
-        xfwd: true,
-      },
+      // Same-origin API: Better Auth cookies stay first-party. The path is forwarded as is: the
+      // API serves its routes under API_URL's path (/api). X-Forwarded-* carry the browser's host
+      // and client IP to the API.
+      "/api": { target: "http://localhost:3000", changeOrigin: false, xfwd: true },
     },
   },
 });

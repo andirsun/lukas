@@ -24,7 +24,7 @@ export function codeFrom(subject: string): string {
 }
 
 /** A fresh database + app per test file. Requests go through `app.request` (no network). */
-export async function createTestApp() {
+export async function createTestApp(overrides: Partial<Config> = {}) {
   const database = await startTestDatabase();
   const app$ = createDb(database.appUrl);
   const admin = createDb(database.adminUrl);
@@ -33,6 +33,7 @@ export async function createTestApp() {
     ...TEST_CONFIG,
     DATABASE_URL: database.appUrl,
     DATABASE_ADMIN_URL: database.adminUrl,
+    ...overrides,
   };
   const app = createApp({ config, db: app$.db, mailer });
 

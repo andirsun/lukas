@@ -50,6 +50,15 @@ const configSchema = z
 
 export type Config = z.infer<typeof configSchema>;
 
+/**
+ * The path every route lives under: API_URL's pathname without a trailing slash. "/api" when the
+ * web origin proxies /api to the API (so Better Auth cookies are first-party), "" when the API is
+ * served from its own origin.
+ */
+export function apiPathPrefix(config: Pick<Config, "API_URL">): string {
+  return new URL(config.API_URL).pathname.replace(/\/+$/, "");
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv): Config {
   return configSchema.parse(env);
 }

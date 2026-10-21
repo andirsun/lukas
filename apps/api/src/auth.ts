@@ -6,6 +6,7 @@ import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createAuthMiddleware } from "better-auth/api";
 import { bearer, emailOTP, jwt } from "better-auth/plugins";
+import { apiPathPrefix } from "./config.ts";
 import type { AppDeps } from "./deps.ts";
 import { signInEmail } from "./emails/sign-in.ts";
 
@@ -46,8 +47,10 @@ export function createAuth(deps: AppDeps) {
   const { config } = deps;
   return betterAuth({
     appName: "Lukas",
-    basePath: "/auth",
-    baseURL: config.API_URL,
+    // Better Auth ignores basePath when baseURL has a path, so it gets the origin and the full
+    // path separately; its endpoints then resolve to `${API_URL}/auth/...`.
+    basePath: `${apiPathPrefix(config)}/auth`,
+    baseURL: new URL(config.API_URL).origin,
     secret: config.BETTER_AUTH_SECRET,
     trustedOrigins: [config.WEB_URL],
     database: drizzleAdapter(deps.db, { provider: "pg", schema }),

@@ -41,22 +41,22 @@ Requirements: Node 22, pnpm 12 and Docker.
 ```bash
 pnpm install
 cp .env.example .env
-docker compose up -d          # Postgres, Mailpit and the API on http://localhost:3000
+docker compose up -d          # Postgres, Mailpit and the API on http://localhost:3000/api
 pnpm --filter @lukas/api seed # creates dev@lukas.test with sample data
 ```
 
 Sign in without a password: request a code, then open Mailpit at http://localhost:8025 to read it.
 
 ```bash
-curl -X POST localhost:3000/auth/email-otp/send-verification-otp \
+curl -X POST localhost:3000/api/auth/email-otp/send-verification-otp \
   -H 'content-type: application/json' -d '{"email":"dev@lukas.test","type":"sign-in"}'
-curl -i -X POST localhost:3000/auth/sign-in/email-otp \
+curl -i -X POST localhost:3000/api/auth/sign-in/email-otp \
   -H 'content-type: application/json' -d '{"email":"dev@lukas.test","otp":"<code>"}'
 # use the set-auth-token response header as a bearer token:
-curl localhost:3000/v1/summary -H 'authorization: Bearer <token>'
+curl localhost:3000/api/v1/summary -H 'authorization: Bearer <token>'
 ```
 
-The API is documented at http://localhost:3000/openapi.json.
+The API is documented at http://localhost:3000/api/openapi.json. Its routes live under the path of `API_URL` (`/api` in `.env.example`, so the web app can proxy `/api` from its own origin).
 
 To run the API outside Docker, start only the services with `docker compose up -d postgres mailpit` and run `pnpm --filter @lukas/api dev`. On the host, Postgres listens on port 5433 and Mailpit SMTP on 1026, so they do not clash with a local Postgres or mail bridge.
 
