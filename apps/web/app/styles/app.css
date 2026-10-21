@@ -861,7 +861,7 @@
       lk-sprite-y var(--lk-sprite-loop-ms) steps(var(--lk-sprite-rows)) infinite;
   }
   .lk-lukas.is-shiver .lk-lukas-body {
-    animation: lk-lukas-shiver 1.6s ease-in-out infinite;
+    animation: lk-lukas-shiver var(--shiver) ease-in-out infinite;
   }
   .lk-lukas.is-hop .lk-lukas-body {
     animation: lk-lukas-hop var(--celebrate) ease-in-out infinite;
@@ -881,8 +881,10 @@
     width: 14%;
     height: auto;
   }
+  /* Sparkles twinkle in turn: sparkle i starts i quarters of a celebration loop late. */
   .lk-lukas.is-hop .lk-lukas-sparkle {
     animation: lk-lukas-twinkle var(--celebrate) ease-in-out infinite;
+    animation-delay: calc(var(--celebrate) * var(--lk-sparkle-index, 0) / 4);
   }
   .lk-lukas-sparkle.is-gold {
     fill: var(--gold);

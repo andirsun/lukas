@@ -79,6 +79,9 @@ export const Worried: Story = {
     await expect(sheet.getAnimations()).toHaveLength(0);
     await expect(lukas.querySelector(".lk-lukas-sweat")).not.toBeNull();
     await expect(animationNames(lukas)).toEqual(["lk-lukas-shiver"]);
+    // Timed by the `--shiver` token (1600ms).
+    const [shiver] = lukas.getAnimations({ subtree: true });
+    await expect(shiver?.effect?.getComputedTiming().duration).toBe(1600);
   },
 };
 
@@ -93,6 +96,14 @@ export const Celebrating: Story = {
     await expect(sparkles.length).toBeGreaterThanOrEqual(3);
     await expect(animationNames(lukas)).toContain("lk-lukas-hop");
     await expect(animationNames(lukas)).toContain("lk-lukas-twinkle");
+    // Each twinkle lasts `--celebrate` and starts a quarter of it after the previous one.
+    const twinkles = [...sparkles].map((sparkle) => sparkle.getAnimations()[0]);
+    await expect(twinkles.map((a) => a?.effect?.getComputedTiming().duration)).toEqual([
+      1200, 1200, 1200, 1200,
+    ]);
+    await expect(
+      twinkles.map((a) => Math.round(a?.effect?.getComputedTiming().delay ?? -1)),
+    ).toEqual([0, 300, 600, 900]);
     await expect(lukas.querySelector(".lk-lukas-sweat")).toBeNull();
   },
 };

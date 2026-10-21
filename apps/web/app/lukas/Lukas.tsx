@@ -87,11 +87,13 @@ function playingVars(sprite: LukasSprite): Record<string, string | number> {
   };
 }
 
+/** Where the sparkles sit around Lukas; each one's twinkle is staggered by a quarter of
+ * `--celebrate` (see `.lk-lukas-sparkle` in app.css). */
 const SPARKLES = [
-  { left: "4%", top: "10%", tone: "is-gold", delay: "0ms" },
-  { left: "82%", top: "4%", tone: "is-candy", delay: "300ms" },
-  { left: "88%", top: "52%", tone: "is-gold", delay: "600ms" },
-  { left: "0%", top: "58%", tone: "is-candy", delay: "900ms" },
+  { left: "4%", top: "10%", tone: "is-gold" },
+  { left: "82%", top: "4%", tone: "is-candy" },
+  { left: "88%", top: "52%", tone: "is-gold" },
+  { left: "0%", top: "58%", tone: "is-candy" },
 ] as const;
 
 /**
@@ -133,11 +135,11 @@ export function Lukas({ mood, size = 96, decorative = false, art }: LukasProps) 
         )}
       </span>
       {treatment === "hop" &&
-        SPARKLES.map((s) => (
+        SPARKLES.map((s, index) => (
           <svg
             key={`${s.left}-${s.top}`}
             className={cx("lk-lukas-sparkle", s.tone)}
-            style={{ left: s.left, top: s.top, animationDelay: s.delay }}
+            style={{ left: s.left, top: s.top, "--lk-sparkle-index": index } as CSSProperties}
             viewBox="0 0 24 24"
             aria-hidden="true"
           >

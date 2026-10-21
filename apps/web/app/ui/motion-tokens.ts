@@ -1,7 +1,7 @@
 import { MotionConfigContext, useReducedMotion } from "motion/react";
 import { useContext } from "react";
 
-export type DurationToken = "--press" | "--sheet" | "--count-up" | "--celebrate";
+export type DurationToken = "--press" | "--sheet" | "--count-up" | "--celebrate" | "--shiver";
 
 /**
  * Reads a duration token (`--sheet: 260ms`) from the stylesheet, in seconds, for Motion. The
