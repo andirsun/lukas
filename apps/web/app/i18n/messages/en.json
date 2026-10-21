@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "Lukas"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "theme": {
+    "label": "Theme",
+    "auto": "Automatic",
+    "night": "Night",
+    "day": "Day"
+  },
+  "language": {
+    "label": "Language",
+    "es": "Español",
+    "en": "English"
+  },
+  "lukas": {
+    "first_of_day": {
+      "1": "First entry of the day! Nice start.",
+      "2": "Logged. Great way to start the day!",
+      "3": "First move of the day. Keeping count is half the win."
+    },
+    "on_track": {
+      "1": "You're doing great: {remaining} left for {daysLeft, plural, one {# day} other {# days}}.",
+      "2": "All good here. {remaining} left and {daysLeft, plural, one {# day} other {# days}} to go.",
+      "3": "Nice pace, keep it up: {remaining} free, {daysLeft, plural, one {# day} other {# days}} ahead."
+    },
+    "near_limit": {
+      "1": "Careful, {category} only has {remaining} left.",
+      "2": "{category} is almost at its limit: {remaining} and that's it.",
+      "3": "Easy on {category}: you have {remaining} left."
+    },
+    "over_budget": {
+      "1": "Heads up! You went {over} over in {category}.",
+      "2": "{category} overflowed by {over}. Time to trim the rest of the month.",
+      "3": "We overshot {category} by {over}. No drama: tomorrow evens it out."
+    },
+    "income_received": {
+      "1": "Money in! {amount} more in your account.",
+      "2": "Income logged: {amount}. Good news!",
+      "3": "{amount} just landed. Spend it wisely, you've got this."
+    },
+    "pending_paid": {
+      "1": "Paid: {amount} off your pending list. What a relief!",
+      "2": "Done, you paid {amount}. One less thing on your mind.",
+      "3": "{amount} payment made. You're on top of it."
+    },
+    "month_last_day": {
+      "1": "Last day of the month! You have {remaining} to spare.",
+      "2": "The month ends today with {remaining} on your side. Almost there!",
+      "3": "Final stretch: {remaining} of cushion. Hang on one more day."
+    },
+    "month_closed_green": {
+      "1": "Month closed in the green! You saved {remaining}.",
+      "2": "You finished with {remaining} left over. That deserves a celebration!",
+      "3": "Month wrapped up in the black: {remaining} on your side. Well done!"
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again in a moment.",
+    "unauthenticated": "Sign in to continue.",
+    "bad_request": "We couldn't understand that request. Check the details and try again.",
+    "http_error": "We couldn't complete the request. Please try again.",
+    "internal_error": "We hit a problem on our side. Please try again in a moment.",
+    "not_found": "We couldn't find what you're looking for.",
+    "validation_failed": "Some of the data isn't valid. Check it and try again.",
+    "range_too_large": "That range is too long. Pick fewer months.",
+    "category_name_taken": "You already have a category with that name.",
+    "category_not_found": "Pick one of your active categories.",
+    "budget_category_not_expense": "Only expense categories can have a budget.",
+    "idempotency_in_progress": "We're still processing your previous request. Hold on a moment.",
+    "idempotency_key_reused": "This request was already used with different details. Please try again.",
+    "import_duplicate_file": "You already imported this file.",
+    "import_too_large": "That file is too large. The limit is 5 MB.",
+    "import_unrecognized_format": "We don't recognize this file. Use a Budge export.",
+    "import_not_in_preview": "This import is no longer in preview."
+  }
+}

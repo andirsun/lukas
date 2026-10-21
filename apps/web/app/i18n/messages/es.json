@@ -1,0 +1,83 @@
+{
+  "app": {
+    "name": "Lukas"
+  },
+  "common": {
+    "loading": "Cargando…",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "save": "Guardar"
+  },
+  "theme": {
+    "label": "Tema",
+    "auto": "Automático",
+    "night": "Noche",
+    "day": "Día"
+  },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English"
+  },
+  "lukas": {
+    "first_of_day": {
+      "1": "¡Primer apunte del día! Así se empieza.",
+      "2": "Ya quedó anotado. ¡Buen comienzo de día!",
+      "3": "Primer movimiento de hoy. Llevar la cuenta es media victoria."
+    },
+    "on_track": {
+      "1": "Vas muy bien: te quedan {remaining} para {daysLeft, plural, one {# día} other {# días}}.",
+      "2": "Todo en orden. Quedan {remaining} y {daysLeft, plural, one {# día} other {# días}} de mes.",
+      "3": "Buen ritmo, tú sigues así: {remaining} libres, {daysLeft, plural, one {# día} other {# días}} por delante."
+    },
+    "near_limit": {
+      "1": "Cuidado, a {category} solo le quedan {remaining}.",
+      "2": "{category} está casi al límite: {remaining} y se acaba.",
+      "3": "Despacito con {category}: te quedan {remaining}."
+    },
+    "over_budget": {
+      "1": "¡Ojo! Te pasaste {over} en {category}.",
+      "2": "{category} se desbordó por {over}. Toca ajustar el resto del mes.",
+      "3": "Nos pasamos {over} en {category}. Sin drama: mañana se compensa."
+    },
+    "income_received": {
+      "1": "¡Entró dinero! {amount} más en tu cuenta.",
+      "2": "Ingreso anotado: {amount}. ¡Buena noticia!",
+      "3": "Llegaron {amount}. Úsalos con cabeza, tú puedes."
+    },
+    "pending_paid": {
+      "1": "Pagado: {amount} menos de pendientes. ¡Qué alivio!",
+      "2": "Listo, ya pagaste {amount}. Una cosa menos en la cabeza.",
+      "3": "Pago de {amount} hecho. Vas cumpliendo."
+    },
+    "month_last_day": {
+      "1": "¡Último día del mes! Te sobran {remaining}.",
+      "2": "Hoy cierra el mes con {remaining} a tu favor. ¡Casi lo logras!",
+      "3": "Última curva del mes: {remaining} de margen. Aguanta un día más."
+    },
+    "month_closed_green": {
+      "1": "¡Mes cerrado en verde! Te sobraron {remaining}.",
+      "2": "Cerraste con {remaining} de sobra. ¡Eso merece celebrarse!",
+      "3": "Mes completado en positivo: {remaining} a tu favor. ¡Bien hecho!"
+    }
+  },
+  "errors": {
+    "generic": "Algo salió mal. Inténtalo de nuevo en un momento.",
+    "unauthenticated": "Inicia sesión para continuar.",
+    "bad_request": "No entendimos esa solicitud. Revisa los datos e inténtalo otra vez.",
+    "http_error": "No pudimos completar la solicitud. Inténtalo de nuevo.",
+    "internal_error": "Tuvimos un problema de nuestro lado. Inténtalo de nuevo en un momento.",
+    "not_found": "No encontramos lo que buscas.",
+    "validation_failed": "Hay datos que no son válidos. Revísalos e inténtalo otra vez.",
+    "range_too_large": "Ese rango es demasiado largo. Elige menos meses.",
+    "category_name_taken": "Ya tienes una categoría con ese nombre.",
+    "category_not_found": "Elige una de tus categorías activas.",
+    "budget_category_not_expense": "Solo las categorías de gasto pueden tener presupuesto.",
+    "idempotency_in_progress": "Seguimos procesando tu solicitud anterior. Espera un momento.",
+    "idempotency_key_reused": "Esta solicitud ya se usó con otros datos. Vuelve a intentarlo.",
+    "import_duplicate_file": "Ya importaste este archivo.",
+    "import_too_large": "El archivo es demasiado grande. El límite es de 5 MB.",
+    "import_unrecognized_format": "No reconocemos este archivo. Usa una exportación de Budge.",
+    "import_not_in_preview": "Esta importación ya no está en vista previa."
+  }
+}
