@@ -135,4 +135,13 @@ describe("transactions", () => {
     expect(sizes).toEqual([50, 50, 20]);
     expect(new Set(ids).size).toBe(120);
   });
+
+  test("a malformed cursor is a validation problem, not a server error", async () => {
+    const cursor = Buffer.from("notadate|0192f5a0-0000-7000-8000-000000000001").toString(
+      "base64url",
+    );
+    const res = await t.request("GET", `/v1/transactions?cursor=${cursor}`, { headers: a });
+    expect(res.status).toBe(422);
+    expect(await res.json()).toMatchObject({ code: "validation_failed" });
+  });
 });

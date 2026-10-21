@@ -102,10 +102,9 @@ function checkRecurrence(value: RecurrenceShape, ctx: z.RefinementCtx) {
 export const createRecurrenceSchema = recurrenceFields.superRefine(checkRecurrence);
 export type CreateRecurrence = z.infer<typeof createRecurrenceSchema>;
 
-export const updateRecurrenceSchema = recurrenceFields
-  .partial()
-  .refine(atLeastOne, AT_LEAST_ONE)
-  .superRefine(checkRecurrence);
+// Cross-field rules are checked by the API on the merged recurrence, since a patch may rely on
+// stored values (e.g. switching back to yearly with the monthOfYear already saved).
+export const updateRecurrenceSchema = recurrenceFields.partial().refine(atLeastOne, AT_LEAST_ONE);
 export type UpdateRecurrence = z.infer<typeof updateRecurrenceSchema>;
 
 export const updateProfileSchema = z

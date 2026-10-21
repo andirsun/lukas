@@ -107,6 +107,33 @@ describe("recurrences", () => {
     expect(next[0]?.recurrenceId).toBeNull();
   });
 
+  test("switching back to yearly reuses the stored month", async () => {
+    const res = await t.request("POST", "/v1/recurrences", {
+      headers: a,
+      body: {
+        name: "Insurance",
+        amount: -9000,
+        categoryId: subscriptions,
+        frequency: "yearly",
+        monthOfYear: 3,
+        dayOfMonth: 1,
+        startDate: "2026-01-01",
+      },
+    });
+    const { id } = (await res.json()) as { id: string };
+    const toMonthly = await t.request("PATCH", `/v1/recurrences/${id}`, {
+      headers: a,
+      body: { frequency: "monthly" },
+    });
+    expect(toMonthly.status).toBe(200);
+    const toYearly = await t.request("PATCH", `/v1/recurrences/${id}`, {
+      headers: a,
+      body: { frequency: "yearly" },
+    });
+    expect(toYearly.status).toBe(200);
+    expect(await toYearly.json()).toMatchObject({ frequency: "yearly", monthOfYear: 3 });
+  });
+
   test("yearly recurrences need monthOfYear", async () => {
     const res = await t.request("POST", "/v1/recurrences", {
       headers: a,

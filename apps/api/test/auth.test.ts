@@ -1,5 +1,5 @@
-import { accounts, withUser } from "@lukas/db";
-import { eq } from "@lukas/db/orm";
+import { accounts, verification, withUser } from "@lukas/db";
+import { eq, like } from "@lukas/db/orm";
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
 import { codeFrom, createTestApp, type TestApp } from "./harness.ts";
 
@@ -42,6 +42,18 @@ describe("email code + magic link", () => {
     const me = await t.request("GET", "/v1/me", { headers: { authorization: `Bearer ${token}` } });
     expect(me.status).toBe(200);
     expect(await me.json()).toMatchObject({ email: "b@lukas.test" });
+  });
+
+  test("codes are not stored in plain text", async () => {
+    await sendCode("hash@lukas.test");
+    const code = codeFrom(t.mailer.lastTo("hash@lukas.test")?.subject ?? "");
+    const rows = await t.admin
+      .select()
+      .from(verification)
+      .where(like(verification.identifier, "%hash@lukas.test%"));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) expect(row.value).not.toContain(code);
+    expect((await signInWith("hash@lukas.test", code)).status).toBe(200);
   });
 
   test("a code works only once", async () => {
