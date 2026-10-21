@@ -53,7 +53,7 @@ export function Verify({ auth }: { auth: SignInAuth }) {
   const t = useTranslations("verify");
   const tRoot = useTranslations();
   const navigate = useNavigate();
-  const finish = useFinishSignIn();
+  const finish = useFinishSignIn(auth);
   const [params] = useSearchParams();
   const { locale, setLocale } = useLocale();
   const [link] = useState<MagicLink>(() => ({

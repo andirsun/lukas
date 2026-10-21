@@ -212,6 +212,7 @@
     "lead": "No passwords: we'll email you a code.",
     "passkey": "Sign in with fingerprint",
     "passkey_busy": "Waiting for your fingerprint…",
+    "first_time": "First time? Sign in with your email; you can use your fingerprint afterwards.",
     "or_email": "or with your email",
     "email_label": "Your email",
     "email_placeholder": "ana@example.com",
@@ -551,11 +552,19 @@
     "prefill_basis_activity": "Based on {months, plural, one {your last month} other {your last # months}} with activity"
   },
   "passkey_offer": {
+    "meta_title": "Your fingerprint · Lukitas",
     "title": "Sign in with your fingerprint next time?",
-    "lead": "Use this device's fingerprint or face and sign in without waiting for a code.",
-    "add": "Use my fingerprint",
+    "lead": "That way you skip waiting for the code.",
+    "points": {
+      "key": "A passkey is a key saved on this phone, in Google, Samsung Pass, iCloud or Proton Pass.",
+      "unlock": "Your fingerprint or face only unlocks it. Lukitas never receives them.",
+      "sync": "It syncs to your other devices that use the same account.",
+      "backup": "Your email keeps working as a backup."
+    },
+    "add": "Create my fingerprint",
     "adding": "Waiting for your fingerprint…",
-    "added": "Done: next time, sign in with your fingerprint.",
-    "failed": "We couldn't save your fingerprint. Try again or continue without it."
+    "not_now": "Not now",
+    "added": "Done: next time you'll sign in with your fingerprint.",
+    "failed": "We couldn't save your fingerprint. Try again or carry on without it."
   }
 }

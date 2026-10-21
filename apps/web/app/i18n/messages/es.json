@@ -212,6 +212,7 @@
     "lead": "Sin contraseñas: te mandamos un código a tu correo.",
     "passkey": "Entrar con huella",
     "passkey_busy": "Esperando tu huella…",
+    "first_time": "¿Primera vez? Entra con tu correo; después podrás usar tu huella.",
     "or_email": "o con tu correo",
     "email_label": "Tu correo",
     "email_placeholder": "ana@correo.com",
@@ -551,10 +552,18 @@
     "prefill_basis_activity": "Basado en {months, plural, one {tu último mes} other {tus últimos # meses}} con movimientos"
   },
   "passkey_offer": {
+    "meta_title": "Tu huella · Lukitas",
     "title": "¿Entrar con tu huella la próxima vez?",
-    "lead": "Usa la huella o la cara de este dispositivo y entra sin esperar el código.",
-    "add": "Usar mi huella",
+    "lead": "Así entras sin esperar el código.",
+    "points": {
+      "key": "Una passkey es una llave guardada en este teléfono, en Google, Samsung Pass, iCloud o Proton Pass.",
+      "unlock": "Tu huella o tu cara solo la desbloquean. Lukitas nunca las recibe.",
+      "sync": "Se sincroniza con tus otros dispositivos que usan la misma cuenta.",
+      "backup": "Tu correo sigue funcionando como respaldo."
+    },
+    "add": "Crear mi huella",
     "adding": "Esperando tu huella…",
+    "not_now": "Ahora no",
     "added": "Listo: la próxima vez entras con tu huella.",
     "failed": "No pudimos guardar tu huella. Inténtalo otra vez o sigue sin ella."
   }

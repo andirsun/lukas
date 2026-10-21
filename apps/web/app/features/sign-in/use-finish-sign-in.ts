@@ -6,7 +6,7 @@ import { queryKeys } from "../../api/queries.ts";
 import type { paths } from "../../api/schema";
 import type { Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
-import { type AuthUser, destinationAfterSignIn } from "./auth.ts";
+import { type AuthUser, destinationAfterSignIn, type SignInAuth } from "./auth.ts";
 
 type Profile = paths["/v1/me"]["get"]["responses"][200]["content"]["application/json"];
 
@@ -17,14 +17,23 @@ export interface FinishSignIn {
   next: string | null;
   /** `?lang=` from the landing: the language a new user's profile starts in. */
   lang: Locale | null;
+  /**
+   * How they signed in. After an email sign-in (code or magic link) Lukitas may offer a passkey;
+   * someone who just used one needs no offer. Email unless said otherwise.
+   */
+  method?: "email" | "passkey";
 }
+
+/** The passkey offer's screen: it takes the page the person was heading to as `?next=`. */
+export const PASSKEY_OFFER_PATH = "/passkey-offer";
 
 /**
  * What happens right after any sign-in (code, magic link, passkey): forget the previous person's
  * cached data, give a new user the language of the page they came from (`PATCH /v1/me`), switch
- * the app to the profile's language, and go to onboarding, `next` or the app.
+ * the app to the profile's language, and go to onboarding, `next` or the app. After an email
+ * sign-in that is due the passkey offer, it goes first and then leads on to that page.
  */
-export function useFinishSignIn() {
+export function useFinishSignIn(auth: Pick<SignInAuth, "shouldOfferPasskey">) {
   const api = useApi();
   const clearSession = useClearSession();
   const queryClient = useQueryClient();
@@ -32,7 +41,7 @@ export function useFinishSignIn() {
   const { setLocale } = useLocale();
 
   return useCallback(
-    async ({ user, next, lang }: FinishSignIn) => {
+    async ({ user, next, lang, method = "email" }: FinishSignIn) => {
       clearSession();
       let profile: Profile | null = null;
       try {
@@ -47,8 +56,17 @@ export function useFinishSignIn() {
         // The profile is a nicety here: the person is signed in either way.
       }
       if (profile?.locale === "es" || profile?.locale === "en") setLocale(profile.locale);
-      navigate(destinationAfterSignIn(profile ?? user, next), { replace: true });
+      const destination = destinationAfterSignIn(profile ?? user, next);
+      // Asking is a nicety too: a failure just means no offer.
+      const offer =
+        method === "email" && (await auth.shouldOfferPasskey(user.id).catch(() => false));
+      if (offer) {
+        const search = new URLSearchParams({ next: destination });
+        navigate({ pathname: PASSKEY_OFFER_PATH, search: `?${search}` }, { replace: true });
+      } else {
+        navigate(destination, { replace: true });
+      }
     },
-    [api, clearSession, queryClient, navigate, setLocale],
+    [api, auth, clearSession, queryClient, navigate, setLocale],
   );
 }

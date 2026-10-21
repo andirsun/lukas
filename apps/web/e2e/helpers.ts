@@ -120,6 +120,18 @@ export async function sessionUser(page: Page): Promise<{ id: string; email: stri
   return body?.user ?? null;
 }
 
+/**
+ * After an email sign-in Lukitas offers a passkey ("¿Entrar con tu huella la próxima vez?") once per
+ * user per device. Tests that are about something else say "Ahora no" and carry on: this waits
+ * for whichever comes first, the offer or the page sign-in was heading to, and dismisses the offer.
+ */
+export async function skipPasskeyOffer(page: Page, { lang = "es" as "es" | "en" } = {}) {
+  await expect(page).toHaveURL(/\/(passkey-offer|welcome|app)(\?|\/|$)/);
+  if (new URL(page.url()).pathname !== "/passkey-offer") return;
+  await page.getByRole("button", { name: lang === "en" ? "Not now" : "Ahora no" }).click();
+  await expect(page).not.toHaveURL(/\/passkey-offer/);
+}
+
 /** Signs a brand-new user in through the sign-in page; returns their email. Lands on /welcome. */
 export async function signUpNewUser(page: Page, { lang = "es" as "es" | "en" } = {}) {
   const email = freshEmail();
@@ -130,6 +142,7 @@ export async function signUpNewUser(page: Page, { lang = "es" as "es" | "en" } =
   await page
     .getByRole("textbox", { name: lang === "en" ? "Digit 1 of 6" : "Dígito 1 de 6" })
     .fill(mail.code);
+  await skipPasskeyOffer(page, { lang });
   await expect(page).toHaveURL(/\/welcome$/);
   return email;
 }

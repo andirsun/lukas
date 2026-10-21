@@ -1,10 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
   clientIp,
   freshEmail,
   readSignInMail,
   requestCode,
   sessionUser,
+  skipPasskeyOffer,
   spendCode,
 } from "./helpers.ts";
 
@@ -50,6 +51,13 @@ test("the emailed code signs a new user in, and the magic link signs them in els
   await expect(firstBox).toBeFocused();
 
   await page.keyboard.type(first.code);
+  // The first email sign-in offers a passkey, in the page's language, with the heading focused.
+  const offer = page.getByRole("heading", {
+    level: 1,
+    name: "Sign in with your fingerprint next time?",
+  });
+  await expect(offer).toBeFocused();
+  await page.getByRole("button", { name: "Not now" }).click();
   await expect(page).toHaveURL(/\/welcome$/);
 
   const user = await sessionUser(page);
@@ -85,6 +93,8 @@ test("the emailed code signs a new user in, and the magic link signs them in els
     await expect(other).toHaveURL(/\/auth\/verify\?lang=en$/);
     await expect(other.locator('meta[name="referrer"]')).toHaveAttribute("content", "no-referrer");
     await other.getByRole("button", { name: "Continue" }).click();
+    // Another device, so the offer comes again (the first browser said "Not now" for itself).
+    await skipPasskeyOffer(other, { lang: "en" });
     await expect(other).toHaveURL(/\/welcome$/);
     expect((await sessionUser(other))?.id).toBe(user?.id);
   } finally {
@@ -114,6 +124,7 @@ test("a used magic link says so and sends a new code", async ({ page }) => {
 
   const fresh = await readSignInMail(email, { skip: [mail.id] });
   await page.getByRole("textbox", { name: "Dígito 1 de 6" }).fill(fresh.code);
+  await skipPasskeyOffer(page);
   await expect(page).toHaveURL(/\/welcome$/);
   expect((await sessionUser(page))?.email).toBe(email);
 });
@@ -144,6 +155,139 @@ test("opening the magic link spends nothing until Continue", async ({ page, brow
     page.getByRole("heading", { level: 1, name: `Continuar como ${email}` }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Continuar" }).click();
+  await skipPasskeyOffer(page);
   await expect(page).toHaveURL(/\/welcome$/);
   expect((await sessionUser(page))?.email).toBe(email);
+});
+
+/** A software authenticator in the page's browser: creates and uses passkeys without a person. */
+async function addVirtualAuthenticator(page: Page) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: {
+      protocol: "ctap2",
+      transport: "internal",
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: true,
+    },
+  });
+}
+
+test("no fingerprint button before a passkey, then the offer creates one and the button signs in", async ({
+  page,
+}) => {
+  await addVirtualAuthenticator(page);
+  // The software authenticator would pick its passkey from the email field's autofill by itself
+  // (see the next test); here only the button is under test.
+  await page.addInitScript(() => {
+    PublicKeyCredential.isConditionalMediationAvailable = async () => false;
+  });
+  const email = freshEmail("passkey");
+
+  // Nothing to sign in with yet: the OS would say "no sign-in available", so there is no button.
+  await page.goto("/sign-in?lang=en");
+  await expect(page.getByRole("button", { name: "Send code" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sign in with fingerprint" })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Your email" })).toHaveAttribute(
+    "autocomplete",
+    "username webauthn",
+  );
+  await expect(
+    page.getByText("First time? Sign in with your email; you can use your fingerprint afterwards."),
+  ).toBeVisible();
+
+  await page.getByRole("textbox", { name: "Your email" }).fill(email);
+  await page.getByRole("button", { name: "Send code" }).click();
+  const mail = await readSignInMail(email);
+  await page.getByRole("textbox", { name: "Digit 1 of 6" }).fill(mail.code);
+
+  // The offer, in plain words; creating the passkey confirms and goes on to onboarding.
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Sign in with your fingerprint next time?" }),
+  ).toBeFocused();
+  await expect(page.getByText("Your email keeps working as a backup.")).toBeVisible();
+  await page.getByRole("button", { name: "Create my fingerprint" }).click();
+  await expect(page).toHaveURL(/\/welcome$/);
+  await expect(
+    page.getByText("Done: next time you'll sign in with your fingerprint."),
+  ).toBeVisible();
+  const user = await sessionUser(page);
+  expect(user?.email).toBe(email);
+
+  // Signed out, this browser now knows a passkey: the button is there and signs in.
+  await page.context().clearCookies();
+  expect(await sessionUser(page)).toBeNull();
+  await page.goto("/sign-in?lang=en");
+  await page.getByRole("button", { name: "Sign in with fingerprint" }).click();
+  await expect(page).toHaveURL(/\/welcome$/);
+  expect((await sessionUser(page))?.id).toBe(user?.id);
+
+  // A passkey exists, so signing in by email again does not offer another one. (Another browser:
+  // it has not answered the offer, and the server's passkey list is what stops it.)
+  const elsewhere = await page
+    .context()
+    .browser()
+    ?.newContext({
+      extraHTTPHeaders: { "x-forwarded-for": clientIp() },
+    });
+  if (!elsewhere) throw new Error("no browser");
+  try {
+    const other = await elsewhere.newPage();
+    await requestCode(email);
+    const second = await readSignInMail(email, { skip: [mail.id] });
+    await other.goto(second.link);
+    await other.getByRole("button", { name: "Continue" }).click();
+    await expect(other).toHaveURL(/\/welcome$/);
+  } finally {
+    await elsewhere.close();
+  }
+});
+
+test("a passkey picked from the email field's autofill signs in with no button", async ({
+  page,
+}) => {
+  await addVirtualAuthenticator(page);
+  const email = freshEmail("autofill");
+  await page.goto("/sign-in?lang=en");
+  await page.getByRole("textbox", { name: "Your email" }).fill(email);
+  await page.getByRole("button", { name: "Send code" }).click();
+  const mail = await readSignInMail(email);
+  await page.getByRole("textbox", { name: "Digit 1 of 6" }).fill(mail.code);
+  await page.getByRole("button", { name: "Create my fingerprint" }).click();
+  await expect(page).toHaveURL(/\/welcome$/);
+  const user = await sessionUser(page);
+
+  // Signed out, the sign-in page asks the browser for this site's passkeys as soon as it opens;
+  // the software authenticator answers like a person picking one from the keyboard's suggestions.
+  await page.context().clearCookies();
+  expect(await sessionUser(page)).toBeNull();
+  await page.goto("/sign-in?lang=en");
+  await expect(page).toHaveURL(/\/welcome$/);
+  expect((await sessionUser(page))?.id).toBe(user?.id);
+});
+
+test("Ahora no is remembered: the offer does not come back on this device", async ({ page }) => {
+  const email = freshEmail("later");
+  await page.goto("/sign-in?lang=es");
+  await page.getByRole("textbox", { name: "Tu correo" }).fill(email);
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  const first = await readSignInMail(email);
+  await page.getByRole("textbox", { name: "Dígito 1 de 6" }).fill(first.code);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "¿Entrar con tu huella la próxima vez?" }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Ahora no" }).click();
+  await expect(page).toHaveURL(/\/welcome$/);
+
+  // Signed out and in again with a new code: straight to onboarding this time.
+  await page.context().clearCookies();
+  await page.goto("/sign-in?lang=es");
+  await page.getByRole("textbox", { name: "Tu correo" }).fill(email);
+  await page.getByRole("button", { name: "Enviar código" }).click();
+  const second = await readSignInMail(email, { skip: [first.id] });
+  await page.getByRole("textbox", { name: "Dígito 1 de 6" }).fill(second.code);
+  await expect(page).toHaveURL(/\/welcome$/);
 });

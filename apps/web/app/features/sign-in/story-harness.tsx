@@ -2,8 +2,10 @@ import { useState } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { fn } from "storybook/test";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
+import type { PasskeyOutcome } from "../../auth/passkey.ts";
 import { ToastProvider } from "../../ui/Toast.tsx";
 import type { AuthFailure, AuthResult, AuthUser, CodeHints, SignInAuth } from "./auth.ts";
+import { PasskeyOffer, type PasskeyOfferApi } from "./PasskeyOffer.tsx";
 import { SignIn } from "./SignIn.tsx";
 import { Verify } from "./Verify.tsx";
 
@@ -27,7 +29,9 @@ export const fail = (error: AuthFailure): AuthResult<never> => ({ data: null, er
 
 /**
  * A stand-in for Better Auth: `sendCode` always works, `verifyCode` accepts `GOOD_CODE` (and says
- * INVALID_OTP otherwise), passkeys are off unless a story turns them on. Every method is a spy.
+ * INVALID_OTP otherwise), passkeys are off unless a story turns them on, no passkey has been used
+ * in this browser, the autofill request never ends (nobody picks a passkey) and no passkey offer
+ * is due. Every method is a spy.
  */
 export function fakeAuth(overrides: Partial<SignInAuth> & { user?: AuthUser } = {}): SignInAuth {
   const { user = NEW_USER, ...rest } = overrides;
@@ -37,8 +41,21 @@ export function fakeAuth(overrides: Partial<SignInAuth> & { user?: AuthUser } = 
       code === GOOD_CODE ? ok(user) : fail({ code: "INVALID_OTP", status: 400 }),
     ),
     passkeysAvailable: () => false,
+    passkeyUsedHere: () => false,
     signInWithPasskey: fn(async () => ok(user)),
+    autofillPasskey: fn(() => new Promise<AuthResult<AuthUser>>(() => {})),
+    shouldOfferPasskey: fn(async (_userId: string) => false),
     ...rest,
+  };
+}
+
+/** A stand-in for the passkey offer's browser side: WebAuthn works and creating a passkey works. */
+export function fakeOffer(overrides: Partial<PasskeyOfferApi> = {}): PasskeyOfferApi {
+  return {
+    supported: () => true,
+    add: fn(async (): Promise<PasskeyOutcome> => "added"),
+    decide: fn((_userId: string) => {}),
+    ...overrides,
   };
 }
 
@@ -80,6 +97,8 @@ function Landed({ label }: { label: string }) {
 
 export interface SignInStageProps {
   auth: SignInAuth;
+  /** The passkey offer's browser side; a working one unless a story says otherwise. */
+  offer?: PasskeyOfferApi;
   /** Where the router starts: a path, or a location with `state` (e.g. the code step). */
   initialEntry: string | { pathname: string; search?: string; state?: unknown };
   /** The signed-in user's profile, as `GET /v1/me` returns it. */
@@ -94,12 +113,14 @@ export interface SignInStageProps {
  */
 export function SignInStage({
   auth,
+  offer,
   initialEntry,
   profileUser = NEW_USER,
   onPatchMe = () => {},
   resendDelayMs,
 }: SignInStageProps) {
   const [fetchImpl] = useState(() => profileFetch(profileUser, onPatchMe));
+  const [fallbackOffer] = useState(() => fakeOffer());
   return (
     <MemoryRouter initialEntries={[initialEntry]}>
       <ApiProvider fetch={fetchImpl}>
@@ -112,6 +133,10 @@ export function SignInStage({
               }
             />
             <Route path="/auth/verify" element={<Verify auth={auth} />} />
+            <Route
+              path="/passkey-offer"
+              element={<PasskeyOffer offer={offer ?? fallbackOffer} userId={profileUser.id} />}
+            />
             <Route path="/welcome" element={<Landed label="Welcome (stand-in)" />} />
             <Route path="/app/*" element={<Landed label="App (stand-in)" />} />
           </Routes>

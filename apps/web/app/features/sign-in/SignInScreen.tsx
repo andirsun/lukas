@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { Lukas, type LukasMood } from "../../lukas/Lukas.tsx";
@@ -42,10 +42,25 @@ export function SignInScreen({
   );
 }
 
-/** The screen's title: display face, centered. */
-export function ScreenTitle({ children }: { children: ReactNode }) {
+/**
+ * The screen's title: display face, centered. A screen that opens by itself (not from a tap on a
+ * link) takes the focus to it with `focusable` and a `ref`, so a screen reader starts there.
+ */
+export function ScreenTitle({
+  children,
+  ref,
+  focusable = false,
+}: {
+  children: ReactNode;
+  ref?: Ref<HTMLHeadingElement>;
+  focusable?: boolean;
+}) {
   return (
-    <h1 className="text-center font-display text-[28px] leading-tight font-bold text-ink">
+    <h1
+      ref={ref}
+      tabIndex={focusable ? -1 : undefined}
+      className="text-center font-display text-[28px] leading-tight font-bold text-ink outline-none"
+    >
       {children}
     </h1>
   );

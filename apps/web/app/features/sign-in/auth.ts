@@ -1,5 +1,13 @@
 import { authClient } from "../../auth/auth-client.ts";
 import { safeNext } from "../../auth/next.ts";
+import {
+  conditionalMediationAvailable,
+  hasUsedPasskey,
+  liveOfferDeps,
+  passkeysSupported,
+  rememberPasskeyUsed,
+  shouldOfferPasskey,
+} from "../../auth/passkey.ts";
 import { detectLocale, type Locale } from "../../i18n/format.ts";
 
 /** Good enough to catch typos; the server has the final word. */
@@ -40,8 +48,23 @@ export interface SignInAuth {
   verifyCode(email: string, code: string): Promise<AuthResult<AuthUser>>;
   /** Whether this browser can use passkeys at all (WebAuthn). */
   passkeysAvailable(): boolean;
+  /**
+   * Whether a passkey has signed in, or been registered, in this browser before. Only then is
+   * "Entrar con huella" shown: before any passkey exists the OS would only say "no sign-in
+   * available".
+   */
+  passkeyUsedHere(): boolean;
   /** Asks the browser for a passkey for this site and signs in with it. */
   signInWithPasskey(): Promise<AuthResult<AuthUser>>;
+  /**
+   * The conditional passkey request (WebAuthn conditional mediation): it waits quietly while the
+   * email field offers this site's passkeys in the keyboard or autofill, and settles when one is
+   * picked. Anything else (nothing picked, a newer request taking over, no support) is a failure
+   * for `passkeyErrorKey` to keep silent.
+   */
+  autofillPasskey(): Promise<AuthResult<AuthUser>>;
+  /** Whether to offer a passkey right after this user's email sign-in (once per user per device). */
+  shouldOfferPasskey(userId: string): Promise<boolean>;
 }
 
 /** The catalog keys sign-in shows for a failure. */
@@ -204,11 +227,26 @@ export const liveSignInAuth: SignInAuth = {
       (fetchOptions) => authClient.signIn.emailOtp({ email, otp: code, fetchOptions }),
       (data) => data.user as AuthUser,
     ),
-  passkeysAvailable: () =>
-    typeof window !== "undefined" && typeof window.PublicKeyCredential === "function",
-  signInWithPasskey: () =>
-    settle(
+  passkeysAvailable: passkeysSupported,
+  passkeyUsedHere: () => hasUsedPasskey(),
+  signInWithPasskey: async () => {
+    const result = await settle(
       (fetchOptions) => authClient.signIn.passkey({ fetchOptions }),
       (data) => (data as { user: AuthUser }).user,
-    ),
+    );
+    if (!result.error) rememberPasskeyUsed();
+    return result;
+  },
+  autofillPasskey: async () => {
+    if (!(await conditionalMediationAvailable())) {
+      return { data: null, error: { code: "AUTH_CANCELLED", status: 400 } };
+    }
+    const result = await settle(
+      (fetchOptions) => authClient.signIn.passkey({ autoFill: true, fetchOptions }),
+      (data) => (data as { user: AuthUser }).user,
+    );
+    if (!result.error) rememberPasskeyUsed();
+    return result;
+  },
+  shouldOfferPasskey: (userId) => shouldOfferPasskey(userId, liveOfferDeps),
 };

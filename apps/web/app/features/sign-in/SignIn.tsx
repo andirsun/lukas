@@ -67,7 +67,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
   const t = useTranslations("sign_in");
   const tRoot = useTranslations();
   const toast = useToast();
-  const finish = useFinishSignIn();
+  const finish = useFinishSignIn(auth);
   const location = useLocation();
   const [params] = useSearchParams();
   const next = params.get("next");
@@ -94,6 +94,9 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
   const [busy, setBusy] = useState<Busy>(null);
   const [resendAt, setResendAt] = useState(() => (arrived ? Date.now() + resendDelayMs : 0));
   const [passkeys] = useState(() => auth.passkeysAvailable());
+  // The fingerprint button only shows once a passkey has signed in, or been registered, in this
+  // browser: before that the OS would only say "no sign-in available". Read once, like `passkeys`.
+  const [fingerprintButton] = useState(() => passkeys && auth.passkeyUsedHere());
   const resendIn = useSecondsUntil(resendAt);
   // After a sign-in 429: when the code may be tried again.
   const [retryAt, setRetryAt] = useState(0);
@@ -107,7 +110,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
   const errorId = useId();
 
   const signedIn = useCallback(
-    (user: AuthUser) => finish({ user, next, lang }),
+    (user: AuthUser, method: "email" | "passkey" = "email") => finish({ user, next, lang, method }),
     [finish, next, lang],
   );
 
@@ -185,7 +188,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
     // Stays busy while the profile is read and the next page loads.
     inFlight.current = true;
     setBusy("verify");
-    await signedIn(result.data);
+    await signedIn(result.data, "email");
   }
 
   async function resend() {
@@ -203,11 +206,47 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
 
   async function passkey() {
     const result = await run("passkey", () => auth.signInWithPasskey(), passkeyErrorKey);
-    if (!result || !("data" in result)) return;
+    if (!result || !("data" in result)) {
+      // The explicit request replaced the conditional one: ask for the autofill again.
+      if (result) startAutofill();
+      return;
+    }
     inFlight.current = true;
     setBusy("passkey");
-    await signedIn(result.data);
+    await signedIn(result.data, "passkey");
   }
+
+  // The conditional passkey request (WebAuthn conditional mediation): while the email field is
+  // there, the browser may offer this site's passkeys in the keyboard or autofill. Picking one
+  // signs in. Anything else it comes back with is no news: a newer request taking over, nothing
+  // picked, no support. `generation` drops the answers of requests that were replaced.
+  const generation = useRef(0);
+  const onAutofillResult = useRef<(user: AuthUser) => void>(() => {});
+  useEffect(() => {
+    onAutofillResult.current = (user) => {
+      if (inFlight.current) return;
+      inFlight.current = true;
+      setBusy("passkey");
+      void signedIn(user, "passkey");
+    };
+  }, [signedIn]);
+  const startAutofill = useCallback(() => {
+    generation.current += 1;
+    const mine = generation.current;
+    void auth
+      .autofillPasskey()
+      .then((result) => {
+        if (mine === generation.current && !result.error) onAutofillResult.current(result.data);
+      })
+      .catch(() => {});
+  }, [auth]);
+  useEffect(() => {
+    if (step !== "email" || !passkeys) return;
+    startAutofill();
+    return () => {
+      generation.current += 1;
+    };
+  }, [step, passkeys, startAutofill]);
 
   function changeEmail() {
     focusEmailOnShow.current = true;
@@ -289,7 +328,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
     <SignInScreen>
       <ScreenTitle>{t("title")}</ScreenTitle>
       <p className="text-center text-ink-muted">{t("lead")}</p>
-      {passkeys && (
+      {fingerprintButton && (
         <>
           <PressButton
             variant="secondary"
@@ -316,7 +355,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
             id={emailId}
             type="email"
             name="email"
-            autoComplete="email"
+            autoComplete="username webauthn"
             autoCapitalize="none"
             spellCheck={false}
             enterKeyHint="send"
@@ -336,6 +375,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
           {busy === "send" ? t("sending") : t("send_code")}
         </PressButton>
       </form>
+      <p className="text-center text-[15px] text-ink-muted">{t("first_time")}</p>
     </SignInScreen>
   );
 }

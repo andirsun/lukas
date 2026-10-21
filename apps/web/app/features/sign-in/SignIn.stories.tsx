@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { expectTarget } from "../../../.storybook/story-utils.ts";
 import { detectLocale } from "../../i18n/format.ts";
-import { fail, fakeAuth, GOOD_CODE, ONBOARDED_USER, SignInStage } from "./story-harness.tsx";
+import { fail, fakeAuth, GOOD_CODE, ONBOARDED_USER, ok, SignInStage } from "./story-harness.tsx";
 
 const meta = {
   title: "Sign-in/SignIn",
@@ -29,16 +29,23 @@ const currentPage = (canvas: ReturnType<typeof within>) =>
 /** The email step: Lukitas, the email field and "send code". No fingerprint button without WebAuthn. */
 export const EmailStep: Story = {
   args: { auth: fakeAuth() },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { level: 1, name: "Entra a Lukitas" })).toBeVisible();
     await expect(canvas.getByRole("img", { name: "Lukitas, contento" })).toBeVisible();
     const email = canvas.getByRole("textbox", { name: "Tu correo" });
     await expect(email).toHaveAttribute("type", "email");
-    await expect(email).toHaveAttribute("autocomplete", "email");
+    // Existing passkeys appear in the field's autofill (WebAuthn conditional mediation).
+    await expect(email).toHaveAttribute("autocomplete", "username webauthn");
     const send = canvas.getByRole("button", { name: "Enviar código" });
     await expectTarget(send);
     await expect(canvas.queryByRole("button", { name: "Entrar con huella" })).toBeNull();
+    // Without WebAuthn there is nothing to ask the browser for.
+    await expect(args.auth.autofillPasskey).not.toHaveBeenCalled();
+    // A newcomer is told how it works, under the form.
+    await expect(
+      canvas.getByText("¿Primera vez? Entra con tu correo; después podrás usar tu huella."),
+    ).toBeVisible();
   },
 };
 
@@ -155,6 +162,8 @@ export const RightCode: Story = {
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
     // `?lang=es` is already the profile's language: nothing to change.
     await expect(args.onPatchMe).not.toHaveBeenCalled();
+    // The passkey offer was considered for this user, and not needed here.
+    await expect(args.auth.shouldOfferPasskey).toHaveBeenCalledWith("u-new");
   },
 };
 
@@ -222,10 +231,17 @@ export const ChangeEmail: Story = {
   },
 };
 
-/** With WebAuthn, "Sign in with fingerprint" comes first; a passkey sign-in goes on to `next`. */
+/**
+ * A browser that has used a passkey before: "Sign in with fingerprint" comes first; a passkey
+ * sign-in goes on to `next`, and is never followed by the offer to create one.
+ */
 export const Passkey: Story = {
   args: {
-    auth: fakeAuth({ passkeysAvailable: () => true, user: ONBOARDED_USER }),
+    auth: fakeAuth({
+      passkeysAvailable: () => true,
+      passkeyUsedHere: () => true,
+      user: ONBOARDED_USER,
+    }),
     initialEntry: "/sign-in?lang=es&next=%2Fapp%2Finsights",
     profileUser: ONBOARDED_USER,
   },
@@ -241,6 +257,73 @@ export const Passkey: Story = {
     await userEvent.click(passkey);
     await expect(args.auth.signInWithPasskey).toHaveBeenCalled();
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/app/insights"));
+    await expect(args.auth.shouldOfferPasskey).not.toHaveBeenCalled();
+  },
+};
+
+/**
+ * WebAuthn is there but this browser has never used a passkey: no fingerprint button (the OS would
+ * only say "no sign-in available"). The browser is still asked quietly, for the email field's
+ * autofill.
+ */
+export const NoFingerprintButtonYet: Story = {
+  args: { auth: fakeAuth({ passkeysAvailable: () => true, passkeyUsedHere: () => false }) },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("heading", { level: 1, name: "Entra a Lukitas" })).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Entrar con huella" })).toBeNull();
+    await expect(canvas.queryByText("o con tu correo")).toBeNull();
+    await expect(canvas.getByRole("textbox", { name: "Tu correo" })).toHaveAttribute(
+      "autocomplete",
+      "username webauthn",
+    );
+    await waitFor(() => expect(args.auth.autofillPasskey).toHaveBeenCalledTimes(1));
+    await expect(canvas.getByRole("button", { name: "Enviar código" })).toBeEnabled();
+  },
+};
+
+/** Once a passkey has signed in or been registered here, the fingerprint button shows. */
+export const FingerprintButtonAfterAPasskey: Story = {
+  args: { auth: fakeAuth({ passkeysAvailable: () => true, passkeyUsedHere: () => true }) },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(canvas.getByRole("button", { name: "Entrar con huella" })).toBeVisible();
+    await expect(canvas.getByText("o con tu correo")).toBeVisible();
+    await waitFor(() => expect(args.auth.autofillPasskey).toHaveBeenCalledTimes(1));
+  },
+};
+
+/** Picking a passkey from the email field's autofill signs in, with no button pressed. */
+export const PasskeyFromAutofill: Story = {
+  args: {
+    auth: fakeAuth({
+      passkeysAvailable: () => true,
+      autofillPasskey: fn(async () => ok(ONBOARDED_USER)),
+      user: ONBOARDED_USER,
+    }),
+    initialEntry: "/sign-in?lang=es&next=%2Fapp%2Finsights",
+    profileUser: ONBOARDED_USER,
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/app/insights"));
+    await expect(args.auth.shouldOfferPasskey).not.toHaveBeenCalled();
+  },
+};
+
+/** The autofill request ending without a choice (closed, aborted, unsupported) says nothing. */
+export const AutofillStaysQuiet: Story = {
+  args: {
+    auth: fakeAuth({
+      passkeysAvailable: () => true,
+      autofillPasskey: fn(async () => fail({ code: "ERROR_CEREMONY_ABORTED", status: 400 })),
+    }),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(args.auth.autofillPasskey).toHaveBeenCalled());
+    await expect(canvas.queryByRole("alert")).toBeNull();
+    await expect(canvas.getByRole("button", { name: "Enviar código" })).toBeEnabled();
   },
 };
 
@@ -249,6 +332,7 @@ export const PasskeyFailed: Story = {
   args: {
     auth: fakeAuth({
       passkeysAvailable: () => true,
+      passkeyUsedHere: () => true,
       signInWithPasskey: fn(async () => fail({ code: "PASSKEY_NOT_FOUND", status: 400 })),
     }),
     initialEntry: "/sign-in?lang=en",
@@ -282,6 +366,7 @@ export const PasskeyCancelled: Story = {
   args: {
     auth: fakeAuth({
       passkeysAvailable: () => true,
+      passkeyUsedHere: () => true,
       signInWithPasskey: fn(async () => fail({ code: "AUTH_CANCELLED", status: 400 })),
     }),
   },
