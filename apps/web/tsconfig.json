@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"],
+    "rootDirs": [".", "./.react-router/types"]
+  },
+  "include": [
+    "app",
+    "scripts",
+    "e2e",
+    ".storybook/*.ts",
+    ".storybook/*.tsx",
+    ".react-router/types",
+    "react-router.config.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ]
+}

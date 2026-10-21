@@ -1,7 +1,17 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": { "includes": ["**", "!**/drizzle/meta", "!**/*.csv"] },
+  "files": {
+    "includes": [
+      "**",
+      "!**/drizzle/meta",
+      "!**/*.csv",
+      "!apps/web/app/styles/tokens.css",
+      "!apps/web/app/api/schema.d.ts",
+      "!apps/web/build"
+    ]
+  },
+  "css": { "parser": { "tailwindDirectives": true } },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
   "linter": { "enabled": true, "rules": { "preset": "none" } },
   "assist": { "actions": { "source": { "organizeImports": "on" } } }
