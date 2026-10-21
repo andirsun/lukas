@@ -29,7 +29,7 @@ export function landingMeta(locale: Locale): MetaDescriptor[] {
     { title },
     { name: "description", content: description },
     { property: "og:type", content: "website" },
-    { property: "og:site_name", content: "Lukas" },
+    { property: "og:site_name", content: "Lukitas" },
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { property: "og:url", content: url },

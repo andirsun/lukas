@@ -1,16 +1,16 @@
-<p align="center"><img src="docs/brand/lukas-banner.png" alt="Lukas, the gold coin mascot, waving next to the Lukas wordmark: Tus lukas, por fin claras." width="100%"></p>
+<p align="center"><img src="docs/brand/lukas-banner.png" alt="Lukitas, the gold coin mascot, waving next to the Lukitas wordmark: Tus lukas, por fin claras." width="100%"></p>
 
-# Lukas
+# Lukitas
 
 **Your budget, and you'll actually enjoy looking after it.** Log an expense in seconds and see where your money goes: a monthly budget on the web, an Android and iOS app with widgets (soon), and an MCP server so your AI assistant (Claude, ChatGPT…) can help you with your money (soon).
 
-Lukas is **free forever and open source** ([AGPL-3.0](LICENSE)): anyone can read the code and check what it does with your data.
+Lukitas is **free forever and open source** ([AGPL-3.0](LICENSE)): anyone can read the code and check what it does with your data.
 
-## Why "Lukas"?
+## Why "Lukitas"?
 
-In Colombia we call money **lucas**. One *luca* is a thousand pesos, and from there it means money in general: "¿cuántas lukas te costó?" (how much did it cost you?), "estoy sin lukas" (I'm broke), "me faltan unas lukas para fin de mes" (I'm a few bucks short until the end of the month). It's a warm, everyday word, which is exactly how we want managing your finances to feel.
+In Colombia we call money **lukas** (spelled *lucas* in Chile, Argentina and Peru). One *luka* is a thousand pesos, and from there it means money in general: "¿cuántas lukas te costó?" (how much did it cost you?), "estoy sin lukas" (I'm broke), "me faltan unas lukas para fin de mes" (I'm a few bucks short until the end of the month). It's a warm, everyday word, which is exactly how we want managing your finances to feel.
 
-**Lukas is also the project's mascot.** It keeps you company in the app: it cheers when you log an expense, warns you when a category is getting close to its limit, and celebrates when you close the month within budget. The goal is for looking after your money to feel good, not like homework.
+**Lukitas is the affectionate diminutive: little lukas.** It is also the project's mascot, a gold coin that keeps you company in the app: it cheers when you log an expense, warns you when a category is getting close to its limit, and celebrates when you close the month within budget. The goal is for looking after your money to feel good, not like homework.
 
 ## What it does
 
@@ -76,8 +76,8 @@ LUKAS_TEST_DB=local pnpm test
 
 ## Self-hosting
 
-For now Lukas is offered as a hosted service, and there are no docs for running your own instance. If you're interested, open an issue and we'll take it into account.
+For now Lukitas is offered as a hosted service, and there are no docs for running your own instance. If you're interested, open an issue and we'll take it into account.
 
 ## License
 
-[AGPL-3.0](LICENSE). If you offer a modified Lukas as a service, you must publish your changes.
+[AGPL-3.0](LICENSE). If you offer a modified Lukitas as a service, you must publish your changes.

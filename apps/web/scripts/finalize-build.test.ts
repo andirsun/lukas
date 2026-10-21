@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { finalizeBuild } from "./finalize-build.ts";
 
-const ORIGIN = "https://lukas.andersonlaverde.com";
+const ORIGIN = "https://lukitas.andersonlaverde.com";
 let dir: string;
 
 beforeEach(() => {

@@ -6,7 +6,7 @@ const COLORS = ["bg", "surface", "surface-row", "surface-sunken", "brand", "good
 function Tokens() {
   return (
     <div className="lk-screen lk-pad min-h-dvh">
-      <span className="lk-logo">Lukas</span>
+      <span className="lk-logo">Lukitas</span>
       <ul className="lk-row-flex m-0 list-none p-0">
         {COLORS.map((name) => (
           <li key={name} className="lk-rowcard">

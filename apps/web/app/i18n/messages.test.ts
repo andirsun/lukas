@@ -84,6 +84,14 @@ describe("message catalogs", () => {
     }
   });
 
+  it("never names the product or the mascot Lukas (it is Lukitas; the slang word is lowercase)", () => {
+    for (const locale of ["es", "en"] as const) {
+      for (const [key, value] of Object.entries(catalogs[locale])) {
+        expect(value, `${locale}:${key}`).not.toMatch(/\bLukas\b/);
+      }
+    }
+  });
+
   it("has no empty messages", () => {
     for (const locale of ["es", "en"] as const) {
       for (const [key, value] of Object.entries(catalogs[locale])) {

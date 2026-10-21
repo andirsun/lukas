@@ -4,18 +4,20 @@
  * canonical, hreflang, Open Graph, sitemap and robots) is required; there is no placeholder to fall
  * back on for something you are about to publish.
  *
- *   VITE_SITE_URL=https://lukas.andersonlaverde.com pnpm --filter @lukas/web build:landing
+ *   VITE_SITE_URL=https://lukitas.andersonlaverde.com pnpm --filter @lukas/web build:landing
  *
  * The output stays in build/client.
  */
 import { spawnSync } from "node:child_process";
+import { readBuildEnv } from "../app/site/build-env.ts";
 import { resolveSiteOrigin } from "../app/site/origin.ts";
 
-const raw = process.env.VITE_SITE_URL;
+// The environment or a `.env` file of apps/web, as the build itself reads it.
+const raw = readBuildEnv().siteUrl;
 if (!raw?.trim()) {
   console.error(
-    "VITE_SITE_URL is not set. Pass the site's public origin, e.g.\n" +
-      "  VITE_SITE_URL=https://lukas.andersonlaverde.com pnpm --filter @lukas/web build:landing",
+    "VITE_SITE_URL is not set (environment or apps/web/.env). Pass the site's public origin, e.g.\n" +
+      "  VITE_SITE_URL=https://lukitas.andersonlaverde.com pnpm --filter @lukas/web build:landing",
   );
   process.exit(1);
 }

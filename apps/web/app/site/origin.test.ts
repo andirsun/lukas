@@ -10,14 +10,14 @@ describe("resolveSiteOrigin", () => {
   });
 
   it("uses the configured origin", () => {
-    expect(resolveSiteOrigin("https://lukas.andersonlaverde.com")).toBe(
-      "https://lukas.andersonlaverde.com",
+    expect(resolveSiteOrigin("https://lukitas.andersonlaverde.com")).toBe(
+      "https://lukitas.andersonlaverde.com",
     );
   });
 
   it("drops trailing slashes and surrounding whitespace", () => {
-    expect(resolveSiteOrigin("https://lukas.andersonlaverde.com/")).toBe(
-      "https://lukas.andersonlaverde.com",
+    expect(resolveSiteOrigin("https://lukitas.andersonlaverde.com/")).toBe(
+      "https://lukitas.andersonlaverde.com",
     );
     expect(resolveSiteOrigin("  https://example.com//  ")).toBe("https://example.com");
   });
@@ -27,7 +27,7 @@ describe("resolveSiteOrigin", () => {
   });
 
   it("fails clearly on something that is not an http(s) origin", () => {
-    expect(() => resolveSiteOrigin("lukas.andersonlaverde.com")).toThrow(/VITE_SITE_URL/);
+    expect(() => resolveSiteOrigin("lukitas.andersonlaverde.com")).toThrow(/VITE_SITE_URL/);
     expect(() => resolveSiteOrigin("ftp://example.com")).toThrow(/VITE_SITE_URL/);
     expect(() => resolveSiteOrigin("https://example.com/some/path")).toThrow(/VITE_SITE_URL/);
   });

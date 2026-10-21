@@ -59,7 +59,7 @@ export function createApp(deps: AppDeps) {
 
   app.doc31("/openapi.json", {
     openapi: "3.1.0",
-    info: { title: "Lukas API", version: "1.0.0" },
+    info: { title: "Lukitas API", version: "1.0.0" },
     servers: [{ url: deps.config.API_URL }],
   });
 

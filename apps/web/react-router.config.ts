@@ -1,6 +1,7 @@
 import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { Config } from "@react-router/dev/config";
+import { readBuildEnv } from "./app/site/build-env.ts";
 import { isLandingOnly, resolveSiteOrigin } from "./app/site/origin.ts";
 import { finalizeBuild } from "./scripts/finalize-build.ts";
 
@@ -8,9 +9,12 @@ import { finalizeBuild } from "./scripts/finalize-build.ts";
  * Build-time switches (see app/site/config.ts for what they do in the app):
  * - VITE_SITE_URL: the site's public origin, for robots.txt and sitemap.xml written after the build.
  * - VITE_LANDING_ONLY=true: only the landing and a 404 page ship (docs/deploy/landing.md).
+ * Both are read the way Vite reads them for the app code (`import.meta.env`): from the real
+ * environment and from the `.env` files of apps/web, so a flag set in either builds the same site.
  */
-const origin = resolveSiteOrigin(process.env.VITE_SITE_URL);
-const landingOnly = isLandingOnly(process.env.VITE_LANDING_ONLY);
+const env = readBuildEnv();
+const origin = resolveSiteOrigin(env.siteUrl);
+const landingOnly = isLandingOnly(env.landingOnly);
 
 export default {
   // The landing pages are static HTML; everything else is a client-side SPA.

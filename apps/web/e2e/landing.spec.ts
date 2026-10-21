@@ -17,8 +17,9 @@ const LOCALES = [
     headline: "Tus lukas, por fin claras.",
     highlight: "lukas",
     annotation: "¡Gratis, y siempre lo será!",
-    lead: "Lukas es tu presupuesto, y te va a dar gusto cuidarlo.",
+    lead: "Lukitas es tu presupuesto, y te va a dar gusto cuidarlo.",
     description: "Anota un gasto en segundos y mira en qué se va cada luka.",
+    newTab: "(se abre en una pestaña nueva)",
     perks: "Gratis para siempre · Código abierto · Sin contraseñas",
     openSourcePerk: "Código abierto",
     removedQuestions: ["¿En qué se me va la plata?", "¿Cuánto me cuesta vivir?"],
@@ -34,7 +35,7 @@ const LOCALES = [
     openSource: { title: "Código abierto", cta: "Ver el código en GitHub" },
     metaDescription: [/Gratis para siempre/, /código abierto/],
     banned: [/mejor amigo/i, /\bjueg(o|a)\b/i, /Empieza gratis/i],
-    // Privacy copy claims only what Lukas does today: no "can't leak", no end-to-end encryption,
+    // Privacy copy claims only what Lukitas does today: no "can't leak", no end-to-end encryption,
     // no encryption at rest.
     overclaims: [/se pueda filtrar/i, /extremo a extremo/i, /no podemos ver/i, /en reposo/i],
     privacyAnswer:
@@ -53,8 +54,9 @@ const LOCALES = [
     headline: "Your money, finally clear.",
     highlight: "money",
     annotation: "Free, and it always will be!",
-    lead: "Lukas is your budget, and you'll actually enjoy looking after it.",
+    lead: "Lukitas is your budget, and you'll actually enjoy looking after it.",
     description: "Log an expense in seconds and see where every buck goes.",
+    newTab: "(opens in a new tab)",
     perks: "Free forever · Open source · No passwords",
     openSourcePerk: "Open source",
     removedQuestions: ["Where does all my money go?", "How much does living cost me?"],
@@ -161,6 +163,55 @@ async function expectNoA11yViolations(page: Page) {
   ).toEqual([]);
 }
 
+/**
+ * The header at one width and theme: the wordmark on one line, the CTA and the ☾ switch on the
+ * same row, and nothing sticking out of the viewport.
+ */
+async function expectHeaderFits(
+  page: Page,
+  path: string,
+  width: number,
+  theme: "night" | "day",
+  cta: string,
+) {
+  await page.setViewportSize({ width, height: 800 });
+  await page.addInitScript((value) => localStorage.setItem("lukas.theme", value), theme);
+  await page.goto(path);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+  const header = page.getByRole("banner");
+  const logo = header.locator(".lk-logo");
+  const nav = header.getByRole("navigation");
+  const link = nav.getByRole("link", { name: cta });
+  const toggle = nav.getByRole("button");
+  await expect(logo).toBeVisible();
+  await expect(link).toBeVisible();
+  await expect(toggle).toBeVisible();
+  const [logoBox, linkBox, toggleBox] = [
+    await logo.boundingBox(),
+    await link.boundingBox(),
+    await toggle.boundingBox(),
+  ];
+  // One line of the 28px wordmark, not two.
+  expect(logoBox?.height).toBeLessThan(40);
+  // One row: the three share a vertical band.
+  const rowTop = Math.min(logoBox?.y ?? 0, linkBox?.y ?? 0, toggleBox?.y ?? 0);
+  const rowBottom = Math.max(
+    (logoBox?.y ?? 0) + (logoBox?.height ?? 0),
+    (linkBox?.y ?? 0) + (linkBox?.height ?? 0),
+    (toggleBox?.y ?? 0) + (toggleBox?.height ?? 0),
+  );
+  expect(rowBottom - rowTop).toBeLessThan(80);
+  // The wordmark clears the CTA, and the switch ends inside the viewport.
+  expect((logoBox?.x ?? 0) + (logoBox?.width ?? 0)).toBeLessThanOrEqual(linkBox?.x ?? 0);
+  expect((toggleBox?.x ?? 0) + (toggleBox?.width ?? 0)).toBeLessThanOrEqual(width);
+  expect(linkBox?.height).toBeGreaterThanOrEqual(44);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    ),
+  ).toBeLessThanOrEqual(0);
+}
+
 for (const l of LOCALES) {
   test.describe(`landing (${l.locale})`, () => {
     test("the prerendered HTML carries the copy, without JavaScript", async ({ page, request }) => {
@@ -218,8 +269,12 @@ for (const l of LOCALES) {
       await expect(description).toHaveText(`${l.lead} ${l.description}`);
       await expect(description.locator(".lk-landing-lead")).toHaveText(l.lead);
 
-      await expect(hero.locator(".lk-landing-perks")).toHaveText(l.perks);
+      // The visible text is the perks; the link to GitHub adds a hidden "opens in a new tab".
+      await expect(hero.locator(".lk-landing-perks")).toHaveText(
+        l.perks.replace(l.openSourcePerk, `${l.openSourcePerk} ${l.newTab}`),
+      );
       const github = hero.getByRole("link", { name: l.openSourcePerk });
+      await expect(github.locator(".sr-only")).toHaveText(l.newTab);
       await expect(github).toHaveAttribute("href", GITHUB);
       await expect(github).toHaveAttribute("target", "_blank");
       await expect(github).toHaveAttribute("rel", "noopener");
@@ -239,7 +294,43 @@ for (const l of LOCALES) {
       }
     });
 
-    test("privacy copy promises only what Lukas does today", async ({ page, request }) => {
+    test("names the product Lukitas everywhere a person or a crawler reads it", async ({
+      page,
+      request,
+    }) => {
+      // The product is Lukitas; "Lukas" alone is another app. The slang word "lukas" (money, in
+      // lowercase) stays in the Spanish copy, so only the capitalized name is banned.
+      await page.goto(l.path);
+      const seen = await page.evaluate(() => {
+        const attributes = [...document.querySelectorAll("[aria-label], [alt], [title]")].flatMap(
+          (element) =>
+            ["aria-label", "alt", "title"].map((name) => element.getAttribute(name) ?? ""),
+        );
+        const meta = [...document.querySelectorAll("head meta[content]")].map(
+          (element) => element.getAttribute("content") ?? "",
+        );
+        const body = document.body.cloneNode(true) as HTMLElement;
+        for (const script of body.querySelectorAll("script, style")) script.remove();
+        return {
+          body: body.textContent ?? "",
+          title: document.title,
+          attributes,
+          meta,
+        };
+      });
+      expect(seen.body).toContain("Lukitas");
+      expect(seen.title).toContain("Lukitas");
+      const everything = [seen.body, seen.title, ...seen.attributes, ...seen.meta].join("\n");
+      expect(everything).not.toMatch(/\bLukas\b/);
+      const html = await (await request.get(l.path)).text();
+      expect(html.replace(/<script[\s\S]*?<\/script>/g, "")).not.toMatch(/\bLukas\b/);
+      await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute(
+        "content",
+        "Lukitas",
+      );
+    });
+
+    test("privacy copy promises only what Lukitas does today", async ({ page, request }) => {
       // React escapes apostrophes in text ("can't" → "can&#x27;t"): decode before matching.
       const html = (await (await request.get(l.path)).text()).replaceAll("&#x27;", "'");
       const withoutScripts = html.replace(/<script[\s\S]*?<\/script>/g, "");
@@ -355,6 +446,7 @@ for (const l of LOCALES) {
       await expect(code).toHaveAttribute("href", GITHUB);
       await expect(code).toHaveAttribute("target", "_blank");
       await expect(code).toHaveAttribute("rel", "noopener");
+      await expect(code.locator(".sr-only")).toHaveText(l.newTab);
       // Right before the FAQ.
       expect(await section.evaluate((el) => el.nextElementSibling?.id)).toBe("faq");
     });
@@ -385,7 +477,7 @@ for (const l of LOCALES) {
       await expect(page.locator("#privacy")).toBeHidden();
       await privacy.click();
       await expect(page.locator("#privacy")).toBeVisible();
-      await expect(footer).toContainText("© 2026 Lukas");
+      await expect(footer).toContainText("© 2026 Lukitas");
 
       await switchLink.click();
       await expect(page).toHaveURL(new RegExp(`${l.other.path}$`));
@@ -441,6 +533,18 @@ for (const l of LOCALES) {
       expect(toggleBox?.x).toBeGreaterThan((signInBox?.x ?? 0) + (signInBox?.width ?? 0));
     });
 
+    test.describe(() => {
+      test.use({ javaScriptEnabled: true });
+
+      for (const width of [320, 390, 1280]) {
+        for (const theme of ["night", "day"] as const) {
+          test(`the header fits at ${width}px, ${theme} theme`, async ({ page }) => {
+            await expectHeaderFits(page, l.path, width, theme, l.signIn);
+          });
+        }
+      }
+    });
+
     test("fits the viewport and keeps every target at 44px", async ({ page }) => {
       await page.goto(l.path);
       // `.lk-landing` clips horizontal overflow, so the document never scrolls sideways: check
@@ -475,7 +579,7 @@ for (const l of LOCALES) {
       await page.goto(l.path);
       const mascot = page.locator("#hero [data-slot='hero-mascot']");
       await expect(mascot).toHaveAttribute("role", "img");
-      await expect(mascot).toHaveAttribute("aria-label", /Lukas/);
+      await expect(mascot).toHaveAttribute("aria-label", /Lukitas/);
       const sprite = mascot.locator(".lk-lukas-sprite");
       await expect(sprite).toHaveCSS("background-image", /\/lukas\/wave\.webp/);
       expect(await sprite.evaluate((el) => el.getAnimations().length)).toBeGreaterThan(0);

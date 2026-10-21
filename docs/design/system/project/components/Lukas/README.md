@@ -1,4 +1,4 @@
-# Lukas
+# Lukitas, the mascot (component `Lukas`)
 
 The mascot, a chubby gold coin whose mood mirrors the budget. Consumer provides `mood`: `happy` (all categories ok, or right after logging), `worried` (any category near or over), `celebrating` (save, paid, month closed in green).
 

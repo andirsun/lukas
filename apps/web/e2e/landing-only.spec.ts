@@ -21,12 +21,13 @@ const LOCALES = [
     path: "/",
     cta: "Muy pronto · Síguelo en GitHub",
     navCta: "Muy pronto",
+    newTab: "(se abre en una pestaña nueva)",
     soon: "Pronto",
     webTitle: "En la web",
     ways: ["En la web", "App para Android y iOS", "Con tu IA"],
     closingTitle: "Cuando quieras, arrancamos.",
     closingBody:
-      "Lukas está en construcción, en abierto. Mira cómo avanza en GitHub y prueba la app en cuanto abra.",
+      "Lukitas está en construcción, en abierto. Mira cómo avanza en GitHub y prueba la app en cuanto abra.",
     oldClosing: /Crea tu cuenta/,
     oldCtas: ["Empieza ahora", "Entrar", "Empezar"],
     banned: [/\bjueg(o|a)\b/i],
@@ -37,12 +38,13 @@ const LOCALES = [
     path: "/en",
     cta: "Coming soon · Follow on GitHub",
     navCta: "Coming soon",
+    newTab: "(opens in a new tab)",
     soon: "Soon",
     webTitle: "On the web",
     ways: ["On the web", "Android & iOS app", "With your AI"],
     closingTitle: "Ready when you are.",
     closingBody:
-      "Lukas is being built in the open. Follow its progress on GitHub and try the app as soon as it opens.",
+      "Lukitas is being built in the open. Follow its progress on GitHub and try the app as soon as it opens.",
     oldClosing: /Create your account/,
     oldCtas: ["Get started", "Sign in", "Start"],
     banned: [/\bgames?\b/i],
@@ -85,11 +87,67 @@ async function expectFitsTheViewport(page: Page) {
   }
 }
 
-/** The target of a link that is meant to leave for GitHub, in a new tab. */
-async function expectGithubLink(link: ReturnType<Page["locator"]>) {
+/**
+ * The target of a link that is meant to leave for GitHub, in a new tab, and says so to a screen
+ * reader: a visually hidden hint (`newTab`) after its text.
+ */
+async function expectGithubLink(link: ReturnType<Page["locator"]>, newTab: string) {
   await expect(link).toHaveAttribute("href", GITHUB);
   await expect(link).toHaveAttribute("target", "_blank");
   await expect(link).toHaveAttribute("rel", "noopener");
+  const hint = link.locator(".sr-only");
+  await expect(hint).toHaveText(newTab);
+  // Visually hidden, not display:none: it stays in the accessibility tree.
+  expect((await hint.boundingBox())?.width).toBeLessThanOrEqual(1);
+}
+
+/**
+ * The header at one width and theme: the wordmark on one line, the CTA and the ☾ switch on the
+ * same row, and nothing sticking out of the viewport.
+ */
+async function expectHeaderFits(
+  page: Page,
+  path: string,
+  width: number,
+  theme: "night" | "day",
+  cta: string,
+) {
+  await page.setViewportSize({ width, height: 800 });
+  await page.addInitScript((value) => localStorage.setItem("lukas.theme", value), theme);
+  await page.goto(path);
+  await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+  const header = page.getByRole("banner");
+  const logo = header.locator(".lk-logo");
+  const nav = header.getByRole("navigation");
+  const link = nav.getByRole("link", { name: cta });
+  const toggle = nav.getByRole("button");
+  await expect(logo).toBeVisible();
+  await expect(link).toBeVisible();
+  await expect(toggle).toBeVisible();
+  const [logoBox, linkBox, toggleBox] = [
+    await logo.boundingBox(),
+    await link.boundingBox(),
+    await toggle.boundingBox(),
+  ];
+  // One line of the 28px wordmark, not two.
+  expect(logoBox?.height).toBeLessThan(40);
+  // One row: the three share a vertical band.
+  const rowTop = Math.min(logoBox?.y ?? 0, linkBox?.y ?? 0, toggleBox?.y ?? 0);
+  const rowBottom = Math.max(
+    (logoBox?.y ?? 0) + (logoBox?.height ?? 0),
+    (linkBox?.y ?? 0) + (linkBox?.height ?? 0),
+    (toggleBox?.y ?? 0) + (toggleBox?.height ?? 0),
+  );
+  expect(rowBottom - rowTop).toBeLessThan(80);
+  // The wordmark clears the CTA, and the switch ends inside the viewport.
+  expect((logoBox?.x ?? 0) + (logoBox?.width ?? 0)).toBeLessThanOrEqual(linkBox?.x ?? 0);
+  expect((toggleBox?.x ?? 0) + (toggleBox?.width ?? 0)).toBeLessThanOrEqual(width);
+  expect(linkBox?.height).toBeGreaterThanOrEqual(44);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    ),
+  ).toBeLessThanOrEqual(0);
 }
 
 for (const l of LOCALES) {
@@ -98,13 +156,17 @@ for (const l of LOCALES) {
       page,
     }) => {
       await page.goto(l.path);
-      const hero = page.locator("#hero").getByRole("link", { name: l.cta, exact: true });
-      await expectGithubLink(hero);
+      const hero = page
+        .locator("#hero")
+        .getByRole("link", { name: `${l.cta} ${l.newTab}`, exact: true });
+      await expectGithubLink(hero, l.newTab);
       await expect(hero).toHaveClass(/lk-btn-primary/);
       expect((await hero.boundingBox())?.height).toBeGreaterThanOrEqual(44);
 
-      const closing = page.locator("#closing").getByRole("link", { name: l.cta, exact: true });
-      await expectGithubLink(closing);
+      const closing = page
+        .locator("#closing")
+        .getByRole("link", { name: `${l.cta} ${l.newTab}`, exact: true });
+      await expectGithubLink(closing, l.newTab);
       await expect(closing).toHaveClass(/lk-btn-primary/);
     });
 
@@ -113,10 +175,22 @@ for (const l of LOCALES) {
     }) => {
       await page.goto(l.path);
       const nav = page.getByRole("banner").getByRole("navigation");
-      const link = nav.getByRole("link", { name: l.navCta, exact: true });
-      await expectGithubLink(link);
+      const link = nav.getByRole("link", { name: `${l.navCta} ${l.newTab}`, exact: true });
+      await expectGithubLink(link, l.newTab);
       await expect(link).toHaveClass(/lk-btn-secondary/);
       await expect(nav.getByRole("button", { name: l.toggleToDay })).toBeVisible();
+    });
+
+    test.describe(() => {
+      test.use({ javaScriptEnabled: true });
+
+      for (const width of [320, 390, 1280]) {
+        for (const theme of ["night", "day"] as const) {
+          test(`the header fits at ${width}px, ${theme} theme`, async ({ page }) => {
+            await expectHeaderFits(page, l.path, width, theme, l.navCta);
+          });
+        }
+      }
     });
 
     test("none of the old calls to action is left", async ({ page }) => {
@@ -167,6 +241,18 @@ for (const l of LOCALES) {
       await expect(spot).toHaveAttribute("data-lukas-mood", "celebrating");
       await expect(spot).toHaveAttribute("data-lukas-pose", "celebrate");
       await expect(spot.locator(".lk-lukas")).toHaveCount(1);
+    });
+
+    test("is called Lukitas, in the text and in the share tags", async ({ page }) => {
+      await page.goto(l.path);
+      await expect(page).toHaveTitle(/^Lukitas · /);
+      await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute(
+        "content",
+        "Lukitas",
+      );
+      await expect(page.locator(".lk-logo").first()).toHaveText("Lukitas");
+      const text = await page.locator("body").evaluate((body) => body.textContent ?? "");
+      expect(text).not.toMatch(/\bLukas\b/);
     });
 
     test("is still free, open source and not a game", async ({ page }) => {
@@ -244,10 +330,12 @@ for (const l of LOCALES) {
         await expect(page.locator("html")).toHaveAttribute("data-theme", "day");
         await expectNoA11yViolations(page);
         await expectGithubLink(
-          page.locator("#hero").getByRole("link", { name: l.cta, exact: true }),
+          page.locator("#hero").getByRole("link", { name: `${l.cta} ${l.newTab}`, exact: true }),
+          l.newTab,
         );
         await expectGithubLink(
-          page.locator("#closing").getByRole("link", { name: l.cta, exact: true }),
+          page.locator("#closing").getByRole("link", { name: `${l.cta} ${l.newTab}`, exact: true }),
+          l.newTab,
         );
         expect(errors).toEqual([]);
       });
@@ -322,7 +410,11 @@ test.describe("landing-only build output", () => {
     ).not.toContainEqual(expect.stringMatching(APP_PATH));
     // The landing look: the same stylesheet, the night theme and the logo.
     await expect(page.locator(".lk-landing")).toHaveCount(1);
-    await expect(page.locator(".lk-logo").first()).toHaveText("Lukas");
+    await expect(page.locator(".lk-logo").first()).toHaveText("Lukitas");
+    await expect(page).toHaveTitle("Lukitas · 404");
+    const text = await page.locator("body").evaluate((body) => body.textContent ?? "");
+    expect(text).toContain("Lukitas");
+    expect(text).not.toMatch(/\bLukas\b/);
   });
 
   test.describe("the 404 page with JavaScript", () => {

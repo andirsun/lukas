@@ -36,7 +36,7 @@ function loads(src: string): Promise<{ width: number; height: number }> {
 export const Happy: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const lukas = canvas.getByRole("img", { name: "Lukas, contento" });
+    const lukas = canvas.getByRole("img", { name: "Lukitas, contento" });
     const box = lukas.getBoundingClientRect();
     await expect(box.width).toBe(160);
     await expect(box.height).toBe(160);
@@ -87,7 +87,7 @@ async function expectPlaying(lukas: HTMLElement, src: string, loopMs: number) {
 export const Worried: Story = {
   args: { mood: "worried" },
   play: async ({ canvasElement }) => {
-    const lukas = within(canvasElement).getByRole("img", { name: "Lukas, preocupado" });
+    const lukas = within(canvasElement).getByRole("img", { name: "Lukitas, preocupado" });
     await expectPlaying(lukas, "/lukas/worried.webp", 2000);
   },
 };
@@ -96,7 +96,7 @@ export const Worried: Story = {
 export const Celebrating: Story = {
   args: { mood: "celebrating" },
   play: async ({ canvasElement }) => {
-    const lukas = within(canvasElement).getByRole("img", { name: "Lukas, celebrando" });
+    const lukas = within(canvasElement).getByRole("img", { name: "Lukitas, celebrando" });
     await expectPlaying(lukas, "/lukas/celebrate.webp", 1000);
   },
 };
@@ -179,7 +179,7 @@ export const TreatmentShiver: Story = {
     },
   },
   play: async ({ canvasElement }) => {
-    const lukas = within(canvasElement).getByRole("img", { name: "Lukas, preocupado" });
+    const lukas = within(canvasElement).getByRole("img", { name: "Lukitas, preocupado" });
     const sheet = sprite(lukas);
     await expect(getComputedStyle(sheet).backgroundPosition).toBe("0% 0%");
     await expect(sheet.getAnimations()).toHaveLength(0);
@@ -198,7 +198,7 @@ export const TreatmentHop: Story = {
     art: { sprite: LUKAS_ART.happy.sprite, play: false, frame: 0, stillFrame: 4, treatment: "hop" },
   },
   play: async ({ canvasElement }) => {
-    const lukas = within(canvasElement).getByRole("img", { name: "Lukas, celebrando" });
+    const lukas = within(canvasElement).getByRole("img", { name: "Lukitas, celebrando" });
     const sparkles = lukas.querySelectorAll(".lk-lukas-sparkle");
     await expect(sparkles.length).toBeGreaterThanOrEqual(3);
     await expect(animationNames(lukas)).toContain("lk-lukas-hop");
@@ -219,7 +219,7 @@ export const DayEnglish: Story = {
   globals: { theme: "day", locale: "en" },
   play: async ({ canvasElement }) => {
     await expect(
-      within(canvasElement).getByRole("img", { name: "Lukas, celebrating" }),
+      within(canvasElement).getByRole("img", { name: "Lukitas, celebrating" }),
     ).toBeVisible();
   },
 };

@@ -46,7 +46,7 @@ async function localeFor(deps: AppDeps, email: string): Promise<"es" | "en"> {
 export function createAuth(deps: AppDeps) {
   const { config } = deps;
   return betterAuth({
-    appName: "Lukas",
+    appName: "Lukitas",
     // Better Auth ignores basePath when baseURL has a path, so it gets the origin and the full
     // path separately; its endpoints then resolve to `${API_URL}/auth/...`.
     basePath: `${apiPathPrefix(config)}/auth`,
@@ -120,7 +120,7 @@ export function createAuth(deps: AppDeps) {
       }),
       passkey({
         rpID: new URL(config.WEB_URL).hostname,
-        rpName: "Lukas",
+        rpName: "Lukitas",
         origin: config.WEB_URL,
       }),
       bearer(),

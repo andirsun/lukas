@@ -1,8 +1,8 @@
-# Lukas design system
+# Lukitas design system
 
-The source files of the Lukas design system: tokens, brand book, component guidelines and live previews, reference screens and the mascot concept.
+The source files of the Lukitas design system: tokens, brand book, component guidelines and live previews, reference screens and the mascot concept.
 
-- `project/README.md`: the brand book (voice, color, type, shape and depth, motion, Lukas, iconography).
+- `project/README.md`: the brand book (voice, color, type, shape and depth, motion, Lukitas, iconography).
 - `project/tokens.json`: every token, in the `night` and `day` themes.
 - `project/components/bundle.css`: the component classes (`lk-` prefix), built only from tokens.
 - `project/components/<Name>/`: guidelines (`README.md`) and a live preview (`preview.html`) per component and reference screen.

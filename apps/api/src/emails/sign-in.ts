@@ -2,14 +2,14 @@ import type { Mail } from "../mailer.ts";
 
 const COPY = {
   es: {
-    subject: (code: string) => `Tu código de Lukas: ${code}`,
-    intro: "Usa este código para entrar a Lukas:",
+    subject: (code: string) => `Tu código de Lukitas: ${code}`,
+    intro: "Usa este código para entrar a Lukitas:",
     link: "O toca este enlace en este dispositivo:",
     outro: "El código vence en 10 minutos. Si no fuiste tú, ignora este correo.",
   },
   en: {
-    subject: (code: string) => `Your Lukas code: ${code}`,
-    intro: "Use this code to sign in to Lukas:",
+    subject: (code: string) => `Your Lukitas code: ${code}`,
+    intro: "Use this code to sign in to Lukitas:",
     link: "Or tap this link on this device:",
     outro: "The code expires in 10 minutes. If this wasn't you, ignore this email.",
   },

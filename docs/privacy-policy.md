@@ -1,8 +1,8 @@
 # Privacy policy (draft)
 
-> Draft for Stage 1. Review before Lukas opens to the public.
+> Draft for Stage 1. Review before Lukitas opens to the public.
 
-Lukas stores the data you give it so it can show you your budget: your email address, your
+Lukitas stores the data you give it so it can show you your budget: your email address, your
 categories, budgets, transactions and recurring transactions, and the files you import.
 
 - **What we collect:** your email (to sign you in), the financial data you enter or import, and

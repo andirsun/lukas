@@ -51,7 +51,7 @@ async function documentFromApp(): Promise<OpenAPI3> {
       BETTER_AUTH_SECRET: "q7Hx2vK9mZpL4tRw8nYb3cDf6gJs1aEu",
       API_URL: "http://localhost:3000",
       WEB_URL: "http://localhost:5173",
-      MAIL_FROM: "Lukas <gen-api@lukas.test>",
+      MAIL_FROM: "Lukitas <gen-api@lukas.test>",
       PORT: 3000,
       NODE_ENV: "test",
       CLIENT_IP_HEADER: "x-forwarded-for",

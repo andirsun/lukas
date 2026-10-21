@@ -13,6 +13,7 @@ import { Footer } from "./Footer.tsx";
 import { Hero } from "./Hero.tsx";
 import { HowItWorks } from "./HowItWorks.tsx";
 import { appLinkProps } from "./links.ts";
+import { NewTabHint } from "./NewTabHint.tsx";
 import { OpenSource } from "./OpenSource.tsx";
 import { LANDING_PATH } from "./seo.ts";
 import { UseItYourWay } from "./UseItYourWay.tsx";
@@ -22,6 +23,7 @@ function Header() {
   const t = useTranslations("landing.nav");
   const name = useTranslations("app")("name");
   const { locale } = useLocale();
+  const app = appLinkProps(locale);
   return (
     <header className="lk-landing-wrap">
       <div className="lk-landing-header">
@@ -35,8 +37,9 @@ function Header() {
           <a href="#faq" className="lk-landing-link lk-landing-nav-section">
             {t("faq")}
           </a>
-          <PressLink {...appLinkProps(locale)} variant="secondary" size="sm">
+          <PressLink {...app} variant="secondary" size="sm">
             {t(LANDING_ONLY ? "sign_in_soon" : "sign_in")}
+            <NewTabHint target={app.target} />
           </PressLink>
           <ThemeToggle />
         </nav>
@@ -66,6 +69,7 @@ function TravelingLukas() {
 function Closing() {
   const t = useTranslations("landing");
   const { locale } = useLocale();
+  const app = appLinkProps(locale);
   return (
     <section id="closing" className="lk-landing-section" aria-labelledby="closing-title">
       <div className="lk-landing-closing">
@@ -80,8 +84,9 @@ function Closing() {
         </span>
         <h2 id="closing-title">{t("closing.title")}</h2>
         <p>{t(LANDING_ONLY ? "closing.body_soon" : "closing.body")}</p>
-        <PressLink {...appLinkProps(locale)} className={cx(LANDING_ONLY && "is-soon")}>
+        <PressLink {...app} className={cx(LANDING_ONLY && "is-soon")}>
           {t(LANDING_ONLY ? "hero.cta_soon" : "hero.cta")}
+          <NewTabHint target={app.target} />
         </PressLink>
       </div>
     </section>

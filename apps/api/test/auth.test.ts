@@ -29,7 +29,23 @@ describe("email code + magic link", () => {
     expect(mail?.text).toContain(
       `http://localhost:5173/auth/verify?email=a%40lukas.test&code=${code}`,
     );
-    expect(mail?.subject).toBe(`Tu código de Lukas: ${code}`);
+    expect(mail?.subject).toBe(`Tu código de Lukitas: ${code}`);
+  });
+
+  test("the email names the product Lukitas, in the text and in the html", async () => {
+    await sendCode("name@lukas.test");
+    const mail = t.mailer.lastTo("name@lukas.test");
+    expect(mail?.text).toContain("Usa este código para entrar a Lukitas:");
+    expect(mail?.html).toContain("Usa este código para entrar a Lukitas:");
+    expect(`${mail?.subject}\n${mail?.text}\n${mail?.html}`).not.toMatch(/\bLukas\b/);
+  });
+
+  test("the passkey relying party is named Lukitas, and its id stays the web host", async () => {
+    const { headers } = await t.signIn("rp@lukas.test");
+    const res = await t.request("GET", "/auth/passkey/generate-register-options", { headers });
+    expect(res.status).toBe(200);
+    const options = (await res.json()) as { rp: { name: string; id: string } };
+    expect(options.rp).toEqual({ name: "Lukitas", id: "localhost" });
   });
 
   test("signing in returns a bearer token that opens protected routes", async () => {

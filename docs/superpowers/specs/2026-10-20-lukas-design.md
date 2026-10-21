@@ -1,3 +1,5 @@
+> Brand renamed to **Lukitas** on 2026-10-21 (an unrelated app already uses "Lukas"); code identifiers keep `lukas`.
+
 # Lukas — Overall Design and Stage 1 (Core & Accounts)
 
 - **Date:** 2026-10-20

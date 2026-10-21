@@ -4,7 +4,7 @@ import { LANDING_ONLY } from "../../site/config.ts";
 /** The demo without an account ("Pruébalo sin cuenta"), built in Task 18a. */
 export const DEMO_PATH = "/demo";
 
-/** The source code: Lukas is open source (AGPL-3.0). Opened in a new tab. */
+/** The source code: Lukitas is open source (AGPL-3.0). Opened in a new tab. */
 export const GITHUB_HREF = "https://github.com/andirsun/lukas";
 
 /**

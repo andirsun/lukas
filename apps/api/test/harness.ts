@@ -10,7 +10,7 @@ export const TEST_CONFIG = {
   BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0000",
   API_URL: "http://localhost:3000",
   WEB_URL: "http://localhost:5173",
-  MAIL_FROM: "Lukas <test@lukas.test>",
+  MAIL_FROM: "Lukitas <test@lukas.test>",
   PORT: 3000,
   NODE_ENV: "test" as const,
   CLIENT_IP_HEADER: "x-forwarded-for",

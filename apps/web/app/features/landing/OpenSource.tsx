@@ -2,18 +2,20 @@ import type { ReactNode } from "react";
 import { useTranslations } from "use-intl";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { GITHUB_HREF } from "./links.ts";
+import { NewTabHint } from "./NewTabHint.tsx";
 
 /** A text link to the source code on GitHub, opened in a new tab. */
 export function CodeLink({ className, children }: { className?: string; children: ReactNode }) {
   return (
     <a href={GITHUB_HREF} target="_blank" rel="noopener" className={className}>
       {children}
+      <NewTabHint target="_blank" />
     </a>
   );
 }
 
 /**
- * Lukas is open source: anyone can read the code (AGPL-3.0). One short paragraph and a link to
+ * Lukitas is open source: anyone can read the code (AGPL-3.0). One short paragraph and a link to
  * the repository, right before the FAQ.
  */
 export function OpenSource() {
@@ -32,6 +34,7 @@ export function OpenSource() {
         </div>
         <PressLink to={GITHUB_HREF} target="_blank" rel="noopener" variant="secondary">
           {t("cta")}
+          <NewTabHint target="_blank" />
         </PressLink>
       </div>
     </section>

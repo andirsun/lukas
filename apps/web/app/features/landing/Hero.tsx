@@ -5,6 +5,7 @@ import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { HeroMascot } from "./HeroMascot.tsx";
 import { appLinkProps, DEMO_PATH } from "./links.ts";
+import { NewTabHint } from "./NewTabHint.tsx";
 import { CodeLink } from "./OpenSource.tsx";
 
 export type HeroProps = {
@@ -22,6 +23,7 @@ export type HeroProps = {
 export function Hero({ secondaryCta = false }: HeroProps) {
   const t = useTranslations("landing.hero");
   const { locale } = useLocale();
+  const app = appLinkProps(locale);
   return (
     <section id="hero" className="lk-landing-hero" aria-labelledby="hero-title">
       <div className="lk-landing-hero-text">
@@ -38,8 +40,9 @@ export function Hero({ secondaryCta = false }: HeroProps) {
         </p>
         <div className="lk-landing-cta">
           <div className="lk-landing-cta-actions">
-            <PressLink {...appLinkProps(locale)} className={cx(LANDING_ONLY && "is-soon")}>
+            <PressLink {...app} className={cx(LANDING_ONLY && "is-soon")}>
               {t(LANDING_ONLY ? "cta_soon" : "cta")}
+              <NewTabHint target={app.target} />
             </PressLink>
             {secondaryCta && (
               <PressLink to={DEMO_PATH} variant="secondary">

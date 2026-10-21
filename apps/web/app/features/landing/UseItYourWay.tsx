@@ -6,6 +6,7 @@ import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { LukasSpot } from "./LukasSpot.tsx";
 import { appLinkProps } from "./links.ts";
+import { NewTabHint } from "./NewTabHint.tsx";
 
 function Icon({ tone, children }: { tone: "gold" | "candy" | "good"; children: ReactNode }) {
   return (
@@ -23,6 +24,7 @@ function Icon({ tone, children }: { tone: "gold" | "candy" | "good"; children: R
 export function UseItYourWay() {
   const t = useTranslations("landing.ways");
   const { locale } = useLocale();
+  const app = appLinkProps(locale);
   return (
     <section id="ways" className="lk-landing-section" aria-labelledby="ways-title">
       <div className="lk-landing-section-head">
@@ -43,8 +45,9 @@ export function UseItYourWay() {
             {LANDING_ONLY ? (
               <span className="lk-landing-soon">{t("soon")}</span>
             ) : (
-              <PressLink {...appLinkProps(locale)} variant="secondary" size="sm">
+              <PressLink {...app} variant="secondary" size="sm">
                 {t("web.cta")}
+                <NewTabHint target={app.target} />
               </PressLink>
             )}
           </div>

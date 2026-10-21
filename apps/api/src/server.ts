@@ -14,5 +14,5 @@ const { db } = createDb(config.DATABASE_URL);
 const app = createApp({ config, db, mailer });
 
 serve({ fetch: app.fetch, port: config.PORT }, ({ port }) => {
-  console.log(`Lukas API listening on http://localhost:${port}`);
+  console.log(`Lukitas API listening on http://localhost:${port}`);
 });

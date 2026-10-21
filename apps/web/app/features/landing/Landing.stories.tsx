@@ -77,17 +77,16 @@ export const HeroSection: Story = {
     const headline = canvas.getByRole("heading", { level: 1 });
     await expect(headline).toHaveTextContent("Tus lukas, por fin claras.");
     await expect(headline.querySelector(".lk-landing-marker")).toHaveTextContent("lukas");
-    await expect(canvas.getByRole("link", { name: "Código abierto" })).toHaveAttribute(
-      "href",
-      "https://github.com/andirsun/lukas",
-    );
+    await expect(
+      canvas.getByRole("link", { name: "Código abierto (se abre en una pestaña nueva)" }),
+    ).toHaveAttribute("href", "https://github.com/andirsun/lukas");
     await expect(canvas.queryByRole("link", { name: "Pruébalo sin cuenta" })).toBeNull();
     const cta = canvas.getByRole("link", { name: "Empieza ahora" });
     await expectEdge(cta, 6);
     await expectTarget(cta);
     await userEvent.tab();
     await expectFocusRing(cta);
-    const mascot = canvas.getByRole("img", { name: /Lukas/ });
+    const mascot = canvas.getByRole("img", { name: /Lukitas/ });
     await expect(mascot).toHaveAttribute("data-slot", "hero-mascot");
     await expect(mascot.querySelector(".lk-lukas")).toHaveAttribute("aria-hidden", "true");
   },
@@ -161,7 +160,9 @@ export const OpenSourceSection: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("heading", { level: 2 })).toHaveTextContent("Código abierto");
     await expect(canvasElement).toHaveTextContent("AGPL-3.0");
-    const code = canvas.getByRole("link", { name: "Ver el código en GitHub" });
+    const code = canvas.getByRole("link", {
+      name: "Ver el código en GitHub (se abre en una pestaña nueva)",
+    });
     await expect(code).toHaveAttribute("href", "https://github.com/andirsun/lukas");
     await expect(code).toHaveAttribute("target", "_blank");
     await expectEdge(code, 3);
@@ -198,6 +199,6 @@ export const FooterSection: Story = {
     await expect(spanish).toHaveAttribute("hreflang", "es");
     await expect(canvas.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "#privacy");
     for (const link of canvas.getAllByRole("link")) await expectTarget(link);
-    await expect(canvasElement).toHaveTextContent("© 2026 Lukas");
+    await expect(canvasElement).toHaveTextContent("© 2026 Lukitas");
   },
 };

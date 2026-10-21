@@ -14,7 +14,7 @@ const CATALOGS = { es, en } as const;
 
 /** The page's tags: titled in both languages and kept out of search results. */
 export const notFoundMeta = () => [
-  { title: "Lukas · 404" },
+  { title: "Lukitas · 404" },
   { name: "robots", content: "noindex" },
 ];
 

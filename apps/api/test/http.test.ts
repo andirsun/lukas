@@ -26,6 +26,12 @@ test("GET /openapi.json describes the API", async () => {
   expect(((await res.json()) as { openapi: string }).openapi).toMatch(/^3\./);
 });
 
+test("the OpenAPI document is titled Lukitas API", async () => {
+  const res = await t.request("GET", "/openapi.json");
+  const doc = (await res.json()) as { info: { title: string } };
+  expect(doc.info.title).toBe("Lukitas API");
+});
+
 test("unknown routes return a problem+json 404", async () => {
   const res = await t.request("GET", "/nope");
   expect(res.status).toBe(404);

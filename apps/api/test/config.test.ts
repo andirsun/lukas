@@ -7,7 +7,7 @@ const base = {
   BETTER_AUTH_SECRET: "s".repeat(40),
   API_URL: "https://api.lukas.app",
   WEB_URL: "https://lukas.app",
-  MAIL_FROM: "Lukas <hola@lukas.app>",
+  MAIL_FROM: "Lukitas <hola@lukas.app>",
   RESEND_API_KEY: "re_123",
   NODE_ENV: "production",
 };

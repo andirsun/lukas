@@ -1,3 +1,5 @@
+> Brand renamed to **Lukitas** on 2026-10-21 (an unrelated app already uses "Lukas"); code identifiers keep `lukas`.
+
 # Lukas — Stage 2: Web (landing + app)
 
 - **Date:** 2026-10-21
