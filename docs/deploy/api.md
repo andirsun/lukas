@@ -26,11 +26,13 @@ browser its own address.
 
 `deploy/personal` is a worked example of the `TRUSTED_PROXIES` mode: Cloudflare overwrites
 `CF-Connecting-IP`, Caddy copies it into `X-Forwarded-For` as the only entry, and the API trusts
-one proxy, Caddy's fixed address in the private Docker network (`TRUSTED_PROXIES=172.28.77.10`).
-Nothing publishes the API's port.
+Caddy's fixed address in the private Docker network (`TRUSTED_PROXIES=172.28.77.10`). The API cannot
+see who opened the connection, so the real guarantee is the layout: nothing publishes the API's port,
+only Caddy reaches it, and Caddy always overwrites `X-Forwarded-For`. A second proxy or a published
+API port would make the header spoofable.
 
 ## Restricting who can sign in
 
 Set `SIGN_IN_ALLOWLIST` (comma-separated emails, case-insensitive) to refuse sign-in codes to anyone
 else: the response is `403` with `code: "sign_in_not_allowed"`, and no email is sent. Leave it unset
-to allow everyone. See [personal.md](personal.md).
+to allow everyone. A value that names nobody (`,`) is a startup error, never "everyone". See [personal.md](personal.md).

@@ -74,3 +74,43 @@ table_counts() {
   done
   psql_db "$db" -At -F ' ' -c "$query"
 }
+
+# guard_checkout FORCE: this install is built from the checkout you develop in, so refuse to deploy
+# edits that are not committed, or a branch that is not PERSONAL_BRANCH, unless FORCE is 1. Prints
+# what is about to be deployed either way.
+guard_checkout() {
+  local force="$1" branch wanted commit dirty problems=""
+  wanted="$(cfg PERSONAL_BRANCH feat/stage-2-web)"
+  branch="$(git -C "$REPO_DIR" symbolic-ref --short -q HEAD || echo "(detached HEAD)")"
+  commit="$(git -C "$REPO_DIR" rev-parse --short HEAD)"
+  dirty="$(git -C "$REPO_DIR" status --porcelain --untracked-files=no)"
+
+  if [ "$branch" != "$wanted" ]; then
+    problems="${problems}  - the repository is on branch '$branch', but this install deploys '$wanted' (PERSONAL_BRANCH in .env).
+"
+  fi
+  if [ -n "$dirty" ]; then
+    problems="${problems}  - there are uncommitted changes to tracked files, and they would be built into the app and
+    their migrations applied to your real data:
+$(printf '%s\n' "$dirty" | head -n 8 | sed 's/^/      /')
+"
+  fi
+  if [ -n "$problems" ] && [ "$force" != 1 ]; then
+    printf 'Not deploying:\n%s\nFix that (commit or stash, and switch to %s), or pass --force if you really mean it.\n' \
+      "$problems" "$wanted" >&2
+    exit 1
+  fi
+  [ -z "$problems" ] || printf 'WARNING (--force): deploying anyway:\n%s' "$problems" >&2
+  say "Deploying $branch at $commit"
+}
+
+# ensure_volume: the database volume is external to the compose project (so `down -v` cannot
+# delete it); create it on first use.
+ensure_volume() {
+  local name
+  name="$(cfg DB_VOLUME_NAME lukitas-personal-db)"
+  docker volume inspect "$name" >/dev/null 2>&1 || {
+    say "Creating the database volume $name"
+    docker volume create "$name" >/dev/null
+  }
+}

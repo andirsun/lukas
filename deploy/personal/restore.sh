@@ -39,6 +39,7 @@ done
 
 need_env_file
 need_docker
+ensure_volume
 stamp="$(date +%Y%m%d_%H%M%S)"
 scratch="lukitas_restore_$stamp"
 

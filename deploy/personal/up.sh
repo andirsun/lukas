@@ -5,18 +5,22 @@
 #   ./up.sh                 everything
 #   ./up.sh --no-tunnel     everything except the tunnel (checking it on 127.0.0.1 first)
 #   ./up.sh --skip-web      reuse the last web build (apps/web/build-personal)
+#   ./up.sh --force         deploy even if the checkout has uncommitted changes to tracked files
+#                           or is not on PERSONAL_BRANCH (see .env); refused otherwise
 set -euo pipefail
 # shellcheck source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 with_tunnel=1
 build_web=1
+force=0
 for arg in "$@"; do
   case "$arg" in
     --no-tunnel) with_tunnel=0 ;;
     --skip-web) build_web=0 ;;
+    --force) force=1 ;;
     -h | --help)
-      sed -n '2,8p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,9p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) die "unknown option: $arg" ;;
@@ -24,7 +28,9 @@ for arg in "$@"; do
 done
 
 need_env_file
+chmod 600 "$ENV_FILE" # it holds passwords and the auth secret
 need_docker
+guard_checkout "$force"
 host="$(cfg PUBLIC_HOSTNAME app-lukas.andersonlaverde.com)"
 web_port="$(cfg WEB_PORT 8088)"
 
@@ -49,6 +55,8 @@ if [ "$build_web" = 1 ]; then
 fi
 [ -f "$REPO_DIR/apps/web/build-personal/client/index.html" ] ||
   die "No web build in apps/web/build-personal. Run ./up.sh without --skip-web."
+
+ensure_volume
 
 say "Building the images"
 compose build

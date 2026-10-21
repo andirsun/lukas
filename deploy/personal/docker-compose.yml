@@ -10,10 +10,18 @@
 # reachable from inside this stack's network only.
 name: lukitas-personal
 
+# Container logs stay small: three files of 10 MB per service.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "3"
+
 services:
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_USER: lukitas
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
@@ -35,6 +43,7 @@ services:
     image: lukitas-api:personal
     command: ["node", "dist/bootstrap.js"]
     restart: "no"
+    logging: *logging
     environment:
       DATABASE_ADMIN_URL: postgres://lukitas:${POSTGRES_PASSWORD}@postgres:5432/lukitas
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Set APP_DB_PASSWORD in .env}
@@ -91,6 +100,7 @@ services:
       dockerfile: deploy/personal/Dockerfile.web
     image: lukitas-web:personal
     restart: unless-stopped
+    logging: *logging
     ports:
       - "127.0.0.1:${WEB_PORT:-8088}:80"
     networks:
@@ -111,6 +121,7 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:2026.10.3
     restart: unless-stopped
+    logging: *logging
     command:
       - tunnel
       - --no-autoupdate
@@ -135,5 +146,8 @@ networks:
 
 volumes:
   db:
-    # A fixed name, so the data does not depend on the project name. Never remove it by hand.
+    # External: created by up.sh, not owned by this project, so `docker compose down -v` cannot
+    # delete it. A fixed name, so the data does not depend on the project name. (Docker Desktop's
+    # "Clean / Purge data" would still delete every volume: see README, Backup.)
+    external: true
     name: ${DB_VOLUME_NAME:-lukitas-personal-db}

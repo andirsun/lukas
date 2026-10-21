@@ -32,11 +32,17 @@ test("invalid proxy ranges are rejected", () => {
 describe("SIGN_IN_ALLOWLIST", () => {
   const dev = { ...base, NODE_ENV: "development", CLIENT_IP_HEADER: "fly-client-ip" };
 
-  test("is off when unset or blank", () => {
+  test("is off when unset or an empty line in .env", () => {
     expect(loadConfig(dev).SIGN_IN_ALLOWLIST).toBeUndefined();
     expect(loadConfig({ ...dev, SIGN_IN_ALLOWLIST: "" }).SIGN_IN_ALLOWLIST).toBeUndefined();
-    expect(loadConfig({ ...dev, SIGN_IN_ALLOWLIST: " , " }).SIGN_IN_ALLOWLIST).toBeUndefined();
   });
+
+  test.each([" ", ",", " , ", ",,"])(
+    "fails closed: %j is set but names nobody, so it is a startup error, not 'everyone may sign in'",
+    (value) => {
+      expect(() => loadConfig({ ...dev, SIGN_IN_ALLOWLIST: value })).toThrow(/SIGN_IN_ALLOWLIST/);
+    },
+  );
 
   test("is a trimmed, lower-cased list of emails", () => {
     expect(

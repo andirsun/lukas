@@ -2,13 +2,25 @@
 # Backs up the database to $BACKUP_DIR/lukitas-YYYY-MM-DD.dump (default ~/Backups/lukitas) and keeps
 # the newest 14 daily dumps.
 #
+#   ./backup.sh               the daily backup (what launchd runs)
+#   ./backup.sh --pre-update  a backup taken before an update: lukitas-YYYY-MM-DD-preupdate-HHMM.dump.
+#                             Its own name, so it never replaces the daily dump; not counted by the
+#                             14-daily rule (the newest 10 of them are kept).
+#
 # The dump is taken as the database owner, which bypasses row-level security (every table here is
 # FORCE ROW LEVEL SECURITY, so a dump by the API's own role would come out empty). A backup is only
 # kept after it passes: pg_restore can list it, and restoring it into a scratch database gives rows
 # in every main table that has rows in the live one. Otherwise the new file is deleted, the old
 # ones stay, and the script exits with an error (and a macOS notification when run by launchd).
 #
-# Needs the stack running (Docker Desktop up). Settings: BACKUP_DIR, KEEP (default 14), ENV_FILE.
+# Optional encrypted second copy: set BACKUP_COPY_DIR (a folder, e.g. in iCloud Drive) and
+# BACKUP_AGE_RECIPIENT (an age public key, "age1...") in .env. After a good backup, the dump is
+# encrypted with `age` (brew install age) into BACKUP_COPY_DIR/<name>.age, and the same retention
+# applies there. Without `age` the copy is skipped with a warning. The dump itself is checked
+# before it is encrypted. See README, "Backup and restore".
+#
+# Needs the stack running (Docker Desktop up). Settings: BACKUP_DIR, KEEP (default 14),
+# BACKUP_COPY_DIR, BACKUP_AGE_RECIPIENT, ENV_FILE.
 set -euo pipefail
 # shellcheck source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -16,13 +28,38 @@ set -euo pipefail
 umask 077
 need_env_file
 
-backup_dir="$(cfg BACKUP_DIR "$HOME/Backups/lukitas")"
-case "$backup_dir" in "~"*) backup_dir="$HOME${backup_dir#\~}" ;; esac
+pre_update=0
+for arg in "$@"; do
+  case "$arg" in
+    --pre-update) pre_update=1 ;;
+    -h | --help)
+      sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      exit 0
+      ;;
+    *) die "unknown option: $arg" ;;
+  esac
+done
+
+# A leading ~ in a value from .env is the home folder.
+expand_home() { case "$1" in "~"*) printf '%s' "$HOME${1#\~}" ;; *) printf '%s' "$1" ;; esac; }
+
+backup_dir="$(expand_home "$(cfg BACKUP_DIR "$HOME/Backups/lukitas")")"
+copy_dir="$(expand_home "$(cfg BACKUP_COPY_DIR)")"
+age_recipient="$(cfg BACKUP_AGE_RECIPIENT)"
 keep="${KEEP:-14}"
+keep_preupdate=10
 stamp="$(date +%Y-%m-%d)"
-final="$backup_dir/lukitas-$stamp.dump"
-partial="$backup_dir/.lukitas-$stamp.dump.partial"
+if [ "$pre_update" = 1 ]; then
+  name="lukitas-$stamp-preupdate-$(date +%H%M).dump"
+else
+  name="lukitas-$stamp.dump"
+fi
+final="$backup_dir/$name"
+partial="$backup_dir/.$name.partial"
 scratch="lukitas_verify"
+
+case "$keep" in '' | *[!0-9]*) die "KEEP must be a number" ;; esac
+[ "$keep" -ge 1 ] || die "KEEP must be at least 1"
 
 fail() {
   printf 'BACKUP FAILED: %s\n' "$*" >&2
@@ -39,11 +76,27 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# prune DIR REGEX KEEP: delete all but the newest KEEP files in DIR whose names match REGEX (names
+# sort by date). Other files in the folder are left alone.
+prune() {
+  local dir="$1" regex="$2" n="$3" old
+  old="$(ls -1 "$dir" | grep -E "$regex" | sort | awk -v keep="$n" '{ l[NR] = $0 } END { for (i = 1; i <= NR - keep; i++) print l[i] }' || true)"
+  [ -z "$old" ] || printf '%s\n' "$old" | while read -r f; do
+    rm -f "$dir/$f"
+    say "Removed old backup $dir/$f"
+  done
+}
+DAILY='^lukitas-[0-9]{4}-[0-9]{2}-[0-9]{2}\.dump'
+PREUPDATE='^lukitas-[0-9]{4}-[0-9]{2}-[0-9]{2}-preupdate-[0-9]{4}\.dump'
+
 command -v docker >/dev/null 2>&1 || fail "docker is not installed or not on PATH"
 docker info >/dev/null 2>&1 || fail "Docker is not running"
 db_running || fail "the database container is not running (is the stack up?)"
-mkdir -p "$backup_dir"
-chmod 700 "$backup_dir"
+[ "$backup_dir" != "$HOME" ] && [ "$backup_dir" != "/" ] || fail "BACKUP_DIR must be a folder of its own, not $backup_dir"
+if [ ! -d "$backup_dir" ]; then
+  mkdir -p "$backup_dir"
+  chmod 700 "$backup_dir" # only a folder this script made; an existing one keeps its mode
+fi
 
 say "Counting rows in the live database"
 live="$(table_counts lukitas)" || fail "could not read the live database"
@@ -55,8 +108,8 @@ compose exec -T postgres pg_dump -U lukitas -d lukitas -Fc >"$partial" || fail "
 say "Checking the dump lists"
 toc="$(compose exec -T postgres pg_restore -l <"$partial")" || fail "pg_restore cannot read the dump"
 for table in $MAIN_TABLES; do
-  name="$(printf '%s' "$table" | tr -d '"')"
-  printf '%s\n' "$toc" | grep -q "TABLE DATA public $name " || fail "the dump has no data section for table $name"
+  table_name="$(printf '%s' "$table" | tr -d '"')"
+  printf '%s\n' "$toc" | grep -q "TABLE DATA public $table_name " || fail "the dump has no data section for table $table_name"
 done
 
 say "Checking the dump restores (scratch database $scratch)"
@@ -82,13 +135,40 @@ EOF2
 mv -f "$partial" "$final"
 chmod 600 "$final"
 
-# Keep the newest $keep daily dumps (names sort by date). Other files in the folder are left alone.
-old="$(ls -1 "$backup_dir" | grep -E '^lukitas-[0-9]{4}-[0-9]{2}-[0-9]{2}\.dump$' | sort | awk -v keep="$keep" '{ l[NR] = $0 } END { for (i = 1; i <= NR - keep; i++) print l[i] }')"
-if [ -n "$old" ]; then
-  printf '%s\n' "$old" | while read -r name; do
-    rm -f "$backup_dir/$name"
-    say "Removed old backup $name"
-  done
-fi
+# Retention. Daily dumps and pre-update dumps are counted separately, so a pre-update backup never
+# pushes a daily one out, and never replaces it.
+prune "$backup_dir" "$DAILY\$" "$keep"
+prune "$backup_dir" "$PREUPDATE\$" "$keep_preupdate"
 
 say "Backup saved: $final ($(du -h "$final" | cut -f1))"
+
+# --- The optional encrypted second copy. The primary backup above is already safe. -------------
+copy_failed=""
+if [ -n "$copy_dir" ] || [ -n "$age_recipient" ]; then
+  if [ -z "$copy_dir" ] || [ -z "$age_recipient" ]; then
+    echo "WARNING: set both BACKUP_COPY_DIR and BACKUP_AGE_RECIPIENT for the encrypted copy; skipping it." >&2
+  elif ! command -v age >/dev/null 2>&1; then
+    echo "WARNING: 'age' is not installed (brew install age); skipping the encrypted copy." >&2
+  else
+    case "$age_recipient" in
+      age1*) ;;
+      *) copy_failed="BACKUP_AGE_RECIPIENT is not an age public key (it starts with age1)" ;;
+    esac
+    if [ -z "$copy_failed" ]; then
+      mkdir -p "$copy_dir" || copy_failed="cannot create $copy_dir"
+    fi
+    if [ -z "$copy_failed" ]; then
+      tmp="$copy_dir/.$name.age.partial"
+      if age -r "$age_recipient" -o "$tmp" "$final" && [ -s "$tmp" ]; then
+        mv -f "$tmp" "$copy_dir/$name.age"
+        prune "$copy_dir" "$DAILY\\.age\$" "$keep"
+        prune "$copy_dir" "$PREUPDATE\\.age\$" "$keep_preupdate"
+        say "Encrypted copy saved: $copy_dir/$name.age"
+      else
+        rm -f "$tmp"
+        copy_failed="age could not encrypt the backup into $copy_dir"
+      fi
+    fi
+    [ -z "$copy_failed" ] || fail "the backup is saved, but the encrypted copy failed: $copy_failed"
+  fi
+fi

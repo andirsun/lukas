@@ -5,6 +5,8 @@
 #   ./update.sh               backup, pull, rebuild, restart
 #   ./update.sh --skip-backup don't back up first (not recommended)
 #   ./update.sh --no-pull     rebuild what is checked out now, without pulling
+#   ./update.sh --force       deploy even with uncommitted changes to tracked files or off
+#                             PERSONAL_BRANCH (see .env); refused otherwise
 # Other options (--no-tunnel, --skip-web) go to up.sh.
 set -euo pipefail
 # shellcheck source=lib.sh
@@ -12,13 +14,18 @@ set -euo pipefail
 
 backup=1
 pull=1
+force=0
 passthrough=()
 for arg in "$@"; do
   case "$arg" in
     --skip-backup) backup=0 ;;
     --no-pull) pull=0 ;;
+    --force)
+      force=1
+      passthrough+=("$arg")
+      ;;
     -h | --help)
-      sed -n '2,8p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,10p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) passthrough+=("$arg") ;;
@@ -27,10 +34,12 @@ done
 
 need_env_file
 need_docker
+# Before anything changes: not a dirty checkout, not another branch.
+guard_checkout "$force"
 
 if [ "$backup" = 1 ] && db_running; then
   say "Backing up first"
-  "$DIR/backup.sh"
+  "$DIR/backup.sh" --pre-update
 elif [ "$backup" = 1 ]; then
   say "The database is not running; nothing to back up"
 fi

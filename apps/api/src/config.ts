@@ -48,6 +48,11 @@ const configSchema = z
      */
     SIGN_IN_ALLOWLIST: z
       .string()
+      // Set, but naming nobody (" ", ","): refuse to start rather than let everyone in.
+      .refine(
+        (v) => v === "" || v.split(",").some((email) => email.trim()),
+        "SIGN_IN_ALLOWLIST is set but has no emails; remove it to allow everyone",
+      )
       .transform((v) =>
         v
           .split(",")
