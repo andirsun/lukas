@@ -215,10 +215,15 @@ for (const l of LOCALES) {
     });
 
     test("privacy copy promises only what Lukas does today", async ({ page, request }) => {
-      const html = await (await request.get(l.path)).text();
+      // React escapes apostrophes in text ("can't" → "can&#x27;t"): decode before matching.
+      const html = (await (await request.get(l.path)).text()).replaceAll("&#x27;", "'");
       const withoutScripts = html.replace(/<script[\s\S]*?<\/script>/g, "");
-      for (const pattern of l.overclaims) expect(withoutScripts).not.toMatch(pattern);
       await page.goto(l.path);
+      const text = await page.locator("body").evaluate((body) => body.textContent ?? "");
+      for (const pattern of l.overclaims) {
+        expect(withoutScripts).not.toMatch(pattern);
+        expect(text).not.toMatch(pattern);
+      }
       await expect(page.locator("#privacy")).toContainText(l.privacyAnswer);
     });
 
