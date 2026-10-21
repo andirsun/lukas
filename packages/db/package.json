@@ -11,7 +11,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "generate": "drizzle-kit generate",
-    "migrate": "tsx src/scripts/migrate.ts"
+    "migrate": "tsx src/scripts/migrate.ts",
+    "bootstrap": "tsx src/scripts/bootstrap.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",

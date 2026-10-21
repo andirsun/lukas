@@ -51,6 +51,7 @@ export type AuthErrorKey =
   | "errors.too_many_attempts"
   | "errors.invalid_email"
   | "errors.too_many_requests"
+  | "errors.sign_in_not_allowed"
   | "errors.too_many_sign_in_attempts"
   | "errors.passkey_failed"
   | "errors.network_error"
@@ -63,6 +64,8 @@ const CODE_KEYS: Record<string, AuthErrorKey> = {
   OTP_EXPIRED: "errors.invalid_or_expired_code",
   TOO_MANY_ATTEMPTS: "errors.too_many_attempts",
   INVALID_EMAIL: "errors.invalid_email",
+  // The API's own code (a personal install with a sign-in allowlist), already in the catalog's form.
+  sign_in_not_allowed: "errors.sign_in_not_allowed",
 };
 
 /** Errors about the code itself: the boxes are marked invalid and emptied. */

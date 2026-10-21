@@ -141,6 +141,7 @@
     "invalid_or_expired_code": "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
     "too_many_attempts": "Demasiados intentos con este código. Pide uno nuevo.",
     "too_many_requests": "Pediste muchos códigos seguidos. Espera unos minutos e inténtalo otra vez.",
+    "sign_in_not_allowed": "Lukitas todavía no está abierto al público. Si quieres probarlo, escríbele a quien te invitó.",
     "passkey_failed": "No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.",
     "too_many_sign_in_attempts": "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez.",
     "import_currency_changed": "La moneda de tu cuenta cambió después de leer el archivo. Súbelo otra vez."

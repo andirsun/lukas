@@ -20,7 +20,15 @@ const landingOnly = isLandingOnly(env.landingOnly);
 /** The public pages, in both languages (the landing and the roadmap). */
 const PUBLIC_PAGES = SITE_PAGES.flatMap((page) => [PAGE_PATH[page].es, PAGE_PATH[page].en]);
 
+/**
+ * Where the build goes: `build` (apps/web/build) unless LUKAS_BUILD_DIR says otherwise. The
+ * personal install builds the full app elsewhere (deploy/personal/up.sh), so it does not replace
+ * the landing release that sits in build/client.
+ */
+const buildDirectory = process.env.LUKAS_BUILD_DIR || "build";
+
 export default {
+  buildDirectory,
   // The landing and roadmap pages are static HTML; everything else is a client-side SPA.
   ssr: false,
   // Landing-only: the unknown-path page too, which buildEnd turns into the top-level 404.html.

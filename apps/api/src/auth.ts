@@ -6,7 +6,7 @@ import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createAuthMiddleware } from "better-auth/api";
 import { bearer, emailOTP, jwt } from "better-auth/plugins";
-import { apiPathPrefix } from "./config.ts";
+import { apiPathPrefix, type Config } from "./config.ts";
 import type { AppDeps } from "./deps.ts";
 import { signInEmail } from "./emails/sign-in.ts";
 
@@ -14,6 +14,19 @@ export const OAUTH_SCOPES = ["finance:read", "finance:write", "offline_access"] 
 export const CODE_TTL_SECONDS = 600;
 const EMAIL_WINDOW_MS = 15 * 60 * 1000;
 const EMAILS_PER_WINDOW = 5;
+
+/** Whether `email` may ask for a sign-in code: always, unless an allowlist is configured. */
+export function isSignInAllowed(config: Pick<Config, "SIGN_IN_ALLOWLIST">, email: string): boolean {
+  const list = config.SIGN_IN_ALLOWLIST;
+  return !list || list.includes(email.trim().toLowerCase());
+}
+
+/** The refusal: the web shows `errors.sign_in_not_allowed` for this code. */
+const signInNotAllowed = () =>
+  new APIError("FORBIDDEN", {
+    code: "sign_in_not_allowed",
+    message: "Sign-in is not open to this address",
+  });
 
 /** Counts sign-in emails per address in a 15-minute window; returns the count including this one. */
 export async function bumpEmailThrottle(deps: AppDeps, email: string): Promise<number> {
@@ -123,7 +136,11 @@ export function createAuth(deps: AppDeps) {
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path !== "/email-otp/send-verification-otp") return;
-        const email = String(ctx.body?.email ?? "").toLowerCase();
+        const email = String(ctx.body?.email ?? "")
+          .trim()
+          .toLowerCase();
+        // Before anything is stored or sent: a refused address leaves no trace.
+        if (!isSignInAllowed(config, email)) throw signInNotAllowed();
         if (email && (await bumpEmailThrottle(deps, email)) > EMAILS_PER_WINDOW) {
           throw new APIError("TOO_MANY_REQUESTS", {
             message: "Too many codes requested for this email",
@@ -156,6 +173,8 @@ export function createAuth(deps: AppDeps) {
         disableSignUp: false,
         async sendVerificationOTP({ email, otp, type }, ctx) {
           if (type !== "sign-in") return;
+          // The hook above refuses first; this keeps the rule even if another route reaches here.
+          if (!isSignInAllowed(config, email)) throw signInNotAllowed();
           const headers = ctx?.headers ?? ctx?.request?.headers;
           const locale = await localeFor(deps, email, headers);
           // The link opens the web in the email's language and goes on to `next` after sign-in.

@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import type SMTPTransport from "nodemailer/lib/smtp-transport/index.js";
 import { Resend } from "resend";
 
 export interface Mail {
@@ -26,14 +27,52 @@ export class ResendMailer implements Mailer {
   }
 }
 
-/** SMTP delivery, used locally with Mailpit. */
+export interface SmtpOptions {
+  /**
+   * Accept a self-signed certificate (Proton Bridge's), but still require STARTTLS so nothing,
+   * credentials included, travels in clear text. Applies to this transport only.
+   */
+  tlsInsecure?: boolean | undefined;
+}
+
+/**
+ * What to hand to nodemailer for an SMTP URL. By default the URL itself, so nodemailer's own checks
+ * apply. With `tlsInsecure` the URL is read into options (nodemailer takes extra settings only
+ * next to options, not next to a URL) and the TLS settings are added.
+ */
+export function smtpTransport(
+  url: string,
+  { tlsInsecure }: SmtpOptions,
+): string | SMTPTransport.Options {
+  if (!tlsInsecure) return url;
+  const parsed = new URL(url);
+  const secure = parsed.protocol === "smtps:";
+  return {
+    host: parsed.hostname.replace(/^\[|\]$/g, ""),
+    port: parsed.port ? Number(parsed.port) : secure ? 465 : 587,
+    secure,
+    ...(parsed.username
+      ? {
+          auth: {
+            user: decodeURIComponent(parsed.username),
+            pass: decodeURIComponent(parsed.password),
+          },
+        }
+      : {}),
+    requireTLS: true,
+    tls: { rejectUnauthorized: false },
+  };
+}
+
+/** SMTP delivery: Mailpit in development, Proton Bridge for a personal install. */
 export class SmtpMailer implements Mailer {
   private readonly transport: nodemailer.Transporter;
   constructor(
     url: string,
     private readonly from: string,
+    options: SmtpOptions = {},
   ) {
-    this.transport = nodemailer.createTransport(url);
+    this.transport = nodemailer.createTransport(smtpTransport(url, options));
   }
   async send(mail: Mail): Promise<void> {
     await this.transport.sendMail({ from: this.from, ...mail });

@@ -156,6 +156,7 @@ coverage/
 
 # Web
 apps/web/build/
+apps/web/build-personal/
 apps/web/.react-router/
 apps/web/storybook-static/
 apps/web/test-results/

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd agent: backs up the Lukitas database every day at 03:00. If the Mac is asleep then, launchd
+  runs it as soon as the Mac wakes. (If the Mac is switched off, the run is skipped until tomorrow.)
+
+  This is a template: install-backup.sh fills in the repository path, your home folder and the path to bash, then loads
+  it from ~/Library/LaunchAgents. Don't copy it there by hand.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.lukitas.backup</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>@BASH@</string>
+    <string>@REPO_DIR@/deploy/personal/backup.sh</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>3</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <!-- docker is not on launchd's default PATH. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>HOME</key>
+    <string>@HOME@</string>
+  </dict>
+
+  <key>WorkingDirectory</key>
+  <string>@REPO_DIR@/deploy/personal</string>
+
+  <key>StandardOutPath</key>
+  <string>@HOME@/Library/Logs/lukitas-backup.log</string>
+  <key>StandardErrorPath</key>
+  <string>@HOME@/Library/Logs/lukitas-backup.log</string>
+
+  <!-- Low priority: it should never slow the Mac down while you use it. -->
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <true/>
+  <key>Nice</key>
+  <integer>10</integer>
+</dict>
+</plist>

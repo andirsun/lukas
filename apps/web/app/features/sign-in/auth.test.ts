@@ -15,6 +15,7 @@ describe("authErrorKey", () => {
     [{ code: "OTP_EXPIRED", status: 400 }, "errors.invalid_or_expired_code"],
     [{ code: "TOO_MANY_ATTEMPTS", status: 403 }, "errors.too_many_attempts"],
     [{ code: "INVALID_EMAIL", status: 400 }, "errors.invalid_email"],
+    [{ code: "sign_in_not_allowed", status: 403 }, "errors.sign_in_not_allowed"],
     [{ status: 0 }, "errors.network_error"],
     [{ status: 502 }, "errors.internal_error"],
     [{ code: "SOMETHING_NEW", status: 400 }, "errors.generic"],

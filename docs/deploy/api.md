@@ -21,3 +21,16 @@ Production refuses to start with a bare `X-Forwarded-For` and no `TRUSTED_PROXIE
 `docker-compose.yml` sets it to `127.0.0.1,::1` in the `api` service, because there the proxy is
 Vite's dev server on the same machine. CI needs the same setting for the e2e suite, which gives each
 browser its own address.
+
+## Behind Caddy and a Cloudflare tunnel (personal install)
+
+`deploy/personal` is a worked example of the `TRUSTED_PROXIES` mode: Cloudflare overwrites
+`CF-Connecting-IP`, Caddy copies it into `X-Forwarded-For` as the only entry, and the API trusts
+one proxy, Caddy's fixed address in the private Docker network (`TRUSTED_PROXIES=172.28.77.10`).
+Nothing publishes the API's port.
+
+## Restricting who can sign in
+
+Set `SIGN_IN_ALLOWLIST` (comma-separated emails, case-insensitive) to refuse sign-in codes to anyone
+else: the response is `403` with `code: "sign_in_not_allowed"`, and no email is sent. Leave it unset
+to allow everyone. See [personal.md](personal.md).

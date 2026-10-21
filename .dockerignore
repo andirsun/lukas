@@ -4,3 +4,4 @@
 .superpowers
 .env
 coverage
+**/dist

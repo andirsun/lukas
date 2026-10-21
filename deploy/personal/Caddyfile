@@ -1,0 +1,66 @@
+# Caddy for the personal install. It listens on plain HTTP inside the stack: TLS ends at Cloudflare,
+# and cloudflared reaches it over the private network.
+{
+	auto_https off
+	admin off
+}
+
+:80 {
+	encode zstd gzip
+
+	# Same set as apps/web/public/_headers (which Cloudflare Pages reads and Caddy cannot), plus
+	# noindex: this is one person's install, not the public site.
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()"
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+
+	# --- API: the path is forwarded as is (the API serves everything under /api). ---------------
+	handle /api/* {
+		# Never cached, unless the API says otherwise.
+		header ?Cache-Control "no-store"
+
+		# Cloudflare sets CF-Connecting-IP to the real visitor and overwrites any value the visitor
+		# sent. Pass that on as the only X-Forwarded-For entry; the API trusts just this hop.
+		@viaCloudflare header Cf-Connecting-Ip *
+		reverse_proxy @viaCloudflare api:3000 {
+			header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
+		}
+		# Someone on this machine (curl to the published port): Caddy's own view of the client.
+		reverse_proxy api:3000
+	}
+
+	root * /srv
+
+	# --- Built files are named after their content: cache them for good. -----------------------
+	handle /assets/* {
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# --- The prerendered pages: revalidate within minutes, so an update shows up quickly. -------
+	@pages path / /en /en/ /roadmap /roadmap/ /en/roadmap /en/roadmap/
+	handle @pages {
+		header Cache-Control "public, max-age=300, must-revalidate"
+		try_files {path} {path}/index.html
+		file_server
+	}
+
+	# --- A path with a file extension is a file: a missing one is a 404, not the app. ----------
+	@file path_regexp \.[A-Za-z0-9]{1,8}$
+	handle @file {
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	# --- Every other path is a screen of the app (/app, /sign-in, /welcome/..., /auth/verify). --
+	# The SPA shell, always revalidated: after an update its script names change.
+	handle {
+		header Cache-Control "no-cache"
+		try_files {path} /__spa-fallback.html
+		file_server
+	}
+}

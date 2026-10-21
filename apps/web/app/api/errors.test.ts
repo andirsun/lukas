@@ -21,6 +21,16 @@ describe("problemMessage", () => {
     expect(problemMessage(problem("category_name_taken"), tEn)).toBe(en.errors.category_name_taken);
   });
 
+  it("explains that sign-in is closed to an address, in both languages", () => {
+    const closed = problem("sign_in_not_allowed", 403);
+    expect(problemMessage(closed, tEs)).toBe(
+      "Lukitas todavía no está abierto al público. Si quieres probarlo, escríbele a quien te invitó.",
+    );
+    expect(problemMessage(closed, tEs)).toBe(es.errors.sign_in_not_allowed);
+    expect(problemMessage(closed, tEn)).toBe(en.errors.sign_in_not_allowed);
+    expect(problemMessage(closed, tEn)).not.toBe(en.errors.generic);
+  });
+
   it("falls back to errors.generic for unknown codes", () => {
     expect(problemMessage(problem("totally_new_code"), tEs)).toBe(es.errors.generic);
     expect(problemMessage(problem("totally_new_code"), tEn)).toBe(en.errors.generic);

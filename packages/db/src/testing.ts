@@ -20,6 +20,11 @@ interface TestDatabase {
   stop(): Promise<void>;
 }
 
+/** A throwaway Postgres with nothing in it: no `lukas_app` role, no tables. */
+export async function startBareDatabase(): Promise<Pick<TestDatabase, "adminUrl" | "stop">> {
+  return process.env.LUKAS_TEST_DB === "local" ? startLocalCluster() : startContainer();
+}
+
 /**
  * Starts a throwaway Postgres with the `lukas_app` role and all migrations applied.
  * Uses a Docker container by default; set LUKAS_TEST_DB=local to use the `initdb`/`pg_ctl`
