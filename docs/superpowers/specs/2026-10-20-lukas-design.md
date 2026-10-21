@@ -142,7 +142,7 @@ Log several transactions from one sentence, such as "gasté 15.000 en el almuerz
 It is inspired by the "smart assistant" of an unrelated app. Capture design is not covered by a separate spec yet; each phase gets its own spec → plan.
 
 - **Phase 1, text and voice, no AI (with Stage 3; web too):** a deterministic parser that runs on the device.
-  - Amounts: "15.000", "15 mil", "15k", "15 lukas".
+  - Amounts: "15.000", "15 mil", "15k", "15 lukas", "4,3 palos" (millions).
   - Separators: "y" and commas.
   - Relative dates: "hoy", "ayer".
   - Categories come from the user's own history through the name → category suggestions that already exist in the API (`GET /v1/transactions/suggestions`).

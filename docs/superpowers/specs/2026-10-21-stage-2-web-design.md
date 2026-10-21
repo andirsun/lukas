@@ -115,13 +115,13 @@ Colombians count money in *lukas*, where 1 luka = $1.000 COP. When the account c
   | 1.000 | "1 luka" |
   | 15.000 | "15 lukas" |
   | 15.500 | "15,5 lukas" (at most one decimal, rounded; ",0" dropped) |
-  | 2.350.000 | "2.350 lukas" |
+  | 1.000.000 or more | in *palos* (1 palo = $1.000.000), with up to two decimals and trailing zeros dropped: 1.000.000 → "1 palo", 4.300.000 → "4,3 palos", 1.250.000 → "1,25 palos" |
   | an expense of 15.000 | "−15 lukas" |
 
-  English shows "15k" instead, because "lukas" doesn't travel. The exact amount in pesos is always one tap away: the edit sheet and the transaction detail show it.
+  The palos threshold is applied after rounding, so 999.990 shows as "1 palo", never "1.000 lukas". English shows "15k" and "4.3M" instead, because "lukas" and "palos" don't travel. The exact amount in pesos is always one tap away: the edit sheet and the transaction detail show it.
 - **Everywhere the same formatter:** hero, rows, budgets, insights, chart axes and totals, Lukitas' messages ("Te quedan 46 lukas en Mercado"), the toast, and the export. The CSV/JSON export stays in exact pesos.
 - **Typing:** in lukas mode the keypad takes lukas: "15" saves 15.000, and "15,5" saves 15.500. A live line under it confirms "= $15.500". A toggle switches the keypad to exact pesos. Amounts are always stored in exact minor units.
-- **Later idea, not v1:** "palos" for millions ("2,3 palos").
+- **Keypad hint:** for big amounts such as a salary or a budget, the live line also reads in palos: typing "4300" in lukas shows "= 4,3 palos ($4.300.000)".
 
 ### 2.6b Try-before-signup demo (added 2026-10-21)
 
