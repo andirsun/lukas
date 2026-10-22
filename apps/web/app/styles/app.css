@@ -617,6 +617,7 @@
  * (sheet, toast, count-up) handle reduced motion in their components.
  */
 @media (prefers-reduced-motion: reduce) {
+  .lk-trend-band,
   .lk-press,
   .lk-btn,
   .lk-key,
@@ -1214,29 +1215,53 @@
     font-weight: 800;
   }
   .lk-trend-income .recharts-rectangle {
-    fill: var(--good);
+    fill: var(--chart-income);
   }
   .lk-trend-expenses .recharts-rectangle {
-    fill: var(--over);
+    fill: var(--chart-expense);
   }
   .lk-trend-budget .recharts-curve {
     stroke: var(--ink-muted);
   }
-  .lk-trend .recharts-tooltip-cursor {
-    fill: var(--surface-sunken);
+  .lk-trend .lk-trend-budget-dot {
+    fill: var(--ink-muted);
     stroke: none;
   }
-  .lk-chart-tip {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-md);
-    background: var(--surface-row);
-    border: 2px solid var(--stroke);
-    color: var(--ink-muted);
-    font-size: 12px;
-    font-weight: 800;
+  /* The selected month's band, behind the transparent chart. */
+  .lk-trend-band {
+    position: absolute;
+    border-radius: var(--radius-sm);
+    background: var(--surface-sunken);
+    transition: left var(--sheet) ease-out;
+  }
+  /* A month's tap target over the trend: invisible, a faint band under a hovering pointer. */
+  .lk-trend-hit {
+    flex: 1;
+    border: 0;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+  }
+  .lk-trend-hit:hover {
+    background: color-mix(in srgb, var(--ink-muted) 8%, transparent);
+  }
+  .lk-swatch-income {
+    background: var(--chart-income);
+  }
+  .lk-swatch-expense {
+    background: var(--chart-expense);
+  }
+  /*
+   * A section showing older figures while new ones load: the figures dim (the toggles do not), so
+   * nobody reads them as the answer to what was just picked.
+   */
+  .lk-insight-body {
+    transition: opacity var(--sheet) ease-out;
+  }
+  [aria-busy="true"] > .lk-insight-body,
+  .lk-insight-body[aria-busy="true"] {
+    opacity: 0.45;
   }
   /* Legend keys: a color square, or the budget's dashed line. */
   .lk-swatch {

@@ -159,16 +159,18 @@ export function useCostOfLiving(months: number, { enabled = true }: { enabled?: 
 }
 
 /**
- * Totals per category over a range. While another range, kind or status loads, the previous
- * answer stays (`isPlaceholderData`), so a chart moves from one to the other instead of blinking.
+ * Totals per category over a range, with the `range` (kind and status included) they answer. While
+ * another range, kind or status loads, the previous answer stays (`isPlaceholderData`), so a chart
+ * moves from one to the other instead of blinking; label it from its own `range`, never from what
+ * is being loaded, so old figures never sit under new words.
  */
 export function useReportByCategory(range: ByCategoryRange) {
   const api = useApi();
   return useQuery({
     queryKey: queryKeys.byCategory(range),
     placeholderData: keepPreviousData,
-    queryFn: async ({ signal }) =>
-      dataOf(
+    queryFn: async ({ signal }) => ({
+      ...dataOf(
         await api.GET("/v1/reports/by-category", {
           params: {
             query: {
@@ -181,24 +183,37 @@ export function useReportByCategory(range: ByCategoryRange) {
           signal,
         }),
       ),
+      range,
+    }),
   });
 }
 
-/** Income, expenses and budget per month over a range; keeps the previous range while one loads. */
+/** What `useReportByCategory` answers: totals per category and the range they are for. */
+export type ByCategoryReport = NonNullable<ReturnType<typeof useReportByCategory>["data"]>;
+
+/**
+ * Income, expenses and budget per month over a range, with the `range` they answer; keeps the
+ * previous answer while another range loads (label it from its own `range`).
+ */
 export function useTrend(range: ReportRange) {
   const api = useApi();
   return useQuery({
     queryKey: queryKeys.trend(range),
     placeholderData: keepPreviousData,
-    queryFn: async ({ signal }) =>
-      dataOf(
+    queryFn: async ({ signal }) => ({
+      ...dataOf(
         await api.GET("/v1/reports/trend", {
           params: { query: { from: range.from, to: range.to } },
           signal,
         }),
       ),
+      range,
+    }),
   });
 }
+
+/** What `useTrend` answers: one entry per month, oldest first, and the range they are for. */
+export type TrendReport = NonNullable<ReturnType<typeof useTrend>["data"]>;
 
 // -- Writes -----------------------------------------------------------------------------------
 //

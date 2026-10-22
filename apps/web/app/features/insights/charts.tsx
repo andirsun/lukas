@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -7,10 +6,10 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import { TREND_MARGIN, X_AXIS_HEIGHT, Y_AXIS_WIDTH } from "./chart-geometry.ts";
 
 /**
  * The Recharts drawings of the insights screen, in their own module so the chart library is
@@ -73,44 +72,55 @@ export interface TrendPoint {
   label: string;
   income: number;
   expenses: number;
-  budget: number;
+  /** `null` for a month without any budget: the line leaves a gap there. */
+  budget: number | null;
 }
 
 /**
- * Income and expense bars per month that rise from the axis, and the budget as a dashed line
- * drawn after them. Tapping or hovering a month shows its figures (`tooltip`).
+ * Income and expense bars per month that rise from the axis, the budget as a dashed straight line
+ * with a dot per month that has one (months without a budget leave a gap), and a y-axis in
+ * compact amounts (`formatTick`). Selecting a month is TrendChart's (its tap targets lie over this).
  */
 export function TrendBars({
   points,
   height,
   animate,
   durationMs,
-  tooltip,
+  formatTick,
 }: {
   points: TrendPoint[];
   height: number;
-  tooltip(point: TrendPoint): ReactNode;
+  formatTick(value: number): string;
 } & Motion) {
-  const withBudget = points.some((p) => p.budget > 0);
+  const withBudget = points.some((p) => p.budget !== null);
   return (
     <ResponsiveContainer width="100%" height={height} initialDimension={{ width: 320, height }}>
       <ComposedChart
         data={points}
         accessibilityLayer={false}
-        margin={{ top: 8, right: 4, bottom: 0, left: 4 }}
+        margin={TREND_MARGIN}
         barGap={3}
         barCategoryGap="22%"
         className="lk-trend"
       >
         <CartesianGrid vertical={false} />
-        <XAxis dataKey="label" axisLine={false} tickLine={false} interval={0} height={24} />
-        <YAxis hide domain={[0, "auto"]} />
-        <Tooltip
-          isAnimationActive={false}
-          content={({ active, payload }) => {
-            const point = payload?.[0]?.payload as TrendPoint | undefined;
-            return active && point ? tooltip(point) : null;
-          }}
+        <XAxis
+          dataKey="label"
+          axisLine={false}
+          tickLine={false}
+          interval="preserveStartEnd"
+          minTickGap={4}
+          height={X_AXIS_HEIGHT}
+        />
+        <YAxis
+          width={Y_AXIS_WIDTH}
+          axisLine={false}
+          tickLine={false}
+          tickCount={4}
+          allowDecimals={false}
+          domain={[0, "auto"]}
+          tickFormatter={formatTick}
+          tick={{ className: "lk-trend-y-tick" }}
         />
         <Bar
           dataKey="income"
@@ -135,9 +145,10 @@ export function TrendBars({
         {withBudget && (
           <Line
             dataKey="budget"
-            type="monotone"
+            type="linear"
+            connectNulls={false}
             className="lk-trend-budget"
-            dot={false}
+            dot={{ r: 3, className: "lk-trend-budget-dot" }}
             activeDot={false}
             strokeWidth={2}
             strokeDasharray="5 4"

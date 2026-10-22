@@ -2,19 +2,21 @@ import type { Month } from "@lukas/core";
 import { motion } from "motion/react";
 import { lazy, Suspense } from "react";
 import { useTranslations } from "use-intl";
+import type { ByCategoryReport } from "../../api/queries.ts";
 import { formatMoney } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
 import { Money } from "../../ui/Money.tsx";
 import { durationToken, useReducedMotionPreference } from "../../ui/motion-tokens.ts";
 import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
-import { formatShare, type Period } from "./insights-model.ts";
+import { formatShare, type Period, sharesOf } from "./insights-model.ts";
 import {
   capitalize,
   InsightCard,
   Loading,
   SrTable,
   tileGround,
+  useMarkColor,
   usePeriodPhrase,
 } from "./parts.tsx";
 
@@ -26,27 +28,20 @@ const SIZE = 200;
 export type Kind = "expense" | "income";
 export type StatusFilter = "all" | "paid" | "pending";
 
-export interface ByCategory {
-  total: number;
-  items: {
-    categoryId: string;
-    name: string;
-    icon: string;
-    color: string;
-    total: number;
-    share: number;
-  }[];
-}
-
 export interface CategoryDonutProps {
-  /** The period's totals per category (for `kind` and `status`); undefined while loading. */
-  data: ByCategory | undefined;
-  /** An older answer is on screen while the new one loads. */
+  /**
+   * Totals per category with the range, kind and status they answer; undefined while the first
+   * one loads. Every label comes from `data.range`, so while another answer loads (`stale`) the
+   * card keeps saying what its figures are.
+   */
+  data: ByCategoryReport | undefined;
+  /** An older answer is on screen while the new one loads: the card dims and says it is busy. */
   stale: boolean;
   kind: Kind;
   onKind(kind: Kind): void;
   status: StatusFilter;
   onStatus(status: StatusFilter): void;
+  /** The period asked for: the subtitle until the first answer lands. */
   period: Period;
   current: Month;
   currency: string;
@@ -76,10 +71,15 @@ export function CategoryDonut({
   const t = useTranslations("insights.donut");
   const { locale } = useLocale();
   const reduce = useReducedMotionPreference();
-  const phrase = usePeriodPhrase(locale, current)(period);
-  const what = t(`what_${kind}_${status}`);
+  const markColor = useMarkColor();
+  // What the figures on screen are: the answer's own range, kind and status.
+  const shownKind: Kind = data?.range.kind ?? kind;
+  const shownStatus: StatusFilter = data ? (data.range.status ?? "all") : status;
+  const phrase = usePeriodPhrase(locale, current)(data?.range ?? period);
+  const what = t(`what_${shownKind}_${shownStatus}`);
   const money = (cents: number) => formatMoney(cents, currency, locale);
   const items = data?.items ?? [];
+  const shares = sharesOf(items.map((item) => item.total));
   const durationMs = Math.round(durationToken("--hop") * 1000);
 
   return (
@@ -89,29 +89,30 @@ export function CategoryDonut({
       order={order}
       busy={stale}
       className={className}
+      controls={
+        <div className="flex flex-col gap-(--space-2)">
+          <SegmentedControl<Kind>
+            label={t("kind_label")}
+            value={kind}
+            options={[
+              { value: "expense", label: t("expense") },
+              { value: "income", label: t("income") },
+            ]}
+            onChange={onKind}
+          />
+          <SegmentedControl<StatusFilter>
+            label={t("status_label")}
+            value={status}
+            options={[
+              { value: "all", label: t("all") },
+              { value: "paid", label: t("paid") },
+              { value: "pending", label: t("pending") },
+            ]}
+            onChange={onStatus}
+          />
+        </div>
+      }
     >
-      <div className="flex flex-col gap-(--space-2)">
-        <SegmentedControl<Kind>
-          label={t("kind_label")}
-          value={kind}
-          options={[
-            { value: "expense", label: t("expense") },
-            { value: "income", label: t("income") },
-          ]}
-          onChange={onKind}
-        />
-        <SegmentedControl<StatusFilter>
-          label={t("status_label")}
-          value={status}
-          options={[
-            { value: "all", label: t("all") },
-            { value: "paid", label: t("paid") },
-            { value: "pending", label: t("pending") },
-          ]}
-          onChange={onStatus}
-        />
-      </div>
-
       {!data ? (
         <Loading height={SIZE} />
       ) : items.length === 0 ? (
@@ -132,7 +133,7 @@ export function CategoryDonut({
                 slices={items.map((item) => ({
                   id: item.categoryId,
                   value: item.total,
-                  fill: categoryLook(item).tint,
+                  fill: markColor(categoryLook(item).tint),
                 }))}
                 animate={!reduce}
                 durationMs={durationMs}
@@ -140,7 +141,7 @@ export function CategoryDonut({
             </Suspense>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
               <span className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-ink-muted">
-                {t(kind === "expense" ? "center_expense" : "center_income")}
+                {t(shownKind === "expense" ? "center_expense" : "center_income")}
               </span>
               <span data-testid="donut-total">
                 <Money
@@ -187,8 +188,8 @@ export function CategoryDonut({
                       <span className="lk-bar lk-bar-sm flex-1">
                         <motion.span
                           style={{
-                            width: `${Math.max(item.share * 100, 1)}%`,
-                            background: tint,
+                            width: `${Math.max((shares[index] ?? 0) * 100, 1)}%`,
+                            background: markColor(tint),
                             transformOrigin: "left",
                           }}
                           initial={reduce ? false : { scaleX: 0 }}
@@ -201,7 +202,7 @@ export function CategoryDonut({
                         />
                       </span>
                       <span className="w-[4.5em] text-right text-[12px] font-extrabold text-ink-muted tabular-nums">
-                        {formatShare(item.share, locale)}
+                        {formatShare(shares[index] ?? 0, locale)}
                       </span>
                     </span>
                   </span>
@@ -213,9 +214,9 @@ export function CategoryDonut({
           <SrTable
             caption={t("caption", { what, period: phrase })}
             head={[t("col_category"), t("col_share"), t("col_amount")]}
-            rows={items.map((item) => ({
+            rows={items.map((item, index) => ({
               key: item.categoryId,
-              cells: [item.name, formatShare(item.share, locale), money(item.total)],
+              cells: [item.name, formatShare(shares[index] ?? 0, locale), money(item.total)],
             }))}
             foot={[{ key: "total", cells: [t("total"), "", money(data.total)] }]}
           />

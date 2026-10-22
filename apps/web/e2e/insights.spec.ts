@@ -68,7 +68,16 @@ test("after the sample import, Análisis shows October's donut and what living c
   await expect(living).toContainText(`${eur(cost.total)} al mes`);
   await expect(living).toContainText("tu último mes completo");
 
-  await expect(page.getByRole("region", { name: "Mes a mes" }).getByRole("table")).toBeAttached();
+  // The trend: October's figures under the chart; tapping September's bars shows September's.
+  const trend = page.getByRole("region", { name: "Mes a mes" });
+  await expect(trend.getByRole("table")).toBeAttached();
+  const readout = trend.getByTestId("trend-readout");
+  await expect(readout).toContainText("Octubre");
+  await expect(trend.locator(".lk-trend-income .recharts-rectangle")).not.toHaveCount(0);
+  // A real tap on September's place in the plot (the fifth of six months).
+  await trend.locator(".lk-trend-hit").nth(4).click();
+  await expect(readout).toContainText("Septiembre");
+  await expect(readout).toContainText("Ingresos");
 
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])

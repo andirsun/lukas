@@ -75,3 +75,38 @@ export function fraction(value: number, whole: number): number {
   if (whole <= 0 || value <= 0) return 0;
   return Math.min(1, value / whole);
 }
+
+/**
+ * Each total's share of their sum, rounded to a tenth of a percent so the shown shares add up to
+ * exactly 100 % (largest remainder: round all down, then give the tenths left over to the ones
+ * that lost the most). Returned as fractions (0.594) for `formatShare`; all 0 when the sum is not
+ * positive.
+ */
+export function sharesOf(totals: number[]): number[] {
+  const sum = totals.reduce((acc, t) => acc + Math.max(t, 0), 0);
+  if (sum <= 0) return totals.map(() => 0);
+  const exact = totals.map((t) => (Math.max(t, 0) / sum) * 1000);
+  const tenths = exact.map(Math.floor);
+  let left = 1000 - tenths.reduce((acc, t) => acc + t, 0);
+  const order = exact
+    .map((value, index) => ({ index, remainder: value - Math.floor(value) }))
+    .sort((a, b) => b.remainder - a.remainder || a.index - b.index);
+  for (const { index } of order) {
+    if (left <= 0) break;
+    tenths[index] = (tenths[index] ?? 0) + 1;
+    left -= 1;
+  }
+  return tenths.map((t) => t / 1000);
+}
+
+/**
+ * An amount (in hundredths) for a chart's axis, short and in the locale's words: `6 mil`,
+ * `1,2 M` (es); `6k`, `1.2M` (en). No currency: the axis sits next to full amounts.
+ */
+export function compactAmount(cents: number, locale: Locale): string {
+  const text = new Intl.NumberFormat(locale, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(cents / 100);
+  return locale === "en" ? text.replace(/K$/, "k") : text;
+}

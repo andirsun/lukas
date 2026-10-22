@@ -282,6 +282,10 @@ export interface HomeApiOptions {
   archivedCategory?: boolean;
   /** No recurrences (the sample has Spotify, the salary and a yearly insurance). */
   noRecurrences?: boolean;
+  /** How long each report (insights) takes to answer, in ms. */
+  reportDelayMs?: number;
+  /** Budgets start this many months before this one (12 by default); earlier months have none. */
+  budgetsSince?: number;
 }
 
 /** One budget amount, from its month on (until a later one), as the API keeps them. */
@@ -331,6 +335,8 @@ function homeFetch({
   createDelayMs = 0,
   archivedCategory = false,
   noRecurrences = false,
+  reportDelayMs = 0,
+  budgetsSince = 12,
 }: HomeApiOptions): typeof fetch {
   let categories: FakeCategory[] =
     data === "no-categories"
@@ -356,7 +362,13 @@ function homeFetch({
   let budgets: FakeBudget[] = categories.flatMap((c) =>
     c.currentBudget === null
       ? []
-      : [{ categoryId: c.id, amount: c.currentBudget, effectiveFrom: addMonths(MONTH, -12) }],
+      : [
+          {
+            categoryId: c.id,
+            amount: c.currentBudget,
+            effectiveFrom: addMonths(MONTH, -budgetsSince),
+          },
+        ],
   );
   const withBudget = (c: FakeCategory): FakeCategory => ({
     ...c,
@@ -489,6 +501,7 @@ function homeFetch({
       );
     }
     // Reports, computed like the API (apps/api/src/routes/reports.ts).
+    if (path.startsWith("/api/v1/reports/") && reportDelayMs) await sleep(reportDelayMs);
     if (path === "/api/v1/reports/by-category") {
       const from = url.searchParams.get("from") ?? MONTH;
       const to = url.searchParams.get("to") ?? MONTH;

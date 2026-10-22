@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compactAmount,
   formatShare,
   fraction,
   isSpan,
@@ -7,6 +8,7 @@ import {
   livingWindow,
   monthLabel,
   periodOf,
+  sharesOf,
   shortMonth,
   trendPeriod,
 } from "./insights-model.ts";
@@ -78,5 +80,40 @@ describe("formatting", () => {
     expect(fraction(-5, 200)).toBe(0);
     expect(fraction(5, 0)).toBe(0);
     expect(fraction(300, 200)).toBe(1);
+  });
+});
+
+describe("shares that add up", () => {
+  const sum = (xs: number[]) => Math.round(xs.reduce((a, x) => a + x, 0) * 1000);
+
+  it("keeps the exact shares when they are already tenths", () => {
+    expect(sharesOf([594, 406])).toEqual([0.594, 0.406]);
+  });
+
+  it("gives the leftover tenths to the largest remainders, summing to 100 %", () => {
+    // Thirds: 33,3 + 33,3 + 33,3 = 99,9 without the fix.
+    expect(sharesOf([1, 1, 1])).toEqual([0.334, 0.333, 0.333]);
+    expect(sum(sharesOf([1, 1, 1]))).toBe(1000);
+    // The October fixture: rounded one by one its shares show 100,1 %.
+    const october = [132978, 26280, 25367, 19412, 9832, 6150, 3689];
+    expect(sum(sharesOf(october))).toBe(1000);
+    expect(sharesOf(october)[0]).toBe(0.594);
+  });
+
+  it("is all zeros without a positive sum", () => {
+    expect(sharesOf([0, 0])).toEqual([0, 0]);
+    expect(sharesOf([])).toEqual([]);
+  });
+});
+
+describe("axis amounts", () => {
+  it("shortens amounts in the locale's words", () => {
+    expect(compactAmount(600000, "es")).toBe(`6${NBSP}mil`);
+    expect(compactAmount(120000000, "es")).toBe(`1,2${NBSP}M`);
+    expect(compactAmount(50000000, "es")).toBe(`500${NBSP}mil`);
+    expect(compactAmount(600000, "en")).toBe("6k");
+    expect(compactAmount(50000000, "en")).toBe("500k");
+    expect(compactAmount(120000000, "en")).toBe("1.2M");
+    expect(compactAmount(0, "es")).toBe("0");
   });
 });

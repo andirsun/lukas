@@ -1,5 +1,5 @@
 import { type Month, monthOf, todayIn } from "@lukas/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "use-intl";
 import { useAllCategories, useMe, useReportByCategory, useTrend } from "../../api/queries.ts";
 import { formatMoney } from "../../i18n/format.ts";
@@ -50,17 +50,24 @@ function InsightsView({ current, currency }: { current: Month; currency: string 
     if (query.error && !query.data) throw query.error;
   }
 
-  const phrase = usePeriodPhrase(locale, current)(period);
+  // The chart's code starts loading with the data, not after it.
+  useEffect(() => {
+    void import("./charts.tsx");
+  }, []);
+
+  // Lukitas speaks about the answer he has, with its own period: never a new month's name with
+  // an old month's figures (his bubble is a live region, so that would be read out).
+  const phrasing = usePeriodPhrase(locale, current);
   const top = spending.data?.items[0];
   const line = !spending.data
     ? null
     : top
       ? t("lukas_top", {
           name: top.name,
-          period: phrase,
+          period: phrasing(spending.data.range),
           amount: formatMoney(top.total, currency, locale),
         })
-      : t("lukas_empty", { period: phrase });
+      : t("lukas_empty", { period: phrasing(spending.data.range) });
 
   return (
     <div className="mx-auto flex w-full max-w-[480px] flex-col gap-(--space-3) px-(--space-4) pt-(--space-3) lg:max-w-[1040px] lg:px-(--space-6) lg:pt-(--space-5)">
@@ -82,7 +89,10 @@ function InsightsView({ current, currency }: { current: Month; currency: string 
         />
       </div>
       <main className="grid grid-cols-1 items-start gap-(--space-3) lg:grid-cols-2">
-        <div className="min-h-[72px] lg:col-span-2 lg:max-w-[640px]">
+        <div
+          className="lk-insight-body min-h-[72px] lg:col-span-2 lg:max-w-[640px]"
+          aria-busy={spending.isPlaceholderData || undefined}
+        >
           {line && <LukasBubble message={line} mood="happy" />}
         </div>
         <CategoryDonut

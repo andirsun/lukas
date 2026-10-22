@@ -724,7 +724,10 @@
       "budget": "Presupuesto",
       "caption": "Ingresos, gastos y presupuesto por mes, {period}",
       "col_month": "Mes",
-      "empty": "Aún no hay movimientos {period}."
+      "empty": "Aún no hay movimientos {period}.",
+      "no_budget": "Sin presupuesto",
+      "previous": "Ver el mes anterior en el gráfico",
+      "next": "Ver el mes siguiente en el gráfico"
     },
     "living": {
       "title": "¿Cuánto me cuesta vivir?",
@@ -741,7 +744,7 @@
       "type_fixed": "Fijo",
       "type_variable": "Variable",
       "total": "Total",
-      "empty": "Necesito al menos un mes completo con gastos para calcularlo. Vuelve cuando cierre este mes.",
+      "empty": "Necesito al menos un mes completo con gastos para calcularlo. Cuando cierre tu primer mes con movimientos, aquí lo verás.",
       "archived": "archivada"
     }
   }

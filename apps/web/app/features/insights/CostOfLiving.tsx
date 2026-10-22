@@ -12,9 +12,9 @@ import { fraction, livingPeriod, livingWindow } from "./insights-model.ts";
 import { InsightCard, Loading, SrTable, tileGround } from "./parts.tsx";
 
 const tint = (name: string) => CATEGORY_TINTS.find((c) => c.name === name)?.value as string;
-/** The split bar's two colors: category tints, apart from the status colors. */
-const FIXED_TINT = tint("indigo");
-const VARIABLE_TINT = tint("teal");
+/** The split bar's two colors: category tint tokens (3:1 on the card in both themes). */
+const FIXED_TINT = "var(--tint-indigo)";
+const VARIABLE_TINT = "var(--tint-teal)";
 
 export interface CostOfLivingProps {
   /** The current month in the person's time zone: the averages use the complete months before it. */

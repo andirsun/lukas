@@ -724,7 +724,10 @@
       "budget": "Budget",
       "caption": "Income, spending and budget per month, {period}",
       "col_month": "Month",
-      "empty": "No transactions yet {period}."
+      "empty": "Nothing logged {period} yet.",
+      "no_budget": "No budget",
+      "previous": "Show the previous month in the chart",
+      "next": "Show the next month in the chart"
     },
     "living": {
       "title": "How much does it cost me to live?",
@@ -741,7 +744,7 @@
       "type_fixed": "Fixed",
       "type_variable": "Variable",
       "total": "Total",
-      "empty": "I need at least one complete month with spending to work this out. Come back when this month closes.",
+      "empty": "I need at least one complete month with spending to work this out. Once your first month with transactions closes, you'll see it here.",
       "archived": "archived"
     }
   }

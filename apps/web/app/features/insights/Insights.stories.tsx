@@ -62,7 +62,10 @@ const october = (args: Spies) => (
 const settled = (root: HTMLElement) =>
   waitFor(
     () => {
-      const moving = root.querySelectorAll<HTMLElement>("section, li, [style*='opacity']");
+      expect(root.querySelector("[aria-busy='true']")).toBeNull();
+      const moving = root.querySelectorAll<HTMLElement>(
+        "section, li, .lk-insight-body, [style*='opacity']",
+      );
       for (const el of [root, ...moving]) {
         expect(getComputedStyle(el).opacity).toBe("1");
       }
@@ -223,6 +226,136 @@ export const Trend: Story = {
       },
       { timeout: 8000 },
     );
+    // A scale in compact amounts: `0`, `2 mil`, `4 mil`…
+    const ticks = [...trend.querySelectorAll(".lk-trend-y-tick")]
+      .map((tick) => (tick.textContent ?? "").replace(/\s+/g, " "))
+      .filter(Boolean);
+    await expect(ticks.length).toBeGreaterThanOrEqual(3);
+    await expect(ticks.some((tick) => /^\d+(,\d)? mil$/.test(tick))).toBe(true);
+  }),
+};
+
+/**
+ * The selected month's figures are written under the chart, the latest month first; the arrows
+ * beside them step through the months from the keyboard (the band behind the bars follows).
+ */
+export const TrendFromKeyboard: Story = {
+  render: october,
+  play: settledAfter(async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trend = await region(canvas, "Mes a mes");
+    const readout = await within(trend).findByTestId("trend-readout", {}, { timeout: 4000 });
+    await expect(readout).toHaveTextContent(rowName(0));
+    await expect(readout).toHaveTextContent(`Ingresos ${eur("6200,00")}`);
+    await expect(readout).toHaveTextContent(`Gastos ${eur("2237,08")}`);
+    await expect(readout).toHaveTextContent(`Presupuesto ${eur("2800,00")}`);
+    const next = within(trend).getByRole("button", { name: "Ver el mes siguiente en el gráfico" });
+    const previous = within(trend).getByRole("button", {
+      name: "Ver el mes anterior en el gráfico",
+    });
+    await expect(next).toBeDisabled();
+    await expectTarget(previous);
+    const band = within(trend).getByTestId("trend-selected");
+    const before = band.style.left;
+
+    previous.focus();
+    await userEvent.keyboard("{Enter}");
+    await expect(readout).toHaveTextContent(rowName(1));
+    await expect(band.style.left).not.toBe(before);
+    await expect(next).toBeEnabled();
+    await userEvent.keyboard("{Enter}");
+    await expect(readout).toHaveTextContent(rowName(2));
+  }),
+};
+
+/**
+ * Months without a budget leave a gap in the budget line (a dot per month that has one), and say
+ * "Sin presupuesto" instead of 0: here the budgets start two months ago.
+ */
+export const TrendBudgetGaps: Story = {
+  render: (args) => (
+    <HomeStage onRequest={args.onRequest} data="october" budgetsSince={2} path="/app/insights" />
+  ),
+  play: settledAfter(async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trend = await region(canvas, "Mes a mes");
+    const rows = bodyRows(await tableIn(trend, /^Ingresos, gastos y presupuesto/));
+    await expect(rows.map((r) => r[3])).toEqual([
+      "Sin presupuesto",
+      "Sin presupuesto",
+      "Sin presupuesto",
+      eur("2800,00"),
+      eur("2800,00"),
+      eur("2800,00"),
+    ]);
+    await waitFor(() => expect(trend.querySelectorAll(".lk-trend-budget-dot")).toHaveLength(3), {
+      timeout: 8000,
+    });
+    await userEvent.click(
+      within(trend).getByRole("button", { name: /mes anterior en el gráfico/ }),
+    );
+    await userEvent.click(
+      within(trend).getByRole("button", { name: /mes anterior en el gráfico/ }),
+    );
+    await userEvent.click(
+      within(trend).getByRole("button", { name: /mes anterior en el gráfico/ }),
+    );
+    await expect(within(trend).getByTestId("trend-readout")).toHaveTextContent(
+      "Presupuesto Sin presupuesto",
+    );
+  }),
+};
+
+/**
+ * While another answer loads, the figures on screen keep their own labels (never the new ones)
+ * and dim, and the card says it is busy; Lukitas keeps his line until he has the new month's
+ * figures. The toggles stay bright.
+ */
+export const StaleWhileLoading: Story = {
+  render: (args) => (
+    <HomeStage onRequest={args.onRequest} data="october" reportDelayMs={900} path="/app/insights" />
+  ),
+  play: settledAfter(async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const donut = await region(canvas, "Por categoría");
+    await tableIn(donut, `Gastos por categoría en ${inSentence(0)}`);
+    await settled(canvasElement);
+    const figure = donut.querySelector("figure") as HTMLElement;
+
+    await userEvent.click(within(donut).getByRole("tab", { name: "Ingresos" }));
+    await expect(donut).toHaveAttribute("aria-busy", "true");
+    // Still the spending, said as spending.
+    await expect(within(donut).getByRole("table")).toHaveAccessibleName(
+      `Gastos por categoría en ${inSentence(0)}`,
+    );
+    await expect(figure).toHaveTextContent("Gastado");
+    await expect(within(donut).getByTestId("donut-total")).toHaveTextContent(eur("2237,08"));
+    await waitFor(() =>
+      expect(Number(getComputedStyle(figure.parentElement as HTMLElement).opacity)).toBeLessThan(
+        0.9,
+      ),
+    );
+    // The toggles are not dimmed.
+    await expect(
+      getComputedStyle(within(donut).getByRole("tablist", { name: "Qué mostrar" })).opacity,
+    ).toBe("1");
+    await tableIn(donut, `Ingresos por categoría en ${inSentence(0)}`);
+    await waitFor(() => expect(donut).not.toHaveAttribute("aria-busy"));
+    await expect(figure).toHaveTextContent("Recibido");
+
+    // Lukitas: the old month's line stays whole until the earlier month's answer lands.
+    const said = `Casa fue lo que más lukas se llevó en ${inSentence(0)}: ${eur("1329,78")}.`;
+    const bubble = canvas.getByText(said);
+    await userEvent.click(canvas.getByRole("button", { name: "Mes anterior" }));
+    await expect(bubble).toHaveTextContent(said);
+    await expect(bubble.closest("[aria-busy]")).toHaveAttribute("aria-busy", "true");
+    await expect(
+      await canvas.findByText(
+        `Casa fue lo que más lukas se llevó en ${inSentence(1)}: ${eur("1329,78")}.`,
+        {},
+        { timeout: 4000 },
+      ),
+    ).toBeVisible();
   }),
 };
 
@@ -357,6 +490,16 @@ export const English: Story = {
     const donut = await region(canvas, "By category");
     const table = await tableIn(donut, /^Spending by category in /);
     await expect(bodyRows(table)[0]).toEqual(["Casa", "59.4%", "€1,329.78"]);
+    const trend = await region(canvas, "Month by month");
+    await waitFor(
+      () => {
+        const ticks = [...trend.querySelectorAll(".lk-trend-y-tick")].map(
+          (tick) => tick.textContent ?? "",
+        );
+        expect(ticks.some((tick) => /^\d+(\.\d)?k$/.test(tick))).toBe(true);
+      },
+      { timeout: 8000 },
+    );
     await region(canvas, "How much does it cost me to live?");
   }),
 };

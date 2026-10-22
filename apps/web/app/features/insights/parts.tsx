@@ -1,8 +1,9 @@
 import type { Month } from "@lukas/core";
 import { motion } from "motion/react";
-import { type ReactNode, useId } from "react";
+import { type ReactNode, useId, useSyncExternalStore } from "react";
 import { useTranslations } from "use-intl";
 import type { Locale } from "../../i18n/format.ts";
+import { tintName } from "../../ui/category-look.ts";
 import { cx } from "../../ui/cx.ts";
 import { durationToken, useReducedMotionPreference } from "../../ui/motion-tokens.ts";
 import { monthLabel, type Period } from "./insights-model.ts";
@@ -10,7 +11,8 @@ import { monthLabel, type Period } from "./insights-model.ts";
 /**
  * One section of the insights screen: a card (`lk-hero`) named by its heading, so it is a region
  * screen readers can jump to. It rises into place over `--sheet`, a beat after the one before it
- * (`order`); under reduced motion it only fades in.
+ * (`order`); under reduced motion it only fades in. While `busy` (older figures on screen while
+ * new ones load) its title and figures dim (`.lk-insight-body`), and it says so (`aria-busy`).
  */
 export function InsightCard({
   title,
@@ -18,10 +20,13 @@ export function InsightCard({
   order,
   busy = false,
   className,
+  controls,
   children,
 }: {
   title: string;
   subtitle?: string | undefined;
+  /** What changes the figures (toggles): never dimmed while they load. */
+  controls?: ReactNode;
   /** Its place on the screen, for the staggered entrance. */
   order: number;
   /** Showing an older answer while the new one loads. */
@@ -44,13 +49,14 @@ export function InsightCard({
         ease: "easeOut",
       }}
     >
-      <div className="flex flex-col gap-(--space-1)">
+      <div className="lk-insight-body flex flex-col gap-(--space-1)">
         <h2 id={id} className="m-0 font-display text-[20px] font-bold leading-tight text-ink">
           {title}
         </h2>
         {subtitle && <p className="m-0 text-[13px] font-bold text-ink-muted">{subtitle}</p>}
       </div>
-      {children}
+      {controls}
+      <div className="lk-insight-body flex min-w-0 flex-col gap-(--space-3)">{children}</div>
     </motion.section>
   );
 }
@@ -131,4 +137,31 @@ export const tileGround = (tint: string) =>
 /** A placeholder of the right height while a section's figures load. */
 export function Loading({ height }: { height: number }) {
   return <div className="rounded-(--radius-lg) bg-surface-sunken" style={{ height }} />;
+}
+
+function subscribeTheme(onChange: () => void): () => void {
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  return () => observer.disconnect();
+}
+
+/**
+ * The color to draw a category's tint with as a mark (a donut sector, a share bar) in the current
+ * theme: its `--tint-<name>` token, which the day theme darkens to keep 3:1 on the card. A color
+ * that is not one of the pickable tints is drawn as it is. Re-renders when the theme changes.
+ */
+export function useMarkColor(): (tint: string) => string {
+  useSyncExternalStore(
+    subscribeTheme,
+    () => document.documentElement.dataset.theme ?? "",
+    () => "",
+  );
+  return (tint) => {
+    const name = tintName(tint);
+    if (!name) return tint;
+    const value = getComputedStyle(document.documentElement)
+      .getPropertyValue(`--tint-${name}`)
+      .trim();
+    return value || tint;
+  };
 }

@@ -90,3 +90,13 @@ export function categoryLook({ icon, color }: { icon: string; color: string }): 
     tint: IMPORTER_TINTS[color] ?? (/^#[0-9a-f]{3,8}$/i.test(color) ? color : FALLBACK_TINT),
   };
 }
+
+/**
+ * The name of a pickable tint (`yellow`) from its stored value (`#ffe66d`), or null for any other
+ * color. Charts draw a named tint with its theme token (`--tint-yellow`), which the day theme
+ * darkens so a mark keeps 3:1 against the card.
+ */
+export function tintName(tint: string): (typeof CATEGORY_TINTS)[number]["name"] | null {
+  const lower = tint.toLowerCase();
+  return CATEGORY_TINTS.find((t) => t.value.toLowerCase() === lower)?.name ?? null;
+}
