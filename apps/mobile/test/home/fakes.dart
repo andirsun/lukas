@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:lukitas/api/gen/lukitas_api.dart';
+import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
 
@@ -16,6 +19,7 @@ class FakeHomeRepository implements HomeRepository {
   FakeHomeRepository({
     this.currency = 'COP',
     this.timezone = 'America/Bogota',
+    this.userId = 'user-1',
     this.budgetTotal = 0,
     List<Category>? categoryList,
     List<Transaction>? items,
@@ -28,6 +32,7 @@ class FakeHomeRepository implements HomeRepository {
 
   final String currency;
   final String timezone;
+  final String userId;
 
   /// Cents. Zero: no budgets.
   int budgetTotal;
@@ -39,6 +44,9 @@ class FakeHomeRepository implements HomeRepository {
   int pageSize;
 
   final calls = <String>[];
+
+  /// While set, [summary] waits for it (a slow connection).
+  Completer<void>? holdSummary;
 
   /// What the next call of that name throws (then cleared).
   final failures = <String, Object>{};
@@ -52,12 +60,13 @@ class FakeHomeRepository implements HomeRepository {
   @override
   Future<HomeProfile> profile() async {
     _call('profile');
-    return HomeProfile(currency: currency, timezone: timezone);
+    return HomeProfile(id: userId, currency: currency, timezone: timezone);
   }
 
   @override
   Future<Summary> summary(String month) async {
     _call('summary $month');
+    await holdSummary?.future;
     final spent = items
         .where(
           (t) => t.date.startsWith(month) && t.amount < 0 && t.status == TransactionStatusEnum.paid,
@@ -137,5 +146,29 @@ class FakeWidgetStore implements WidgetStore {
   Future<void> clear(String key) async {
     if (failure != null) throw failure!;
     saved.remove(key);
+  }
+}
+
+/// The home cache's storage in memory: one JSON string.
+class FakeCacheStore implements HomeCacheStore {
+  String? value;
+  Object? failure;
+
+  @override
+  Future<String?> read() async {
+    if (failure != null) throw failure!;
+    return value;
+  }
+
+  @override
+  Future<void> write(String json) async {
+    if (failure != null) throw failure!;
+    value = json;
+  }
+
+  @override
+  Future<void> clear() async {
+    if (failure != null) throw failure!;
+    value = null;
   }
 }

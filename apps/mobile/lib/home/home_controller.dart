@@ -6,6 +6,7 @@ import '../api/device.dart';
 import '../api/gen/lukitas_api.dart';
 import '../api/session.dart';
 import '../capture/parser/dates.dart';
+import 'home_cache.dart';
 import 'home_repository.dart';
 import 'lukas_line.dart';
 import 'widget_snapshot.dart';
@@ -158,6 +159,7 @@ int _newestFirst(Transaction a, Transaction b) {
 /// snapshot (spec section 7.1: every app load or save updates the widget).
 class HomeController extends Notifier<HomeState> {
   HomeRepository get _repo => ref.read(homeRepositoryProvider);
+  HomeCache get _cache => ref.read(homeCacheProvider);
 
   var _alive = true;
   Timer? _eventTimer;
@@ -169,6 +171,7 @@ class HomeController extends Notifier<HomeState> {
   HomeState build() {
     // A new session (another person signing in) starts from nothing.
     ref.watch(homeRepositoryProvider);
+    ref.watch(homeCacheProvider);
     _alive = true;
     _loading = null;
     _profile = null;
@@ -188,6 +191,7 @@ class HomeController extends Notifier<HomeState> {
 
   /// A failure that means the session is over: the server does not know the token any more.
   void _checkSession(Object error) {
+    if (!_alive) return;
     if (error is HomeFailure && error.unauthorized) {
       unawaited(ref.read(sessionProvider.notifier).signOut());
     }
@@ -208,6 +212,7 @@ class HomeController extends Notifier<HomeState> {
     }
     try {
       final profile = _profile ??= await _repo.profile();
+      if (!_alive) return;
       final today = todayIn(profile.timezone, ref.read(clockProvider)().toUtc());
       final month = today.substring(0, 7);
       final (summary, categories, page) = await (
@@ -215,6 +220,8 @@ class HomeController extends Notifier<HomeState> {
         _repo.categories(),
         _repo.transactions(month),
       ).wait;
+      // Home was left (signed out, say) while this was on its way: nobody is waiting for it.
+      if (!_alive) return;
       final data = HomeData(
         month: month,
         today: today,
@@ -234,27 +241,81 @@ class HomeController extends Notifier<HomeState> {
         ),
       );
       unawaited(_writeSnapshot(summary, data.currency));
+      unawaited(_persist());
     } on ParallelWaitError<dynamic, dynamic> catch (error) {
       // The first of the three that failed.
       final errors = error.errors as (Object?, Object?, Object?);
-      _loadFailed(errors.$1 ?? errors.$2 ?? errors.$3 ?? const HomeFailure(0));
+      await _loadFailed(errors.$1 ?? errors.$2 ?? errors.$3 ?? const HomeFailure(0));
     } on Object catch (error) {
-      _loadFailed(error);
+      await _loadFailed(error);
     }
   }
 
-  void _loadFailed(Object error) {
+  /// A load failed. What is on screen stays, stale; with nothing on screen (a cold start with no
+  /// network) the last good month saved on this phone shows instead, stale; and with neither, the
+  /// failure.
+  Future<void> _loadFailed(Object error) async {
+    if (!_alive) return;
     final failure = _failure(error);
     if (state.data != null) {
       _set(state.copyWith(loading: false, stale: true));
-    } else {
-      _set(HomeState(loading: false, failure: failure));
+      return;
     }
+    // A refused session shows nothing: signing out wipes the cache.
+    final cached = failure.unauthorized ? null : await _cache.read();
+    if (!_alive) return;
+    // Never another user's month (the cache is also bound to the session that wrote it).
+    final known = _profile?.id;
+    if (cached == null || (known != null && known != cached.userId)) {
+      _set(HomeState(loading: false, failure: failure));
+      return;
+    }
+    final today = todayIn(cached.timezone, ref.read(clockProvider)().toUtc());
+    _set(
+      HomeState(
+        loading: false,
+        stale: true,
+        data: HomeData(
+          month: cached.month,
+          today: today,
+          currency: cached.currency,
+          summary: cached.summary,
+          categories: {for (final c in cached.categories) c.id: c},
+          items: cached.items,
+          nextCursor: null,
+        ),
+      ),
+    );
+  }
+
+  /// Saves what is on screen (its first page of movements) for a start with no network. Best
+  /// effort, and never after home was left.
+  Future<void> _persist() async {
+    if (!_alive) return;
+    final data = state.data;
+    final profile = _profile;
+    if (data == null || profile == null || state.stale) return;
+    await _cache.write(
+      CachedHome(
+        userId: profile.id,
+        currency: data.currency,
+        timezone: profile.timezone,
+        month: data.month,
+        summary: data.summary,
+        categories: data.categories.values.toList(),
+        items: data.items.take(transactionsPageSize).toList(),
+      ),
+    );
   }
 
   Future<void> _writeSnapshot(Summary summary, String currency) async {
-    final locale = languageOfTag(ref.read(deviceHintsProvider).locale);
-    await ref.read(widgetSnapshotWriterProvider)(summary, currency: currency, locale: locale);
+    if (!_alive) return;
+    try {
+      final locale = languageOfTag(ref.read(deviceHintsProvider).locale);
+      await ref.read(widgetSnapshotWriterProvider)(summary, currency: currency, locale: locale);
+    } catch (_) {
+      // The widget keeps its last figure; this never breaks home (nor, after home was left, the app).
+    }
   }
 
   /// Brings the next page ("Ver más movimientos") below the rows shown. Throws a [HomeFailure] and
@@ -284,15 +345,19 @@ class HomeController extends Notifier<HomeState> {
 
   /// The summary again, after a change (silently: the rows already show the change).
   Future<void> _refreshSummary() async {
+    if (!_alive) return;
     final data = state.data;
     if (data == null) return;
     try {
       final summary = await _repo.summary(data.month);
+      if (!_alive) return;
       final current = state.data;
       if (current == null) return;
       _set(state.copyWith(data: current.copyWith(summary: summary)));
       unawaited(_writeSnapshot(summary, current.currency));
+      unawaited(_persist());
     } on Object catch (error) {
+      if (!_alive) return;
       _checkSession(error);
       _set(state.copyWith(stale: true));
     }
@@ -327,7 +392,9 @@ class HomeController extends Notifier<HomeState> {
       }
       throw _failure(error);
     }
-    await _refreshSummary();
+    // The row is already gone: the summary follows in the background, so Deshacer shows as soon as
+    // the server has the delete, however slow the summary is.
+    unawaited(_refreshSummary());
   }
 
   /// Brings a deleted [tx] back (Deshacer): the same row, in its place, sliding in.
@@ -351,7 +418,7 @@ class HomeController extends Notifier<HomeState> {
     } on Object catch (error) {
       throw _failure(error);
     }
-    await _refreshSummary();
+    unawaited(_refreshSummary());
   }
 
   /// Marks a pending [tx] paid. Lukitas talks about it for [eventLineDuration]. A refusal puts the

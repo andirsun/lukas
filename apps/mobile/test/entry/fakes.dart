@@ -7,6 +7,7 @@ import 'package:lukitas/api/passkeys.dart';
 import 'package:lukitas/api/session.dart';
 import 'package:lukitas/app.dart';
 import 'package:lukitas/home/home_controller.dart';
+import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
 
@@ -173,6 +174,7 @@ Future<ProviderContainer> pumpApp(
       // Home, once reached, reads an empty month from memory instead of the network.
       homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
       widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
+      homeCacheStoreProvider.overrideWithValue(FakeCacheStore()),
       widgetSnapshotWriterProvider.overrideWithValue(
         (summary, {required currency, required locale}) async {},
       ),

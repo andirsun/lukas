@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
@@ -11,6 +13,13 @@ import 'home_harness.dart';
 Future<void> swipe(WidgetTester tester, Finder row, double dx, {int ms = 300}) async {
   await tester.timedDrag(row, Offset(dx, 0), Duration(milliseconds: ms));
   await tester.pumpAndSettle();
+}
+
+/// Takes home off the screen, and lets Riverpod drop its state, so no timer outlives the test (two
+/// homes were shown in turn).
+Future<void> leave(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(Duration.zero);
 }
 
 /// Lets the 10 s of an event line pass, so no timer outlives the test.
@@ -160,6 +169,32 @@ void main() {
   });
 
   group('swipes', () {
+    testWidgets('Deshacer shows as soon as the delete is done, not after the summary', (
+      tester,
+    ) async {
+      final repo = monthWithBudgets();
+      await pumpHome(tester, repo);
+      // From now on the summary is slow (a bad connection).
+      final gate = Completer<void>();
+      repo.holdSummary = gate;
+
+      await tester.timedDrag(
+        find.text('Café'),
+        const Offset(-250, 0),
+        const Duration(milliseconds: 300),
+      );
+      await tester.pumpAndSettle();
+      expect(repo.deleted.map((t) => t.id), ['coffee']);
+      expect(find.text('Eliminado: Café'), findsOneWidget);
+      expect(find.text('Deshacer'), findsOneWidget);
+      expect(find.text(r'Gastado $212.500'), findsOneWidget, reason: 'the summary has not arrived');
+
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(r'Gastado $208.000'), findsOneWidget);
+      expect(find.text('Deshacer'), findsOneWidget);
+    });
+
     testWidgets('swipe left deletes and Deshacer within 8 s restores the same row', (tester) async {
       final repo = monthWithBudgets();
       await pumpHome(tester, repo);
@@ -296,7 +331,7 @@ void main() {
       final harness = await pumpHome(tester, monthWithBudgets(), withEdit: true);
       await swipe(tester, find.text('Café'), -100);
       expect(find.text('BORRAR'), findsOneWidget);
-      await tester.tap(find.text('Café'));
+      await tester.tap(find.text('Café'), warnIfMissed: false);
       await tester.pumpAndSettle();
       expect(find.text('BORRAR'), findsNothing);
       expect(harness.edited, isEmpty);
@@ -384,6 +419,43 @@ void main() {
   });
 
   group('offline and errors', () {
+    testWidgets('a cold start with no network shows the last good month, with the offline note', (
+      tester,
+    ) async {
+      final store = FakeCacheStore();
+      await pumpHome(tester, monthWithBudgets(), cacheStore: store);
+
+      // The app starts again, with no network.
+      final offline = monthWithBudgets()..failures['profile'] = const HomeFailure(0);
+      await pumpHome(tester, offline, cacheStore: store);
+      expect(find.text('Te quedan este mes'), findsOneWidget);
+      expect(find.text('Café'), findsOneWidget);
+      expect(find.text('Sin conexión. Te mostramos lo último que cargó.'), findsOneWidget);
+      expect(find.text('Reintentar'), findsNothing);
+      await leave(tester);
+    });
+
+    testWidgets('in English the note is English', (tester) async {
+      final store = FakeCacheStore();
+      await pumpHome(tester, monthWithBudgets(), cacheStore: store, locale: const Locale('en'));
+      final offline = monthWithBudgets()..failures['profile'] = const HomeFailure(0);
+      await pumpHome(tester, offline, cacheStore: store, locale: const Locale('en'));
+      expect(find.text('No connection. Showing what loaded last.'), findsOneWidget);
+      await leave(tester);
+    });
+
+    testWidgets('another person never sees the last person\'s month', (tester) async {
+      final store = FakeCacheStore();
+      await pumpHome(tester, monthWithBudgets(), cacheStore: store, token: 't1');
+
+      final offline = monthWithBudgets()..failures['profile'] = const HomeFailure(0);
+      await pumpHome(tester, offline, cacheStore: store, token: 't2');
+      expect(find.text('Café'), findsNothing);
+      expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
+      expect(find.text('Reintentar'), findsOneWidget);
+      await leave(tester);
+    });
+
     testWidgets('a first load that fails offers Reintentar, and works once back online', (
       tester,
     ) async {

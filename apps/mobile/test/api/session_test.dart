@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/auth_api.dart';
 import 'package:lukitas/api/passkeys.dart';
 import 'package:lukitas/api/session.dart';
+import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
 
 import '../entry/fakes.dart';
@@ -41,6 +42,7 @@ void main() {
     late FakeAuthApi auth;
     late FakePasskeys passkeys;
     late FakeWidgetStore widget;
+    late FakeCacheStore homeCache;
 
     ProviderContainer containerWith() {
       final container = ProviderContainer(
@@ -48,6 +50,7 @@ void main() {
           authApiProvider.overrideWithValue(auth),
           passkeysProvider.overrideWithValue(passkeys),
           widgetStoreProvider.overrideWithValue(widget),
+          homeCacheStoreProvider.overrideWithValue(homeCache),
         ],
       );
       addTearDown(container.dispose);
@@ -64,6 +67,7 @@ void main() {
       auth = FakeAuthApi();
       passkeys = FakePasskeys();
       widget = FakeWidgetStore();
+      homeCache = FakeCacheStore();
       mockStorage();
     });
 
@@ -216,6 +220,27 @@ void main() {
       await controller.signOut();
 
       expect(widget.saved, isEmpty);
+    });
+
+    test('signOut also wipes the home cache: the next person must never see it', () async {
+      mockStorage(token: 'email-token-0');
+      homeCache.value = '{"v":1}';
+      final container = containerWith();
+      final controller = await ready(container);
+      await controller.signOut();
+
+      expect(homeCache.value, isNull);
+    });
+
+    test('a session the server no longer knows wipes the home cache too', () async {
+      mockStorage(token: 'stale-token');
+      homeCache.value = '{"v":1}';
+      auth.failures['isGuest'] = const AuthFailure(status: 401);
+      final container = containerWith();
+      final controller = await ready(container);
+      await controller.refreshed;
+
+      expect(homeCache.value, isNull);
     });
 
     test("a session the server no longer knows wipes the widget's figures too", () async {

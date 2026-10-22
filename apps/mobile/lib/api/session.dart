@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../home/home_cache.dart';
 import '../home/widget_snapshot.dart';
 import 'auth_api.dart';
 import 'client.dart';
@@ -218,9 +219,13 @@ class SessionController extends Notifier<SessionState> {
     state = SessionState.signedOut;
   }
 
-  /// The widget on the home screen shows the signed-in person's figures: signed out, it must not.
-  /// Not waited for: signing out never hangs on the widget's storage.
-  void _forgetWidget() => unawaited(clearWidgetSnapshot(store: ref.read(widgetStoreProvider)));
+  /// The widget on the home screen and the home cache hold the signed-in person's figures: signed
+  /// out, neither may show them to the next person. Not waited for: signing out never hangs on
+  /// their storage.
+  void _forgetWidget() {
+    unawaited(clearWidgetSnapshot(store: ref.read(widgetStoreProvider)));
+    unawaited(clearHomeCache(ref.read(homeCacheStoreProvider)));
+  }
 }
 
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore());

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/api/session.dart';
+import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/lukas_line.dart';
@@ -19,11 +22,15 @@ class Snapshot {
   final String locale;
 }
 
-(ProviderContainer, FakeHomeRepository, List<Snapshot>) setup(FakeHomeRepository repo) {
+(ProviderContainer, FakeHomeRepository, List<Snapshot>) setup(
+  FakeHomeRepository repo, {
+  FakeCacheStore? cacheStore,
+}) {
   final snapshots = <Snapshot>[];
   final container = ProviderContainer(
     overrides: [
       homeRepositoryProvider.overrideWithValue(repo),
+      homeCacheProvider.overrideWithValue(HomeCache(cacheStore ?? FakeCacheStore(), token: 't1')),
       clockProvider.overrideWithValue(() => _now),
       widgetSnapshotWriterProvider.overrideWithValue(
         (summary, {required currency, required locale}) async =>
@@ -46,6 +53,13 @@ class _FakeSession extends SessionController {
 }
 
 Future<void> settle() => Future<void>.delayed(Duration.zero);
+
+/// Lets background work (a summary on its way) finish.
+Future<void> settleAll() async {
+  for (var i = 0; i < 5; i++) {
+    await settle();
+  }
+}
 
 void main() {
   test(
@@ -84,6 +98,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         homeRepositoryProvider.overrideWithValue(repo),
+        homeCacheProvider.overrideWithValue(HomeCache(FakeCacheStore(), token: 't1')),
         clockProvider.overrideWithValue(() => DateTime.utc(2026, 10, 23, 2)),
         widgetSnapshotWriterProvider.overrideWithValue(
           (s, {required currency, required locale}) async {},
@@ -172,6 +187,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         homeRepositoryProvider.overrideWithValue(repo),
+        homeCacheProvider.overrideWithValue(HomeCache(FakeCacheStore(), token: 't1')),
         sessionProvider.overrideWith(() => session),
         clockProvider.overrideWithValue(() => _now),
         widgetSnapshotWriterProvider.overrideWithValue(
@@ -202,9 +218,11 @@ void main() {
       await controller.remove(a);
       expect(container.read(homeProvider).data!.items.map((t) => t.id), ['b']);
       expect(repo.deleted.map((t) => t.id), ['a']);
+      await settleAll();
       expect(container.read(homeProvider).data!.summary.spent, 2000);
 
       await controller.restore(a);
+      await settleAll();
       expect(container.read(homeProvider).data!.items.map((t) => t.id), ['a', 'b']);
       expect(container.read(homeProvider).restored, {'a'});
       expect(repo.calls, contains('restore a'));
@@ -290,5 +308,139 @@ void main() {
     expect(container.read(homeProvider).event!.event.name, 'two');
     await tester.pump(const Duration(seconds: 4));
     expect(container.read(homeProvider).event, isNull);
+  });
+
+  group('the cache of the last good month', () {
+    test('every good load saves it, bound to the user and the session', () async {
+      final store = FakeCacheStore();
+      final (container, _, _) = setup(
+        FakeHomeRepository(items: [tx('a', '2026-10-22', -1000, name: 'Café')]),
+        cacheStore: store,
+      );
+      container.listen(homeProvider, (_, _) {});
+      await settle();
+      await settle();
+
+      final cached = (await HomeCache(store, token: 't1').read())!;
+      expect(cached.userId, 'user-1');
+      expect(cached.month, '2026-10');
+      expect(cached.items.map((t) => t.name), ['Café']);
+      expect(await HomeCache(store, token: 't2').read(), isNull);
+    });
+
+    test('a delete and its undo keep it in step with the list', () async {
+      final store = FakeCacheStore();
+      final (container, _, _) = setup(
+        FakeHomeRepository(items: [tx('a', '2026-10-22', -1000), tx('b', '2026-10-21', -2000)]),
+        cacheStore: store,
+      );
+      container.listen(homeProvider, (_, _) {});
+      await settle();
+      await settle();
+      final controller = container.read(homeProvider.notifier);
+      final a = container.read(homeProvider).data!.items.first;
+
+      await controller.remove(a);
+      await settle();
+      await settle();
+      expect((await HomeCache(store, token: 't1').read())!.items.map((t) => t.id), ['b']);
+      expect((await HomeCache(store, token: 't1').read())!.summary.spent, 2000);
+
+      await controller.restore(a);
+      await settle();
+      await settle();
+      expect((await HomeCache(store, token: 't1').read())!.items.map((t) => t.id), ['a', 'b']);
+    });
+
+    test('a start with no answer shows the cache, stale, with today read again', () async {
+      final store = FakeCacheStore();
+      final (first, _, _) = setup(
+        FakeHomeRepository(budgetTotal: 100000, items: [tx('a', '2026-10-22', -1000)]),
+        cacheStore: store,
+      );
+      first.listen(homeProvider, (_, _) {});
+      await settle();
+      await settle();
+
+      final offline = FakeHomeRepository()..failures['profile'] = const HomeFailure(0);
+      final (container, _, _) = setup(offline, cacheStore: store);
+      container.listen(homeProvider, (_, _) {});
+      await settle();
+      await settle();
+      final state = container.read(homeProvider);
+      expect(state.stale, isTrue);
+      expect(state.failure, isNull);
+      expect(state.data!.items.map((t) => t.id), ['a']);
+      expect(state.data!.summary.budgetTotal, 100000);
+      expect((state.data!.currency, state.data!.today), ('COP', '2026-10-22'));
+    });
+
+    test('no cache: the failure shows as before; another session never sees the cache', () async {
+      final store = FakeCacheStore();
+      final (first, _, _) = setup(
+        FakeHomeRepository(items: [tx('a', '2026-10-22', -1000)]),
+        cacheStore: store,
+      );
+      first.listen(homeProvider, (_, _) {});
+      await settle();
+      await settle();
+
+      // Another person on the same phone: their token is not the one the cache was written for.
+      final repo = FakeHomeRepository()..failures['profile'] = const HomeFailure(0);
+      final container = ProviderContainer(
+        overrides: [
+          homeRepositoryProvider.overrideWithValue(repo),
+          homeCacheProvider.overrideWithValue(HomeCache(store, token: 't2')),
+          clockProvider.overrideWithValue(() => _now),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.listen(homeProvider, (_, _) {});
+      await settle();
+      await settle();
+      expect(container.read(homeProvider).data, isNull);
+      expect(container.read(homeProvider).failure!.offline, isTrue);
+    });
+  });
+
+  group('after the screen is gone', () {
+    test('a load that finishes later writes no snapshot and throws nothing', () async {
+      final repo = FakeHomeRepository(items: [tx('a', '2026-10-22', -1000)]);
+      final gate = Completer<void>();
+      repo.holdSummary = gate;
+      final (container, _, snapshots) = setup(repo);
+      final errors = <Object>[];
+      await runZonedGuarded(() async {
+        container.listen(homeProvider, (_, _) {});
+        await settle();
+        await settle();
+        container.dispose();
+        gate.complete();
+        await settle();
+        await settle();
+        await settle();
+      }, (error, _) => errors.add(error));
+      expect(errors, isEmpty);
+      expect(snapshots, isEmpty);
+    });
+
+    test('a failed load that ends later throws nothing either', () async {
+      final repo = FakeHomeRepository();
+      final gate = Completer<void>();
+      repo.holdSummary = gate;
+      repo.failures['categories'] = const HomeFailure(401);
+      final (container, _, _) = setup(repo);
+      final errors = <Object>[];
+      await runZonedGuarded(() async {
+        container.listen(homeProvider, (_, _) {});
+        await settle();
+        container.dispose();
+        gate.complete();
+        await settle();
+        await settle();
+        await settle();
+      }, (error, _) => errors.add(error));
+      expect(errors, isEmpty);
+    });
   });
 }

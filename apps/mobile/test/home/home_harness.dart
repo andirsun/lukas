@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
+import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
@@ -40,6 +41,8 @@ Future<HomeHarness> pumpHome(
   Size size = const Size(390, 844),
   bool withEdit = false,
   bool settle = true,
+  FakeCacheStore? cacheStore,
+  String? token = 't1',
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -49,6 +52,7 @@ Future<HomeHarness> pumpHome(
   final container = ProviderContainer(
     overrides: [
       homeRepositoryProvider.overrideWithValue(repo),
+      homeCacheProvider.overrideWithValue(HomeCache(cacheStore ?? FakeCacheStore(), token: token)),
       clockProvider.overrideWithValue(() => testNow),
       lukasVariantProvider.overrideWithValue(() => 1),
       widgetSnapshotWriterProvider.overrideWithValue(
@@ -73,7 +77,11 @@ Future<HomeHarness> pumpHome(
       ),
     ),
   );
-  if (settle) await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+    // Riverpod's dispose task for a tree this one replaced.
+    await tester.pump(Duration.zero);
+  }
   return HomeHarness(repo, container, snapshots, edited);
 }
 

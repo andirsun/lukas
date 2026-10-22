@@ -10,8 +10,10 @@ const transactionsPageSize = 50;
 /// What home needs of the profile: the currency amounts are written in and the zone "today" is
 /// read in.
 class HomeProfile {
-  const HomeProfile({required this.currency, required this.timezone});
+  const HomeProfile({required this.id, required this.currency, required this.timezone});
 
+  /// The user's id.
+  final String id;
   final String currency;
   final String timezone;
 }
@@ -80,7 +82,7 @@ class ApiHomeRepository implements HomeRepository {
   @override
   Future<HomeProfile> profile() async {
     final me = await _settle(() => _api.getMe());
-    return HomeProfile(currency: me.currency, timezone: me.timezone);
+    return HomeProfile(id: me.id, currency: me.currency, timezone: me.timezone);
   }
 
   @override
