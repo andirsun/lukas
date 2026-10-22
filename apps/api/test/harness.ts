@@ -24,7 +24,10 @@ export function codeFrom(subject: string): string {
 }
 
 /** A fresh database + app per test file. Requests go through `app.request` (no network). */
-export async function createTestApp(overrides: Partial<Config> = {}) {
+export async function createTestApp(
+  overrides: Partial<Config> = {},
+  { now }: { now?: () => Date } = {},
+) {
   const database = await startTestDatabase();
   const app$ = createDb(database.appUrl);
   const admin = createDb(database.adminUrl);
@@ -35,7 +38,7 @@ export async function createTestApp(overrides: Partial<Config> = {}) {
     DATABASE_ADMIN_URL: database.adminUrl,
     ...overrides,
   };
-  const app = createApp({ config, db: app$.db, mailer });
+  const app = createApp({ config, db: app$.db, mailer, now });
 
   // Distinct fake client IPs (behind a trusted 10.x proxy) keep the per-IP auth rate limit out of
   // unrelated tests.

@@ -94,7 +94,7 @@ export function transactionRoutes(deps: AppDeps) {
         );
       }
       const rows = await withUser(deps.db, user.id, async (tx) => {
-        if (q.month) await materializeRecurrences(tx, user.id, q.month, currentMonth(user));
+        if (q.month) await materializeRecurrences(tx, user.id, q.month, currentMonth(deps, user));
         return tx
           .select()
           .from(transactions)

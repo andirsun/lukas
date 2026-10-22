@@ -7,7 +7,6 @@ import {
   firstDay,
   type Month,
   setBudgetSchema,
-  todayIn,
   updateCategorySchema,
 } from "@lukas/core";
 import { categories, categoryBudgets, type Tx, transactions, withUser } from "@lukas/db";
@@ -18,7 +17,7 @@ import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
 import { stopCategoryRecurrences } from "../services/recurrence-stop.ts";
-import { currentMonth } from "../services/time.ts";
+import { currentMonth, userToday } from "../services/time.ts";
 import { defaultAccount } from "../services/transactions.ts";
 
 type CategoryRow = typeof categories.$inferSelect;
@@ -75,7 +74,7 @@ export function categoryRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const includeArchived = c.req.valid("query").includeArchived === "true";
-      const month = currentMonth(c.get("user"));
+      const month = currentMonth(deps, c.get("user"));
       const result = await withUser(deps.db, c.get("userId"), async (tx) => {
         const rows = await tx
           .select()
@@ -106,7 +105,7 @@ export function categoryRoutes(deps: AppDeps) {
           .returning();
         return created as CategoryRow;
       }).catch(nameTaken);
-      return c.json(toDto(row, [], currentMonth(c.get("user"))), 201);
+      return c.json(toDto(row, [], currentMonth(deps, c.get("user"))), 201);
     },
   );
 
@@ -121,7 +120,7 @@ export function categoryRoutes(deps: AppDeps) {
       const { id } = c.req.valid("param");
       const { archived, ...fields } = c.req.valid("json");
       const user = c.get("user");
-      const month = currentMonth(user);
+      const month = currentMonth(deps, user);
       const dto = await withUser(deps.db, c.get("userId"), async (tx) => {
         const archiving = archived === true;
         // Archiving ends the category's recurrences: locked like any recurrence write, so a
@@ -159,7 +158,7 @@ export function categoryRoutes(deps: AppDeps) {
         // Its active recurrences end today, and their unpaid pending rows from today on go, so
         // nothing keeps arriving in a category that is out of sight. Paid rows stay.
         if (archiving && existing.archivedAt === null) {
-          await stopCategoryRecurrences(tx, id, todayIn(user.timezone));
+          await stopCategoryRecurrences(tx, id, userToday(deps, user));
         }
         return toDto(row as CategoryRow, await budgetsFor(tx), month);
       }).catch(nameTaken);
@@ -178,7 +177,7 @@ export function categoryRoutes(deps: AppDeps) {
       const { id } = c.req.valid("param");
       const { amount, effectiveFrom } = c.req.valid("json");
       const userId = c.get("userId");
-      const month = currentMonth(c.get("user"));
+      const month = currentMonth(deps, c.get("user"));
       const dto = await withUser(deps.db, userId, async (tx) => {
         const category = await findCategory(tx, id);
         if (category.kind !== "expense") {

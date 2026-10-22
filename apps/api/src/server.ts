@@ -17,7 +17,9 @@ const mailer: Mailer = config.RESEND_API_KEY
       tlsInsecure: config.SMTP_TLS_INSECURE,
     });
 const { db } = createDb(config.DATABASE_URL);
-const app = createApp({ config, db, mailer });
+const pinned = config.E2E_NOW;
+if (pinned) console.log(`E2E_NOW: the clock is pinned to ${pinned.toISOString()}`);
+const app = createApp({ config, db, mailer, now: pinned ? () => new Date(pinned) : undefined });
 
 serve({ fetch: app.fetch, port: config.PORT }, ({ port }) => {
   console.log(`Lukitas API listening on http://localhost:${port}`);

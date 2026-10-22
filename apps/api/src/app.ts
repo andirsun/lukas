@@ -42,7 +42,10 @@ export function createApp(deps: AppDeps) {
   app.onError(onError);
   app.notFound(notFound);
 
-  app.get("/health", (c) => c.json({ status: "ok" }));
+  // A pinned clock (E2E_NOW) is reported, so the e2e suite can check the stack it runs against.
+  app.get("/health", (c) =>
+    c.json(deps.now ? { status: "ok", now: deps.now().toISOString() } : { status: "ok" }),
+  );
   app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
   app.get("/.well-known/oauth-authorization-server", (c) =>
     oauthProviderAuthServerMetadata(auth)(c.req.raw),

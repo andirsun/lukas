@@ -231,7 +231,7 @@ export function importRoutes(deps: AppDeps) {
           ).values(),
         ];
         const dates = rows.map((r) => r.date).sort();
-        const recent = { months: AVERAGE_MONTHS, until: currentMonth(c.get("user")) };
+        const recent = { months: AVERAGE_MONTHS, until: currentMonth(deps, c.get("user")) };
         const stats: ImportStats = {
           transactions: rows.length,
           duplicates: hashes.filter((h) => known.has(h)).length,

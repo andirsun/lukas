@@ -53,8 +53,7 @@ const inRange = (from: Month, to: Month) =>
  * reads its months the same way, so it counts the same rows as the home screen whether or not
  * that screen opened those months first.
  */
-async function materializeMonths(tx: Tx, user: SessionUser, months: Month[]) {
-  const current = currentMonth(user);
+async function materializeMonths(tx: Tx, user: SessionUser, months: Month[], current: Month) {
   for (const month of months) await materializeRecurrences(tx, user.id, month, current);
 }
 
@@ -98,7 +97,7 @@ export function reportRoutes(deps: AppDeps) {
       const months = checkRange(from, to);
       const user = c.get("user");
       const rows = await withUser(deps.db, user.id, async (tx) => {
-        await materializeMonths(tx, user, months);
+        await materializeMonths(tx, user, months, currentMonth(deps, user));
         return tx
           .select({
             categoryId: categories.id,
@@ -164,7 +163,7 @@ export function reportRoutes(deps: AppDeps) {
       const months = checkRange(from, to);
       const user = c.get("user");
       const { totals, cats, budgets } = await withUser(deps.db, user.id, async (tx) => {
-        await materializeMonths(tx, user, months);
+        await materializeMonths(tx, user, months, currentMonth(deps, user));
         return {
           totals: await tx
             .select({
@@ -233,10 +232,10 @@ export function reportRoutes(deps: AppDeps) {
     async (c) => {
       const { months: count } = c.req.valid("query");
       const user = c.get("user");
-      const to = addMonths(currentMonth(user), -1);
+      const to = addMonths(currentMonth(deps, user), -1);
       const from = addMonths(to, 1 - count);
       const { cats, txs, recurring } = await withUser(deps.db, user.id, async (tx) => {
-        await materializeMonths(tx, user, monthsBetween(from, to));
+        await materializeMonths(tx, user, monthsBetween(from, to), currentMonth(deps, user));
         return {
           cats: await tx.select({ id: categories.id, kind: categories.kind }).from(categories),
           txs: await tx

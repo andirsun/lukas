@@ -80,6 +80,17 @@ const configSchema = z
           .filter(Boolean),
       )
       .refine((list) => list.every(isCidr), "TRUSTED_PROXIES must be IPs or CIDR ranges"),
+    /**
+     * End-to-end tests only: pins the API's clock (the "current month" every route works out) to
+     * this ISO instant, so tests that read seeded months do not depend on the real date. Refused
+     * in production. Blank or unset: the real clock.
+     */
+    E2E_NOW: z
+      .preprocess(
+        (v) => (v === "" ? undefined : v),
+        z.string().datetime({ offset: true }).pipe(z.coerce.date()).optional(),
+      )
+      .optional(),
   })
   .refine((c) => c.NODE_ENV === "test" || Boolean(c.RESEND_API_KEY) !== Boolean(c.SMTP_URL), {
     message: "Set exactly one of RESEND_API_KEY or SMTP_URL",
@@ -93,6 +104,10 @@ const configSchema = z
     message:
       "SMTP_TLS_INSECURE only works with an SMTP_URL on this machine (localhost, 127.0.0.1, [::1] or host.docker.internal)",
     path: ["SMTP_TLS_INSECURE"],
+  })
+  .refine((c) => c.NODE_ENV !== "production" || c.E2E_NOW === undefined, {
+    message: "E2E_NOW pins the clock for end-to-end tests; production refuses it",
+    path: ["E2E_NOW"],
   })
   .refine(
     (c) =>

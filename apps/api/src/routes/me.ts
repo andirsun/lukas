@@ -1,5 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { formatMinorAsDecimal, todayIn, updateProfileSchema } from "@lukas/core";
+import { formatMinorAsDecimal, updateProfileSchema } from "@lukas/core";
 import {
   accounts,
   categories,
@@ -15,6 +15,7 @@ import type { AppDeps } from "../deps.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { userToday } from "../services/time.ts";
 import { defaultAccount, toTransactionDto } from "../services/transactions.ts";
 
 const profileDto = z.object({
@@ -157,7 +158,7 @@ export function meRoutes(deps: AppDeps) {
           .orderBy(asc(transactions.date), asc(transactions.id)),
         recurrences: await tx.select().from(recurrences),
       }));
-      const stamp = todayIn(me.timezone);
+      const stamp = userToday(deps, me);
 
       if (format === "csv") {
         const names = new Map(data.categories.map((cat) => [cat.id, cat.name]));

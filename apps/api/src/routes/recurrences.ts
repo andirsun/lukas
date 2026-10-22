@@ -115,7 +115,7 @@ export function recurrenceRoutes(deps: AppDeps) {
           .returning();
         // Pending occurrences from this month on follow the new rule: drop them so the next read
         // regenerates them. Paid and soft-deleted (dismissed) occurrences are kept.
-        await dropPendingOccurrences(tx, [id], { fromMonth: currentMonth(c.get("user")) });
+        await dropPendingOccurrences(tx, [id], { fromMonth: currentMonth(deps, c.get("user")) });
         return updated as RecurrenceRow;
       });
       return c.json(toDto(row), 200);
@@ -142,7 +142,7 @@ export function recurrenceRoutes(deps: AppDeps) {
         // Like an edit: its unpaid pending rows from this month on go (they would look like bills
         // still due). The FK is ON DELETE SET NULL, so paid, past and dismissed ones stay, with
         // recurrence_id = null.
-        await dropPendingOccurrences(tx, [id], { fromMonth: currentMonth(c.get("user")) });
+        await dropPendingOccurrences(tx, [id], { fromMonth: currentMonth(deps, c.get("user")) });
         await tx.delete(recurrences).where(eq(recurrences.id, id));
       });
       return c.body(null, 204);

@@ -135,3 +135,25 @@ describe("DATABASE_ADMIN_URL", () => {
     ).toBe("postgres://lukas:x@db:5432/lukas");
   });
 });
+
+describe("E2E_NOW", () => {
+  const dev = { ...base, NODE_ENV: "development", CLIENT_IP_HEADER: "fly-client-ip" };
+
+  test("is off when unset or an empty line in .env", () => {
+    expect(loadConfig(dev).E2E_NOW).toBeUndefined();
+    expect(loadConfig({ ...dev, E2E_NOW: "" }).E2E_NOW).toBeUndefined();
+  });
+
+  test("pins the clock to an ISO instant outside production", () => {
+    expect(loadConfig({ ...dev, E2E_NOW: "2026-10-21T15:00:00Z" }).E2E_NOW).toEqual(
+      new Date("2026-10-21T15:00:00Z"),
+    );
+    expect(() => loadConfig({ ...dev, E2E_NOW: "yesterday" })).toThrow(/E2E_NOW/);
+  });
+
+  test("production refuses a pinned clock", () => {
+    expect(() =>
+      loadConfig({ ...base, CLIENT_IP_HEADER: "fly-client-ip", E2E_NOW: "2026-10-21T15:00:00Z" }),
+    ).toThrow(/E2E_NOW/);
+  });
+});
