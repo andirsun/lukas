@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { clientIp, onboardWithSample, signUpNewUser } from "./helpers.ts";
+import { clientIp, onboardWithSample, pinClock, signUpNewUser } from "./helpers.ts";
 import { centerOf, swipe, tap, touchDown } from "./touch.ts";
 
 /**
@@ -309,7 +309,7 @@ test.describe("in Madrid, on 21 October 2026", () => {
   test("a pending row swiped right is paid, with its celebration; Te quedan holds because the summary already counts pending as spent", async ({
     page,
   }) => {
-    await page.clock.install({ time: new Date("2026-10-21T15:00:00Z") });
+    await pinClock(page);
     await signUpNewUser(page);
     await onboardWithSample(page, "Europe/Madrid");
     await page.goto("/app");

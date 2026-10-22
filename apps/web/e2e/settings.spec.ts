@@ -2,6 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 import {
   clientIp,
   onboardWithSample,
+  pinClock,
   readSignInMail,
   sessionUser,
   signUpNewUser,
@@ -42,7 +43,7 @@ async function openSettings(page: Page) {
 let email: string;
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-10-21T15:00:00Z") });
+  await pinClock(page);
   email = await signUpNewUser(page);
   await onboardWithSample(page, "Europe/Madrid");
 });

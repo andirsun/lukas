@@ -94,10 +94,8 @@ const ROADMAP = {
     titlePart: "Lo que viene",
     intro: "Esto es lo que tenemos planeado. Puede cambiar con el tiempo.",
     columns: [
-      {
-        label: "En construcción",
-        items: ["App web", "Importa tu historial de Budge", "Pruébalo sin cuenta"],
-      },
+      { label: "Ya está", items: ["Pruébalo sin cuenta"] },
+      { label: "En construcción", items: ["App web", "Importa tu historial de Budge"] },
       {
         label: "Próximo",
         items: ["Android: widget con micrófono", "Varios gastos en una frase", "Conecta tu IA"],
@@ -111,7 +109,6 @@ const ROADMAP = {
         ],
       },
     ],
-    emptyLabel: "Ya está",
     landingItems: ["Android: widget con micrófono", "Varios gastos en una frase", "Conecta tu IA"],
     cta: "Ver el roadmap",
     navLink: "Lo que viene",
@@ -125,10 +122,8 @@ const ROADMAP = {
     titlePart: "What's next",
     intro: "This is what we have planned. It may change over time.",
     columns: [
-      {
-        label: "Being built",
-        items: ["Web app", "Import your history from Budge", "Try it without an account"],
-      },
+      { label: "Live", items: ["Try it without an account"] },
+      { label: "Being built", items: ["Web app", "Import your history from Budge"] },
       {
         label: "Next",
         items: [
@@ -146,7 +141,6 @@ const ROADMAP = {
         ],
       },
     ],
-    emptyLabel: "Live",
     landingItems: [
       "Android: widget with a microphone",
       "Several expenses in one sentence",
@@ -225,6 +219,89 @@ async function expectHeroContrast(page: Page) {
     const background = over(stroke, parseColor(page));
     expect(contrast(parseColor(colors.note.color), background)).toBeGreaterThanOrEqual(4.5);
   }
+}
+
+/** A text in the hero, as `expectHeroTextContrast` measures it. */
+interface HeroText {
+  text: string;
+  color: string;
+  /** Translucent backgrounds between the text and what is behind them, innermost first. */
+  layers: string[];
+  /** The first opaque background behind the text, or null when it sits on the page's gradient. */
+  opaque: string | null;
+  large: boolean;
+}
+
+/**
+ * Every text in the hero, measured, since axe can't (it reports them "incomplete": the page's
+ * background is a gradient). Each visible text's color is checked against what is behind it: an
+ * opaque background where an element has one (a button), translucent ones composited over it, and
+ * otherwise the gradient at both ends, `bg-glow` and `bg` (its lightest and darkest points). AA:
+ * 4.5:1, or 3:1 for large text (24px, or 18.66px bold). A failure lists each text with its ratio.
+ */
+async function expectHeroTextContrast(page: Page) {
+  const { texts, gradient } = await page.locator("#hero").evaluate((hero) => {
+    const token = (name: string) => {
+      const probe = document.createElement("span");
+      probe.style.color = `var(${name})`;
+      hero.append(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    };
+    const alphaOf = (color: string) => {
+      const match = /\/\s*([\d.]+)\)$|rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)$/.exec(color);
+      return match ? Number(match[1] ?? match[2]) : 1;
+    };
+    const texts: HeroText[] = [];
+    for (const element of hero.querySelectorAll<HTMLElement>("*")) {
+      const own = [...element.childNodes]
+        .filter((node) => node.nodeType === Node.TEXT_NODE)
+        .map((node) => node.textContent?.trim() ?? "")
+        .join(" ")
+        .trim();
+      const box = element.getBoundingClientRect();
+      // Visually hidden text (the new-tab hint for screen readers) is not on screen.
+      if (!own || box.width <= 1 || box.height <= 1) continue;
+      const style = getComputedStyle(element);
+      if (style.visibility === "hidden" || Number(style.opacity) === 0) continue;
+      const layers: string[] = [];
+      let behind: string | null = null;
+      for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+        if (node.classList.contains("lk-screen")) break;
+        const background = getComputedStyle(node).backgroundColor;
+        const alpha = alphaOf(background);
+        if (alpha === 0) continue;
+        if (alpha === 1) {
+          behind = background;
+          break;
+        }
+        layers.push(background);
+      }
+      const size = Number.parseFloat(style.fontSize);
+      const bold = Number(style.fontWeight) >= 700;
+      texts.push({
+        text: own,
+        color: style.color,
+        layers,
+        opaque: behind,
+        large: size >= 24 || (bold && size >= 18.66),
+      });
+    }
+    return { texts, gradient: [token("--bg-glow"), token("--bg")] };
+  });
+  expect(texts.length).toBeGreaterThan(5);
+  const measured = texts.flatMap((t) =>
+    (t.opaque ? [t.opaque] : gradient).map((behind) => {
+      const background = t.layers.reduceRight(
+        (under, layer) => over(parseColor(layer), under),
+        parseColor(behind),
+      );
+      const ratio = contrast(over(parseColor(t.color), background), background);
+      return { text: t.text, ratio: Math.round(ratio * 100) / 100, min: t.large ? 3 : 4.5 };
+    }),
+  );
+  expect(measured.filter((m) => m.ratio < m.min)).toEqual([]);
 }
 
 /** Axe with the WCAG A/AA rule sets (2.0 to 2.2) plus best practices. */
@@ -663,6 +740,7 @@ for (const l of LOCALES) {
         await expect(page.locator("html")).toHaveAttribute("data-theme", "night");
         await expectNoA11yViolations(page);
         await expectHeroContrast(page);
+        await expectHeroTextContrast(page);
       });
     });
 
@@ -766,6 +844,7 @@ test.describe("landing with JavaScript", () => {
       ).toBeVisible();
       await expectNoA11yViolations(page);
       await expectHeroContrast(page);
+      await expectHeroTextContrast(page);
     });
 
     test(`the switch changes the theme and it persists after a reload (${l.locale})`, async ({
@@ -815,11 +894,10 @@ for (const l of LOCALES) {
     test("shows a column per status that has items, with its items", async ({ page }) => {
       await page.goto(r.path);
       const main = page.getByRole("main");
-      // Only the columns with items render: "done" stays empty for now.
+      // Only the columns with items render (every status has some since the demo went live).
       await expect(main.getByRole("heading", { level: 2 })).toHaveText(
         r.columns.map((column) => column.label),
       );
-      await expect(main.getByText(r.emptyLabel, { exact: true })).toHaveCount(0);
       for (const column of r.columns) {
         const section = main.getByRole("region", { name: column.label });
         await expect(section.getByRole("heading", { level: 3 })).toHaveText(column.items);

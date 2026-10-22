@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { clientIp, onboardWithSample, signUpNewUser } from "./helpers.ts";
+import { clientIp, onboardWithSample, pinClock, signUpNewUser } from "./helpers.ts";
 
 /**
  * Home and the add sheet against the dev stack (spec §2.5, §2.6): a new user who imported the
@@ -40,7 +40,7 @@ test.describe("in Madrid, on 21 October 2026", () => {
   test.use({ locale: "es-ES", timezoneId: "Europe/Madrid" });
 
   test.beforeEach(async ({ page }) => {
-    await page.clock.install({ time: new Date("2026-10-21T15:00:00Z") });
+    await pinClock(page);
   });
 
   test("adding an expense lowers what is left and lists it under today", async ({ page }) => {

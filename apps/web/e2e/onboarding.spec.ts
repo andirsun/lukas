@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
-import { clientIp, signUpNewUser } from "./helpers.ts";
+import { clientIp, E2E_NOW, pinClock, signUpNewUser } from "./helpers.ts";
 
 /**
  * The first run after signing up, against the dev stack (spec §2.4, revised: optional, short,
@@ -27,6 +27,11 @@ const SUGGESTED = [
 test.use({
   extraHTTPHeaders: async ({ extraHTTPHeaders }, use) =>
     use({ ...extraHTTPHeaders, "x-forwarded-for": clientIp() }),
+});
+
+// The sample's months (September and October 2026) are read against the suite's clock.
+test.beforeEach(async ({ page }) => {
+  await pinClock(page);
 });
 
 const heading = (page: Page, name: string) => page.getByRole("heading", { level: 1, name });
@@ -239,7 +244,7 @@ test.describe("from Spain", () => {
       timeZone: "Europe/Madrid",
       year: "numeric",
       month: "2-digit",
-    }).format(new Date());
+    }).format(new Date(E2E_NOW));
     const summary = (await (await page.request.get(`/api/v1/summary?month=${month}`)).json()) as {
       spent: number;
     };
@@ -266,7 +271,7 @@ test.describe("from Spain", () => {
       timeZone: "Europe/Madrid",
       year: "numeric",
       month: "2-digit",
-    }).format(new Date());
+    }).format(new Date(E2E_NOW));
     const before = (await (await page.request.get("/api/v1/categories")).json()) as {
       id: string;
       name: string;

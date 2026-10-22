@@ -1,6 +1,11 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, test } from "@playwright/test";
-import { clientIp, onboardWithSample, signUpNewUser } from "./helpers.ts";
+import {
+  clientIp,
+  expectNoAxeViolations,
+  onboardWithSample,
+  pinClock,
+  signUpNewUser,
+} from "./helpers.ts";
 
 /**
  * Insights (spec §2.7) against the dev stack: a new user who imported the sample Budge file
@@ -29,7 +34,7 @@ const eur = (cents: number) =>
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 1024;
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-10-21T15:00:00Z") });
+  await pinClock(page);
   await signUpNewUser(page);
   await onboardWithSample(page, "Europe/Madrid");
 });
@@ -81,10 +86,5 @@ test("after the sample import, Análisis shows October's donut and what living c
   await expect(readout).toContainText("Septiembre");
   await expect(readout).toContainText("Ingresos");
 
-  const results = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
-    .analyze();
-  expect(
-    results.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target.join(" ")) })),
-  ).toEqual([]);
+  await expectNoAxeViolations(page);
 });

@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { clientIp, onboardWithSample, signUpNewUser } from "./helpers.ts";
+import { clientIp, onboardWithSample, pinClock, signUpNewUser } from "./helpers.ts";
 
 /**
  * Category detail, categories and recurring (spec §2.7) against the dev stack: a new user who
@@ -54,7 +54,7 @@ async function openRecurring(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-10-21T15:00:00Z") });
+  await pinClock(page);
   await signUpNewUser(page);
   await onboardWithSample(page, "Europe/Madrid");
 });

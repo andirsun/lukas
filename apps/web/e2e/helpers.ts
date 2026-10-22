@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import AxeBuilder from "@axe-core/playwright";
 import { expect, type Page, request } from "@playwright/test";
 
 /**
@@ -13,6 +14,20 @@ const API = process.env.E2E_API_URL ?? "http://localhost:3000";
 const WEB = "http://localhost:5173";
 
 const rand = (n: number) => Math.floor(Math.random() * n);
+
+/**
+ * The suite's "now": 21 October 2026, 15:00 UTC (afternoon in Madrid, morning in Bogotá). The
+ * sample Budge file's months (September and October 2026) are read against it, so nothing depends
+ * on the real date:
+ * - the API runs with `E2E_NOW` set to it (docker-compose.yml; global-setup.ts checks), and
+ * - a spec that reads a month pins its page with `pinClock(page)` before the first navigation.
+ */
+export const E2E_NOW = "2026-10-21T15:00:00Z";
+
+/** Pins the page's clock (it still ticks from there) to the suite's "now", or to `time`. */
+export function pinClock(page: Page, time: string = E2E_NOW): Promise<void> {
+  return page.clock.install({ time: new Date(time) });
+}
 
 /**
  * A made-up client address (from 198.18.0.0/15, reserved for testing) for a browser context's
@@ -190,4 +205,29 @@ export async function onboardWithSample(page: Page, timezone: string) {
   expect(budget.ok(), await budget.text()).toBe(true);
   const done = await page.request.patch("/api/v1/me", { data: { onboardingCompleted: true } });
   expect(done.ok(), await done.text()).toBe(true);
+}
+
+/** The WCAG 2.2 A and AA rules axe checks on every app screen. */
+export const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
+
+/**
+ * Runs axe on the page once it is at rest, and fails with every violation and its nodes. At rest:
+ * no finite animation or CSS transition still running (entrances, sheets, toasts, a pressed
+ * button's colors), so colors are checked as they end up, not halfway.
+ */
+export async function expectNoAxeViolations(page: Page, screen = page.url(), tags = WCAG_TAGS) {
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (a) =>
+          a.playState !== "running" ||
+          a.effect?.getComputedTiming().iterations === Number.POSITIVE_INFINITY,
+      ),
+  );
+  const results = await new AxeBuilder({ page }).withTags(tags).analyze();
+  expect(
+    results.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target.join(" ")) })),
+    `axe on ${screen}`,
+  ).toEqual([]);
 }

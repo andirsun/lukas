@@ -9,7 +9,7 @@
       "!apps/web/app/styles/tokens.css",
       "!apps/web/app/api/schema.d.ts",
       "!apps/web/build",
-      "!**/.claude/worktrees"
+      "!**/.claude"
     ]
   },
   "css": { "parser": { "tailwindDirectives": true } },
