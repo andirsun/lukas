@@ -39,7 +39,27 @@ VITE_SITE_URL=https://lukitas.andersonlaverde.com VITE_APP_URL=https://app-lukas
 - `public/_headers` sets long immutable caching for `/assets/*`, a short cache for the HTML and the
   basic security headers.
 
-## Deploy
+## Publishing on merge
+
+Every merge into `main` publishes the landing: the CI job `deploy-landing`
+(`.github/workflows/ci.yml`) runs after `check` and `e2e` pass, builds the landing-only release
+(the `VITE_SITE_URL` and `VITE_APP_URL` above) and runs `wrangler deploy` from `deploy/landing`.
+Pull requests never run it, so they never touch the live site. A newer merge waits for a publish in
+flight.
+
+It needs two repository secrets (GitHub → the repo → Settings → Secrets and variables → Actions):
+
+1. **`CLOUDFLARE_API_TOKEN`.** In Cloudflare: My Profile → API Tokens → Create Token → template
+   "Edit Cloudflare Workers". Under Account Resources choose only the account that holds
+   `andersonlaverde.com`, and under Zone Resources only that zone. Copy the token once; Cloudflare
+   does not show it again.
+2. **`CLOUDFLARE_ACCOUNT_ID`.** On that account's home page in Cloudflare (Account details → Account
+   ID).
+
+Without them the job fails with a message naming them. To revoke the CI's access, delete the token
+in Cloudflare.
+
+## Deploy by hand
 
 The landing is served by Cloudflare Workers as static assets: no Worker code, only the files in
 `apps/web/build/client`. (Cloudflare now builds new Pages projects on Workers; creating a classic

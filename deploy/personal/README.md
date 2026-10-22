@@ -181,8 +181,8 @@ before changing anything.
 **The install is built from the checkout you develop in**, so `up.sh` and `update.sh` refuse to run
 (and say why) when:
 
-- the repository is on a different branch than `PERSONAL_BRANCH` in `.env` (default
-  `feat/stage-2-web`; set it to `main` when the install follows `main`), or
+- the repository is on a different branch than `PERSONAL_BRANCH` in `.env` (default `main`:
+  the install follows what is merged), or
 - tracked files have uncommitted changes (they would be built into the app, and their migrations
   applied to your real data; migrations only go forward).
 

@@ -105,7 +105,7 @@ A spec that reads a month pins its page the same way, with `pinClock(page)` from
 
 ## Deploying
 
-- **The landing page** ships on its own as static files (Cloudflare): [`docs/deploy/landing.md`](docs/deploy/landing.md), with its config in [`deploy/landing/`](deploy/landing/).
+- **The landing page** ships on its own as static files (Cloudflare), published by CI after every merge into `main`: [`docs/deploy/landing.md`](docs/deploy/landing.md), with its config in [`deploy/landing/`](deploy/landing/).
 - **A personal install** runs the whole app for one person on one machine, behind a Cloudflare tunnel, with an email allowlist and daily backups: [`docs/deploy/personal.md`](docs/deploy/personal.md), with the stack and scripts in [`deploy/personal/`](deploy/personal/README.md).
 - **The API** on its own: [`docs/deploy/api.md`](docs/deploy/api.md).
 
