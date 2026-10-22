@@ -1,5 +1,5 @@
 import { type Db, session, user } from "@lukas/db";
-import { and, eq, sql } from "@lukas/db/orm";
+import { and, eq, inArray, sql } from "@lukas/db/orm";
 
 /** A guest idle for longer than this is deleted (spec §4.4). */
 export const GUEST_INACTIVE_DAYS = 60;
@@ -7,6 +7,9 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Postgres advisory lock key of the cleanup ("luka"): one run at a time, across API instances. */
 export const GUEST_CLEANUP_LOCK = 0x6c756b61;
+
+/** Guests deleted per transaction: a spike of sign-ups never makes one huge delete or lock hold. */
+export const GUEST_CLEANUP_BATCH = 500;
 
 /**
  * Deletes the guests (anonymous users) whose latest session activity (`session.updatedAt`) is more
@@ -18,11 +21,21 @@ export const GUEST_CLEANUP_LOCK = 0x6c756b61;
  * categories, transactions...). That needs no privilege beyond the API's own role: `user` and
  * `session` are not under row-level security, and foreign-key cascades bypass it.
  *
- * Runs in one transaction that first takes a transaction-level advisory lock. A run that cannot
- * get it, because another is going, does nothing and returns 0. (A session-level lock would
- * belong to whichever pooled connection took it; this one is released with the transaction.)
+ * It deletes in batches of 500, one transaction each, until a batch deletes fewer than that. Every
+ * batch first takes a transaction-level advisory lock; one that cannot get it, because another run
+ * is going, deletes nothing and ends this run. (A session-level lock would belong to whichever
+ * pooled connection took it; this one is released with the transaction.)
  */
 export async function cleanupInactiveGuests(db: Db, now: Date): Promise<number> {
+  let total = 0;
+  for (;;) {
+    const deleted = await deleteBatch(db, now);
+    total += deleted;
+    if (deleted < GUEST_CLEANUP_BATCH) return total;
+  }
+}
+
+async function deleteBatch(db: Db, now: Date): Promise<number> {
   const cutoff = new Date(now.getTime() - GUEST_INACTIVE_DAYS * DAY_MS);
   return db.transaction(async (tx) => {
     const [lock] = await tx.execute<{ locked: boolean }>(
@@ -34,11 +47,16 @@ export async function cleanupInactiveGuests(db: Db, now: Date): Promise<number> 
       (select max(${session.updatedAt}) from ${session} where ${session.userId} = ${user.id}),
       ${user.createdAt}
     )`;
-    const deleted = await tx
-      .delete(user)
+    const inactive = tx
+      .select({ id: user.id })
+      .from(user)
       .where(
         and(eq(user.isAnonymous, true), sql`${lastActive} < ${cutoff.toISOString()}::timestamp`),
       )
+      .limit(GUEST_CLEANUP_BATCH);
+    const deleted = await tx
+      .delete(user)
+      .where(inArray(user.id, inactive))
       .returning({ id: user.id });
     return deleted.length;
   });

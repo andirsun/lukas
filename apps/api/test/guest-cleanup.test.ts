@@ -3,6 +3,7 @@ import { eq, inArray, sql } from "@lukas/db/orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   cleanupInactiveGuests,
+  GUEST_CLEANUP_BATCH,
   GUEST_CLEANUP_LOCK,
   scheduleGuestCleanup,
 } from "../src/services/guest-cleanup.ts";
@@ -175,6 +176,93 @@ describe("cleanupInactiveGuests", () => {
 
   test("the lock key is the one the brief names", () => {
     expect(GUEST_CLEANUP_LOCK).toBe(0x6c756b61);
+  });
+});
+
+describe("batches", () => {
+  test("1200 inactive guests are all deleted across 3 batches, a user with an email untouched", async () => {
+    expect(GUEST_CLEANUP_BATCH).toBe(500);
+    const old = daysAgo(90);
+    const row = (i: number, guest: boolean) => ({
+      id: `bulk-${String(i).padStart(4, "0")}`,
+      name: `Bulk ${i}`,
+      email: guest ? `bulk-${i}@guest.lukitas.invalid` : "member-in-the-middle@lukas.test",
+      isAnonymous: guest,
+      createdAt: old,
+      updatedAt: old,
+    });
+    // 1 200 guests with the member's row in the middle of the id order, all with no session.
+    const rows = Array.from({ length: 1201 }, (_, i) => row(i, i !== 600));
+    for (let i = 0; i < rows.length; i += 300) {
+      await t.admin.insert(user).values(rows.slice(i, i + 300));
+    }
+
+    const transaction = vi.spyOn(t.db, "transaction");
+    try {
+      expect(await cleanupInactiveGuests(t.db, NOW)).toBe(1200);
+      expect(transaction).toHaveBeenCalledTimes(3);
+    } finally {
+      transaction.mockRestore();
+    }
+
+    const left = await t.admin.select({ id: user.id }).from(user);
+    expect(left).toEqual([{ id: "bulk-0600" }]);
+  });
+
+  test("a batch that finds the lock taken ends the run", async () => {
+    const guests = await Promise.all([newGuest(), newGuest()]);
+    for (const g of guests) await lastActive(g.userId, 100);
+    await t.admin.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(${GUEST_CLEANUP_LOCK})`);
+      expect(await cleanupInactiveGuests(t.db, NOW)).toBe(0);
+    });
+    expect(await cleanupInactiveGuests(t.db, NOW)).toBe(2);
+  });
+});
+
+describe("guest session lifetime", () => {
+  const SESSION_DAYS = 60;
+  const me = (headers: { authorization: string }) => t.request("GET", "/v1/me", { headers });
+
+  test("a session lasts 60 days from its last use", async () => {
+    const g = await newGuest();
+    const [row] = await t.admin.select().from(session).where(eq(session.userId, g.userId));
+    const days = ((row?.expiresAt.getTime() ?? 0) - Date.now()) / DAY;
+    expect(days).toBeGreaterThan(SESSION_DAYS - 0.01);
+    expect(days).toBeLessThanOrEqual(SESSION_DAYS);
+  });
+
+  test("a session used on day 59 is still valid, and slides forward", async () => {
+    const g = await newGuest();
+    // As a session last used 59 days ago looks: its expiry is a day away.
+    await t.admin
+      .update(session)
+      .set({
+        createdAt: new Date(Date.now() - 59 * DAY),
+        updatedAt: new Date(Date.now() - 59 * DAY),
+        expiresAt: new Date(Date.now() + 1 * DAY),
+      })
+      .where(eq(session.userId, g.userId));
+
+    expect((await me(g.headers)).status).toBe(200);
+
+    const [row] = await t.admin.select().from(session).where(eq(session.userId, g.userId));
+    const days = ((row?.expiresAt.getTime() ?? 0) - Date.now()) / DAY;
+    expect(days).toBeGreaterThan(SESSION_DAYS - 0.01);
+  });
+
+  test("a session idle for 61 days is no longer valid", async () => {
+    const g = await newGuest();
+    await t.admin
+      .update(session)
+      .set({
+        createdAt: new Date(Date.now() - 61 * DAY),
+        updatedAt: new Date(Date.now() - 61 * DAY),
+        expiresAt: new Date(Date.now() - 1 * DAY),
+      })
+      .where(eq(session.userId, g.userId));
+
+    expect((await me(g.headers)).status).toBe(401);
   });
 });
 

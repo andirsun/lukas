@@ -169,6 +169,8 @@ later. Set `GUEST_SIGNUP=false` in `.env` and run `./up.sh` to stop new guests;
 existing ones keep working. Once a day the API deletes guests that have not used the app for 60
 days, with all their data. Accounts with an email are never deleted this way.
 
+Sessions last 60 days from their last use (extended at most once a day), so a guest stays signed in as long as it is used within 60 days.
+
 ### Keeping the Mac awake
 
 While the Mac sleeps, the tunnel is down and your phone shows a Cloudflare error (1033). To stay

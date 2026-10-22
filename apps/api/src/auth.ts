@@ -281,6 +281,10 @@ export function createAuth(deps: AppDeps) {
     trustedOrigins: [config.WEB_URL],
     database: drizzleAdapter(deps.db, { provider: "pg", schema }),
     emailAndPassword: { enabled: false },
+    // Every session slides while it is used: valid for 60 days after its last use, extended at most
+    // once a day. A guest has no email to sign in again with, so it must outlast the 60 days of
+    // idleness after which the account is deleted (services/guest-cleanup.ts).
+    session: { expiresIn: 60 * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
     user: {
       additionalFields: {
         timezone: { type: "string", required: false, defaultValue: "UTC", input: false },
