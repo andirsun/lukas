@@ -12,6 +12,7 @@ import type { AppDeps } from "../deps.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { dropPendingOccurrences } from "../services/recurrence-stop.ts";
 import { currentMonth } from "../services/time.ts";
 import { defaultAccount, requireActiveCategory } from "../services/transactions.ts";
 
@@ -114,16 +115,7 @@ export function recurrenceRoutes(deps: AppDeps) {
           .returning();
         // Pending occurrences from this month on follow the new rule: drop them so the next read
         // regenerates them. Paid and soft-deleted (dismissed) occurrences are kept.
-        await tx
-          .delete(transactions)
-          .where(
-            and(
-              eq(transactions.recurrenceId, id),
-              eq(transactions.status, "pending"),
-              isNull(transactions.deletedAt),
-              gte(transactions.occurrenceMonth, firstDay(currentMonth(c.get("user")))),
-            ),
-          );
+        await dropPendingOccurrences(tx, [id], { fromMonth: currentMonth(c.get("user")) });
         return updated as RecurrenceRow;
       });
       return c.json(toDto(row), 200);
@@ -136,7 +128,10 @@ export function recurrenceRoutes(deps: AppDeps) {
       path: "/v1/recurrences/{id}",
       request: { params: idParam },
       responses: {
-        204: { description: "Deleted; generated transactions are kept" },
+        204: {
+          description:
+            "Deleted; its unpaid pending transactions from this month on go, the rest are kept",
+        },
         ...problems(404),
       },
     }),
@@ -144,7 +139,10 @@ export function recurrenceRoutes(deps: AppDeps) {
       const { id } = c.req.valid("param");
       await withUser(deps.db, c.get("userId"), async (tx) => {
         await findRecurrence(tx, id);
-        // The FK is ON DELETE SET NULL, so generated transactions stay with recurrence_id = null.
+        // Like an edit: its unpaid pending rows from this month on go (they would look like bills
+        // still due). The FK is ON DELETE SET NULL, so paid, past and dismissed ones stay, with
+        // recurrence_id = null.
+        await dropPendingOccurrences(tx, [id], { fromMonth: currentMonth(c.get("user")) });
         await tx.delete(recurrences).where(eq(recurrences.id, id));
       });
       return c.body(null, 204);

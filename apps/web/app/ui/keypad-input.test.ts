@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { Locale } from "../i18n/format.ts";
 import {
   type AmountFormat,
+  amountCents,
   pasteAmount,
+  pastedNegative,
   pressKey,
   typeOnKeypad,
   wholeAmount,
@@ -129,5 +131,32 @@ describe("pasting an amount", () => {
     for (const text of ["15.000,5", "50.000,50", "4.300.000"]) {
       expect(wholeAmount(type(chars(text), cop), cop)).toBe(pasteAmount(text, cop));
     }
+  });
+});
+
+describe("amountCents: the keypad's text as the stored ×100 integer", () => {
+  const cases: [Locale, string, string, number][] = [
+    ["es", "COP", "", 0],
+    ["es", "COP", "15000", 1_500_000],
+    // Pesos: the decimal separator only ends the amount.
+    ["es", "COP", "15000,", 1_500_000],
+    ["es", "COP", "15000,5", 1_500_000],
+    ["en", "COP", "50000.", 5_000_000],
+    ["es", "EUR", "6,08", 608],
+    ["es", "EUR", "6,", 600],
+    ["en", "USD", "1250.5", 125_050],
+    ["es", "EUR", "999999999,99", 99_999_999_999],
+  ];
+  it.each(cases)("%s %s: %j is %d", (locale, currency, raw, cents) => {
+    expect(amountCents(raw, { locale, currency })).toBe(cents);
+  });
+});
+
+describe("pastedNegative: a minus before the first digit", () => {
+  it.each(["-50.000", "−6,08 €", "- 50", "$-15.000", "‑20", "–20"])("%j is negative", (text) => {
+    expect(pastedNegative(text)).toBe(true);
+  });
+  it.each(["50-", "50.000", "6,08 €", "2026-10-21", "$ 15.000", ""])("%j is not", (text) => {
+    expect(pastedNegative(text)).toBe(false);
   });
 });

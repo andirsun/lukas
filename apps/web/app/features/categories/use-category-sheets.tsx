@@ -1,10 +1,10 @@
-import type { CategoryDto } from "@lukas/core";
+import { type CategoryDto, type RecurrenceDto, todayIn } from "@lukas/core";
 import { useQuery } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { useTranslations } from "use-intl";
 import { useApi } from "../../api/ApiProvider.tsx";
 import { ApiProblem, problemMessage, type Translator } from "../../api/errors.ts";
-import { useCreateCategory, useUpdateCategory } from "../../api/queries.ts";
+import { useCreateCategory, useMe, useRecurrences, useUpdateCategory } from "../../api/queries.ts";
 import { ConfirmSheet } from "../../ui/ConfirmSheet.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
 import { useToast } from "../../ui/Toast.tsx";
@@ -28,6 +28,17 @@ function useHasTransactions(categoryId: string | null) {
   });
 }
 
+/** The rules archiving a category stops: its own, not ended before today (the API's rule). */
+export function activeRecurrencesIn(
+  recurrences: readonly RecurrenceDto[],
+  categoryId: string,
+  today: string,
+): number {
+  return recurrences.filter(
+    (r) => r.categoryId === categoryId && (r.endDate === null || r.endDate >= today),
+  ).length;
+}
+
 /**
  * The sheets that change categories, for the categories page and a category's detail: "Nueva
  * categoría", editing one (name, kind, emoji, tint) and archiving it, which asks first in its own
@@ -40,6 +51,8 @@ export function useCategorySheets() {
   const toast = useToast();
   const create = useCreateCategory();
   const update = useUpdateCategory();
+  const me = useMe().data;
+  const recurrences = useRecurrences();
   const [target, setTarget] = useState<Target | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -95,6 +108,12 @@ export function useCategorySheets() {
       }
     : undefined;
 
+  // Archiving also ends the category's recurrences (the sheet says how many).
+  const stopping =
+    editing && me && recurrences.data
+      ? activeRecurrencesIn(recurrences.data, editing.id, todayIn(me.timezone))
+      : 0;
+
   const sheets: ReactNode = (
     <>
       <CategoryForm
@@ -121,6 +140,7 @@ export function useCategorySheets() {
         onClose={() => setConfirmOpen(false)}
         title={t("archive_sheet.title", { name: editing?.name ?? "" })}
         body={t("archive_sheet.body")}
+        note={stopping > 0 ? t("archive_sheet.stops_recurring", { count: stopping }) : undefined}
         confirmLabel={t("archive_sheet.confirm")}
         onConfirm={archive}
       />

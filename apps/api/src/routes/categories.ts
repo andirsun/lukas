@@ -7,6 +7,7 @@ import {
   firstDay,
   type Month,
   setBudgetSchema,
+  todayIn,
   updateCategorySchema,
 } from "@lukas/core";
 import { categories, categoryBudgets, type Tx, transactions, withUser } from "@lukas/db";
@@ -16,7 +17,9 @@ import { isUniqueViolation } from "../http/db-errors.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { stopCategoryRecurrences } from "../services/recurrence-stop.ts";
 import { currentMonth } from "../services/time.ts";
+import { defaultAccount } from "../services/transactions.ts";
 
 type CategoryRow = typeof categories.$inferSelect;
 const idParam = z.object({ id: z.uuid() });
@@ -117,8 +120,13 @@ export function categoryRoutes(deps: AppDeps) {
     async (c) => {
       const { id } = c.req.valid("param");
       const { archived, ...fields } = c.req.valid("json");
-      const month = currentMonth(c.get("user"));
+      const user = c.get("user");
+      const month = currentMonth(user);
       const dto = await withUser(deps.db, c.get("userId"), async (tx) => {
+        const archiving = archived === true;
+        // Archiving ends the category's recurrences: locked like any recurrence write, so a
+        // currency change or a new recurrence never interleaves with it.
+        if (archiving) await defaultAccount(tx, { lock: true });
         const existing = await findCategory(tx, id);
         // Spending ↔ income only while nothing was ever booked under it: its transactions' signs
         // would no longer mean what they meant. Soft-deleted ones count, as for the currency lock:
@@ -148,6 +156,11 @@ export function categoryRoutes(deps: AppDeps) {
           .set({ ...fields, archivedAt })
           .where(eq(categories.id, id))
           .returning();
+        // Its active recurrences end today, and their unpaid pending rows from today on go, so
+        // nothing keeps arriving in a category that is out of sight. Paid rows stay.
+        if (archiving && existing.archivedAt === null) {
+          await stopCategoryRecurrences(tx, id, todayIn(user.timezone));
+        }
         return toDto(row as CategoryRow, await budgetsFor(tx), month);
       }).catch(nameTaken);
       return c.json(dto, 200);

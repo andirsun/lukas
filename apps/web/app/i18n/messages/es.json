@@ -630,7 +630,8 @@
     "archive_sheet": {
       "title": "¿Archivar {name}?",
       "body": "Ya no aparece al anotar ni en tus presupuestos. Sus movimientos se quedan, y puedes restaurarla cuando quieras desde Categorías.",
-      "confirm": "Sí, archivar"
+      "confirm": "Sí, archivar",
+      "stops_recurring": "{count, plural, one {También se detendrá # pago recurrente de esta categoría.} other {También se detendrán # pagos recurrentes de esta categoría.}}"
     }
   },
   "recurring": {
@@ -643,9 +644,8 @@
     "yearly_rule": "Cada año, el {day} de {month}",
     "next": "Próximo: {date}",
     "ended": "Ya terminó",
-    "until": "Hasta {date}",
     "saved": "Guardaste {name}.",
-    "deleted": "Eliminaste {name}. Los movimientos que ya creó se quedan.",
+    "deleted": "Eliminaste {name}. Lo que ya pagaste se queda.",
     "form": {
       "title_new": "Nuevo recurrente",
       "title_edit": "Editar recurrente",
@@ -677,7 +677,7 @@
     },
     "delete_sheet": {
       "title": "¿Eliminar {name}?",
-      "body": "Ya no se anotará solo. Los movimientos que ya creó se quedan.",
+      "body": "Ya no se anotará solo, y sus pendientes de este mes en adelante se borran. Lo que ya pagaste se queda.",
       "confirm": "Sí, eliminar"
     }
   }

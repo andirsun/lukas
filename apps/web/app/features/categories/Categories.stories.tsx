@@ -54,7 +54,8 @@ const toastShown = (text: string | RegExp) =>
       expect(toast).toHaveTextContent(text);
       expect(toast && getComputedStyle(toast).opacity).toBe("1");
     },
-    { timeout: 4000 },
+    // On a loaded machine the toast's fade-in comes late.
+    { timeout: 8000 },
   );
 
 async function typeOnKeypad(dialog: Canvas, text: string) {
@@ -173,6 +174,10 @@ export const ArchiveAsksForConfirmation: Story = {
     await userEvent.click(edit.getByRole("button", { name: "Archivar categoría" }));
     let confirm = within(await screen.findByRole("dialog", { name: "¿Archivar Ocio?" }));
     await expect(confirm.getByText(/Sus movimientos se quedan/)).toBeVisible();
+    // Ocio has two recurrences (Spotify, a film club): archiving stops them, and says so.
+    await expect(
+      confirm.getByText("También se detendrán 2 pagos recurrentes de esta categoría."),
+    ).toBeVisible();
     await userEvent.click(confirm.getByRole("button", { name: "Cancelar" }));
     await dialogGone();
     await expect(lines(args.onRequest).filter((l) => l.startsWith("PATCH "))).toHaveLength(0);
@@ -224,6 +229,71 @@ export const RenameAndRestyle: Story = {
       await canvas.findByRole("heading", { level: 1, name: "Planes" }, { timeout: 4000 }),
     ).toBeVisible();
     await toastShown("Guardaste los cambios de Planes.");
+  },
+};
+
+/**
+ * Pesos: the budget sheet starts from the stored budget (80.000.000 hundredths: $800.000, "800
+ * lukas"), takes a pasted "15.000" as fifteen thousand pesos with its hint, refuses a minus, and
+ * sends hundredths.
+ */
+export const BudgetInPesos: Story = {
+  render: (args) => (
+    <HomeStage onRequest={args.onRequest} path="/app/categories/cat-food" currency="COP" />
+  ),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const budget = await budgetRegion(canvas);
+    await waitFor(() => expect(budget).toHaveTextContent("Quedan $800.000"));
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar presupuesto" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Presupuesto de Comida" }));
+    const figure = sheet.getByTestId("budget-amount");
+    await expect(figure).toHaveTextContent("$800.000 (800 lukas)");
+    const keypad = within(sheet.getByRole("group", { name: "Teclado numérico" }));
+    await expect(keypad.queryByRole("button", { name: "Coma decimal" })).toBeNull();
+
+    paste("15.000");
+    await waitFor(() => expect(figure).toHaveTextContent("$15.000 (15 lukas)"));
+    await userEvent.keyboard("-");
+    await expect(await sheet.findByRole("alert")).toHaveTextContent(
+      "Un presupuesto no puede ser negativo.",
+    );
+    await expect(figure).toHaveTextContent("$15.000 (15 lukas)");
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar presupuesto" }));
+    await dialogGone();
+    await waitFor(() =>
+      expect(lines(args.onRequest)).toContainEqual(
+        `PUT /api/v1/categories/cat-food/budget {"amount":1500000,"effectiveFrom":"${MONTH}"}`,
+      ),
+    );
+    await toastShown("Presupuesto de Comida: $15.000 (15 lukas)");
+  },
+};
+
+/** The archive sheet counts the recurrences it stops: one (singular), or none (no line). */
+export const ArchiveCountsRecurrences: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories" />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const archiveFrom = async (name: string) => {
+      await userEvent.click(
+        await canvas.findByRole("button", { name: `Editar ${name}` }, { timeout: 4000 }),
+      );
+      const edit = within(await screen.findByRole("dialog", { name: "Editar categoría" }));
+      await userEvent.click(edit.getByRole("button", { name: "Archivar categoría" }));
+      return within(await screen.findByRole("dialog", { name: `¿Archivar ${name}?` }));
+    };
+    let confirm = await archiveFrom("Transporte");
+    await expect(
+      confirm.getByText("También se detendrá 1 pago recurrente de esta categoría."),
+    ).toBeVisible();
+    await userEvent.click(confirm.getByRole("button", { name: "Cancelar" }));
+    await dialogGone();
+    confirm = await archiveFrom("Supermercado");
+    await expect(confirm.queryByText(/También se detendr/)).toBeNull();
+    await userEvent.click(confirm.getByRole("button", { name: "Cancelar" }));
+    await dialogGone();
+    await expect(lines(args.onRequest).filter((l) => l.startsWith("PATCH "))).toHaveLength(0);
   },
 };
 

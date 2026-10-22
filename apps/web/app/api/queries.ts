@@ -426,14 +426,21 @@ export function useCreateCategory() {
   });
 }
 
-/** Rename, restyle, change the kind (409 while it has transactions), archive or restore. */
+/**
+ * Rename, restyle, change the kind (409 while it has transactions), archive or restore. Archiving
+ * also ends the category's recurrences and drops their pending rows from today on (the API does
+ * it), so those lists are refetched too.
+ */
 export function useUpdateCategory() {
   const api = useApi();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: CategoryPatch }) =>
       dataOf(await api.PATCH("/v1/categories/{id}", { params: { path: { id } }, body: patch })),
-    onSettled: () => settleCategories(qc),
+    onSettled: (_data, _error, { patch }) =>
+      patch.archived
+        ? Promise.all([settleCategories(qc), settleRecurrences(qc)])
+        : settleCategories(qc),
   });
 }
 

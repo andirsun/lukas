@@ -125,7 +125,10 @@ interface FakeRecurrence {
   endDate: string | null;
 }
 
-/** Rent-like fixed costs: Spotify every month (the pending one above), the salary, a yearly insurance. */
+/**
+ * Fixed costs: Spotify (the pending one above) and a film club in Ocio, the salary, and a yearly
+ * car insurance in Transporte.
+ */
 function sampleRecurrences(): FakeRecurrence[] {
   const spotifyDay = Number(dayFromToday(2).slice(8, 10));
   return [
@@ -136,6 +139,17 @@ function sampleRecurrences(): FakeRecurrence[] {
       categoryId: "cat-fun",
       frequency: "monthly",
       dayOfMonth: spotifyDay,
+      monthOfYear: null,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+    {
+      id: "rec-cineclub",
+      name: "Cine club",
+      amount: -1500,
+      categoryId: "cat-fun",
+      frequency: "monthly",
+      dayOfMonth: 12,
       monthOfYear: null,
       startDate: "2026-01-01",
       endDate: null,
@@ -336,6 +350,14 @@ function homeFetch({
         return Response.json({ code: "category_name_taken" }, { status: 409 });
       }
       categories = categories.map((c) => (c.id === id ? { ...c, ...patch } : c));
+      // Like the API: archiving ends the category's active recurrences today.
+      if (patch.archived && !existing.archived) {
+        recurrences = recurrences.map((r) =>
+          r.categoryId === id && (r.endDate === null || r.endDate >= STORY_TODAY)
+            ? { ...r, endDate: STORY_TODAY }
+            : r,
+        );
+      }
       return Response.json(withBudget(categories.find((c) => c.id === id) as FakeCategory));
     }
     if (path === "/api/v1/recurrences" && request.method === "GET") {

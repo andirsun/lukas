@@ -630,7 +630,8 @@
     "archive_sheet": {
       "title": "Archive {name}?",
       "body": "It won't be offered when you add a transaction, nor in your budgets. Its transactions stay, and you can restore it any time from Categories.",
-      "confirm": "Yes, archive"
+      "confirm": "Yes, archive",
+      "stops_recurring": "{count, plural, one {This also stops # recurring payment in this category.} other {This also stops # recurring payments in this category.}}"
     }
   },
   "recurring": {
@@ -643,9 +644,8 @@
     "yearly_rule": "Every year, on {month} {day}",
     "next": "Next: {date}",
     "ended": "Already ended",
-    "until": "Until {date}",
     "saved": "You saved {name}.",
-    "deleted": "You deleted {name}. The transactions it already made stay.",
+    "deleted": "You deleted {name}. What you already paid stays.",
     "form": {
       "title_new": "New recurring",
       "title_edit": "Edit recurring",
@@ -677,7 +677,7 @@
     },
     "delete_sheet": {
       "title": "Delete {name}?",
-      "body": "It won't be added by itself anymore. The transactions it already made stay.",
+      "body": "It won't be added by itself anymore, and its pending ones from this month on are removed. What you already paid stays.",
       "confirm": "Yes, delete"
     }
   }

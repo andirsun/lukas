@@ -156,9 +156,14 @@ export function centsOf(raw: string, locale: Locale): number {
   }
 }
 
-/** The keypad's text as cents (unsigned): whole pesos only for whole-unit currencies; 0 while empty. */
+/**
+ * The keypad's text as the stored ×100 integer (unsigned): whole pesos only for whole-unit
+ * currencies, and a trailing decimal separator still being typed (`6,`) ignored; 0 while empty.
+ */
 export function amountCents(raw: string, format: AmountFormat): number {
-  return centsOf(wholeAmount(raw, format), format.locale);
+  const text = wholeAmount(raw, format);
+  const separator = decimalSeparator(format.locale);
+  return centsOf(text.endsWith(separator) ? text.slice(0, -1) : text, format.locale);
 }
 
 /**

@@ -49,7 +49,8 @@ const toastShown = (text: string | RegExp) =>
       expect(toast).toHaveTextContent(text);
       expect(toast && getComputedStyle(toast).opacity).toBe("1");
     },
-    { timeout: 4000 },
+    // On a loaded machine the toast's fade-in comes late.
+    { timeout: 8000 },
   );
 
 async function typeOnKeypad(dialog: Canvas, text: string) {
@@ -176,7 +177,9 @@ export const EditAndDelete: Story = {
     await expect(sheet.getByTestId("recurring-amount")).toHaveTextContent("−3,53");
     await userEvent.click(sheet.getByRole("button", { name: "Eliminar recurrente" }));
     const confirm = within(await screen.findByRole("dialog", { name: "¿Eliminar Spotify?" }));
-    await expect(confirm.getByText(/Los movimientos que ya creó se quedan/)).toBeVisible();
+    await expect(
+      confirm.getByText(/sus pendientes de este mes en adelante se borran/),
+    ).toBeVisible();
     await userEvent.click(confirm.getByRole("button", { name: "Sí, eliminar" }));
     await dialogGone();
     await waitFor(() =>
@@ -184,6 +187,30 @@ export const EditAndDelete: Story = {
     );
     await waitFor(() => expect(canvas.queryByRole("button", { name: /^Spotify/ })).toBeNull());
     await toastShown(/Eliminaste Spotify/);
+  },
+};
+
+/**
+ * Pesos: no decimal key, the muted lukas hint follows the typed figure (worked out from the ×100
+ * amount that is sent), and the expense is stored negative in hundredths.
+ */
+export const PesosRecurring: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/recurring" currency="COP" />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const sheet = await openNew(canvas);
+    const keypad = within(sheet.getByRole("group", { name: "Teclado numérico" }));
+    await expect(keypad.queryByRole("button", { name: "Coma decimal" })).toBeNull();
+    await fillBasics(sheet, { amount: "50000", name: "Arriendo", category: "Casa" });
+    await expect(sheet.getByTestId("recurring-amount")).toHaveTextContent("−$50.000 (50 lukas)");
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    await dialogGone();
+    await waitFor(() => expect(recurrencePosts(args.onRequest)).toHaveLength(1));
+    await expect(recurrencePosts(args.onRequest)[0]).toContain('"amount":-5000000');
+    await expect(
+      await canvas.findByRole("button", { name: /^Arriendo −\$50\.000/ }, { timeout: 4000 }),
+    ).toBeVisible();
+    await toastShown("Guardaste Arriendo.");
   },
 };
 

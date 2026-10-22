@@ -10,6 +10,8 @@ export interface ConfirmSheetProps {
   title: string;
   /** What happens, and what does not. */
   body: string;
+  /** A further consequence worth its own line ("También se detendrán 2 pagos recurrentes…"). */
+  note?: string | undefined;
   /** "Sí, archivar". */
   confirmLabel: string;
   /** Does it; a rejection keeps the sheet open (the caller says why, in a toast). */
@@ -26,6 +28,7 @@ export function ConfirmSheet({
   onClose,
   title,
   body,
+  note,
   confirmLabel,
   onConfirm,
 }: ConfirmSheetProps) {
@@ -49,6 +52,7 @@ export function ConfirmSheet({
     <Sheet open={open} onClose={onClose} title={title}>
       <div className="flex flex-col gap-(--space-4) pt-(--space-3)">
         <p className="m-0 text-[15px] text-ink">{body}</p>
+        {note && <p className="m-0 text-[15px] font-bold text-ink">{note}</p>}
         <div className="flex flex-col gap-(--space-2) min-[400px]:flex-row-reverse">
           <PressButton
             variant="secondary"
