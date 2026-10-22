@@ -14,66 +14,50 @@ import 'words.dart';
 export 'types.dart';
 
 /// Reads [text] into drafts. Nothing is dropped silently: a movement that cannot be read comes
-/// back whole in [ParseResult.unread], as heard.
+/// back whole in [ParseResult.unread], as heard. It never throws.
 ParseResult parseSentence(String text, ParseContext ctx) {
-  final items = readItems(text, ctx.locale);
-  final leadingDate = _leadingDate(items, ctx.today);
   final drafts = <Draft>[];
   final unread = <String>[];
-  for (final movement in splitMovements(items)) {
-    final draft = _draft(movement, ctx, leadingDate);
-    if (draft != null) {
-      drafts.add(draft);
-    } else if (movement.items.isNotEmpty) {
+  // The context carries over: a verb sets the kind, and a date word the date, of its movement
+  // and of every later one, until another verb or date word.
+  var kind = Kind.expense;
+  var date = ctx.today;
+  for (final movement in splitMovements(readItems(text, ctx.locale))) {
+    if (movement.items.isEmpty) continue;
+    final verb = movement.items.where((i) => i.type == ItemType.verb).firstOrNull;
+    if (verb != null) kind = verb.income ? Kind.income : Kind.expense;
+    final dateWord = movement.items.where((i) => i.type == ItemType.date).firstOrNull;
+    if (dateWord != null) date = dateOf(fold(dateWord.text), ctx.today);
+
+    final cents = _cents(movement, ctx);
+    if (cents == null) {
       unread.add(text.substring(movement.items.first.start, movement.items.last.end));
+      continue;
     }
+    final name = _name(movement);
+    drafts.add(
+      Draft(
+        amount: cents,
+        kind: kind,
+        name: name,
+        categoryId: matchCategory(name, kind, ctx.usual, ctx.categories),
+        date: date,
+      ),
+    );
   }
   return ParseResult(drafts: drafts, unread: unread);
 }
 
-/// A date word at the very start (after articles and function words) covers every movement
-/// that has no date of its own.
-String? _leadingDate(List<Item> items, String today) {
-  for (final item in items) {
-    if (item.type == ItemType.dropped) continue;
-    if (item.type == ItemType.date) return dateOf(fold(item.text), today);
-    return null;
-  }
-  return null;
-}
-
-Draft? _draft(Movement movement, ParseContext ctx, String? leadingDate) {
+/// The movement's amount in cents, or null when it has none it can use.
+int? _cents(Movement movement, ParseContext ctx) {
   final amounts = movement.amounts.toList();
   // No amount, or two that are not one number and have no name between them.
   if (amounts.length != 1) return null;
   final amount = amounts.single.amount!;
   // Lukas and palos count only in COP; elsewhere the movement stays unread.
   if (amount.slang && ctx.currency != 'COP') return null;
-  final cents = amount.cents;
-  if (cents == null) return null;
-
-  var kind = Kind.expense;
-  String? date;
-  for (final item in movement.items) {
-    if (item.type == ItemType.verb) {
-      kind = item.income ? Kind.income : Kind.expense;
-      break;
-    }
-  }
-  for (final item in movement.items) {
-    if (item.type == ItemType.date) {
-      date = dateOf(fold(item.text), ctx.today);
-      break;
-    }
-  }
-  final name = _name(movement);
-  return Draft(
-    amount: cents,
-    kind: kind,
-    name: name,
-    categoryId: matchCategory(name, ctx.usual, ctx.categories),
-    date: date ?? leadingDate ?? ctx.today,
-  );
+  // Null when ambiguous (`4,300 palos`), zero, or above 999 999 999.
+  return amount.cents;
 }
 
 /// The words left after the verb, the amount, the date, the function words and the articles,

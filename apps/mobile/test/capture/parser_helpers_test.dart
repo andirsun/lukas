@@ -1,4 +1,6 @@
 // Unit tests for the parser's helpers: number words, today in a time zone, and splitting.
+import 'dart:math';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/capture/parser/amounts.dart';
 import 'package:lukitas/capture/parser/dates.dart';
@@ -71,8 +73,31 @@ void main() {
     });
 
     test('above 999 999 999 has no usable amount', () {
-      final tokens = tokenize('1.000.000.000', 'es');
-      expect(readAmount(tokens, 0, 'es')!.cents, isNull);
+      for (final text in [
+        '1.000.000.000',
+        '99999999999999999999',
+        '999999999999999999999999999999 millones',
+        'mil millones',
+        'dos mil millones',
+      ]) {
+        expect(readAmount(tokenize(text, 'es'), 0, 'es')!.cents, isNull, reason: text);
+      }
+      expect(cents('999.999.999'), 99999999900);
+    });
+
+    test('a larger scale after a scale multiplies', () {
+      expect(readAmountText('mil millones', 'es'), Dec(1000000000));
+      expect(readAmountText('dos mil millones', 'es'), Dec(2000000000));
+    });
+
+    test('decimals in words keep their length', () {
+      expect(cents('10 coma 05'), 1005);
+      expect(cents('cuatro coma tres'), 430);
+    });
+
+    test('`y medio` after a scale, bare or not', () {
+      expect(cents('mil y medio'), 150000);
+      expect(cents('un millón y medio'), 150000000);
     });
   });
 
@@ -87,6 +112,9 @@ void main() {
       'twelve fifty': 12.5,
       'one million two hundred thousand': 1200000,
       'twelve dollars and fifty cents': 12.5,
+      'twelve hundred': 1200,
+      'fifteen hundred fifty': 1550,
+      'four point five': 4.5,
     };
     values.forEach((text, units) {
       test(text, () => expect(cents(text, 'en'), (units * 100).round()));
@@ -94,6 +122,33 @@ void main() {
   });
 
   group('digits', () {
+    test('three digits after a separator are thousands, in every locale', () {
+      for (final locale in ['es', 'en']) {
+        expect(cents('15,000', locale), 1500000, reason: locale);
+        expect(cents('15.000', locale), 1500000, reason: locale);
+        expect(cents('2,500', locale), 250000, reason: locale);
+        expect(cents('9,999', locale), 999900, reason: locale);
+        expect(cents('1.234,56', locale), 123456, reason: locale);
+        expect(cents('1,234.56', locale), 123456, reason: locale);
+        expect(cents('9,50', locale), 950, reason: locale);
+        expect(cents('12.5', locale), 1250, reason: locale);
+      }
+    });
+
+    test('thousands before a scale word, or with k, is ambiguous', () {
+      int? read(String text) => readAmount(tokenize(text, 'es'), 0, 'es')!.cents;
+      expect(read('4,300 palos'), isNull);
+      expect(read('4.300 mil'), isNull);
+      expect(read('1,500k'), isNull);
+      expect(read('4,3 palos'), 430000000);
+    });
+
+    test('a word keeps the digits glued to it', () {
+      expect(tokenize('el D1 20 mil', 'es').map((t) => t.text), ['el', 'D1', '20', 'mil']);
+      expect(tokenize('MiTienda24', 'es').single.isNumber, isFalse);
+      expect(tokenize('15mil', 'es').map((t) => t.text), ['15', 'mil']);
+    });
+
     test('es: dot and space thousands, comma decimal, k', () {
       expect(cents('15.000'), 1500000);
       expect(cents('1.500.000'), 150000000);
@@ -135,7 +190,10 @@ void main() {
     });
 
     test('a time given in another offset is the same instant', () {
-      expect(todayIn('America/Bogota', DateTime.utc(2026, 10, 2, 4, 30).toLocal()), '2026-10-01');
+      // 23:30 in Bogotá is 06:30 the next day in Lisbon (WEST, UTC+1).
+      final instant = DateTime.parse('2026-10-01T23:30:00-05:00');
+      expect(todayIn('America/Bogota', instant), '2026-10-01');
+      expect(todayIn('Europe/Lisbon', instant), '2026-10-02');
     });
 
     test('an unknown zone falls back to UTC', () {
@@ -235,6 +293,44 @@ void main() {
 
     test('a zero amount is unread', () {
       expect(parseSentence('gasté 0 en taxi', ctx).unread, ['gasté 0 en taxi']);
+    });
+
+    test('never throws, on 200 random strings', () {
+      final random = Random(20261022);
+      const pieces = [
+        '9', '99999999999999999999', '0', '1,', ',5', '.', ',', ' ', '  ', 'k', 'K', '\$', '€', //
+        '😀', '🇨🇴', '—', '-', '?', '¿', '!', '\n', '\t', '"', "'", '(', ')', ';', ':', '/', //
+        'mil', 'millones', 'palos', 'lukas', 'y', 'medio', 'con', 'coma', 'point', 'hundred', //
+        'un', 'una', 'a', 'and', 'gasté', 'me', 'pagaron', 'ayer', 'lunes', 'el', 'en', 'D1', //
+        'twelve', 'fifty', 'noventa', 'treinta', 'cien', 'ñandú', 'e\u0301', '\u0303', 'x',
+      ];
+      for (var n = 0; n < 200; n++) {
+        final text = StringBuffer();
+        final length = random.nextInt(40);
+        for (var i = 0; i < length; i++) {
+          final piece = pieces[random.nextInt(pieces.length)];
+          // Some long digit runs, up to a few hundred digits.
+          text.write(random.nextInt(10) == 0 ? '9' * random.nextInt(400) : piece);
+          if (random.nextBool()) text.write(' ');
+        }
+        for (final context in [
+          ctx,
+          const ParseContext(
+            locale: 'en',
+            currency: 'EUR',
+            today: '2028-02-29',
+            timeZone: 'Europe/Lisbon',
+            categories: [Category(id: 'c', name: 'D1', kind: Kind.expense)],
+            usual: [Usual(name: 'x', categoryId: 'missing')],
+          ),
+        ]) {
+          final input = text.toString();
+          final result = parseSentence(input, context);
+          for (final draft in result.drafts) {
+            expect(draft.amount, inInclusiveRange(1, 99999999900), reason: input);
+          }
+        }
+      }
     });
   });
 }

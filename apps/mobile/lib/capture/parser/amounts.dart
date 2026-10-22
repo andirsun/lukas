@@ -5,39 +5,44 @@ import 'words.dart';
 /// The largest amount read, in currency units.
 const maxAmountUnits = 999999999;
 
-/// An exact decimal, [n] / 10^[e]. Amounts never go through a double.
+/// An exact decimal, [n] / 10^[e], on [BigInt] so no digit run can overflow it. Amounts never
+/// go through a double.
 class Dec implements Comparable<Dec> {
-  const Dec(this.n, [this.e = 0]);
+  Dec(int n, [int e = 0]) : this.big(BigInt.from(n), e);
+  Dec.big(this.n, [this.e = 0]);
 
-  final int n;
+  static final zero = Dec(0);
+  static final half = Dec(5, 1);
+
+  final BigInt n;
   final int e;
 
-  static int _pow10(int e) {
-    var p = 1;
-    for (var i = 0; i < e; i++) {
-      p *= 10;
-    }
-    return p;
-  }
+  static final _ten = BigInt.from(10);
 
-  Dec _at(int e) => Dec(n * _pow10(e - this.e), e);
+  Dec _at(int e) => Dec.big(n * _ten.pow(e - this.e), e);
 
   Dec operator +(Dec other) {
     final e = this.e > other.e ? this.e : other.e;
-    return Dec(_at(e).n + other._at(e).n, e);
+    return Dec.big(_at(e).n + other._at(e).n, e);
   }
 
-  Dec times(int k) => Dec(n * k, e);
+  Dec times(int k) => Dec.big(n * BigInt.from(k), e);
 
-  bool get isInteger => n % _pow10(e) == 0;
+  Dec timesDec(Dec other) => Dec.big(n * other.n, e + other.e);
+
+  bool get isInteger => n % _ten.pow(e) == BigInt.zero;
 
   /// The integer part.
-  int get whole => n ~/ _pow10(e);
+  BigInt get whole => n ~/ _ten.pow(e);
 
-  /// x100, rounded half up.
+  /// Whether this is an integer from [low] to [high].
+  bool isIntegerIn(int low, int high) =>
+      isInteger && whole >= BigInt.from(low) && whole <= BigInt.from(high);
+
+  /// x100, rounded half up. Only for values that fit an int (callers check the cap first).
   int get cents {
-    final d = _pow10(e);
-    return (n * 100 * 2 + d) ~/ (2 * d);
+    final d = _ten.pow(e);
+    return ((n * BigInt.from(200) + d) ~/ (d * BigInt.two)).toInt();
   }
 
   @override
@@ -63,6 +68,7 @@ class AmountMatch {
     required this.end,
     required this.value,
     required this.slang,
+    this.ambiguous = false,
   });
 
   final int start;
@@ -74,10 +80,15 @@ class AmountMatch {
   /// Read with `luca(s)`/`lukas` or `palo(s)`, which count only in COP.
   final bool slang;
 
-  /// Integer cents, or null when the amount is not usable: zero, or above [maxAmountUnits].
+  /// Digits with a thousands separator before a scale word (`4,300 palos`): 4,3 or 4.300?
+  final bool ambiguous;
+
+  /// Integer cents, or null when the amount is not usable: ambiguous, zero, or above
+  /// [maxAmountUnits].
   int? get cents {
-    if (value.compareTo(const Dec(0)) <= 0) return null;
-    if (value.compareTo(const Dec(maxAmountUnits)) > 0) return null;
+    if (ambiguous) return null;
+    if (value.compareTo(Dec.zero) <= 0) return null;
+    if (value.compareTo(Dec(maxAmountUnits)) > 0) return null;
     return value.cents;
   }
 }
@@ -209,50 +220,51 @@ class _Reader {
     return any ? (v, j) : null;
   }
 
-  /// 1–999 in English words: `[unit hundred [and]] [tens [unit] | teen | unit]`.
+  /// 1–99 in English words: `tens [unit] | teen | unit`.
+  (int, int)? _below100En(int j) {
+    if (_enTens[word(j)] case final t?) {
+      if (_enUnits[word(j + 1)] case final u?) return (t + u, j + 2);
+      return (t, j + 1);
+    }
+    if (_enTeens[word(j)] case final t?) return (t, j + 1);
+    if (_enUnits[word(j)] case final u?) return (u, j + 1);
+    return null;
+  }
+
+  /// 1–9 999 in English words: `[(a | 1–99) hundred [and]] [1–99]`, so `two hundred fifty` and
+  /// `twelve hundred` (1 200).
   (int, int)? _smallEn(int i) {
     var j = i;
     var v = 0;
     var any = false;
-    final first = word(j);
-    final hundreds = first == 'a' ? 1 : _enUnits[first];
-    if (hundreds != null && word(j + 1) == 'hundred') {
-      v += hundreds * 100;
-      j += 2;
+    final h = word(j) == 'a' && word(j + 1) == 'hundred' ? (1, j + 1) : _below100En(j);
+    if (h != null && word(h.$2) == 'hundred') {
+      v = h.$1 * 100;
+      j = h.$2 + 1;
       any = true;
-      final next = word(j + 1);
-      if (word(j) == 'and' &&
-          (_enTens.containsKey(next) || _enTeens.containsKey(next) || _enUnits.containsKey(next))) {
-        j++;
-      }
+      if (word(j) == 'and' && _below100En(j + 1) != null) j++;
     }
-    if (_enTens[word(j)] case final t?) {
-      v += t;
-      j++;
-      any = true;
-      if (_enUnits[word(j)] case final u?) {
-        v += u;
-        j++;
-      }
-    } else if (_enTeens[word(j)] case final t?) {
-      v += t;
-      j++;
-      any = true;
-    } else if (_enUnits[word(j)] case final u?) {
-      v += u;
-      j++;
+    if (_below100En(j) case (final r, final next)) {
+      v += r;
+      j = next;
       any = true;
     }
     return any ? (v, j) : null;
   }
 
-  /// A number with no scale word: digits, or words up to 999, with an optional decimal in words
-  /// (`cuatro coma tres`, `four point five`).
-  (Dec, int)? small(int i) {
+  /// A number with no scale word: digits, or words, with an optional decimal in words
+  /// (`cuatro coma tres`, `10 coma 05`, `four point five`). `grouped` says the digits carry a
+  /// thousands separator.
+  ({Dec value, int next, bool grouped, bool ambiguous})? small(int i) {
     Dec v;
     int j;
+    var grouped = false;
+    var ambiguous = false;
     if (isNumber(i)) {
-      v = digitsValue(tokens[i].text, locale);
+      final d = readDigits(tokens[i].text);
+      v = d.value;
+      grouped = d.grouped;
+      ambiguous = d.ambiguous;
       j = i + 1;
     } else {
       final r = _en ? _smallEn(i) : _smallEs(i);
@@ -261,52 +273,74 @@ class _Reader {
       j = r.$2;
     }
     if (v.isInteger && word(j) == (_en ? 'point' : 'coma')) {
-      final f = _en ? _smallEn(j + 1) : _smallEs(j + 1);
-      final fd = f == null && isNumber(j + 1) ? digitsValue(tokens[j + 1].text, locale) : null;
-      final frac = f?.$1 ?? (fd != null && fd.isInteger ? fd.whole : null);
+      // The decimals keep their written length: `05` is five hundredths.
+      String? frac;
+      var next = j + 2;
+      if (isNumber(j + 1) && RegExp(r'^\d{1,3}$').hasMatch(tokens[j + 1].text)) {
+        frac = tokens[j + 1].text;
+      } else if ((_en ? _smallEn(j + 1) : _smallEs(j + 1)) case (final f, final n)) {
+        frac = '$f';
+        next = n;
+      }
       if (frac != null) {
-        v = v + Dec(frac, '$frac'.length);
-        j = f?.$2 ?? j + 2;
+        v = v + Dec(int.parse(frac), frac.length);
+        j = next;
       }
     }
-    return (v, j);
+    return (value: v, next: j, grouped: grouped, ambiguous: ambiguous);
   }
-
-  /// Whether [small] at [i] was read from words (not digits).
-  bool fromWords(int i) => !isNumber(i);
 
   AmountMatch? read(int i) {
     var j = i;
-    var total = const Dec(0);
+    var total = Dec.zero;
     var lastScale = _bigScale;
     var any = false;
     var slang = false;
+    var ambiguous = false;
+
+    // After a scale word: es `y medio`/`y media` adds half of it (`un palo y medio`).
+    void halfMore(int scale) {
+      if (!_en && word(j) == 'y' && (word(j + 1) == 'medio' || word(j + 1) == 'media')) {
+        total = total + Dec.half.times(scale);
+        j += 2;
+      }
+    }
+
     while (true) {
+      // A larger scale right after a scale multiplies everything so far: `mil millones`.
+      final bigger = scaleAt(j);
+      if (any && lastScale != _bigScale && bigger != null && bigger > lastScale) {
+        total = total.times(bigger);
+        lastScale = bigger;
+        slang = slang || _slangScales.contains(word(j));
+        j++;
+        continue;
+      }
       Dec? s;
       var k = j;
+      var grouped = false;
       final w = word(j);
       if ((_oneBeforeScale[locale] ?? const {}).contains(w) && scaleAt(j + 1) != null) {
-        s = const Dec(1);
+        s = Dec(1);
         k = j + 1;
       } else if (!_en && w == 'medio' && scaleAt(j + 1) != null) {
-        s = const Dec(5, 1);
+        s = Dec.half;
         k = j + 1;
-      } else if (small(j) case (final v, final next)) {
-        s = v;
-        k = next;
+      } else if (small(j) case final r?) {
+        s = r.value;
+        k = r.next;
+        grouped = r.grouped;
+        ambiguous = ambiguous || r.ambiguous;
       }
       final scale = scaleAt(k);
       if (s != null && scale != null && scale < lastScale) {
         total = total + s.times(scale);
         lastScale = scale;
         slang = slang || _slangScales.contains(word(k));
+        ambiguous = ambiguous || grouped;
         j = k + 1;
         any = true;
-        // es "un palo y medio", "dos millones y medio": half of that scale more.
-        if (!_en && word(j) == 'y' && (word(j + 1) == 'medio' || word(j + 1) == 'media')) {
-          total = total + const Dec(5, 1).times(scale);
-          j += 2;
-        }
+        halfMore(scale);
         continue;
       }
       if (s == null && _bareScales.contains(w) && _scales[w]! < lastScale) {
@@ -314,6 +348,7 @@ class _Reader {
         lastScale = _scales[w]!;
         j++;
         any = true;
+        halfMore(lastScale);
         continue;
       }
       if (s != null &&
@@ -321,9 +356,9 @@ class _Reader {
           (lastScale == _bigScale || s.compareTo(Dec(lastScale)) < 0)) {
         total = total + s;
         // en "twelve fifty": two word numbers, the second 10–99, are units and cents.
-        if (_en && lastScale == _bigScale && fromWords(j) && s.isInteger && s.whole < 100) {
-          final c = fromWords(k) ? _smallEn(k) : null;
-          if (c != null && c.$1 >= 10 && c.$1 <= 99 && scaleAt(c.$2) == null) {
+        if (_en && lastScale == _bigScale && !isNumber(j) && s.isIntegerIn(1, 99)) {
+          final c = isNumber(k) ? null : _below100En(k);
+          if (c != null && c.$1 >= 10 && scaleAt(c.$2) == null && word(c.$2) != 'hundred') {
             total = total + Dec(c.$1, 2);
             k = c.$2;
           }
@@ -340,51 +375,48 @@ class _Reader {
     final joiner = word(j);
     if (!scaled && total.isInteger && (joiner == 'con' || (_en && joiner == 'and'))) {
       final c = small(j + 1);
-      if (c != null &&
-          c.$1.isInteger &&
-          c.$1.whole >= 1 &&
-          c.$1.whole <= 99 &&
-          scaleAt(c.$2) == null) {
-        final hasCentWord = _centWords.contains(word(c.$2));
+      if (c != null && c.value.isIntegerIn(1, 99) && scaleAt(c.next) == null) {
+        final hasCentWord = _centWords.contains(word(c.next));
         if (joiner == 'con' || hasCentWord) {
-          total = total + Dec(c.$1.whole, 2);
-          j = c.$2;
+          total = total + Dec.big(c.value.whole, 2);
+          j = c.next;
           if (hasCentWord) j++;
           if (_currencyWords.contains(word(j))) j++;
         }
       }
     }
-    return AmountMatch(start: i, end: j, value: total, slang: slang);
+    return AmountMatch(start: i, end: j, value: total, slang: slang, ambiguous: ambiguous);
   }
 }
 
-/// The value of a number written in digits, by the locale's separators (words.dart), with `k`
-/// as x1.000.
-Dec digitsValue(String text, String locale) {
+/// More integer digits than this are above any amount read; they are not parsed.
+const _maxIntegerDigits = 15;
+
+/// The value of a number token in digits (words.dart), the same in every locale and currency:
+/// - a dot or comma followed by exactly three digits is a thousands separator (cents have two);
+/// - a last dot or comma followed by one or two digits is the decimal;
+/// - a space before three digits is thousands (`120 000`, es);
+/// - `k` after the digits is x1.000.
+/// `grouped` is true when a thousands separator was used, and `ambiguous` when one was used with
+/// `k` (`1,500k`).
+({Dec value, bool grouped, bool ambiguous}) readDigits(String text) {
   var s = text;
   var k = 1;
   if (s.endsWith('k') || s.endsWith('K')) {
     k = 1000;
     s = s.substring(0, s.length - 1);
   }
-  String intPart;
   var frac = '';
-  if (locale == 'en') {
-    final parts = s.replaceAll(',', '').split('.');
-    intPart = parts[0];
-    if (parts.length > 1) frac = parts[1];
-  } else if (s.contains(',')) {
-    final parts = s.split(',');
-    intPart = parts[0].replaceAll('.', '').replaceAll(' ', '');
-    frac = parts[1];
-  } else if (RegExp(r'^\d+\.\d{1,2}$').hasMatch(s)) {
-    final parts = s.split('.');
-    intPart = parts[0];
-    frac = parts[1];
-  } else {
-    intPart = s.replaceAll('.', '').replaceAll(' ', '');
+  final decimal = RegExp(r'[.,](\d{1,2})$').firstMatch(s);
+  if (decimal != null) {
+    frac = decimal[1]!;
+    s = s.substring(0, decimal.start);
   }
-  return Dec(int.parse('$intPart$frac'), frac.length).times(k);
+  final grouped = RegExp(r'[., ]').hasMatch(s);
+  var digits = s.replaceAll(RegExp(r'[., ]'), '').replaceFirst(RegExp(r'^0+(?=\d)'), '');
+  if (digits.length > _maxIntegerDigits) digits = '1${'0' * _maxIntegerDigits}';
+  final value = Dec.big(BigInt.parse('$digits$frac'), frac.length).times(k);
+  return (value: value, grouped: grouped, ambiguous: grouped && k != 1);
 }
 
 /// The longest amount that starts at token [i], or null when none starts there.

@@ -45,23 +45,21 @@ class Token {
   String toString() => text;
 }
 
-// Numbers in digits, by locale, with an optional `k` (x1.000) right after them.
-//  es: a dot before exactly three digits is thousands, and so is a space (`120 000`); a comma is
-//      the decimal. A dot before one or two digits is read as a decimal too (`12.50`).
-//  en: a comma before exactly three digits is thousands; a dot is the decimal.
+// Numbers in digits, with an optional `k` (x1.000) right after them. A dot or comma before
+// exactly three digits is a thousands separator; a last dot or comma before one or two digits is
+// the decimal (amounts.dart, readDigits). In es, a space before three digits is thousands too
+// (`120 000`; Whisper writes that).
 const _kSuffix = r'(?:[kK](?![\p{L}\p{N}]))?';
+const _digits = r'\d+(?:[.,]\d{3}(?!\d))*(?:[.,]\d{1,2}(?!\d))?';
 final _numberEs = RegExp(
-  r'(?:\d+\.\d{1,2}(?![\d.])'
-  r'|(?:\d{1,3}(?:\.\d{3})+(?!\d)|\d{1,3}(?: \d{3})+(?![\d.])|\d+)(?:,\d+)?)'
-  '$_kSuffix',
+  r'(?:\d{1,3}(?: \d{3})+(?!\d)(?:[.,]\d{1,2}(?!\d))?|'
+  '$_digits)$_kSuffix',
   unicode: true,
 );
-final _numberEn = RegExp(
-  r'(?:\d{1,3}(?:,\d{3})+(?!\d)|\d+)(?:\.\d+)?'
-  '$_kSuffix',
-  unicode: true,
-);
-final _word = RegExp(r'[\p{L}\p{M}]+', unicode: true);
+final _numberEn = RegExp('$_digits$_kSuffix', unicode: true);
+
+// A word starts with a letter and keeps the digits glued to it (`D1`, `MiTienda24`).
+final _word = RegExp(r'[\p{L}\p{M}][\p{L}\p{M}\p{N}]*', unicode: true);
 
 /// Splits [text] into words, numbers and commas. Everything else (spaces, dots ending a sentence,
 /// other punctuation) separates tokens and is dropped.
