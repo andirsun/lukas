@@ -5,29 +5,27 @@
 
 ## Decision
 
-*Updated after the vocabulary-biasing follow-up (last section). The first decision is kept below, struck through, for the record.*
+*Confirmed on the phone after the vocabulary-biasing follow-up (see the last two sections). The first decision is kept below, struck through, for the record.*
 
-**Engine:** Vosk small models (`vosk-model-small-es-0.42` and `vosk-model-small-en-us-0.15`), run as **two passes** on the same audio:
+**Engine:** Vosk small models (`vosk-model-small-es-0.42` and `vosk-model-small-en-us-0.15`), run as **two passes** on the same audio, merged by word timestamps (merge rule v2):
 - a free pass;
 - a grammar-biased pass, which knows only the amount, kind and date vocabulary plus `[unk]`.
 
-The passes are merged by word timestamps (merge rule v2).
-- **This is provisional** until the phone confirms it. It was measured on the Mac with Vosk 0.3.44, while the phone has 0.3.75.
-  - The Mac's free pass reproduces the phone's 17/20, with the same three misses and the same latency.
-- **If the phone run falls below 18/20**, the earlier fallback applies:
-  - the Qwen2.5-1.5B hybrid, if the founder accepts its size;
-  - otherwise, the platform `SpeechRecognizer`.
-- Whisper does not qualify in any combination.
+**Measured on the phone:**
+- **Amounts right in 19/20 sentences** (24/25 amounts, 24/25 kinds, 24/25 dates, 18/25 names). The only miss is s10, "three" heard as "tree".
+- **End of speech to drafts:** 12.1 ms median, 18.1 ms p90, 33.2 ms max, with the two passes finalized one after the other and the rules parse added. In parallel, it's 8.4 ms median.
+- **CPU:** RTF 0.054 for both passes together. The 4-thread cap doesn't apply, because Vosk uses one thread per recognizer.
 
-**Parsing:** rules only.
-- On biased Vosk, the rules get amounts right in **19/20** sentences, with an estimated median of about 11 ms from end of speech to drafts.
-- On typed text, they get 20/20.
-- That meets the spec's "rules only" bar, so there is no model download.
-- The Qwen2.5-1.5B hybrid stays only as the fallback in case the phone doesn't confirm.
+Whisper does not qualify in any combination.
 
-**What the founder decides:** nothing for now; the 1.1 GB model is no longer needed. That changes only if the phone run misses the bar.
+**Parsing:** rules only. They meet the spec's "rules only" bar: 19/20 with two-pass Vosk, and 20/20 on typed text. There is no model download.
 
-**Pending on the phone:** `bench/run_bias.sh` (see "Pending" below, about 2 minutes) confirms the two-pass Vosk on the phone. The LLM measurements are now optional.
+**Fallback:**
+- Qwen2.5-1.5B in a hybrid is the documented fallback if a later, larger test set drops two-pass Vosk below the bar.
+- On the phone, at 4 threads, it takes 1035 ms median and 1814 ms p90 per call, and peaks at 2.2 GB of memory.
+- It isn't needed now.
+
+**What the founder decides:** nothing; no model needs accepting.
 
 <details><summary>First decision (before the follow-up), superseded</summary>
 
@@ -39,7 +37,7 @@ The passes are merged by word timestamps (merge rule v2).
 
 - **Device:** the founder's Samsung Galaxy S25 Ultra (SM-S938B), Android 17 / API 37, arm64-v8a, Snapdragon 8 Elite (8 cores).
   - The phone was fast-charging during the runs. The battery read 32 °C at the start and 42–43 °C during the parser runs, so expect some thermal throttling: the latencies are, if anything, pessimistic for this phone.
-- **App:** a throwaway Flutter 3.47.7 app, built release AOT for arm64, outside the repo. It stays on the phone and in `~/lukitas-spike` only until the pending phone run, and is deleted after it.
+- **App:** a throwaway Flutter 3.47.7 app, built release AOT for arm64, outside the repo. It was uninstalled from the phone and deleted from the Mac after the phone confirmation.
   - Recording used Android `AudioRecord` (`VOICE_RECOGNITION`, 16 kHz mono PCM16) through a MethodChannel.
   - Vosk ran through `com.alphacephei:vosk-android:0.3.75`, which uses JNA.
   - whisper.cpp `v1.9.5` and llama.cpp `v0.7.0` were built with NDK r28c into two JNI libraries.
@@ -224,7 +222,7 @@ These were written before measuring; Phase A of the task.
 | Qwen2.5-0.5B | 8 | 1278 | 2361 | 4193 | 28 | 899 | 3.4 s |
 | Qwen2.5-0.5B | 4 | 713 | 1273 | 1654 | 43 | 765 | 4.1 s |
 | Qwen2.5-1.5B | 8 | 1342 (typed set, 20 calls) | 3072 | 3682 | 24 | 3545 | 4.2 s |
-| Qwen2.5-1.5B | 4 | **pending** | | | | | |
+| Qwen2.5-1.5B | 4 | 1035 (typed + Vosk sets, 40 calls; see "Phone confirmation") | 1814 | 2145 | 30 | 2254 | 4.0 s |
 
 - **Threads:** 8 threads was slower than 4 for the 0.5B on this phone, which points to oversubscription or throttling. The app should use at most 4 threads.
 - **Generation:** a typical draft is 25–60 grammar-constrained tokens.
@@ -235,8 +233,9 @@ These were written before measuring; Phase A of the task.
 | Combination | Amounts right | Median ms | p90 ms | Meets the bar (≥ 18/20, median ≤ 1000 ms)? |
 |---|---|---|---|---|
 | Vosk + rules | 17/20 | 8 | 16 | No: amounts |
+| **Two-pass Vosk (free + grammar, merge v2) + rules** | **19/20 (phone)** | **12** | 18 | **Yes** (the decision) |
 | Vosk + hybrid 0.5B | 17/20 (Mac) | 8 | 16 (+ ~0.7–1.3 s on the 1 sentence that calls the model) | No: amounts |
-| **Vosk + hybrid 1.5B** | **18/20 (Mac)** | **8** | 16 (+ ~1.3 s, up to 3.7 s, on the 1 sentence that calls the model) | **Yes, provisionally:** accuracy is off-device; the founder must accept the model |
+| **Vosk + hybrid 1.5B** | **18/20 (Mac)** | **8** | 16 (+ ~1.3 s, up to 3.7 s, on the 1 sentence that calls the model) | Yes on the Mac, but superseded by two-pass Vosk + rules (19/20 on the phone, no model) |
 | Whisper base + rules, 8 / 4 threads | 15/20 | 817 / 1207 | 990 / 1357 | No: amounts; at 4 threads also latency |
 | Whisper base + hybrid 1.5B | 17/20 (Mac) | ≥ 817 | — | No |
 | Whisper tiny + any | ≤ 13/20 | 289 | 453 | No |
@@ -260,38 +259,55 @@ These were written before measuring; Phase A of the task.
 - Vosk ships one model per language, downloaded on demand, so a person who uses only Spanish needs about 40 MB.
 - Including Vosk adds about 10 MB per ABI to the APK. The `vosk-android` AAR ships armeabi-v7a, arm64-v8a and x86_64.
 
-## Pending (when the phone is back)
+## Phone confirmation (same day, after the phone came back)
 
-- **Setup:** the spike app and its models are still installed on the phone, and `~/lukitas-spike` is kept for this.
-- **What's needed:** the phone unlocked once, awake and connected over Wi-Fi adb (`192.168.1.47:33293`).
+The phone ran with its battery at 30.8 °C, not charging. The adb serial was the mDNS one.
 
-**1. Confirm the decision (about 2 minutes).** This installs the updated spike APK, which adds the grammar pass and word timestamps. It then runs the free and grammar passes for es and en, merges them, and scores them:
+### 1. Two-pass Vosk + rules (`bench/run_bias.sh`, spike APK with grammar pass and word timestamps)
 
-```sh
-~/lukitas-spike/bench/run_bias.sh
-```
+| Vosk transcript (phone, 0.3.75) | Sentences with amounts right | Amounts | Kinds | Dates | Names | WER (canonical) | Misses |
+|---|---|---|---|---|---|---|---|
+| Free pass alone | 17/20 | 22/25 | 22/25 | 23/25 | 16/25 | 25.0% | s07, s08, s10 |
+| Grammar pass alone | 15/20 | 16/25 | 20/25 | 20/25 | 2/25 | 63.0% | s02, s08, s10, s15, s17 |
+| Merge v1 | 19/20 | 24/25 | 24/25 | 24/25 | 16/25 | 16.3% | s10 |
+| **Merge v2** | **19/20** | **24/25** | **24/25** | **24/25** | **18/25** | 16.3% | s10 |
 
-- **It confirms the decision** if the `merge v2` row shows at least 18/20, and the free and grammar `finalMs` in `bench/results/speech-vosk-*.json` keep the median end to end under 1000 ms.
-- **If it doesn't:** go to step 2, and the fallback in "Decision" applies.
+- **These are identical to the Mac** (Vosk 0.3.44), row by row.
+- **One difference from the Phase B free pass:** with `setWords(true)`, the phone's free pass reads s08 as "gaste dos mil", as the Mac does. The Phase B free pass, without word timestamps, read "gastos de mil". The scores don't change.
 
-**2. Optional, needed only if step 1 misses the bar:** the LLM latency and the hybrids on the phone.
+| Phone latency, Vosk (ms) | Median | p90 | Max | RTF median (max) |
+|---|---|---|---|---|
+| Free pass, finalize | 8.4 | 14.5 | 28.6 | 0.044 (0.132) |
+| Grammar pass, finalize | 3.8 | 4.6 | 5.2 | 0.009 (0.010) |
+| **Both, one after the other, + rules** | **12.1** | **18.1** | **33.2** | 0.054 (0.141) |
+| Both in parallel (two threads) + rules | 8.4 | 14.5 | 28.6 | n/a |
 
-```sh
-cd ~/lukitas-spike
-Q15=qwen2.5-1.5b-instruct-q4_k_m.gguf; Q05=qwen2.5-0.5b-instruct-q4_k_m.gguf
-bench/run_parse.sh ref,vosk \
-  parse-llm15-t8:llm:$Q15:8 parse-llm15-t4:llm:$Q15:4 \
-  parse-hyb15-t4:hybrid:$Q15:4 parse-hyb05-t4:hybrid:$Q05:4
-~/development/flutter/bin/dart run tool/score.dart parse bench/results
-```
+- **CPU:** the grammar pass costs about 21% of the free pass's CPU.
+- **Grammar-pass endpoints:** it hit an endpoint mid-sentence in 18 of 20 clips. The app collected the intermediate results, as Task 12 must.
+- **Memory:** each pass ran in its own process, so the peak was measured per pass:
+  - es: Δ 175 MB free, Δ 166 MB grammar;
+  - en: Δ 207 MB free, Δ 183 MB grammar.
 
-**3. Clean up:**
+  Both recognizers share one loaded `Model`, so running both together should cost about one model plus a small grammar graph. That combined peak was not measured.
+- **The 4-thread mid-range proxy** doesn't change Vosk, which uses one thread per recognizer.
+- **The decision bar** (≥ 18/20 and a median ≤ 1000 ms) **is met**, with a large latency margin.
 
-```sh
-~/Library/Android/sdk/platform-tools/adb -s 192.168.1.47:33293 shell rm -f /data/local/tmp/transcripts.json
-~/Library/Android/sdk/platform-tools/adb -s 192.168.1.47:33293 uninstall dev.lukitas.spike.lukitas_spike
-rm -r ~/lukitas-spike
-```
+### 2. Fallback: Qwen2.5-1.5B on the phone at 4 threads (typed and Vosk sets, 40 calls)
+
+| Median ms | p90 ms | Max ms | Tokens/s (median) | Load ms | Prompt prefix, once | VmHWM |
+|---|---|---|---|---|---|---|
+| 1035 | 1814 | 2145 | 29.7 | 2254 | 4.0 s | 2236 MB |
+
+- Its accuracy on the phone matches the Mac twin: 12/20 on typed text and 10/20 on Vosk, as a parser alone.
+- 4 threads was faster than the 8-thread run on the typed set (1342 ms median, measured earlier with the phone hot and charging).
+- The hybrid on the phone and the 1.5B at 8 threads over the speech sets were not run. They are not needed for the decision.
+
+### Clean-up
+
+- The spike app was uninstalled from the phone.
+- The phone's `/data/local/tmp` files were removed.
+- `~/lukitas-spike` was deleted, with all its models, builds and recordings.
+- Nothing from the spike is left in the repo except this report.
 
 ## Notes for Tasks 8 and 12
 
@@ -393,12 +409,12 @@ So the follow-up tried biasing Vosk toward the words the amounts need.
   - The 8- and 4-thread settings don't apply: Vosk uses one thread per recognizer, so the 4-thread proxy is unaffected.
   - The parse adds 0.01 ms.
   - The median end to end stays around 10 ms, far under 1000 ms.
-- **Memory:** both recognizers share one `Model`. The grammar recognizer adds only its small grammar FST. This wasn't measured here; the phone run records VmHWM.
+- **Memory:** both recognizers share one `Model`. The grammar recognizer adds only its small grammar FST. The combined peak wasn't measured; per-pass phone numbers are in "Phone confirmation".
 - **Mid-range phones:** an RTF of about 0.06 leaves roughly 16× headroom on this phone. A slower mid-range core should still keep up with live speech, but that is unmeasured.
 
 ### Caveats
 
-- **Mac only:** Vosk 0.3.44 on the Mac versus 0.3.75 on the phone. The scores matched on the free pass, but one transcript differed, so the phone run (`bench/run_bias.sh`) must confirm the merged 19/20.
+- **Mac versus phone:** Vosk 0.3.44 on the Mac and 0.3.75 on the phone. **Resolved:** the phone run reproduced every row exactly (see "Phone confirmation").
 - **The margin is thin:** one speaker and one take per sentence, so 19/20 is one sentence above the bar.
 - **Biasing can pull names toward number or verb words:** "almuerzo" became "peso", and "pan" became "pagué". v2 guards against that. Task 8's shared cases should include names that sound like amount words.
 
