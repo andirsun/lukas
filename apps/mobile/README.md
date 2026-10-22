@@ -5,7 +5,9 @@ The Flutter app (spec: `docs/superpowers/specs/2026-10-22-stage-3-mobile-design.
 ```sh
 flutter pub get                 # also generates AppLocalizations from lib/l10n/*.arb
 flutter analyze
-flutter test
+flutter test                    # everything, golden images included
+flutter test --exclude-tags golden    # what CI runs: goldens are pixels from the Mac that made them
+flutter test --update-goldens --tags golden    # after a deliberate change to how a screen looks
 flutter build apk --debug
 ```
 

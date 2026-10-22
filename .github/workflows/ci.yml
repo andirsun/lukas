@@ -171,7 +171,9 @@ jobs:
       # Also generates AppLocalizations from lib/l10n/*.arb.
       - run: flutter pub get --enforce-lockfile
       - run: flutter analyze
-      - run: flutter test
+      # Golden images (tag `golden`, apps/mobile/dart_test.yaml) are pixels from the Mac that made
+      # them; this Linux runner rasterizes text and shadows a little differently, so it skips them.
+      - run: flutter test --exclude-tags golden
       # Generated files must be committed as generated: run the generator and commit its output.
       - name: lib/theme/tokens.g.dart is up to date
         run: |
