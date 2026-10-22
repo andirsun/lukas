@@ -165,6 +165,8 @@ export const DragDownFromAnywhereCloses: Story = {
       });
       await waitFor(() => expect(args.onClose).toHaveBeenCalledOnce());
       await expect(vibrate).toHaveBeenCalledWith([10]);
+      // Gone before the a11y run, as in DragClosesReducedMotion.
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 3000 });
     } finally {
       vibrate.mockRestore();
     }
@@ -206,5 +208,7 @@ export const DragClosesReducedMotion: Story = {
       },
     });
     await waitFor(() => expect(args.onClose).toHaveBeenCalledOnce());
+    // Gone before the a11y run: a half-faded sheet would fail its contrast check on a slow machine.
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 3000 });
   },
 };
