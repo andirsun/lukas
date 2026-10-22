@@ -14,6 +14,11 @@ export const OAUTH_SCOPES = ["finance:read", "finance:write", "offline_access"] 
 export const CODE_TTL_SECONDS = 600;
 const EMAIL_WINDOW_MS = 15 * 60 * 1000;
 const EMAILS_PER_WINDOW = 5;
+/** ES256 then RS256 (COSE ids), offered when a passkey is created. */
+const PASSKEY_ALGORITHMS = [
+  { alg: -7, type: "public-key" },
+  { alg: -257, type: "public-key" },
+] as const;
 
 /** Whether `email` may ask for a sign-in code: always, unless an allowlist is configured. */
 export function isSignInAllowed(config: Pick<Config, "SIGN_IN_ALLOWLIST">, email: string): boolean {
@@ -146,6 +151,15 @@ export function createAuth(deps: AppDeps) {
             message: "Too many codes requested for this email",
           });
         }
+      }),
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/passkey/generate-register-options") return;
+        const returned = ctx.context.returned;
+        if (!returned || typeof returned !== "object" || !("pubKeyCredParams" in returned)) return;
+        // The passkey plugin offers SimpleWebAuthn's default, Ed25519 first. Proton Pass then
+        // creates Ed25519 keys it cannot sign with (CTAP2_ERR_UNSUPPORTED_ALGORITHM), so only
+        // ES256 and RS256 are offered: every authenticator signs with one of those.
+        return ctx.json({ ...returned, pubKeyCredParams: PASSKEY_ALGORITHMS });
       }),
     },
     databaseHooks: {

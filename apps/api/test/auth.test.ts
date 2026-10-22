@@ -56,6 +56,25 @@ describe("email code + magic link", () => {
     expect(options.rp).toEqual({ name: "Lukitas", id: "localhost" });
   });
 
+  test("a new passkey is offered ES256 first and never Ed25519", async () => {
+    // Proton Pass creates Ed25519 keys when offered them first, then cannot sign with them
+    // (AuthenticatorError 38, CTAP2_ERR_UNSUPPORTED_ALGORITHM).
+    const { headers } = await t.signIn("alg@lukas.test");
+    const res = await t.request("GET", "/auth/passkey/generate-register-options", { headers });
+    expect(res.status).toBe(200);
+    // The challenge cookie still comes along: verify-registration needs it.
+    expect(res.headers.get("set-cookie")).toContain("better-auth-passkey");
+    const options = (await res.json()) as {
+      challenge: string;
+      pubKeyCredParams: { alg: number; type: string }[];
+    };
+    expect(options.challenge).toBeTruthy();
+    expect(options.pubKeyCredParams).toEqual([
+      { alg: -7, type: "public-key" },
+      { alg: -257, type: "public-key" },
+    ]);
+  });
+
   test("signing in returns a bearer token that opens protected routes", async () => {
     await sendCode("b@lukas.test");
     const code = codeFrom(t.mailer.lastTo("b@lukas.test")?.subject ?? "");
