@@ -62,11 +62,23 @@ The API is documented at http://localhost:3000/api/openapi.json. Its routes live
 
 To run the API outside Docker, start only the services with `docker compose up -d postgres mailpit` and run `pnpm --filter @lukas/api dev`. On the host, Postgres listens on port 5433 and Mailpit SMTP on 1026, so they do not clash with a local Postgres or mail bridge.
 
+### Web app
+
+With the stack up (`docker compose up -d`), start the web app:
+
+```bash
+pnpm --filter @lukas/web dev   # http://localhost:5173
+```
+
+The landing is at `/`, the app at `/sign-in` and `/app`, and a demo without an account at `/demo`. Vite proxies `/api` to the API on port 3000, so the browser talks to one origin (`API_URL` and `WEB_URL` in `.env` point at it). Sign in with any email and read the code in Mailpit at http://localhost:8025. The components have stories: `pnpm --filter @lukas/web storybook` (http://localhost:6006).
+
 ### Tests
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test
 ```
+
+`pnpm test` runs the unit tests, the API's integration tests and every Storybook story (rendered in Chromium, with its interactions and an accessibility check). The first time, install the browser: `pnpm --filter @lukas/web exec playwright install chromium`.
 
 Integration tests start a throwaway Postgres in Docker (testcontainers). Without Docker, use the Postgres binaries on your PATH instead:
 
@@ -74,9 +86,24 @@ Integration tests start a throwaway Postgres in Docker (testcontainers). Without
 LUKAS_TEST_DB=local pnpm test
 ```
 
+End-to-end tests drive the web app in Chromium at phone and desktop sizes, against the dev stack. They read the sample data's months (September and October 2026) against a fixed date, so start the API with its clock pinned to it, then run them (Playwright starts `pnpm dev` unless it is already running):
+
+```bash
+E2E_NOW=2026-10-21T15:00:00Z docker compose up -d --build
+pnpm --filter @lukas/web e2e
+```
+
+A spec that reads a month pins its page the same way, with `pinClock(page)` from `apps/web/e2e/helpers.ts`. The landing is tested as it ships, built first: `pnpm --filter @lukas/web e2e:landing` (the full site), `e2e:landing-only` and `e2e:landing-only-app` (the landing-only release, without and with an app). CI runs all of these on every pull request.
+
+## Deploying
+
+- **The landing page** ships on its own as static files (Cloudflare): [`docs/deploy/landing.md`](docs/deploy/landing.md), with its config in [`deploy/landing/`](deploy/landing/).
+- **A personal install** runs the whole app for one person on one machine, behind a Cloudflare tunnel, with an email allowlist and daily backups: [`docs/deploy/personal.md`](docs/deploy/personal.md), with the stack and scripts in [`deploy/personal/`](deploy/personal/README.md).
+- **The API** on its own: [`docs/deploy/api.md`](docs/deploy/api.md).
+
 ## Self-hosting
 
-For now Lukitas is offered as a hosted service, and there are no docs for running your own instance. If you're interested, open an issue and we'll take it into account.
+For now Lukitas is offered as a hosted service, and there are no docs for running your own instance beyond the personal install above. If you're interested, open an issue and we'll take it into account.
 
 ## License
 
