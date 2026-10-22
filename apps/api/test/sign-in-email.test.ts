@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { signInEmail } from "../src/emails/sign-in.ts";
+import { claimEmail, signInEmail } from "../src/emails/sign-in.ts";
 
 const WEB_URL = "https://lukitas.example";
 const link = `${WEB_URL}/auth/verify?email=a%40lukas.test&code=123456&lang=es&next=%2Fapp%2Finsights`;
@@ -160,5 +160,48 @@ describe("sign-in email", () => {
       expect(all).not.toMatch(/\bLukas\b/);
       expect(all).not.toMatch(/\b(game|juego)\b/i);
     }
+  });
+});
+
+describe("claim email (a guest saves their progress)", () => {
+  const claim = { code: "123456", webUrl: WEB_URL, expiresInMinutes: 10 };
+
+  test("Spanish: the save-progress subject and heading, the code, the expiry, no link", () => {
+    const mail = claimEmail({ ...claim, locale: "es" });
+    expect(mail.subject).toBe("Tu código para guardar tu progreso: 123456");
+    const text = visibleText(mail.html);
+    expect(text).toContain("Tu código para guardar tu progreso");
+    expect(text).toContain("123456");
+    expect(text).toContain("El código vence en 10 minutos.");
+    expect(text).not.toContain("ENTRAR A LUKITAS");
+    expect(text).not.toContain("enlace");
+    expect(mail.html).toContain('lang="es"');
+    expect(mail.html).not.toContain("/auth/verify");
+  });
+
+  test("English: the save-progress subject and heading, the code, the expiry, no link", () => {
+    const mail = claimEmail({ ...claim, locale: "en" });
+    expect(mail.subject).toBe("Your code to save your progress: 123456");
+    const text = visibleText(mail.html);
+    expect(text).toContain("Your code to save your progress");
+    expect(text).toContain("The code expires in 10 minutes.");
+    expect(text).not.toContain("SIGN IN TO LUKITAS");
+    expect(text).not.toMatch(/\blink\b/i);
+  });
+
+  test("the text part has the code and the web URL, and no other link", () => {
+    for (const locale of ["es", "en"] as const) {
+      const mail = claimEmail({ ...claim, locale });
+      expect(mail.text).toContain("123456");
+      expect(mail.text.match(/https?:\/\/\S+/g)).toEqual([WEB_URL]);
+    }
+  });
+
+  test("the same layout as sign-in: the mascot, the brand palette, email-safe HTML", () => {
+    const { html } = claimEmail({ ...claim, locale: "es" });
+    expect(html).toContain(`src="${WEB_URL}/email/lukitas-wave.png"`);
+    expect(html).toContain("#f7f4ff");
+    expect(html).toContain('role="presentation"');
+    expect(html).not.toMatch(/<script/i);
   });
 });

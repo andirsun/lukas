@@ -11,7 +11,16 @@ import {
   withUser,
 } from "@lukas/db";
 import { and, asc, eq, isNull, sql } from "@lukas/db/orm";
+import {
+  consumeClaimCode,
+  dropClaimCodes,
+  isSignInAllowed,
+  issueClaimCode,
+  overEmailLimit,
+  sendClaimCode,
+} from "../auth.ts";
 import type { AppDeps } from "../deps.ts";
+import { isUniqueViolation } from "../http/db-errors.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
@@ -28,6 +37,31 @@ const profileDto = z.object({
   /** A guest: signed up on the app without an email (its `email` is a placeholder until claimed). */
   isAnonymous: z.boolean(),
 });
+
+/** An email as sign-in reads it: trimmed and lowercased. */
+const emailField = z.string().trim().toLowerCase().pipe(z.email().max(254));
+
+const claimSendBody = z.object({ email: emailField });
+const claimVerifyBody = z.object({ email: emailField, code: z.string().trim().min(1).max(32) });
+
+const notAGuest = () => new ApiError(409, "not_a_guest", "This account already has an email");
+const emailTaken = () => new ApiError(409, "email_taken", "That email already has an account");
+
+/** The guest gate of the claim: only an anonymous user may claim an email. */
+async function requireGuest(deps: AppDeps, userId: string) {
+  const [row] = await deps.db
+    .select({ isAnonymous: user.isAnonymous })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (!row?.isAnonymous) throw notAGuest();
+}
+
+/** The allowlist gate, the same as sign-in's (and a guest's `.invalid` placeholder never passes). */
+function requireAllowed(deps: AppDeps, email: string) {
+  if (!isSignInAllowed(deps.config, email)) {
+    throw new ApiError(403, "sign_in_not_allowed", "Sign-in is not open to this address");
+  }
+}
 
 const csvField = (value: string) =>
   /[",\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
@@ -131,6 +165,74 @@ export function meRoutes(deps: AppDeps) {
         }
       });
       return c.json(await profile(deps, c.get("userId")), 200);
+    },
+  );
+
+  // Saving a guest's progress (spec §4.2): the guest's own user receives the email, so its id,
+  // sessions and every row stay; nothing is copied.
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/v1/me/claim-email/send",
+      request: { body: jsonBody(claimSendBody) },
+      responses: {
+        204: { description: "A code is on its way to the email" },
+        ...problems(403, 409, 422, 429),
+      },
+    }),
+    async (c) => {
+      const { email } = c.req.valid("json");
+      const sessionUser = c.get("user");
+      await requireGuest(deps, sessionUser.id);
+      requireAllowed(deps, email);
+      // The app then says to sign in with that email instead; the guest stays as it is.
+      const [owner] = await deps.db.select({ id: user.id }).from(user).where(eq(user.email, email));
+      if (owner) throw emailTaken();
+      if (await overEmailLimit(deps, email)) {
+        throw new ApiError(429, "too_many_requests", "Too many codes requested for this email");
+      }
+      const code = await issueClaimCode(deps, sessionUser.id, email);
+      await sendClaimCode(deps, { email, code, locale: sessionUser.locale });
+      return c.body(null, 204);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/v1/me/claim-email/verify",
+      request: { body: jsonBody(claimVerifyBody) },
+      responses: {
+        200: jsonResponse(profileDto, "The profile, no longer a guest"),
+        ...problems(400, 403, 409, 422),
+      },
+    }),
+    async (c) => {
+      const { email, code } = c.req.valid("json");
+      const userId = c.get("userId");
+      await requireGuest(deps, userId);
+      requireAllowed(deps, email);
+      if (!(await consumeClaimCode(deps, userId, email, code))) {
+        throw new ApiError(400, "invalid_or_expired_code", "The code is wrong, expired or used");
+      }
+      let claimed: { id: string }[];
+      try {
+        // One statement in one transaction. A concurrent claim of the same email by another guest
+        // waits on the unique email index and then fails it: that one gets email_taken.
+        claimed = await withUser(deps.db, userId, (tx) =>
+          tx
+            .update(user)
+            .set({ email, emailVerified: true, isAnonymous: false })
+            .where(and(eq(user.id, userId), eq(user.isAnonymous, true)))
+            .returning({ id: user.id }),
+        );
+      } catch (error) {
+        if (isUniqueViolation(error)) throw emailTaken();
+        throw error;
+      }
+      if (claimed.length === 0) throw notAGuest();
+      await dropClaimCodes(deps, userId);
+      return c.json(await profile(deps, userId), 200);
     },
   );
 

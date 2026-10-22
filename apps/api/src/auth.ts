@@ -1,7 +1,15 @@
+import { createHash, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { passkey } from "@better-auth/passkey";
 import { defaultCurrencyFor, isValidTimeZone } from "@lukas/core";
-import { accounts, emailThrottle, schema, user as userTable, withUser } from "@lukas/db";
+import {
+  accounts,
+  emailThrottle,
+  schema,
+  user as userTable,
+  verification,
+  withUser,
+} from "@lukas/db";
 import { eq, sql } from "@lukas/db/orm";
 import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -9,10 +17,12 @@ import { createAuthMiddleware } from "better-auth/api";
 import { anonymous, bearer, emailOTP, jwt } from "better-auth/plugins";
 import { apiPathPrefix, type Config } from "./config.ts";
 import type { AppDeps } from "./deps.ts";
-import { signInEmail } from "./emails/sign-in.ts";
+import { claimEmail, signInEmail } from "./emails/sign-in.ts";
 
 export const OAUTH_SCOPES = ["finance:read", "finance:write", "offline_access"] as const;
 export const CODE_TTL_SECONDS = 600;
+/** Wrong tries a code survives: the third wrong one uses it up. */
+export const CODE_ATTEMPTS = 3;
 const EMAIL_WINDOW_MS = 15 * 60 * 1000;
 const EMAILS_PER_WINDOW = 5;
 /** ES256 then RS256 (COSE ids), offered when a passkey is created. */
@@ -67,6 +77,94 @@ export async function bumpEmailThrottle(deps: AppDeps, email: string): Promise<n
     })
     .returning({ count: emailThrottle.count });
   return row?.count ?? 1;
+}
+
+/** Counts one more email to `email` and says whether that goes over the per-email limit. */
+export async function overEmailLimit(deps: AppDeps, email: string): Promise<boolean> {
+  return (await bumpEmailThrottle(deps, email)) > EMAILS_PER_WINDOW;
+}
+
+/**
+ * Claim codes (spec §4.2): stored like emailOTP's sign-in codes, in Better Auth's `verification`
+ * table as `<sha-256, base64url>:<wrong tries>` (what `storeOTP: "hashed"` writes), under an
+ * identifier that ties the code to both the guest and the email.
+ */
+const claimCodeId = (userId: string, email: string) => `claim-email-otp-${userId}-${email}`;
+const claimCodePrefix = (userId: string) => `claim-email-otp-${userId}-`;
+const hashCode = (code: string) => createHash("sha256").update(code).digest("base64url");
+
+/** Stores a fresh claim code for this guest and email (replacing any earlier one); returns it. */
+export async function issueClaimCode(deps: AppDeps, userId: string, email: string) {
+  const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  const identifier = claimCodeId(userId, email);
+  await deps.db.transaction(async (tx) => {
+    await tx.delete(verification).where(eq(verification.identifier, identifier));
+    await tx.insert(verification).values({
+      id: randomUUID(),
+      identifier,
+      value: `${hashCode(code)}:0`,
+      expiresAt: new Date(Date.now() + CODE_TTL_SECONDS * 1000),
+    });
+  });
+  return code;
+}
+
+/**
+ * Uses up this guest's claim code for `email` if `code` matches, as emailOTP's atomic verify does:
+ * the row is taken out first, so a code is accepted once however many requests race; a wrong
+ * code puts it back with one more wrong try, until the third. Expired codes never match.
+ */
+export async function consumeClaimCode(
+  deps: AppDeps,
+  userId: string,
+  email: string,
+  code: string,
+): Promise<boolean> {
+  const identifier = claimCodeId(userId, email);
+  return deps.db.transaction(async (tx) => {
+    const [row] = await tx
+      .delete(verification)
+      .where(eq(verification.identifier, identifier))
+      .returning()
+      .then((rows) => rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
+    if (!row || row.expiresAt.getTime() <= Date.now()) return false;
+    const colon = row.value.lastIndexOf(":");
+    const stored = Buffer.from(row.value.slice(0, colon));
+    const tries = Number.parseInt(row.value.slice(colon + 1), 10) || 0;
+    if (tries >= CODE_ATTEMPTS) return false;
+    const given = Buffer.from(hashCode(code));
+    if (given.length === stored.length && timingSafeEqual(given, stored)) return true;
+    if (tries + 1 < CODE_ATTEMPTS) {
+      await tx.insert(verification).values({
+        id: randomUUID(),
+        identifier,
+        value: `${row.value.slice(0, colon)}:${tries + 1}`,
+        expiresAt: row.expiresAt,
+      });
+    }
+    return false;
+  });
+}
+
+/** Drops every claim code this user still has (once an email is claimed, none is needed). */
+export async function dropClaimCodes(deps: AppDeps, userId: string) {
+  await deps.db
+    .delete(verification)
+    .where(sql`starts_with(${verification.identifier}, ${claimCodePrefix(userId)})`);
+}
+
+/** Mails a claim code, in the guest's language, with the sign-in email's layout and no link. */
+export async function sendClaimCode(
+  deps: AppDeps,
+  input: { email: string; code: string; locale: string },
+) {
+  const mail = claimEmail({
+    code: input.code,
+    locale: asLocale(input.locale) ?? "es",
+    webUrl: deps.config.WEB_URL,
+    expiresInMinutes: Math.ceil(CODE_TTL_SECONDS / 60),
+  });
+  await deps.mailer.send({ to: input.email, ...mail });
 }
 
 type Locale = "es" | "en";
@@ -205,7 +303,7 @@ export function createAuth(deps: AppDeps) {
           .toLowerCase();
         // Before anything is stored or sent: a refused address leaves no trace.
         if (!isSignInAllowed(config, email)) throw signInNotAllowed();
-        if (email && (await bumpEmailThrottle(deps, email)) > EMAILS_PER_WINDOW) {
+        if (email && (await overEmailLimit(deps, email))) {
           throw new APIError("TOO_MANY_REQUESTS", {
             message: "Too many codes requested for this email",
           });
@@ -256,7 +354,7 @@ export function createAuth(deps: AppDeps) {
       emailOTP({
         otpLength: 6,
         expiresIn: CODE_TTL_SECONDS,
-        allowedAttempts: 3,
+        allowedAttempts: CODE_ATTEMPTS,
         storeOTP: "hashed",
         disableSignUp: false,
         async sendVerificationOTP({ email, otp, type }, ctx) {
