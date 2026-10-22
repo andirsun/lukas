@@ -68,8 +68,10 @@ test("after the sample import, Análisis shows October's donut and what living c
   await expect(living).toContainText(`${eur(cost.total)} al mes`);
   await expect(living).toContainText("tu último mes completo");
 
-  // The trend: October's figures under the chart; tapping September's bars shows September's.
+  // The trend covers the span on screen: over six months, October's figures are under the chart,
+  // and tapping September's bars shows September's.
   const trend = page.getByRole("region", { name: "Mes a mes" });
+  await page.getByRole("tab", { name: "6 meses" }).click();
   await expect(trend.getByRole("table")).toBeAttached();
   const readout = trend.getByTestId("trend-readout");
   await expect(readout).toContainText("Octubre");

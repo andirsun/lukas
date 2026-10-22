@@ -206,11 +206,37 @@ export const DonutRange: Story = {
 
 // -- Trend ----------------------------------------------------------------------------------------
 
-/** Six months, one row each in the table: income, expenses and the budget. */
+/** The trend covers the span on screen: these stories look at six months. */
+async function showSixMonths(canvas: ReturnType<typeof within>) {
+  await userEvent.click(await canvas.findByRole("tab", { name: "6 meses" }));
+}
+
+/** The trend covers the same months as the donut: one month by default, three after "3 meses". */
+export const TrendFollowsSpan: Story = {
+  render: october,
+  play: settledAfter(async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trend = await region(canvas, "Mes a mes");
+    await waitFor(() =>
+      expect(bodyRows(within(trend).getByRole("table")).map((r) => r[0])).toEqual([rowName(0)]),
+    );
+    await userEvent.click(canvas.getByRole("tab", { name: "3 meses" }));
+    await waitFor(() =>
+      expect(bodyRows(within(trend).getByRole("table")).map((r) => r[0])).toEqual([
+        rowName(2),
+        rowName(1),
+        rowName(0),
+      ]),
+    );
+  }),
+};
+
+/** Six months ("6 meses"), one row each in the table: income, expenses and the budget. */
 export const Trend: Story = {
   render: october,
   play: settledAfter(async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await showSixMonths(canvas);
     const trend = await region(canvas, "Mes a mes");
     const table = await tableIn(trend, /^Ingresos, gastos y presupuesto/);
     const rows = bodyRows(table);
@@ -243,6 +269,7 @@ export const TrendFromKeyboard: Story = {
   render: october,
   play: settledAfter(async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await showSixMonths(canvas);
     const trend = await region(canvas, "Mes a mes");
     const readout = await within(trend).findByTestId("trend-readout", {}, { timeout: 4000 });
     await expect(readout).toHaveTextContent(rowName(0));
@@ -278,6 +305,7 @@ export const TrendBudgetGaps: Story = {
   ),
   play: settledAfter(async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await showSixMonths(canvas);
     const trend = await region(canvas, "Mes a mes");
     const rows = bodyRows(await tableIn(trend, /^Ingresos, gastos y presupuesto/));
     await expect(rows.map((r) => r[3])).toEqual([
@@ -406,7 +434,7 @@ export const Empty: Story = {
     ).toBeVisible();
     const trend = await region(canvas, "Mes a mes");
     await expect(
-      await within(trend).findByText(/^Aún no hay movimientos de .+ a .+\.$/),
+      await within(trend).findByText(`Aún no hay movimientos en ${inSentence(0)}.`),
     ).toBeVisible();
     const living = await region(canvas, "¿Cuánto me cuesta vivir?");
     await expect(

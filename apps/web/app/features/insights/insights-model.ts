@@ -20,9 +20,9 @@ export function periodOf(end: Month, span: Span): Period {
   return { from: addMonths(end, 1 - span), to: end };
 }
 
-/** The trend shows at least the last six months up to `end` (a year when the span is a year). */
+/** The trend covers the span on screen, the same months as the donut (founder, 2026-10-22). */
 export function trendPeriod(end: Month, span: Span): Period {
-  return periodOf(end, span === 12 ? 12 : 6);
+  return periodOf(end, span);
 }
 
 /** How many complete months "¿Cuánto me cuesta vivir?" averages at most. */

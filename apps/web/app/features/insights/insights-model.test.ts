@@ -22,8 +22,9 @@ describe("periods", () => {
     expect(periodOf("2026-02", 12)).toEqual({ from: "2025-03", to: "2026-02" });
   });
 
-  it("shows six months of trend, or a year for a year", () => {
-    expect(trendPeriod("2026-10", 1)).toEqual({ from: "2026-05", to: "2026-10" });
+  it("shows the trend over the chosen span, like the donut", () => {
+    expect(trendPeriod("2026-10", 1)).toEqual({ from: "2026-10", to: "2026-10" });
+    expect(trendPeriod("2026-10", 3)).toEqual({ from: "2026-08", to: "2026-10" });
     expect(trendPeriod("2026-10", 6)).toEqual({ from: "2026-05", to: "2026-10" });
     expect(trendPeriod("2026-10", 12)).toEqual({ from: "2025-11", to: "2026-10" });
   });
