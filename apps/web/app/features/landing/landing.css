@@ -274,6 +274,15 @@
     font-size: 17px;
     white-space: nowrap;
   }
+  /* "Try it without an account" is long: a little less padding, and on the narrowest phones it
+     breaks into two balanced lines rather than pushing the page sideways. */
+  .lk-landing-cta .lk-btn-secondary {
+    max-width: 100%;
+    padding-inline: 24px;
+    white-space: normal;
+    text-wrap: balance;
+    text-align: center;
+  }
   .lk-landing-perks {
     display: flex;
     flex-wrap: wrap;

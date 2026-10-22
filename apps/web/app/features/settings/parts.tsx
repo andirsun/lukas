@@ -1,4 +1,5 @@
 import { type ReactNode, useId } from "react";
+import { useTranslations } from "use-intl";
 import { cx } from "../../ui/cx.ts";
 
 /** A card of settings named by its heading (so it is a landmark region). */
@@ -37,6 +38,19 @@ export function SettingsSection({
       </div>
       {children}
     </section>
+  );
+}
+
+/**
+ * In the demo, under a setting that can't work there (export, deleting the account, passkeys,
+ * import): why its controls are off. Give the controls `aria-describedby={id}`.
+ */
+export function DemoOffNote({ id }: { id: string }) {
+  const t = useTranslations("settings");
+  return (
+    <p id={id} className="m-0 text-[14px] text-ink-muted">
+      {t("demo_off")}
+    </p>
   );
 }
 

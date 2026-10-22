@@ -12,8 +12,8 @@ import { expect, type Page, test } from "@playwright/test";
 const ORIGIN = process.env.VITE_SITE_URL ?? "https://landing-only.example.test";
 const GITHUB = "https://github.com/andirsun/lukas";
 const CLIENT = fileURLToPath(new URL("../build/client/", import.meta.url));
-/** Anything that would lead to the app: sign-in, the app itself, the welcome flow. */
-const APP_PATH = /(^|\/)(sign-in|app|welcome)(\/|\?|#|$)/;
+/** Anything that would lead to the app: sign-in, the app itself, the welcome flow, the demo. */
+const APP_PATH = /(^|\/)(sign-in|app|welcome|demo)(\/|\?|#|$)/;
 
 const LOCALES = [
   {
@@ -30,6 +30,7 @@ const LOCALES = [
       "Lukitas está en construcción, en abierto. Mira cómo avanza en GitHub y prueba la app en cuanto abra.",
     oldClosing: /Crea tu cuenta/,
     oldCtas: ["Empieza ahora", "Entrar", "Empezar"],
+    demoCta: "Pruébalo sin cuenta",
     banned: [/\bjueg(o|a)\b/i],
     toggleToDay: "Cambiar a modo día",
   },
@@ -47,6 +48,7 @@ const LOCALES = [
       "Lukitas is being built in the open. Follow its progress on GitHub and try the app as soon as it opens.",
     oldClosing: /Create your account/,
     oldCtas: ["Get started", "Sign in", "Start"],
+    demoCta: "Try it without an account",
     banned: [/\bgames?\b/i],
     toggleToDay: "Switch to day mode",
   },
@@ -188,6 +190,9 @@ for (const l of LOCALES) {
         .getByRole("link", { name: `${l.cta} ${l.newTab}`, exact: true });
       await expectGithubLink(closing, l.newTab);
       await expect(closing).toHaveClass(/lk-btn-primary/);
+
+      // The demo is part of the app: with no app to open there is no demo to try either.
+      await expect(page.getByRole("link", { name: l.demoCta })).toHaveCount(0);
     });
 
     test("the header's sign-in is a short coming-soon link to GitHub, beside the day/night switch", async ({
@@ -234,7 +239,7 @@ for (const l of LOCALES) {
       }
     });
 
-    test("no link leads to /sign-in, /app or /welcome", async ({ page, request }) => {
+    test("no link leads to /sign-in, /app, /welcome or /demo", async ({ page, request }) => {
       await page.goto(l.path);
       const hrefs = await page
         .locator("a[href]")
@@ -242,7 +247,7 @@ for (const l of LOCALES) {
       expect(hrefs.length).toBeGreaterThan(5);
       expect(hrefs.filter((href) => APP_PATH.test(new URL(href, "http://x").pathname))).toEqual([]);
       const html = await (await request.get(l.path)).text();
-      expect(html).not.toMatch(/href="[^"]*\/(sign-in|app|welcome)(["/?#])/);
+      expect(html).not.toMatch(/href="[^"]*\/(sign-in|app|welcome|demo)(["/?#])/);
     });
 
     test("the closing section tells the truth about the app, and keeps Lukas's spot", async ({
@@ -403,7 +408,7 @@ for (const l of LOCALES) {
       expect(hrefs.length).toBeGreaterThan(4);
       expect(hrefs.filter((href) => APP_PATH.test(new URL(href, "http://x").pathname))).toEqual([]);
       const html = await (await request.get(r.path)).text();
-      expect(html).not.toMatch(/href="[^"]*\/(sign-in|app|welcome)(["/?#])/);
+      expect(html).not.toMatch(/href="[^"]*\/(sign-in|app|welcome|demo)(["/?#])/);
       const text = await page.locator("body").evaluate((body) => body.textContent ?? "");
       expect(text).toContain("Lukitas");
       expect(text).not.toMatch(/\bLukas\b/);
@@ -525,7 +530,7 @@ test.describe("landing-only build output", () => {
     expect(headers).toMatch(/Permissions-Policy: .*camera=\(\)/);
   });
 
-  for (const path of ["/some/unknown/page", "/sign-in", "/app", "/welcome", "/en/nope"]) {
+  for (const path of ["/some/unknown/page", "/sign-in", "/app", "/welcome", "/demo", "/en/nope"]) {
     test(`${path} gets the 404 page, not the app`, async ({ request, page }) => {
       const response = await request.get(path);
       expect(response.status()).toBe(404);

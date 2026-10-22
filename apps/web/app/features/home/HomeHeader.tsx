@@ -2,9 +2,14 @@ import type { Month } from "@lukas/core";
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
+import { useApiMode } from "../../api/ApiProvider.tsx";
+import { useLocale } from "../../i18n/IntlProvider.tsx";
+import { LANDING_PATH } from "../../site/paths.ts";
 import { MonthPicker } from "../../ui/MonthPicker.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
+import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
+import { useAppPath } from "./app-path.ts";
 import { type SignOutRequest, useSignOut } from "./use-sign-out.ts";
 
 export interface HomeHeaderProps {
@@ -18,14 +23,15 @@ export interface HomeHeaderProps {
 
 /** Sections that live in the avatar menu (on phones, the only way there). */
 const SECTIONS = [
-  { key: "recurring", to: "/app/recurring" },
-  { key: "categories", to: "/app/categories" },
-  { key: "settings", to: "/app/settings" },
+  { key: "recurring", to: "/recurring" },
+  { key: "categories", to: "/categories" },
+  { key: "settings", to: "/settings" },
 ] as const;
 
 /**
  * Home's header: the wordmark, the month (previous months browsable), and the avatar menu with
- * the day/night switch, Recurrentes, Categorías and Ajustes, and sign-out. The menu is a disclosure: its
+ * the day/night switch, Recurrentes, Categorías and Ajustes, and sign-out (in the demo, "Salir del
+ * demo", back to the landing: there is no session to end). The menu is a disclosure: its
  * button says whether it is open, Escape or a tap outside closes it and gives focus back.
  */
 export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeaderProps) {
@@ -35,6 +41,9 @@ export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeader
   const button = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const signOut = useSignOut(request);
+  const appPath = useAppPath();
+  const demo = useApiMode() === "demo";
+  const { locale } = useLocale();
 
   useEffect(() => {
     if (!open) return;
@@ -90,7 +99,7 @@ export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeader
           {SECTIONS.map(({ key, to }) => (
             <li key={key}>
               <Link
-                to={to}
+                to={appPath(to)}
                 className="flex min-h-11 items-center justify-between rounded-sm text-[14px] font-bold text-ink no-underline hover:underline focus-visible:outline-3 focus-visible:outline-focus focus-visible:outline-offset-2"
               >
                 {t(`nav.${key}`)}
@@ -99,9 +108,15 @@ export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeader
             </li>
           ))}
         </ul>
-        <PressButton variant="secondary" size="sm" onClick={() => void signOut()}>
-          {t("home.sign_out")}
-        </PressButton>
+        {demo ? (
+          <PressLink to={LANDING_PATH[locale]} variant="secondary" size="sm">
+            {t("demo.leave")}
+          </PressLink>
+        ) : (
+          <PressButton variant="secondary" size="sm" onClick={() => void signOut()}>
+            {t("home.sign_out")}
+          </PressButton>
+        )}
       </div>
     </header>
   );

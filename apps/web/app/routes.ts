@@ -13,9 +13,10 @@ export default [
   route("en/roadmap", "routes/en.roadmap.tsx"),
   // Every screen of the app (sign-in, welcome, /app/*) nests under this layout, which holds the
   // API client, its cache and the toasts. The landing stays outside it, so visitors do not download
-  // that code. (The demo has its own layout with a demo ApiProvider, not nested in this one.)
+  // that code. The demo (/demo/*) has its own layout with a demo ApiProvider, beside this one.
   // The landing-only release has no app, so the layout (and its code and sounds) is left out, and
-  // any other path is a prerendered 404 (react-router.config.ts).
+  // any other path is a prerendered 404 (react-router.config.ts); its "Pruébalo sin cuenta" opens
+  // the demo on the app's origin.
   ...(landingOnly
     ? [route("*", "routes/not-found.tsx")]
     : [
@@ -36,6 +37,17 @@ export default [
             route("insights", "routes/app.insights.tsx"),
             route("settings", "routes/app.settings.tsx"),
           ]),
+        ]),
+        // Try before signing up (spec §2.6b): the same screens as /app (the same route modules,
+        // under their own ids), as the made-up "Valentina (demo)", on a backend in the page. No
+        // import: settings turns it off in the demo.
+        route("demo", "routes/demo.tsx", [
+          index("routes/app._index.tsx", { id: "demo-home" }),
+          route("categories", "routes/app.categories.tsx", { id: "demo-categories" }),
+          route("categories/:id", "routes/app.categories.$id.tsx", { id: "demo-category" }),
+          route("recurring", "routes/app.recurring.tsx", { id: "demo-recurring" }),
+          route("insights", "routes/app.insights.tsx", { id: "demo-insights" }),
+          route("settings", "routes/app.settings.tsx", { id: "demo-settings" }),
         ]),
       ]),
 ] satisfies RouteConfig;

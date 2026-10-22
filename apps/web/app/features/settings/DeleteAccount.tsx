@@ -7,7 +7,7 @@ import type { Translator } from "../../api/errors.ts";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { Sheet } from "../../ui/Sheet.tsx";
 import type { SignOutRequest } from "../home/use-sign-out.ts";
-import { SettingsSection } from "./parts.tsx";
+import { DemoOffNote, SettingsSection } from "./parts.tsx";
 import { emailMatches } from "./settings-model.ts";
 import type { ExportFormat } from "./use-export.ts";
 import { failureMessage } from "./use-profile.ts";
@@ -23,11 +23,14 @@ export function DeleteAccount({
   signOut,
   onExport,
   exporting,
+  off = false,
 }: {
   email: string;
   signOut: SignOutRequest;
   onExport(format: ExportFormat): void;
   exporting: boolean;
+  /** The demo: the button is off, with a note saying why. */
+  off?: boolean;
 }) {
   const t = useTranslations("settings.delete");
   const tRoot = useTranslations() as unknown as Translator;
@@ -43,6 +46,7 @@ export function DeleteAccount({
   const inputId = useId();
   const hintId = useId();
   const errorId = useId();
+  const offId = useId();
   const ready = emailMatches(typed, email);
 
   const close = () => {
@@ -83,10 +87,13 @@ export function DeleteAccount({
       <PressButton
         variant="secondary"
         className="self-start text-over"
+        disabled={off}
+        aria-describedby={off ? offId : undefined}
         onClick={() => setOpen(true)}
       >
         {t("action")}
       </PressButton>
+      {off && <DemoOffNote id={offId} />}
       <Sheet open={open} onClose={close} title={t("sheet_title")}>
         <div className="flex flex-col gap-(--space-4) pt-(--space-3)">
           <p className="m-0 text-[15px] text-ink">{t("sheet_body")}</p>

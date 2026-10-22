@@ -4,26 +4,21 @@ import { COMING_SOON } from "../../site/config.ts";
 import { cx } from "../../ui/cx.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { HeroMascot } from "./HeroMascot.tsx";
-import { appLinkProps, DEMO_PATH } from "./links.ts";
+import { appLinkProps, demoLinkProps } from "./links.ts";
 import { NewTabHint } from "./NewTabHint.tsx";
 import { CodeLink } from "./OpenSource.tsx";
 
-export type HeroProps = {
-  /**
-   * Also offer "Pruébalo sin cuenta" → the demo, as a secondary action. Off until the demo exists
-   * (Task 18a turns it on).
-   */
-  secondaryCta?: boolean;
-};
-
 /**
  * A handwritten promise (free, and it always will be), the headline with "lukas" on a gold
- * marker, what Lukas is, one primary action with the perks under it, and Lukas waving.
+ * marker, what Lukas is, one primary action and "Pruébalo sin cuenta" (the demo) beside it, with
+ * the perks under them, and Lukas waving. Without an app to open (landing-only, coming soon) there
+ * is no demo either, so only the primary action shows.
  */
-export function Hero({ secondaryCta = false }: HeroProps) {
+export function Hero() {
   const t = useTranslations("landing.hero");
   const { locale } = useLocale();
   const app = appLinkProps(locale);
+  const demo = demoLinkProps(locale);
   return (
     <section id="hero" className="lk-landing-hero" aria-labelledby="hero-title">
       <div className="lk-landing-hero-text">
@@ -44,8 +39,8 @@ export function Hero({ secondaryCta = false }: HeroProps) {
               {t(COMING_SOON ? "cta_soon" : "cta")}
               <NewTabHint target={app.target} />
             </PressLink>
-            {secondaryCta && (
-              <PressLink to={DEMO_PATH} variant="secondary">
+            {demo && (
+              <PressLink {...demo} variant="secondary">
                 {t("cta_demo")}
               </PressLink>
             )}

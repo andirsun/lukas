@@ -95,21 +95,25 @@ export function SrTable({
       )}
     </tr>
   );
+  // The wrapper is what is visually hidden: a table grows to fit its cells whatever its own width,
+  // so `sr-only` on the table itself let wide figures (pesos) push the page sideways on phones.
   return (
-    <table className="sr-only">
-      <caption>{caption}</caption>
-      <thead>
-        <tr>
-          {head.map((cell) => (
-            <th key={cell} scope="col">
-              {cell}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>{rows.map(line)}</tbody>
-      {foot.length > 0 && <tfoot>{foot.map(line)}</tfoot>}
-    </table>
+    <div className="sr-only">
+      <table>
+        <caption>{caption}</caption>
+        <thead>
+          <tr>
+            {head.map((cell) => (
+              <th key={cell} scope="col">
+                {cell}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>{rows.map(line)}</tbody>
+        {foot.length > 0 && <tfoot>{foot.map(line)}</tfoot>}
+      </table>
+    </div>
   );
 }
 

@@ -20,6 +20,7 @@ import { PageHeader } from "../../ui/PageHeader.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { useTransactionSheet } from "../add-transaction/TransactionSheetProvider.tsx";
+import { useAppPath } from "../home/app-path.ts";
 import { Day } from "../home/Home.tsx";
 import { groupByDay } from "../home/home-model.ts";
 import { BudgetSheet } from "./BudgetSheet.tsx";
@@ -48,9 +49,10 @@ export function ManageFrame({ children, busy = false }: { children: ReactNode; b
 function useBack() {
   const t = useTranslations("manage");
   const state = useLocation().state as DetailState | null;
+  const appPath = useAppPath();
   return state?.from === "categories"
-    ? { to: "/app/categories", label: t("back_categories"), short: t("back_categories_short") }
-    : { to: "/app", label: t("back"), short: t("back_short") };
+    ? { to: appPath("/categories"), label: t("back_categories"), short: t("back_categories_short") }
+    : { to: appPath(), label: t("back"), short: t("back_short") };
 }
 
 /**
@@ -114,11 +116,12 @@ export function CategoryDetail() {
 
 function NotFound() {
   const t = useTranslations("categories.detail");
+  const appPath = useAppPath();
   return (
     <main className="lk-hero flex flex-col gap-(--space-2)">
       <h1 className="m-0 font-display text-[22px] font-bold text-ink">{t("not_found_title")}</h1>
       <p className="m-0 text-[14px] font-bold text-ink-muted">{t("not_found_lead")}</p>
-      <PressLink to="/app/categories" className="self-start">
+      <PressLink to={appPath("/categories")} className="self-start">
         {t("to_categories")}
       </PressLink>
     </main>

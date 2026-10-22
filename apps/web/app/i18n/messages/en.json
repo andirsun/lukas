@@ -821,6 +821,14 @@
       "confirm_hint": "Your email is {email}.",
       "confirm": "Delete forever",
       "deleting": "Deleting…"
-    }
+    },
+    "demo_off": "Not available in the demo. Create your account to use it."
+  },
+  "demo": {
+    "meta_title": "Demo · Lukitas",
+    "label": "Demo",
+    "banner": "You're in the demo: the data is made up and goes away when you reload.",
+    "create_account": "Create my account",
+    "leave": "Leave the demo"
   }
 }

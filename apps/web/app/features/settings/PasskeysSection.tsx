@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useTranslations } from "use-intl";
 import type { Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
@@ -7,7 +7,7 @@ import { ConfirmSheet } from "../../ui/ConfirmSheet.tsx";
 import { FingerprintIcon } from "../../ui/FingerprintIcon.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { useToast } from "../../ui/Toast.tsx";
-import { SettingsSection } from "./parts.tsx";
+import { DemoOffNote, SettingsSection } from "./parts.tsx";
 import type { PasskeyItem, PasskeysApi } from "./passkeys.ts";
 
 const PASSKEYS_KEY = ["passkeys"] as const;
@@ -31,15 +31,19 @@ function formatDay(iso: string, locale: Locale, timeZone: string): string {
 export function PasskeysSection({
   passkeys,
   timeZone,
+  off = false,
 }: {
   passkeys: PasskeysApi;
   timeZone: string;
+  /** The demo: nothing is listed or asked of the browser; "Agregar" is off, with a note. */
+  off?: boolean;
 }) {
   const t = useTranslations("settings.passkeys");
   const { locale } = useLocale();
   const qc = useQueryClient();
   const toast = useToast();
-  const list = useQuery({ queryKey: PASSKEYS_KEY, queryFn: () => passkeys.list() });
+  const offId = useId();
+  const list = useQuery({ queryKey: PASSKEYS_KEY, queryFn: () => passkeys.list(), enabled: !off });
   const [supported] = useState(() => passkeys.supported());
   const [adding, setAdding] = useState(false);
   const inFlight = useRef(false);
@@ -77,6 +81,18 @@ export function PasskeysSection({
     toast.show({ message: t("removed") });
     await qc.invalidateQueries({ queryKey: PASSKEYS_KEY });
   };
+
+  if (off) {
+    return (
+      <SettingsSection title={t("title")} lead={t("lead")}>
+        <PressButton variant="secondary" className="self-start" disabled aria-describedby={offId}>
+          <FingerprintIcon />
+          {t("add")}
+        </PressButton>
+        <DemoOffNote id={offId} />
+      </SettingsSection>
+    );
+  }
 
   return (
     <SettingsSection title={t("title")} lead={t("lead")}>

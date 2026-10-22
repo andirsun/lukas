@@ -383,8 +383,11 @@ for (const l of LOCALES) {
       await expect(github).toHaveAttribute("target", "_blank");
       await expect(github).toHaveAttribute("rel", "noopener");
 
-      // The demo (Task 18a) is not built yet: no link to it.
-      await expect(page.getByRole("link", { name: l.demoCta })).toHaveCount(0);
+      // Beside it, the demo without an account, in this language, as the secondary action.
+      const demo = hero.getByRole("link", { name: l.demoCta });
+      await expect(demo).toHaveAttribute("href", `/demo?lang=${l.locale}`);
+      await expect(demo).toHaveClass(/lk-btn-secondary/);
+      expect((await demo.boundingBox())?.height).toBeGreaterThanOrEqual(44);
     });
 
     test("says nothing about games, best friends or paying later", async ({ page, request }) => {

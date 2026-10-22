@@ -80,7 +80,10 @@ export const HeroSection: Story = {
     await expect(
       canvas.getByRole("link", { name: "Código abierto (se abre en una pestaña nueva)" }),
     ).toHaveAttribute("href", "https://github.com/andirsun/lukas");
-    await expect(canvas.queryByRole("link", { name: "Pruébalo sin cuenta" })).toBeNull();
+    await expect(canvas.getByRole("link", { name: "Pruébalo sin cuenta" })).toHaveAttribute(
+      "href",
+      "/demo?lang=es",
+    );
     const cta = canvas.getByRole("link", { name: "Empieza ahora" });
     await expectEdge(cta, 6);
     await expectTarget(cta);
@@ -92,15 +95,15 @@ export const HeroSection: Story = {
   },
 };
 
-/** Hero in English by day, with the demo as a second action (the seam Task 18a turns on). */
+/** Hero in English by day, with the demo as the second action. */
 export const HeroWithDemoDayEnglish: Story = {
-  render: () => <Hero secondaryCta />,
+  render: () => <Hero />,
   globals: { theme: "day", locale: "en" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("Free, and it always will be!")).toBeVisible();
     const demo = canvas.getByRole("link", { name: "Try it without an account" });
-    await expect(demo).toHaveAttribute("href", "/demo");
+    await expect(demo).toHaveAttribute("href", "/demo?lang=en");
     await expect(demo).toHaveClass("lk-btn-secondary");
     await expectTarget(demo);
   },

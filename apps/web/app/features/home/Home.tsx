@@ -10,7 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { type PointerEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslations } from "use-intl";
-import { useApi } from "../../api/ApiProvider.tsx";
+import { useApi, useApiMode } from "../../api/ApiProvider.tsx";
 import { ApiProblem, problemMessage, type Translator } from "../../api/errors.ts";
 import {
   queryKeys,
@@ -36,6 +36,7 @@ import { TransactionRow } from "../../ui/TransactionRow.tsx";
 import { useTransactionSheet } from "../add-transaction/TransactionSheetProvider.tsx";
 import { createSuggestions, useHasTransactions } from "../onboarding/onboarding-api.ts";
 import { SUGGESTED_CATEGORIES } from "../onboarding/suggested-categories.ts";
+import { useAppPath } from "./app-path.ts";
 import { HomeHeader } from "./HomeHeader.tsx";
 import { type DayGroup, groupByDay, homeLukasLine, overallState } from "./home-model.ts";
 import { type HomeView, useDismissed, useHomeView } from "./home-storage.ts";
@@ -297,6 +298,9 @@ function Nudges({
   const t = useTranslations("home");
   const hasTransactions = useHasTransactions();
   const [dismissed, dismiss] = useDismissed(userId);
+  const appPath = useAppPath();
+  // The demo has no import: settings turns it off there.
+  const canImport = useApiMode() === "live";
   const noBudgets =
     summary.budgetTotal === 0 &&
     categories.some((c) => c.kind === "expense") &&
@@ -307,15 +311,15 @@ function Nudges({
           id: "budgets",
           title: t("nudge_budgets_title"),
           lead: t("nudge_budgets_lead"),
-          action: { label: t("nudge_budgets_action"), to: "/app/categories" },
+          action: { label: t("nudge_budgets_action"), to: appPath("/categories") },
         }
       : null,
-    hasTransactions.data === false && !dismissed.has("import")
+    canImport && hasTransactions.data === false && !dismissed.has("import")
       ? {
           id: "import",
           title: t("nudge_import_title"),
           lead: t("nudge_import_lead"),
-          action: { label: t("nudge_import_action"), to: "/app/import" },
+          action: { label: t("nudge_import_action"), to: appPath("/import") },
         }
       : null,
   ].filter((card) => card !== null);
@@ -516,6 +520,7 @@ function Budgets({
   const t = useTranslations("home");
   const tTransaction = useTranslations("transaction");
   const navigate = useNavigate();
+  const appPath = useAppPath();
   if (!summary || !categories) return <div className="min-h-[120px]" aria-busy="true" />;
   const byId = new Map(categories.map((c) => [c.id, c]));
   const rows = summary.categories
@@ -545,7 +550,7 @@ function Budgets({
             currency={currency}
             {...(category.archived ? { note: tTransaction("archived") } : {})}
             // Its detail, in the month on screen.
-            onOpen={() => navigate(`/app/categories/${category.id}?month=${month}`)}
+            onOpen={() => navigate(appPath(`/categories/${category.id}?month=${month}`))}
           />
         );
       })}

@@ -109,7 +109,8 @@ test.describe("2.5D Lukas", () => {
     await body.click();
     await expect(layer.locator(".lk-traveler-hop.is-hopping")).toHaveCount(1);
     await expect(page).toHaveURL(/\/$/);
-    expect(await getsThePointer(page, "#hero a.lk-btn")).toBe(true);
+    expect(await getsThePointer(page, "#hero a.lk-btn-primary")).toBe(true);
+    expect(await getsThePointer(page, "#hero a.lk-btn-secondary")).toBe(true);
     expect(errors).toEqual([]);
   });
 

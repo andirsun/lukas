@@ -9,21 +9,23 @@ export interface SidebarProps {
   onAdd(): void;
   /** Sections whose screen does not exist yet: listed, marked "pronto", and not links. */
   soon?: readonly string[];
+  /** Where the app lives: `/app`, or `/demo` in the demo. */
+  base?: string;
 }
 
 const LINKS = [
-  { key: "home", to: "/app" },
-  { key: "insights", to: "/app/insights" },
-  { key: "recurring", to: "/app/recurring" },
-  { key: "categories", to: "/app/categories" },
-  { key: "settings", to: "/app/settings" },
+  { key: "home", to: "" },
+  { key: "insights", to: "/insights" },
+  { key: "recurring", to: "/recurring" },
+  { key: "categories", to: "/categories" },
+  { key: "settings", to: "/settings" },
 ] as const;
 
 /**
  * Desktop navigation, in place of the bottom bar: the wordmark, the five sections (the current
  * one raised) and a primary "Agregar" that opens the add sheet.
  */
-export function Sidebar({ current, onAdd, soon = [] }: SidebarProps) {
+export function Sidebar({ current, onAdd, soon = [], base = "/app" }: SidebarProps) {
   const t = useTranslations();
   return (
     <nav
@@ -40,7 +42,7 @@ export function Sidebar({ current, onAdd, soon = [] }: SidebarProps) {
         ) : (
           <Link
             key={key}
-            to={to}
+            to={`${base}${to}`}
             className="lk-side-link"
             aria-current={current === key ? "page" : undefined}
           >

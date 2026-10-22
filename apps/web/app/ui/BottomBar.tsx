@@ -8,11 +8,13 @@ export interface BottomBarProps {
   onAdd(): void;
   /** Tabs whose screen does not exist yet: shown, marked "pronto", and not a link. */
   soon?: readonly ("home" | "insights")[];
+  /** Where the app lives: `/app`, or `/demo` in the demo. */
+  base?: string;
 }
 
 const TABS = [
-  { key: "home", to: "/app", glyph: "🏠" },
-  { key: "insights", to: "/app/insights", glyph: "📊" },
+  { key: "home", to: "", glyph: "🏠" },
+  { key: "insights", to: "/insights", glyph: "📊" },
 ] as const;
 
 /**
@@ -20,7 +22,7 @@ const TABS = [
  * the add sheet; recurring, categories and settings live in the avatar menu. On wide screens the
  * layout shows `Sidebar` instead.
  */
-export function BottomBar({ current, onAdd, soon = [] }: BottomBarProps) {
+export function BottomBar({ current, onAdd, soon = [], base = "/app" }: BottomBarProps) {
   const t = useTranslations("nav");
   const tab = (key: (typeof TABS)[number]["key"]) => {
     const { to, glyph } = TABS.find((x) => x.key === key) as (typeof TABS)[number];
@@ -36,7 +38,11 @@ export function BottomBar({ current, onAdd, soon = [] }: BottomBarProps) {
       );
     }
     return (
-      <Link to={to} className="lk-tab" aria-current={current === key ? "page" : undefined}>
+      <Link
+        to={`${base}${to}`}
+        className="lk-tab"
+        aria-current={current === key ? "page" : undefined}
+      >
         <span className="lk-tab-ico" aria-hidden="true">
           {glyph}
         </span>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appLinkProps, GITHUB_HREF } from "./links.ts";
+import { appLinkProps, demoLinkProps, GITHUB_HREF } from "./links.ts";
 
 const APP = "https://app-lukas.andersonlaverde.com";
 
@@ -31,5 +31,22 @@ describe("appLinkProps", () => {
 
   it("ignores the app URL outside landing-only mode: the app's own sign-in route is used", () => {
     expect(appLinkProps("es", false, APP)).toEqual({ to: "/sign-in?lang=es" });
+  });
+});
+
+describe("demoLinkProps", () => {
+  it("leads to the demo in the visitor's language when the app is on this origin", () => {
+    expect(demoLinkProps("es", false)).toEqual({ to: "/demo?lang=es" });
+    expect(demoLinkProps("en", false, APP)).toEqual({ to: "/demo?lang=en" });
+  });
+
+  it("opens the demo on the app's origin in landing-only mode with an app URL", () => {
+    expect(demoLinkProps("es", true, APP)).toEqual({ to: `${APP}/demo?lang=es` });
+    expect(demoLinkProps("en", true, APP)).toEqual({ to: `${APP}/demo?lang=en` });
+  });
+
+  it("is left out in landing-only mode without an app URL: there is no demo to open", () => {
+    expect(demoLinkProps("es", true)).toBeNull();
+    expect(demoLinkProps("en", true, undefined)).toBeNull();
   });
 });

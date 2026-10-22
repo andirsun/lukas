@@ -9,6 +9,7 @@ import { categoryLook } from "../../ui/category-look.ts";
 import { LukasBubble } from "../../ui/LukasBubble.tsx";
 import { PageHeader } from "../../ui/PageHeader.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
+import { useAppPath } from "../home/app-path.ts";
 import { type DetailState, ManageFrame } from "./CategoryDetail.tsx";
 import { useCategorySheets } from "./use-category-sheets.tsx";
 
@@ -20,6 +21,7 @@ import { useCategorySheets } from "./use-category-sheets.tsx";
 export function CategoriesPage() {
   const t = useTranslations("categories");
   const tManage = useTranslations("manage");
+  const appPath = useAppPath();
   const me = useMe().data;
   if (!me) throw new Error("CategoriesPage renders inside AppShell, which waits for the profile");
   const categories = useAllCategories();
@@ -42,7 +44,7 @@ export function CategoriesPage() {
 
   return (
     <ManageFrame busy={!all}>
-      <PageHeader back={{ to: "/app", label: tManage("back"), short: tManage("back_short") }} />
+      <PageHeader back={{ to: appPath(), label: tManage("back"), short: tManage("back_short") }} />
       <main className="flex flex-col gap-(--space-4)">
         <div className="flex flex-wrap items-center justify-between gap-(--space-2)">
           <h1 className="m-0 font-display text-[28px] font-bold text-ink">{t("title")}</h1>
@@ -139,11 +141,12 @@ function CategoryItem({
         ? t("no_budget")
         : t("budget", { amount: formatMoney(category.currentBudget, currency, locale) });
   const state: DetailState = { from: "categories" };
+  const appPath = useAppPath();
 
   return (
     <div className="lk-rowcard lk-row">
       <Link
-        to={`/app/categories/${category.id}`}
+        to={appPath(`/categories/${category.id}`)}
         state={state}
         className="lk-row-hit"
         aria-labelledby={`${id}-name ${id}-line`}

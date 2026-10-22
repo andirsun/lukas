@@ -12,6 +12,7 @@ import { PageHeader } from "../../ui/PageHeader.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { useToast } from "../../ui/Toast.tsx";
 import { ManageFrame } from "../categories/CategoryDetail.tsx";
+import { useAppPath } from "../home/app-path.ts";
 import { RecurringForm } from "./RecurringForm.tsx";
 import { nextOccurrence } from "./recurring-model.ts";
 
@@ -31,6 +32,7 @@ function formatDate(date: string, locale: Locale): string {
 export function RecurringPage() {
   const t = useTranslations("recurring");
   const tManage = useTranslations("manage");
+  const appPath = useAppPath();
   const tRoot = useTranslations() as unknown as Translator;
   const me = useMe().data;
   if (!me) throw new Error("RecurringPage renders inside AppShell, which waits for the profile");
@@ -70,7 +72,7 @@ export function RecurringPage() {
 
   return (
     <ManageFrame busy={!ready}>
-      <PageHeader back={{ to: "/app", label: tManage("back"), short: tManage("back_short") }} />
+      <PageHeader back={{ to: appPath(), label: tManage("back"), short: tManage("back_short") }} />
       <main className="flex flex-col gap-(--space-3)">
         <div className="flex flex-wrap items-center justify-between gap-(--space-2)">
           <h1 className="m-0 font-display text-[28px] font-bold text-ink">{t("title")}</h1>

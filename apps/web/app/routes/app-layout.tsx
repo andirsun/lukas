@@ -1,11 +1,8 @@
 import { Outlet } from "react-router";
-import { useTranslations } from "use-intl";
 import { ApiProvider } from "../api/ApiProvider.tsx";
-import { ApiProblem, problemMessage, type Translator } from "../api/errors.ts";
+import { ScreenError } from "../features/home/ScreenError.tsx";
 import { Celebration } from "../feedback/Celebration.tsx";
 import { useFeedbackWarmup } from "../feedback/warmup.ts";
-import { Lukas } from "../lukas/Lukas.tsx";
-import { PressButton } from "../ui/PressButton.tsx";
 import { ToastProvider } from "../ui/Toast.tsx";
 import type { Route } from "./+types/app-layout";
 
@@ -15,7 +12,8 @@ import type { Route } from "./+types/app-layout";
  * not in `root.tsx`, so the landing does not pay for any of it.
  *
  * Screens nest under it in routes.ts: `layout("routes/app-layout.tsx", [route("sign-in", ...)])`.
- * The demo is not nested here: it wraps its own routes in `<ApiProvider mode="demo" fetch={...}>`.
+ * The demo is not nested here: routes/demo.tsx wraps the same screens in
+ * `<ApiProvider mode="demo" fetch={...}>`, with its own toasts and celebration.
  */
 export default function AppLayout() {
   useFeedbackWarmup();
@@ -31,19 +29,8 @@ export default function AppLayout() {
 
 /**
  * What a screen shows when its loader or render fails, e.g. a session check with no connection
- * or a server error (the guards throw those rather than sending anyone to sign-in): what went
- * wrong, in the catalog's words, and a retry that loads the page again.
+ * or a server error: what went wrong and a retry (`ScreenError`).
  */
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const t = useTranslations() as unknown as Translator;
-  const message = error instanceof ApiProblem ? problemMessage(error, t) : t("errors.generic");
-  return (
-    <main className="lk-screen flex min-h-dvh flex-col items-center justify-center gap-(--space-4) p-(--space-4) text-center">
-      <Lukas mood="worried" size={96} />
-      <p role="alert" className="max-w-[360px] text-ink">
-        {message}
-      </p>
-      <PressButton onClick={() => window.location.reload()}>{t("common.retry")}</PressButton>
-    </main>
-  );
+  return <ScreenError error={error} />;
 }

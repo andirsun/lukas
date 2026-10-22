@@ -19,6 +19,7 @@ const LOCALES = [
     locale: "es",
     path: "/",
     cta: "Empieza ahora",
+    demoCta: "Pruébalo sin cuenta",
     navCta: "Entrar",
     webCta: "Empezar",
     webTitle: "En la web",
@@ -33,6 +34,7 @@ const LOCALES = [
     locale: "en",
     path: "/en",
     cta: "Get started",
+    demoCta: "Try it without an account",
     navCta: "Sign in",
     webCta: "Start",
     webTitle: "On the web",
@@ -66,6 +68,24 @@ async function expectAppLink(link: ReturnType<Page["locator"]>, locale: string) 
 
 for (const l of LOCALES) {
   test.describe(`landing-only with the app (${l.locale})`, () => {
+    test("the hero's \"try it without an account\" opens the demo on the app's origin", async ({
+      page,
+    }) => {
+      await page.goto(l.path);
+      const demo = page.locator("#hero").getByRole("link", { name: l.demoCta, exact: true });
+      await expect(demo).toHaveAttribute("href", `${APP}/demo?lang=${l.locale}`);
+      await expect(demo).not.toHaveAttribute("target", /.+/);
+      await expect(demo).toHaveClass(/lk-btn-secondary/);
+      expect((await demo.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+      // Only the hero offers it, and nothing links to a /demo on the landing's own origin.
+      const hrefs = await page
+        .locator("a[href]")
+        .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") ?? ""));
+      expect(hrefs.filter((href) => /\/demo(\?|$)/.test(href))).toEqual([
+        `${APP}/demo?lang=${l.locale}`,
+      ]);
+    });
+
     test("the hero and closing calls to action open the app's sign-in", async ({ page }) => {
       await page.goto(l.path);
       for (const section of ["#hero", "#closing"]) {
