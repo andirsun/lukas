@@ -17,6 +17,7 @@ const ALLOWED = [
   "mine@lukas.test",
   "throttle@lukas.test",
   "other@lukas.test",
+  "retry2@lukas.test",
 ];
 
 async function guest(t: TestApp, headers: Record<string, string> = {}): Promise<Session> {
@@ -235,27 +236,43 @@ describe("a guest claims an email in place", () => {
     expect((await me(t, owner.headers)).email).toBe("owner@lukas.test");
   });
 
+  // The same messages as sign-in (spec §4.2): a typo is `invalid_code`, the third wrong try and
+  // anything after it is `too_many_attempts` (403, as Better Auth's emailOTP), and an expired or
+  // unknown code is `invalid_or_expired_code`.
   test("a wrong code 3 times invalidates it", async () => {
     const g = await guest(t);
     const code = await sendAndRead(t, g, "wrong@lukas.test");
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       const res = await verify(t, g, "wrong@lukas.test", wrongCode(code));
       expect(res.status).toBe(400);
-      expect(await res.json()).toMatchObject({ code: "invalid_or_expired_code" });
+      expect(await res.json()).toMatchObject({ code: "invalid_code" });
     }
+    const third = await verify(t, g, "wrong@lukas.test", wrongCode(code));
+    expect(third.status).toBe(403);
+    expect(await third.json()).toMatchObject({ code: "too_many_attempts" });
+    // The right code is refused afterwards: the code is used up.
     const res = await verify(t, g, "wrong@lukas.test", code);
-    expect(res.status).toBe(400);
-    expect(await res.json()).toMatchObject({ code: "invalid_or_expired_code" });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ code: "too_many_attempts" });
     expect((await me(t, g.headers)).isAnonymous).toBe(true);
+  });
+
+  test("one wrong try is invalid_code, and the right code still works after it", async () => {
+    const g = await guest(t);
+    const code = await sendAndRead(t, g, "retry@lukas.test");
+    const res = await verify(t, g, "retry@lukas.test", wrongCode(code));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ code: "invalid_code" });
+    expect((await verify(t, g, "retry@lukas.test", code)).status).toBe(200);
   });
 
   test("two wrong tries still leave the right code working", async () => {
     const g = await guest(t);
-    const code = await sendAndRead(t, g, "retry@lukas.test");
+    const code = await sendAndRead(t, g, "retry2@lukas.test");
     for (let i = 0; i < 2; i++) {
-      expect((await verify(t, g, "retry@lukas.test", wrongCode(code))).status).toBe(400);
+      expect((await verify(t, g, "retry2@lukas.test", wrongCode(code))).status).toBe(400);
     }
-    expect((await verify(t, g, "retry@lukas.test", code)).status).toBe(200);
+    expect((await verify(t, g, "retry2@lukas.test", code)).status).toBe(200);
   });
 
   test("an expired code is refused", async () => {

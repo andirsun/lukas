@@ -12,6 +12,7 @@ import {
 } from "@lukas/db";
 import { and, asc, eq, isNull, sql } from "@lukas/db/orm";
 import {
+  type ClaimCodeResult,
   consumeClaimCode,
   dropClaimCodes,
   isSignInAllowed,
@@ -46,6 +47,17 @@ const claimVerifyBody = z.object({ email: emailField, code: z.string().trim().mi
 
 const notAGuest = () => new ApiError(409, "not_a_guest", "This account already has an email");
 const emailTaken = () => new ApiError(409, "email_taken", "That email already has an account");
+
+/**
+ * A claim code that did not work, with sign-in's codes and statuses (Better Auth's emailOTP:
+ * INVALID_OTP 400, TOO_MANY_ATTEMPTS 403, OTP_EXPIRED 400), so the app shows the same messages.
+ */
+const CLAIM_CODE_PROBLEMS = {
+  wrong: () => new ApiError(400, "invalid_code", "The code is wrong"),
+  exhausted: () => new ApiError(403, "too_many_attempts", "Too many wrong tries with this code"),
+  expired: () => new ApiError(400, "invalid_or_expired_code", "The code expired"),
+  missing: () => new ApiError(400, "invalid_or_expired_code", "No such code, or already used"),
+} satisfies Record<Exclude<ClaimCodeResult, "ok">, () => ApiError>;
 
 /** The guest gate of the claim: only an anonymous user may claim an email. */
 async function requireGuest(deps: AppDeps, userId: string) {
@@ -212,9 +224,8 @@ export function meRoutes(deps: AppDeps) {
       const userId = c.get("userId");
       await requireGuest(deps, userId);
       requireAllowed(deps, email);
-      if (!(await consumeClaimCode(deps, userId, email, code))) {
-        throw new ApiError(400, "invalid_or_expired_code", "The code is wrong, expired or used");
-      }
+      const result = await consumeClaimCode(deps, userId, email, code);
+      if (result !== "ok") throw CLAIM_CODE_PROBLEMS[result]();
       let claimed: { id: string }[];
       try {
         // One statement in one transaction. A concurrent claim of the same email by another guest

@@ -110,16 +110,24 @@ export async function issueClaimCode(deps: AppDeps, userId: string, email: strin
 }
 
 /**
+ * What became of a claim code, told apart as sign-in tells them apart: `ok` (it matched and is
+ * now used), `wrong` (tries left), `exhausted` (this was the last wrong try, or there were none
+ * left), `expired`, or `missing` (never sent, already used, or sent for another guest or email).
+ */
+export type ClaimCodeResult = "ok" | "wrong" | "exhausted" | "expired" | "missing";
+
+/**
  * Uses up this guest's claim code for `email` if `code` matches, as emailOTP's atomic verify does:
  * the row is taken out first, so a code is accepted once however many requests race; a wrong
- * code puts it back with one more wrong try, until the third. Expired codes never match.
+ * code puts it back with one more wrong try. A used-up code stays (and keeps answering
+ * `exhausted`) until it expires or a new one replaces it.
  */
 export async function consumeClaimCode(
   deps: AppDeps,
   userId: string,
   email: string,
   code: string,
-): Promise<boolean> {
+): Promise<ClaimCodeResult> {
   const identifier = claimCodeId(userId, email);
   return deps.db.transaction(async (tx) => {
     const [row] = await tx
@@ -127,22 +135,27 @@ export async function consumeClaimCode(
       .where(eq(verification.identifier, identifier))
       .returning()
       .then((rows) => rows.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()));
-    if (!row || row.expiresAt.getTime() <= Date.now()) return false;
+    if (!row) return "missing";
+    if (row.expiresAt.getTime() <= Date.now()) return "expired";
     const colon = row.value.lastIndexOf(":");
-    const stored = Buffer.from(row.value.slice(0, colon));
+    const hash = row.value.slice(0, colon);
     const tries = Number.parseInt(row.value.slice(colon + 1), 10) || 0;
-    if (tries >= CODE_ATTEMPTS) return false;
-    const given = Buffer.from(hashCode(code));
-    if (given.length === stored.length && timingSafeEqual(given, stored)) return true;
-    if (tries + 1 < CODE_ATTEMPTS) {
-      await tx.insert(verification).values({
+    const putBack = (wrongTries: number) =>
+      tx.insert(verification).values({
         id: randomUUID(),
         identifier,
-        value: `${row.value.slice(0, colon)}:${tries + 1}`,
+        value: `${hash}:${wrongTries}`,
         expiresAt: row.expiresAt,
       });
+    if (tries >= CODE_ATTEMPTS) {
+      await putBack(tries);
+      return "exhausted";
     }
-    return false;
+    const given = Buffer.from(hashCode(code));
+    const stored = Buffer.from(hash);
+    if (given.length === stored.length && timingSafeEqual(given, stored)) return "ok";
+    await putBack(tries + 1);
+    return tries + 1 >= CODE_ATTEMPTS ? "exhausted" : "wrong";
   });
 }
 
