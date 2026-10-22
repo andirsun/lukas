@@ -1,7 +1,7 @@
 import { accounts, verification, withUser } from "@lukas/db";
 import { eq, like } from "@lukas/db/orm";
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
-import { CODE_TTL_SECONDS } from "../src/auth.ts";
+import { CODE_TTL_SECONDS, guestDefaults } from "../src/auth.ts";
 import { codeFrom, createTestApp, type TestApp } from "./harness.ts";
 
 let t: TestApp;
@@ -152,6 +152,32 @@ describe("email code + magic link", () => {
     expect(mail?.text).toContain("&lang=en");
   });
 
+  test.each([
+    ["en-US", "Your Lukitas code", "en"],
+    ["en_US", "Your Lukitas code", "en"],
+    ["EN-gb", "Your Lukitas code", "en"],
+    ["es-CO", "Tu código de Lukitas", "es"],
+    ["es_419", "Tu código de Lukitas", "es"],
+  ])(
+    "a phone's language tag %j picks the email's language (the app sends the full tag)",
+    async (tag, subject, lang) => {
+      const email = `tag-${tag.toLowerCase().replace(/[^a-z0-9]/g, "")}@lukas.test`;
+      // The opposite language in Accept-Language: the app's hint must win over it.
+      const accept = lang === "en" ? "es-CO,es;q=0.9" : "en-US,en;q=0.9";
+      await sendCode(email, { "x-lukas-locale": tag, "accept-language": accept });
+      const mail = t.mailer.lastTo(email);
+      expect(mail?.subject.startsWith(subject)).toBe(true);
+      expect(mail?.text).toContain(`&lang=${lang}`);
+    },
+  );
+
+  test("a tag in another language, or no tag, falls back to Accept-Language", async () => {
+    await sendCode("tag-fr@lukas.test", { "x-lukas-locale": "fr-FR", "accept-language": "en" });
+    expect(t.mailer.lastTo("tag-fr@lukas.test")?.subject).toMatch(/^Your Lukitas code/);
+    await sendCode("tag-junk@lukas.test", { "x-lukas-locale": "-_-", "accept-language": "en" });
+    expect(t.mailer.lastTo("tag-junk@lukas.test")?.subject).toMatch(/^Your Lukitas code/);
+  });
+
   test("with no hint, a new address gets the browser's language (Accept-Language)", async () => {
     await sendCode("accept-en@lukas.test", { "accept-language": "en-GB,en;q=0.9,es;q=0.5" });
     expect(t.mailer.lastTo("accept-en@lukas.test")?.subject).toMatch(/^Your Lukitas code/);
@@ -202,4 +228,11 @@ test("the OAuth authorization server metadata advertises the finance scopes", as
     expect.arrayContaining(["finance:read", "finance:write"]),
   );
   expect(metadata.registration_endpoint).toBeDefined();
+});
+
+test("a guest's defaults read an underscore tag (en_US) like a hyphenated one", () => {
+  const read = (tag: string) => guestDefaults(new Headers({ "x-lukas-locale": tag }));
+  expect(read("en_US")).toMatchObject({ locale: "en", region: "US" });
+  expect(read("es_CO")).toMatchObject({ locale: "es", region: "CO" });
+  expect(read("en-US")).toMatchObject({ locale: "en", region: "US" });
 });

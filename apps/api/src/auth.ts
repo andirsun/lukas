@@ -191,6 +191,22 @@ export const TIMEZONE_HINT_HEADER = "x-lukas-timezone";
 const asLocale = (value: string | null | undefined): Locale | null =>
   value === "es" || value === "en" ? value : null;
 
+/**
+ * The language and region of a BCP 47 tag as phones and browsers send it: `en-US`, `es-CO`, `EN-gb`,
+ * or Java's `en_US`. Nothing for a value that is not a tag.
+ */
+export function parseLanguageTag(tag: string | null | undefined): {
+  language: string | undefined;
+  region: string | undefined;
+} {
+  try {
+    const parsed = new Intl.Locale((tag ?? "").trim().replaceAll("_", "-"));
+    return { language: parsed.language, region: parsed.region };
+  } catch {
+    return { language: undefined, region: undefined };
+  }
+}
+
 /** The first of es/en in an Accept-Language header, by quality; null if it names neither. */
 export function localeFromAcceptLanguage(header: string | null | undefined): Locale | null {
   const ranked = (header ?? "")
@@ -224,16 +240,7 @@ export function guestDefaults(headers: Headers | undefined): {
   region: string | undefined;
 } {
   const zone = headers?.get(TIMEZONE_HINT_HEADER)?.trim() ?? "";
-  const tag = headers?.get(LOCALE_HINT_HEADER)?.trim() ?? "";
-  let language: string | undefined;
-  let region: string | undefined;
-  try {
-    const parsed = new Intl.Locale(tag);
-    language = parsed.language;
-    region = parsed.region;
-  } catch {
-    // Not a language tag: no hint.
-  }
+  const { language, region } = parseLanguageTag(headers?.get(LOCALE_HINT_HEADER));
   return {
     timezone: isValidTimeZone(zone) ? canonicalTimeZone(zone) : "UTC",
     locale: asLocale(language) ?? localeFromAcceptLanguage(headers?.get("accept-language")) ?? "es",
@@ -243,7 +250,8 @@ export function guestDefaults(headers: Headers | undefined): {
 
 /**
  * The language of a sign-in email: the profile's for an existing user; for a new address, the
- * page's (the web sends it in `x-lukas-locale`), else the browser's Accept-Language, else Spanish.
+ * language of `x-lukas-locale` (the web sends `es` or `en`, the app the phone's tag, such as
+ * `en-US`), else the browser's Accept-Language, else Spanish.
  */
 async function localeFor(deps: AppDeps, email: string, headers: Headers | undefined) {
   const [row] = await deps.db
@@ -252,7 +260,7 @@ async function localeFor(deps: AppDeps, email: string, headers: Headers | undefi
     .where(eq(userTable.email, email));
   if (row) return asLocale(row.locale) ?? "es";
   return (
-    asLocale(headers?.get(LOCALE_HINT_HEADER)) ??
+    asLocale(parseLanguageTag(headers?.get(LOCALE_HINT_HEADER)).language) ??
     localeFromAcceptLanguage(headers?.get("accept-language")) ??
     "es"
   );
