@@ -610,14 +610,14 @@
     },
     "delete": {
       "title": "Eliminar tu cuenta",
-      "lead": "Borra tu cuenta y todos tus datos para siempre. No se puede deshacer.",
+      "lead": "Borramos tu cuenta y todos tus movimientos de inmediato. Las copias de seguridad que los incluyan se borran solas en 14 días.",
       "action": "Eliminar mi cuenta",
       "sheet_title": "¿Eliminar tu cuenta?",
-      "sheet_body": "Se borran tus movimientos, categorías, presupuestos, recurrentes y huellas. No hay forma de recuperarlos.",
+      "sheet_body": "Se borran de inmediato tus movimientos, categorías, presupuestos, recurrentes y huellas. Las copias de seguridad que los incluyan se borran solas en 14 días.",
       "export_first": "Descarga tus datos antes",
       "confirm_label": "Escribe tu correo para confirmar",
       "confirm_hint": "Tu correo es {email}.",
-      "confirm": "Eliminar para siempre",
+      "confirm": "Sí, eliminar mi cuenta",
       "deleting": "Eliminando…"
     },
     "demo_off": "En el demo esto no está disponible. Crea tu cuenta para usarlo.",

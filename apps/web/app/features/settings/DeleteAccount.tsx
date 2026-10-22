@@ -14,10 +14,11 @@ import type { ExportFormat } from "./use-export.ts";
 import { failureMessage } from "./use-profile.ts";
 
 /**
- * Deleting the account, for good: a sheet that says what goes, offers the export first ("Descarga
- * tus datos antes"), and only enables "Eliminar para siempre" once the account's email is typed
- * (case and surrounding spaces don't matter). Then `DELETE /v1/me`, sign-out, and the landing. A failed delete stays in the sheet and says why; a failed sign-out afterwards
- * does not matter (the sessions went with the account).
+ * Deleting the account: a sheet that says what goes (at once; backups that hold it age out within
+ * 14 days), offers the export first ("Descarga tus datos antes"), and only enables "Sí, eliminar
+ * mi cuenta" once the account's email is typed (case and surrounding spaces don't matter). Then
+ * `DELETE /v1/me`, sign-out, and the landing. A failed delete stays in the sheet and says why; a
+ * failed sign-out afterwards does not matter (the sessions went with the account).
  */
 export function DeleteAccount({
   email,

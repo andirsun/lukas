@@ -33,6 +33,8 @@ jobs:
       # testcontainers (Docker is available on the runner); the Storybook stories run after them in
       # Chromium (apps/web/vitest.config.ts).
       - run: pnpm test
+      # The personal install's backup retention (no dump older than 14 days), on fake dumps.
+      - run: deploy/personal/test-retention.sh
 
   e2e:
     runs-on: ubuntu-latest

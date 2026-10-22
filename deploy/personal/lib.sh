@@ -114,3 +114,48 @@ ensure_volume() {
     docker volume create "$name" >/dev/null
   }
 }
+
+# --- Backup retention (backup.sh; tested by test-retention.sh) ------------------------------------
+
+# The dumps backup.sh writes: daily, and the ones taken before an update.
+DAILY_DUMP='^lukitas-[0-9]{4}-[0-9]{2}-[0-9]{2}\.dump'
+PREUPDATE_DUMP='^lukitas-[0-9]{4}-[0-9]{2}-[0-9]{2}-preupdate-[0-9]{4}\.dump'
+
+# prune_newest DIR REGEX KEEP: delete all but the newest KEEP files in DIR whose names match REGEX
+# (names sort by date). Other files in the folder are left alone.
+prune_newest() {
+  local dir="$1" regex="$2" n="$3" old
+  old="$(ls -1 "$dir" | grep -E "$regex" | sort | awk -v keep="$n" '{ l[NR] = $0 } END { for (i = 1; i <= NR - keep; i++) print l[i] }' || true)"
+  [ -z "$old" ] || printf '%s\n' "$old" | while read -r f; do
+    rm -f "$dir/$f"
+    say "Removed old backup $dir/$f"
+  done
+}
+
+# No dump is kept longer than this many days, daily or pre-update, encrypted copy or not: the app
+# tells a person who deletes their account that backups holding it delete themselves within 14 days.
+MAX_BACKUP_DAYS=14
+
+# prune_older DIR REGEX DAYS: delete the files in DIR whose names match REGEX and that were last
+# modified DAYS days ago or earlier. An hour early, so the 03:00 run DAYS days after a dump removes
+# it even if that dump finished a little after 03:00.
+prune_older() {
+  local dir="$1" regex="$2" days="$3" path
+  find "$dir" -maxdepth 1 -type f -mmin +"$((days * 1440 - 60))" | while read -r path; do
+    printf '%s\n' "${path##*/}" | grep -Eq "$regex" || continue
+    rm -f "$path"
+    say "Removed backup older than $days days: $path"
+  done
+}
+
+# apply_retention DIR SUFFIX KEEP KEEP_PREUPDATE: the retention of the dumps in DIR (SUFFIX is a
+# regex for what follows ".dump": "" for the dumps, '\.age' for the encrypted copies). Nothing
+# older than MAX_BACKUP_DAYS; under that, the newest KEEP daily and KEEP_PREUPDATE pre-update dumps,
+# counted separately, so a pre-update dump never pushes a daily one out.
+apply_retention() {
+  local dir="$1" suffix="$2" keep="$3" keep_preupdate="$4"
+  [ -d "$dir" ] || return 0
+  prune_older "$dir" "($DAILY_DUMP|$PREUPDATE_DUMP)$suffix\$" "$MAX_BACKUP_DAYS"
+  prune_newest "$dir" "$DAILY_DUMP$suffix\$" "$keep"
+  prune_newest "$dir" "$PREUPDATE_DUMP$suffix\$" "$keep_preupdate"
+}

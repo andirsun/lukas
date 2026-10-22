@@ -13,5 +13,6 @@ categories, budgets, transactions and recurring transactions, and the files you 
   user id and account balances are discarded.
 - **Assistants:** an AI assistant you connect through MCP can read and change your data only with
   the permissions you approve, and you can revoke it at any time.
-- **Your rights:** you can export all your data (JSON or CSV) and permanently delete your account
-  from the app at any time. Deletion removes all your data immediately.
+- **Your rights:** you can export all your data (JSON or CSV) and delete your account from the
+  app at any time. We delete your account and all your entries right away. Backups that include
+  them delete themselves within 14 days.

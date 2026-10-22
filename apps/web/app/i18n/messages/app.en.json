@@ -610,14 +610,14 @@
     },
     "delete": {
       "title": "Delete your account",
-      "lead": "Deletes your account and all your data for good. It can't be undone.",
+      "lead": "We delete your account and all your entries right away. Backups that include them delete themselves within 14 days.",
       "action": "Delete my account",
       "sheet_title": "Delete your account?",
-      "sheet_body": "Your transactions, categories, budgets, recurring payments and fingerprints are deleted. There is no way to get them back.",
+      "sheet_body": "Your transactions, categories, budgets, recurring payments and fingerprints are deleted right away. Backups that include them delete themselves within 14 days.",
       "export_first": "Download your data first",
       "confirm_label": "Type your email to confirm",
       "confirm_hint": "Your email is {email}.",
-      "confirm": "Delete forever",
+      "confirm": "Yes, delete my account",
       "deleting": "Deleting…"
     },
     "demo_off": "Not available in the demo. Create your account to use it.",

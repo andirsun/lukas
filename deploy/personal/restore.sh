@@ -12,6 +12,11 @@
 # migrations and starts everything again. It also works on a new server: bring the stack's
 # database up (docker compose up -d postgres), then run this with the dump.
 #
+# A restore brings back every account in the dump, including accounts deleted after it was taken
+# (with their data; they can sign in again). The live restore says so, lists those accounts (in
+# the dump, not in the live database) and how to delete each one again. Do it: the app promised
+# them their data was gone.
+#
 # Options: --keep (drill: keep the scratch database), --yes. Settings: ENV_FILE.
 set -euo pipefail
 # shellcheck source=lib.sh
@@ -27,7 +32,7 @@ for arg in "$@"; do
     --keep) keep=1 ;;
     --yes) yes=1 ;;
     -h | --help)
-      sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     -*) die "unknown option: $arg" ;;
@@ -76,6 +81,36 @@ if [ "$drill" = 1 ]; then
   exit 0
 fi
 
+# accounts DATABASE: "id email" for each account in DATABASE (none if it has no user table yet).
+accounts() { psql_db "$1" -At -F ' ' -c 'select id, email from "user"' 2>/dev/null || true; }
+# Accounts in the dump that the live database does not have: deleted after the dump was taken. Only
+# when the live database has accounts to compare with (not on a new server, or after losing it).
+live_accounts="$(accounts lukitas)"
+deleted_since=""
+if [ -n "$live_accounts" ]; then
+  deleted_since="$(accounts "$scratch" | awk 'NR == FNR { live[$1] = 1; next } !($1 in live)' <(printf '%s\n' "$live_accounts") -)"
+fi
+
+# deleted_warning: what the restore brings back that people deleted, and how to delete it again.
+deleted_warning() {
+  echo
+  echo "WARNING: a restore brings back every account in the dump, including accounts deleted after"
+  echo "it was taken, with all their data (and they can sign in again). Delete each one again."
+  if [ -n "$deleted_since" ]; then
+    echo "In the dump but not in the live database, so deleted since the dump (delete each again;"
+    echo "its data goes with it):"
+    printf '%s\n' "$deleted_since" | while read -r id email; do
+      printf '  %s\n    docker compose --env-file %s -f %s exec postgres psql -U lukitas -d lukitas -c "delete from \\"user\\" where id = %s"\n' \
+        "$email" "$ENV_FILE" "$DIR/docker-compose.yml" "'$id'"
+    done
+  elif [ -z "$live_accounts" ]; then
+    echo "The live database has no accounts to compare with: delete again anyone who deleted their"
+    echo "account after the dump was taken."
+  fi
+}
+
+deleted_warning
+
 if [ "$yes" != 1 ]; then
   echo
   echo "This will make the dump above the live database. The current one is renamed and kept."
@@ -106,5 +141,6 @@ services="api web"
 compose up -d --wait $services
 
 say "Restored from $file"
+deleted_warning
 echo "The previous database is still there as $before. When you are sure, drop it:"
 echo "  docker compose --env-file $ENV_FILE -f $DIR/docker-compose.yml exec postgres psql -U lukitas -d postgres -c 'drop database $before'"

@@ -1,23 +1,27 @@
 #!/usr/bin/env bash
-# Backs up the database to $BACKUP_DIR/lukitas-YYYY-MM-DD.dump (default ~/Backups/lukitas) and keeps
-# the newest 14 daily dumps.
+# Backs up the database to $BACKUP_DIR/lukitas-YYYY-MM-DD.dump (default ~/Backups/lukitas). No dump
+# is kept longer than 14 days, daily or pre-update (the app promises that backups holding a deleted
+# account delete themselves within 14 days); under that, the newest 14 daily dumps.
 #
 #   ./backup.sh               the daily backup (what launchd runs)
 #   ./backup.sh --pre-update  a backup taken before an update: lukitas-YYYY-MM-DD-preupdate-HHMM.dump.
 #                             Its own name, so it never replaces the daily dump; not counted by the
-#                             14-daily rule (the newest 10 of them are kept).
+#                             14-daily rule (the newest 10 of them are kept, none past 14 days).
+#
+# Every run applies the 14-day limit, even one that fails (a failure notifies you every time).
 #
 # The dump is taken as the database owner, which bypasses row-level security (every table here is
 # FORCE ROW LEVEL SECURITY, so a dump by the API's own role would come out empty). A backup is only
 # kept after it passes: pg_restore can list it, and restoring it into a scratch database gives rows
 # in every main table that has rows in the live one. Otherwise the new file is deleted, the old
-# ones stay, and the script exits with an error (and a macOS notification when run by launchd).
+# ones younger than 14 days stay, and the script exits with an error (and a macOS notification when
+# run by launchd).
 #
 # Optional encrypted second copy: set BACKUP_COPY_DIR (a folder, e.g. in iCloud Drive) and
 # BACKUP_AGE_RECIPIENT (an age public key, "age1...") in .env. After a good backup, the dump is
 # encrypted with `age` (brew install age) into BACKUP_COPY_DIR/<name>.age, and the same retention
-# applies there. Without `age` the copy is skipped with a warning. The dump itself is checked
-# before it is encrypted. See README, "Backup and restore".
+# applies there (tested by test-retention.sh). Without `age` the copy is skipped with a warning.
+# The dump itself is checked before it is encrypted. See README, "Backup and restore".
 #
 # Needs the stack running (Docker Desktop up). Settings: BACKUP_DIR, KEEP (default 14),
 # BACKUP_COPY_DIR, BACKUP_AGE_RECIPIENT, ENV_FILE.
@@ -33,7 +37,7 @@ for arg in "$@"; do
   case "$arg" in
     --pre-update) pre_update=1 ;;
     -h | --help)
-      sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,27p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) die "unknown option: $arg" ;;
@@ -61,8 +65,16 @@ scratch="lukitas_verify"
 case "$keep" in '' | *[!0-9]*) die "KEEP must be a number" ;; esac
 [ "$keep" -ge 1 ] || die "KEEP must be at least 1"
 
+# retain: the retention of the dumps and of the encrypted copies (lib.sh, apply_retention).
+retain() {
+  apply_retention "$backup_dir" "" "$keep" "$keep_preupdate"
+  [ -z "$copy_dir" ] || apply_retention "$copy_dir" '\.age' "$keep" "$keep_preupdate"
+}
+
 fail() {
   printf 'BACKUP FAILED: %s\n' "$*" >&2
+  # Old dumps still age out: the 14-day promise does not wait for a good backup.
+  retain || true
   # When launchd runs this nobody is watching the log; tell the person.
   osascript -e "display notification \"$*\" with title \"Lukitas backup failed\"" >/dev/null 2>&1 || true
   exit 1
@@ -75,19 +87,6 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
-
-# prune DIR REGEX KEEP: delete all but the newest KEEP files in DIR whose names match REGEX (names
-# sort by date). Other files in the folder are left alone.
-prune() {
-  local dir="$1" regex="$2" n="$3" old
-  old="$(ls -1 "$dir" | grep -E "$regex" | sort | awk -v keep="$n" '{ l[NR] = $0 } END { for (i = 1; i <= NR - keep; i++) print l[i] }' || true)"
-  [ -z "$old" ] || printf '%s\n' "$old" | while read -r f; do
-    rm -f "$dir/$f"
-    say "Removed old backup $dir/$f"
-  done
-}
-DAILY='^lukitas-[0-9]{4}-[0-9]{2}-[0-9]{2}\.dump'
-PREUPDATE='^lukitas-[0-9]{4}-[0-9]{2}-[0-9]{2}-preupdate-[0-9]{4}\.dump'
 
 command -v docker >/dev/null 2>&1 || fail "docker is not installed or not on PATH"
 docker info >/dev/null 2>&1 || fail "Docker is not running"
@@ -135,10 +134,9 @@ EOF2
 mv -f "$partial" "$final"
 chmod 600 "$final"
 
-# Retention. Daily dumps and pre-update dumps are counted separately, so a pre-update backup never
-# pushes a daily one out, and never replaces it.
-prune "$backup_dir" "$DAILY\$" "$keep"
-prune "$backup_dir" "$PREUPDATE\$" "$keep_preupdate"
+# Retention (lib.sh): nothing older than 14 days; under that, daily and pre-update dumps are counted
+# separately, so a pre-update backup never pushes a daily one out, and never replaces it.
+retain
 
 say "Backup saved: $final ($(du -h "$final" | cut -f1))"
 
@@ -161,8 +159,7 @@ if [ -n "$copy_dir" ] || [ -n "$age_recipient" ]; then
       tmp="$copy_dir/.$name.age.partial"
       if age -r "$age_recipient" -o "$tmp" "$final" && [ -s "$tmp" ]; then
         mv -f "$tmp" "$copy_dir/$name.age"
-        prune "$copy_dir" "$DAILY\\.age\$" "$keep"
-        prune "$copy_dir" "$PREUPDATE\\.age\$" "$keep_preupdate"
+        retain
         say "Encrypted copy saved: $copy_dir/$name.age"
       else
         rm -f "$tmp"

@@ -198,7 +198,17 @@ data you had, restore the backup `update.sh` made.
 
 `backup.sh` writes `~/Backups/lukitas/lukitas-YYYY-MM-DD.dump` (`BACKUP_DIR` in `.env` changes the
 folder; give it a folder of its own), keeps the newest 14 daily dumps, and checks every dump before
-keeping it:
+keeping it (below).
+
+**No dump lives longer than 14 days**, daily or pre-update, and the same goes for the encrypted
+copies. That is what the app tells someone who deletes their account: "Las copias de seguridad que
+los incluyan se borran solas en 14 días". Every run applies it, even one that fails (a Mac that
+was off for days removes them at its next run, on wake). The count
+limits below only cap what is younger. `./test-retention.sh` checks the rules on fake dumps (no
+Docker needed). Copies made by anything else (Time Machine, iCloud's Recently Deleted) are not
+covered: see [Keep a copy that is not on this Mac](#keep-a-copy-that-is-not-on-this-mac).
+
+The checks:
 
 1. `pg_dump -Fc` as the database owner, which bypasses row-level security. (Every table here is
    `FORCE ROW LEVEL SECURITY`; a dump as `lukas_app` fails, as it should. Do not change the role.)
@@ -207,13 +217,14 @@ keeping it:
    `passkey`, `accounts`, `categories`, `category_budgets`, `recurrences`, `imports` and
    `transactions`: a table with rows that restores empty fails the backup.
 
-If a check fails, the new file is deleted, the older dumps stay, the script exits non-zero and (from
+If a check fails, the new file is deleted, the older dumps stay (up to 14 days), the script exits non-zero and (from
 the scheduled run) macOS shows a notification "Lukitas backup failed". Log of the scheduled run:
 `~/Library/Logs/lukitas-backup.log`.
 
 **Before an update** `update.sh` runs `backup.sh --pre-update`, which writes
 `lukitas-YYYY-MM-DD-preupdate-HHMM.dump`: its own file, so it never replaces that day's 03:00 dump,
-and it does not count against the 14 daily dumps (the newest 10 pre-update dumps are kept).
+and it does not count against the 14 daily dumps (the newest 10 pre-update dumps are kept, none
+older than 14 days).
 
 **Schedule.** `./install-backup.sh` installs `com.lukitas.backup` for your user (check what it
 installs first with `./install-backup.sh --render`; remove it with `./uninstall-backup.sh`). Runs at
@@ -227,8 +238,11 @@ not encrypted, and they sit on the same disk as the database. Disk failure, thef
 Desktop's **Troubleshoot > Clean / Purge data** (which deletes every volume, whatever the compose
 file says) would take both. So:
 
-1. **Time Machine.** Make sure `~/Backups` is included (it is by default) and that the Time Machine
-   disk is encrypted (Time Machine > Select Disk > Encrypt Backup). Keep **FileVault** on.
+1. **Time Machine.** Keep **FileVault** on, and the Time Machine disk encrypted (Time Machine >
+   Select Disk > Encrypt Backup). Time Machine keeps old versions of files for months, so a dump
+   deleted at 14 days would live on there, holding accounts people deleted. Leave the backup folder
+   out of it (`tmutil addexclusion ~/Backups/lukitas`) and use the encrypted copy below as the copy
+   off this Mac.
 2. **An encrypted copy of every backup**, written by `backup.sh` itself, with
    [`age`](https://github.com/FiloSottile/age). It needs no password at backup time, only a public
    key; only the private key can open the copies. Once:
@@ -250,6 +264,8 @@ file says) would take both. So:
    After each good backup the dump is encrypted into `BACKUP_COPY_DIR/<name>.age` (same retention as
    the originals). If `age` is not installed the copy is skipped with a warning; a failed copy makes
    the run fail (the primary backup is kept either way). Only encrypted files ever reach iCloud.
+   iCloud Drive keeps what is deleted from it in Recently Deleted for 30 days: to hold the 14-day
+   promise there too, use an external disk, or empty Recently Deleted for that folder.
 
    **Restore from a copy:** put the key in a file, decrypt, then restore as usual.
 
@@ -275,6 +291,12 @@ It restores into a new database first (if that fails nothing has changed), asks 
 `restore`, stops the API and the tunnel, renames the old database to `lukitas_before_<time>` (kept:
 drop it yourself when you are sure), puts the new one in its place, applies newer migrations, and
 starts everything. `--yes` skips the question.
+
+**A restore brings back accounts deleted after the dump was taken**, with all their data, and they
+can sign in again. Those people were told their data was gone, so delete each of them again right
+after the restore. `restore.sh` warns about it and lists the accounts in the dump that the live
+database does not have, each with the command that deletes it again. (When the live database is
+lost or empty there is nothing to compare with: check who deleted their account since the dump.)
 
 ## Moving to a server
 

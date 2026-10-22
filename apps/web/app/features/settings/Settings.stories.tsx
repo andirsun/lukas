@@ -107,7 +107,7 @@ export const DeleteNeedsExactEmail: Story = {
     await title(canvas);
     await userEvent.click(canvas.getByRole("button", { name: "Eliminar mi cuenta" }));
     const sheet = within(await screen.findByRole("dialog", { name: "¿Eliminar tu cuenta?" }));
-    const confirm = sheet.getByRole("button", { name: "Eliminar para siempre" });
+    const confirm = sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" });
     const email = sheet.getByRole("textbox", { name: "Escribe tu correo para confirmar" });
     await expect(confirm).toBeDisabled();
     await userEvent.type(email, "ana@example.co");
@@ -141,10 +141,12 @@ export const DeleteWithEnter: Story = {
     const email = sheet.getByRole("textbox", { name: "Escribe tu correo para confirmar" });
     await userEvent.type(email, "ana@example.co{Enter}");
     await expect(writesTo(args.onRequest, "DELETE /api/v1/me")).toHaveLength(0);
-    await expect(sheet.getByRole("button", { name: "Eliminar para siempre" })).toBeDisabled();
+    await expect(sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" })).toBeDisabled();
 
     await userEvent.type(email, "m{Enter}{Enter}");
-    await userEvent.click(sheet.getByRole("button", { name: /Eliminar para siempre|Eliminando…/ }));
+    await userEvent.click(
+      sheet.getByRole("button", { name: /Sí, eliminar mi cuenta|Eliminando…/ }),
+    );
     await expect(await canvas.findByText("Landing (stand-in)")).toBeVisible();
     await expect(writesTo(args.onRequest, "DELETE /api/v1/me")).toHaveLength(1);
     await expect(args.signOut).toHaveBeenCalledTimes(1);
@@ -170,7 +172,7 @@ export const DeleteOffersExportAndSurvivesFailure: Story = {
       sheet.getByRole("textbox", { name: "Escribe tu correo para confirmar" }),
       "ana@example.com",
     );
-    await userEvent.click(sheet.getByRole("button", { name: "Eliminar para siempre" }));
+    await userEvent.click(sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" }));
     await expect(
       await sheet.findByText(
         "Tuvimos un problema de nuestro lado. Inténtalo de nuevo en un momento.",

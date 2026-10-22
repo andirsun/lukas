@@ -88,7 +88,7 @@ test("deleting the account signs out to the landing; the same email then starts 
   await openSettings(page);
   await page.getByRole("button", { name: "Eliminar mi cuenta" }).click();
   const sheet = page.getByRole("dialog", { name: "¿Eliminar tu cuenta?" });
-  const confirm = sheet.getByRole("button", { name: "Eliminar para siempre" });
+  const confirm = sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" });
   await expect(confirm).toBeDisabled();
   await sheet
     .getByRole("textbox", { name: "Escribe tu correo para confirmar" })

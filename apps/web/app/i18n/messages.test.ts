@@ -160,3 +160,24 @@ describe("message catalogs", () => {
     }
   });
 });
+
+describe("deleting an account promises what is true (backups keep it up to 14 days)", () => {
+  const DELETION = {
+    es: "Borramos tu cuenta y todos tus movimientos de inmediato. Las copias de seguridad que los incluyan se borran solas en 14 días.",
+    en: "We delete your account and all your entries right away. Backups that include them delete themselves within 14 days.",
+  } as const;
+
+  for (const locale of ["es", "en"] as const) {
+    it(`${locale}: says when the backups go, and never "forever"`, () => {
+      const lines = Object.entries(catalogs[locale]).filter(([key]) =>
+        key.startsWith("settings.delete."),
+      );
+      expect(catalogs[locale]["settings.delete.lead"]).toBe(DELETION[locale]);
+      for (const [key, line] of lines) {
+        expect(line, key).not.toMatch(
+          /para siempre|recuperarlos|no se puede deshacer|forever|for good|get them back|can't be undone/i,
+        );
+      }
+    });
+  }
+});
