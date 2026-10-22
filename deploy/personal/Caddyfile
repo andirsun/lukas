@@ -64,12 +64,12 @@
 		file_server
 	}
 
-	# --- The prerendered pages: revalidate within minutes, so an update shows up quickly. -------
+	# --- The landing and roadmap live on their own site: send visitors there (same path and query).
+	# A temporary redirect, so the landing can move without browsers remembering the old answer.
 	@pages path / /en /en/ /roadmap /roadmap/ /en/roadmap /en/roadmap/
 	handle @pages {
-		header Cache-Control "public, max-age=300, must-revalidate"
-		try_files {path} {path}/index.html
-		file_server
+		header Cache-Control "no-cache"
+		redir {$LANDING_URL}{uri} 302
 	}
 
 	# --- A path with a file extension is a file: a missing one is a 404, not the app. ----------

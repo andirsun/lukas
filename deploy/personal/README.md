@@ -11,7 +11,7 @@ with `docker compose up` in the root (ports 5433, 3000, 5173, 8025, 1026), so bo
 
 ```
  phone ──https──> Cloudflare ──tunnel──> cloudflared ──> web (Caddy) ──/api/*──> api ──> postgres
-                  (TLS, DNS)             (outbound only)   │ static app + landing      │ role lukas_app,
+                  (TLS, DNS)             (outbound only)   │ static app                │ role lukas_app,
                                                            │                           │ row-level security
                                                            └ http://127.0.0.1:8088     └ the volume lukitas-personal-db
                                                              (this Mac only)
@@ -20,8 +20,10 @@ with `docker compose up` in the root (ports 5433, 3000, 5173, 8025, 1026), so bo
 - **One origin.** The app and the API share `app-lukas.andersonlaverde.com` (the API is under
   `/api`), so the session cookie is first-party and secure. No CORS.
 - **Allowlist.** Only the emails in `SIGN_IN_ALLOWLIST` can ask for a sign-in code. Anyone else
-  gets "Lukitas todavía no está abierto al público" and no email is sent. The landing page at `/`
-  stays public (a search-engine `noindex` header is set).
+  gets "Lukitas todavía no está abierto al público" and no email is sent.
+- **The landing lives elsewhere.** `/`, `/en` and the roadmap redirect (302, same path and query)
+  to the public landing at `LANDING_URL` (default `https://lukitas.andersonlaverde.com`), whose
+  buttons come back here to `/sign-in` and `/demo`.
 - **Not everything is public.** Caddy answers 404 for `/api/auth/oauth2/*` (OAuth client
   registration and flows, for MCP clients that this install does not use yet) and for
   `/api/openapi.json`. Re-enable OAuth when the MCP stage needs it (Caddyfile, `@notPublic`).

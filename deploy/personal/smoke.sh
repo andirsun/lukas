@@ -21,7 +21,7 @@ check() { # NAME EXPECTED ACTUAL
 }
 status() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
 
-check "GET /                 landing" 200 "$(status "$base/")"
+check "GET /                 to the landing" "302 ${LANDING_URL:-https://lukitas.andersonlaverde.com}/" "$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$base/")"
 check "GET /api/health       API" 200 "$(status "$base/api/health")"
 check "GET /app              app shell" 200 "$(status "$base/app")"
 check "GET /sign-in          app shell" 200 "$(status "$base/sign-in")"
@@ -32,7 +32,7 @@ check "GET /api/v1/me        needs a session" 401 "$(status "$base/api/v1/me")"
 check "GET /api/openapi.json  not public" 404 "$(status "$base/api/openapi.json")"
 check "POST oauth2/register   not public" 404 "$(status -X POST "$base/api/auth/oauth2/register" -H 'Content-Type: application/json' -d '{}')"
 check "GET oauth2/authorize   not public" 404 "$(status "$base/api/auth/oauth2/authorize")"
-check "GET frame-ancestors    header" "frame-ancestors 'none'" "$(curl -s -I "$base/" | tr -d '\r' | sed -n "s/^[Cc]ontent-[Ss]ecurity-[Pp]olicy: //p")"
+check "GET frame-ancestors    header" "frame-ancestors 'none'" "$(curl -s -I "$base/sign-in" | tr -d '\r' | sed -n "s/^[Cc]ontent-[Ss]ecurity-[Pp]olicy: //p")"
 
 # A made-up address is not on the list. The API answers 403 sign_in_not_allowed and sends nothing.
 body="$(curl -s -w '\n%{http_code}' -X POST "$base/api/auth/email-otp/send-verification-otp" \
