@@ -203,7 +203,9 @@ keeping it (below).
 **No dump lives longer than 14 days**, daily or pre-update, and the same goes for the encrypted
 copies. That is what the app tells someone who deletes their account: "Las copias de seguridad que
 los incluyan se borran solas en 14 días". Every run applies it, even one that fails (a Mac that
-was off for days removes them at its next run, on wake). The count
+was off for days removes them at its next run, on wake), with one exception: the newest dump
+always stays, so weeks of failed backups never leave you with none (each failure notifies you;
+fix the backup and the old one goes at the next good run). The count
 limits below only cap what is younger. `./test-retention.sh` checks the rules on fake dumps (no
 Docker needed). Copies made by anything else (Time Machine, iCloud's Recently Deleted) are not
 covered: see [Keep a copy that is not on this Mac](#keep-a-copy-that-is-not-on-this-mac).
@@ -217,7 +219,7 @@ The checks:
    `passkey`, `accounts`, `categories`, `category_budgets`, `recurrences`, `imports` and
    `transactions`: a table with rows that restores empty fails the backup.
 
-If a check fails, the new file is deleted, the older dumps stay (up to 14 days), the script exits non-zero and (from
+If a check fails, the new file is deleted, the older dumps stay (up to 14 days, and the newest always), the script exits non-zero and (from
 the scheduled run) macOS shows a notification "Lukitas backup failed". Log of the scheduled run:
 `~/Library/Logs/lukitas-backup.log`.
 

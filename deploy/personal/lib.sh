@@ -140,9 +140,13 @@ MAX_BACKUP_DAYS=14
 # modified DAYS days ago or earlier. An hour early, so the 03:00 run DAYS days after a dump removes
 # it even if that dump finished a little after 03:00.
 prune_older() {
-  local dir="$1" regex="$2" days="$3" path
+  local dir="$1" regex="$2" days="$3" path newest
+  # The newest dump always stays, however old: after weeks of failed backups it is the last good
+  # one, and losing it would leave none at all (the failures notify every day meanwhile).
+  newest="$(ls -1t "$dir" | grep -E "$regex" | head -n 1 || true)"
   find "$dir" -maxdepth 1 -type f -mmin +"$((days * 1440 - 60))" | while read -r path; do
     printf '%s\n' "${path##*/}" | grep -Eq "$regex" || continue
+    [ "${path##*/}" != "$newest" ] || continue
     rm -f "$path"
     say "Removed backup older than $days days: $path"
   done

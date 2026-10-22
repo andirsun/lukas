@@ -8,7 +8,8 @@
 #                             Its own name, so it never replaces the daily dump; not counted by the
 #                             14-daily rule (the newest 10 of them are kept, none past 14 days).
 #
-# Every run applies the 14-day limit, even one that fails (a failure notifies you every time).
+# Every run applies the 14-day limit, even one that fails (a failure notifies you every time),
+# except that the newest dump always stays: weeks of failed backups never leave none at all.
 #
 # The dump is taken as the database owner, which bypasses row-level security (every table here is
 # FORCE ROW LEVEL SECURITY, so a dump by the API's own role would come out empty). A backup is only
@@ -73,7 +74,7 @@ retain() {
 
 fail() {
   printf 'BACKUP FAILED: %s\n' "$*" >&2
-  # Old dumps still age out: the 14-day promise does not wait for a good backup.
+  # Old dumps still age out (the 14-day promise does not wait for a good backup), all but the newest.
   retain || true
   # When launchd runs this nobody is watching the log; tell the person.
   osascript -e "display notification \"$*\" with title \"Lukitas backup failed\"" >/dev/null 2>&1 || true

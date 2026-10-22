@@ -84,9 +84,22 @@ apply_retention "$copies" '\.age' 14 10 >/dev/null
 expect "$copies" lukitas-2026-10-21.dump.age lukitas-2026-09-01.dump notes.txt \
   .lukitas-2026-09-01.dump.age.partial
 
+# Backups failing for weeks: every dump is past 14 days. The newest one stays, so a long run of
+# failed backups never leaves none at all; the rest still go. Same for the encrypted copies.
+stale="$tmp/stale"
+mkdir "$stale"
+aged "$stale/lukitas-2026-09-20.dump" 32
+aged "$stale/lukitas-2026-09-25-preupdate-0800.dump" 27
+aged "$stale/lukitas-2026-09-28.dump" 24
+aged "$stale/lukitas-2026-09-28.dump.age" 24
+aged "$stale/lukitas-2026-09-20.dump.age" 32
+apply_retention "$stale" "" 14 10 >/dev/null
+apply_retention "$stale" '\.age' 14 10 >/dev/null
+expect "$stale" lukitas-2026-09-28.dump lukitas-2026-09-28.dump.age
+
 # A folder that does not exist (no copies set up yet) is fine.
 apply_retention "$tmp/missing" "" 14 10 >/dev/null
-expect "$tmp" copies counts daily preupdate
+expect "$tmp" copies counts daily preupdate stale
 
 [ "$failures" = 0 ] || die "$failures retention check(s) failed"
 say "Retention: all checks passed"
