@@ -9,6 +9,8 @@ flutter test
 flutter build apk --debug
 ```
 
+The integration tests (`integration_test/`) run on the emulator against the dev stack: see "Integration tests against the dev stack" in `docs/mobile/setup.md`.
+
 ## Generated code (committed; CI fails when stale)
 
 - `lib/theme/tokens.g.dart`, from `docs/design/system/project/tokens.json`: `dart run scripts/gen-tokens.dart`.

@@ -49,3 +49,9 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Passkeys through the platform's Credential Manager (Android 14+), never through the
+    // library's Play Services bridge, which scripts/check-no-google.sh refuses.
+    implementation("androidx.credentials:credentials:1.6.0")
+}

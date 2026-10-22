@@ -109,6 +109,29 @@ adb emu kill                                                   # stop it
 
 The headless command was verified: it boots to `sys.boot_completed=1` as `emulator-5554` with SDK 36.
 
+## Integration tests against the dev stack
+
+The tests in `apps/mobile/integration_test` drive the app on the emulator against the dev stack
+(`docker compose up -d` at the repo root: API on port 3000, Postgres, Mailpit on 8025). The emulator
+reaches the Mac at `10.0.2.2`; debug builds allow plain HTTP for it.
+
+```sh
+docker compose up -d                                           # from the repo root
+emulator -avd lukitas-api36 -no-window -no-audio -gpu swiftshader_indirect &
+adb wait-for-device shell 'while [ "$(getprop sys.boot_completed)" != 1 ]; do sleep 1; done'
+cd apps/mobile
+flutter test integration_test -d emulator-5554 \
+  --dart-define=LUKITAS_SERVER=http://10.0.2.2:3000 \
+  --dart-define=MAILPIT_URL=http://10.0.2.2:8025
+```
+
+They read sign-in codes and links from Mailpit, as the web's e2e suite does. The API allows 5 code
+requests per 10 minutes from one address, and every run from the emulator comes from the same one:
+running the suite more than twice in 10 minutes gets `too_many_requests`.
+
+The first Gradle build also installs `platforms;android-35` and `cmake;3.22.1` into the SDK: the
+`jni` plugin (pulled in through `flutter_secure_storage`'s dependencies) builds against them.
+
 ## Physical phone
 
 Enable Developer options and USB debugging on the phone, connect it by USB, accept the debugging prompt, then run `adb devices`. One device should be listed as `device`.

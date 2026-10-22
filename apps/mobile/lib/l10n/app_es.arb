@@ -16,5 +16,225 @@
         "example": "Mercado"
       }
     }
+  },
+  "entryLead": "Anota en qué se te va la plata. Sin contraseñas.",
+  "@entryLead": {
+    "description": "The first screen's line under the name."
+  },
+  "lukitasWaves": "Lukitas te saluda",
+  "@lukitasWaves": {
+    "description": "Screen-reader label of the waving Lukitas."
+  },
+  "entryGuest": "Probar sin correo",
+  "@entryGuest": {
+    "description": "First run: start as a guest, with no email."
+  },
+  "entryGuestHint": "Puedes agregar tu correo después.",
+  "@entryGuestHint": {
+    "description": "Under the guest choice."
+  },
+  "entryGuestBusy": "Preparando tu cuenta…",
+  "@entryGuestBusy": {
+    "description": "While the guest account is created."
+  },
+  "entryEmail": "Entrar con mi correo",
+  "@entryEmail": {
+    "description": "First run: sign in with an email code or magic link."
+  },
+  "entryPasskey": "Entrar con huella",
+  "@entryPasskey": {
+    "description": "First run: sign in with a passkey. Shown only when the phone supports passkeys."
+  },
+  "entryPasskeyBusy": "Esperando tu huella…",
+  "@entryPasskeyBusy": {
+    "description": "While the phone's passkey prompt is open."
+  },
+  "signInTitle": "Entra a Lukitas",
+  "@signInTitle": {
+    "description": "Email screen title."
+  },
+  "signInLead": "Sin contraseñas: te mandamos un código a tu correo.",
+  "@signInLead": {
+    "description": "Email screen lead."
+  },
+  "emailLabel": "Tu correo",
+  "@emailLabel": {
+    "description": "Email field label."
+  },
+  "emailPlaceholder": "ana@correo.com",
+  "@emailPlaceholder": {
+    "description": "Email field placeholder."
+  },
+  "sendCode": "Enviar código",
+  "@sendCode": {
+    "description": "Button that emails a sign-in code."
+  },
+  "sending": "Enviando…",
+  "@sending": {
+    "description": "While the code is being sent."
+  },
+  "codeTitle": "Revisa tu correo",
+  "@codeTitle": {
+    "description": "Code step title."
+  },
+  "codeLead": "Te mandamos un código de 6 dígitos a {email}. Escríbelo aquí o toca el enlace del correo.",
+  "@codeLead": {
+    "description": "Code step lead, signing in.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "claimCodeLead": "Te mandamos un código de 6 dígitos a {email}. Escríbelo aquí para guardar tu progreso.",
+  "@claimCodeLead": {
+    "description": "Code step lead, when a guest saves their progress.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "codeLabel": "Código de 6 dígitos",
+  "@codeLabel": {
+    "description": "Code field label."
+  },
+  "submitCode": "Entrar",
+  "@submitCode": {
+    "description": "Button that signs in with the code."
+  },
+  "submitClaim": "Guardar",
+  "@submitClaim": {
+    "description": "Button that saves a guest's progress with the code."
+  },
+  "verifying": "Entrando…",
+  "@verifying": {
+    "description": "While the code is checked."
+  },
+  "resend": "Reenviar código",
+  "@resend": {
+    "description": "Button that emails a new code."
+  },
+  "resent": "Te mandamos un código nuevo.",
+  "@resent": {
+    "description": "After a new code is sent."
+  },
+  "changeEmail": "Usar otro correo",
+  "@changeEmail": {
+    "description": "Back to the email field from the code step."
+  },
+  "guestSaveTitle": "¿Guardamos lo que ya anotaste?",
+  "@guestSaveTitle": {
+    "description": "Asked when a guest enters an email: claim it or sign in as another account."
+  },
+  "guestSaveBody": "Estás usando Lukitas sin correo. Podemos guardar tu progreso en {email}: sigues con los mismos movimientos.",
+  "@guestSaveBody": {
+    "description": "Body of the guest's choice.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "guestSaveAction": "Guardar mi progreso",
+  "@guestSaveAction": {
+    "description": "The guest claims the email: same account, every movement kept."
+  },
+  "guestOtherAccount": "Entrar con otra cuenta",
+  "@guestOtherAccount": {
+    "description": "The guest signs in as another user instead (after a warning)."
+  },
+  "guestLeaveTitle": "¿Dejar tu cuenta de invitado?",
+  "@guestLeaveTitle": {
+    "description": "Warning before a guest's session is replaced."
+  },
+  "guestLeaveBody": "Si entras con {email}, lo que anotaste como invitado se queda en esa cuenta sin correo y no podrás volver a verlo.",
+  "@guestLeaveBody": {
+    "description": "Body of the warning before a guest's session is replaced.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "guestLeaveConfirm": "Entrar de todos modos",
+  "@guestLeaveConfirm": {
+    "description": "Confirms replacing the guest's session."
+  },
+  "cancel": "Cancelar",
+  "@cancel": {
+    "description": "Closes a question without doing anything."
+  },
+  "emailTakenSignIn": "Entrar con ese correo",
+  "@emailTakenSignIn": {
+    "description": "After email_taken: sign in with that email instead (after a warning)."
+  },
+  "verifyFailedTitle": "No pudimos hacerte entrar",
+  "@verifyFailedTitle": {
+    "description": "A magic link that did not sign in."
+  },
+  "sendNewCode": "Enviar un código nuevo",
+  "@sendNewCode": {
+    "description": "From a failed magic link to the email screen."
+  },
+  "errorGeneric": "Algo salió mal. Inténtalo de nuevo en un momento.",
+  "@errorGeneric": {
+    "description": "Error: anything else."
+  },
+  "errorNetwork": "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
+  "@errorNetwork": {
+    "description": "Error: no response."
+  },
+  "errorInternal": "Tuvimos un problema de nuestro lado. Inténtalo de nuevo en un momento.",
+  "@errorInternal": {
+    "description": "Error: the server failed."
+  },
+  "errorInvalidEmail": "Escribe un correo válido, como ana@correo.com.",
+  "@errorInvalidEmail": {
+    "description": "Error: not an email."
+  },
+  "errorInvalidCode": "Ese código no es correcto. Revísalo e inténtalo otra vez.",
+  "@errorInvalidCode": {
+    "description": "Error: wrong code."
+  },
+  "errorInvalidOrExpiredCode": "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
+  "@errorInvalidOrExpiredCode": {
+    "description": "Error: expired or used code."
+  },
+  "errorTooManyAttempts": "Demasiados intentos con este código. Pide uno nuevo.",
+  "@errorTooManyAttempts": {
+    "description": "Error: too many wrong tries."
+  },
+  "errorTooManyRequests": "Pediste muchos códigos seguidos. Espera unos minutos e inténtalo otra vez.",
+  "@errorTooManyRequests": {
+    "description": "Error: too many codes asked for."
+  },
+  "errorSignInNotAllowed": "Lukitas todavía no está abierto al público. Si quieres probarlo, escríbele a quien te invitó.",
+  "@errorSignInNotAllowed": {
+    "description": "Error: the email is not on this install's allowlist."
+  },
+  "errorGuestSignupDisabled": "Por ahora no se pueden crear cuentas de invitado.",
+  "@errorGuestSignupDisabled": {
+    "description": "Error: guest sign-up is off on this server."
+  },
+  "errorEmailTaken": "Ese correo ya tiene una cuenta. Entra con él.",
+  "@errorEmailTaken": {
+    "description": "Error: a guest tried to claim an email that already has an account."
+  },
+  "errorPasskeyFailed": "No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.",
+  "@errorPasskeyFailed": {
+    "description": "Error: the passkey sign-in failed."
+  },
+  "errorTooManySignInAttempts": "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez.",
+  "@errorTooManySignInAttempts": {
+    "description": "Error: sign-in rate limit."
+  },
+  "retry": "Reintentar",
+  "@retry": {
+    "description": "Tries the same thing again."
   }
 }

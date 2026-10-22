@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
 
+import 'device.dart';
 import 'gen/lukitas_api.dart';
 
-/// The API at one server: `<server>/api`, with the session's bearer token when signed in.
+/// The API at one server: `<server>/api`, with the session's bearer token when signed in and the
+/// phone's time zone and language ([DeviceHints]) on every request.
 ///
 /// [api] is the generated client (lib/api/gen, from the API's OpenAPI document by
 /// scripts/gen-api.sh); its paths carry no `/api` prefix, so the base URL adds it.
@@ -12,7 +14,7 @@ class ApiClient {
 
   /// A client for [server] (e.g. `https://app-lukas.andersonlaverde.com`). Any path on [server] is
   /// kept, so an API behind a sub-path works; a query or fragment is dropped.
-  static ApiClient forServer(Uri server, {String? token}) {
+  static ApiClient forServer(Uri server, {String? token, DeviceHints? hints}) {
     final path = server.path.replaceFirst(RegExp(r'/+$'), '');
     final base = Uri(
       scheme: server.scheme,
@@ -27,7 +29,7 @@ class ApiClient {
           baseUrl: base.toString(),
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 20),
-          headers: {if (token != null) 'Authorization': 'Bearer $token'},
+          headers: {...?hints?.headers, if (token != null) 'Authorization': 'Bearer $token'},
         ),
       ),
     );

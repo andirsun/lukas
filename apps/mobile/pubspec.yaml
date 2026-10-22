@@ -21,6 +21,10 @@ dependencies:
   built_value: 8.13.0
   dio: 5.11.1
   flutter_riverpod: 3.4.3
+  # The session's bearer token, encrypted with a key kept in the Android Keystore (spec section
+  # 6.3). BSD-3-Clause; on Android it brings Tink (Apache-2.0), and its Windows side brings
+  # path_provider and jni into the APK. No Play Services.
+  flutter_secure_storage: 11.2.0
   go_router: 18.0.2
   # The version flutter_localizations pins.
   intl: 0.20.3
@@ -33,6 +37,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # On-device tests against the dev stack (integration_test/).
+  integration_test:
+    sdk: flutter
   # Generates the API client's *.g.dart files (scripts/gen-api.sh).
   build_runner: 2.16.2
   built_value_generator: 8.13.0
@@ -42,3 +49,6 @@ flutter:
   uses-material-design: true
   # AppLocalizations from lib/l10n (l10n.yaml).
   generate: true
+  assets:
+    # Lukitas' sprite sheets, the web's own (apps/web/public/lukas): 4x2 frames of 500 px.
+    - assets/lukas/wave.webp
