@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/add/add_repository.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_controller.dart';
@@ -45,6 +46,7 @@ Future<HomeHarness> pumpHome(
   String? token = 't1',
   DateTime? now,
   DateTime Function()? clock,
+  AddRepository? addRepo,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -54,6 +56,7 @@ Future<HomeHarness> pumpHome(
   final container = ProviderContainer(
     overrides: [
       homeRepositoryProvider.overrideWithValue(repo),
+      if (addRepo != null) addRepositoryProvider.overrideWithValue(addRepo),
       homeCacheProvider.overrideWithValue(HomeCache(cacheStore ?? FakeCacheStore(), token: token)),
       clockProvider.overrideWithValue(clock ?? () => now ?? testNow),
       lukasVariantProvider.overrideWithValue(() => 1),

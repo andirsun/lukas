@@ -96,6 +96,21 @@ String formatMoney(int cents, String currency, String locale, {MoneySign sign = 
   return '$prefix${style.symbol}${style.attached ? '' : _nbsp}$figure';
 }
 
+/// What is being typed on the add sheet's keypad (`6,0`, raw, in the language's decimal separator)
+/// shown as money, the way [formatMoney] writes it (`6,0 €`, `$50.000`, `€6.5`): the whole part is
+/// grouped and the decimals stay exactly as typed, a trailing separator or zero included. Empty is
+/// 0. Whole-unit currencies show no decimals (a separator there only ended the amount).
+String formatAmountInput(String raw, String currency, String locale) {
+  final separator = locale == 'es' ? ',' : '.';
+  final parts = raw.split(separator);
+  final whole = int.tryParse(parts.first.isEmpty ? '0' : parts.first) ?? 0;
+  final money = formatMoney(whole * _minorUnit, currency, locale);
+  if (isWholeUnit(currency)) return money;
+  final decimals = parts.length > 1 ? parts[1] : null;
+  // [formatMoney] wrote two zero decimals after the first separator: put what was typed there.
+  return money.replaceFirst('${separator}00', decimals == null ? '' : '$separator$decimals');
+}
+
 String _number(double value, String locale) {
   // At most two decimals, none when whole: 15,5 / 15.5, 1,25 / 1.25, 50.
   var text = value.toStringAsFixed(2);

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../add/add_sheet.dart';
 import '../api/gen/lukitas_api.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
@@ -17,6 +18,7 @@ import 'home_widgets.dart';
 import 'lukas_line.dart';
 import 'lukitas_face.dart';
 import 'swipe_row.dart';
+import 'toast.dart';
 import 'transaction_row.dart';
 
 /// Picks which of Lukitas' three phrasings a line uses (1 to 3). Replaced in tests.
@@ -27,6 +29,9 @@ final lukasVariantProvider = Provider<int Function()>((ref) {
 
 /// How long Lukitas celebrates a save or a payment (the web's `CELEBRATE_MS`).
 const _celebrateFor = Duration(milliseconds: 2500);
+
+/// Space under the list so the ＋ never covers the last row.
+const _addButtonRoom = 88.0;
 
 /// The widest the content grows on a big screen.
 const _maxContentWidth = 480.0;
@@ -39,8 +44,8 @@ const _maxContentWidth = 480.0;
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, this.onEdit});
 
-  /// Opens a movement to edit (a tap on its row, or a swipe right on a paid one). Null until the
-  /// edit sheet exists: then paid rows have no right-hand swipe.
+  /// Opens a movement to edit (a tap on its row, or a swipe right on a paid one). Null: the edit
+  /// sheet. Tests pass their own to see what was asked for.
   final void Function(Transaction transaction)? onEdit;
 
   @override
@@ -88,31 +93,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     String? actionLabel,
     VoidCallback? onAction,
     bool error = false,
-  }) {
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
-          ),
-          // Deshacer stays 8 seconds (the `--undo` token); a SnackBar with an action would
-          // otherwise stay until dismissed.
-          duration: actionLabel != null ? LukitasTokens.durationUndo : const Duration(seconds: 5),
-          persist: false,
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: colors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
-            side: error ? BorderSide(color: colors.over, width: 2) : BorderSide.none,
-          ),
-          action: actionLabel == null
-              ? null
-              : SnackBarAction(label: actionLabel, textColor: colors.gold, onPressed: onAction!),
-        ),
-      );
-  }
+  }) => showToast(
+    messenger,
+    colors,
+    message,
+    actionLabel: actionLabel,
+    onAction: onAction,
+    error: error,
+  );
 
   String _failureMessage(AppLocalizations l10n, HomeFailure failure) =>
       failure.offline ? l10n.errorNetwork : l10n.errorGeneric;
@@ -263,6 +251,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     }
 
     return Scaffold(
+      // Nothing to add to until the categories are known.
+      floatingActionButton: data == null
+          ? null
+          : FloatingActionButton(
+              key: const Key('home.add'),
+              tooltip: l10n.addFabLabel,
+              backgroundColor: colors.brand,
+              foregroundColor: colors.onBrand,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
+              ),
+              onPressed: () => unawaited(openAddSheet(context)),
+              child: const Icon(Icons.add, size: 30),
+            ),
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: RadialGradient(
@@ -362,7 +364,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     inset,
                     LukitasTokens.space1,
                     inset,
-                    LukitasTokens.space5,
+                    // Room under the last row for the ＋.
+                    _addButtonRoom,
                   ),
                   sliver: SliverList.builder(
                     itemCount: entries.length,
@@ -481,7 +484,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   Widget _row(HomeState home, HomeData data, Transaction tx, AppLocalizations l10n) {
     final pending = tx.status == TransactionStatusEnum.pending;
-    final onEdit = widget.onEdit;
+    final onEdit = widget.onEdit ?? (Transaction tx) => unawaited(openEditSheet(context, tx));
     return SwipeRow(
       key: ValueKey(tx.id),
       gap: LukitasTokens.space2,
@@ -496,8 +499,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               () => unawaited(_pay(tx).then((_) {}, onError: (Object _) {})),
               l10n.swipePaid,
             )
-          : onEdit == null
-          ? null
           : SwipeRight(SwipeRightKind.edit, () => onEdit(tx), l10n.swipeEdit),
       child: TransactionRow(
         transaction: tx,
@@ -505,7 +506,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         currency: data.currency,
         locale: l10n.localeName,
         paidHere: home.paidHere.contains(tx.id),
-        onOpen: onEdit == null ? null : () => onEdit(tx),
+        onOpen: () => onEdit(tx),
         onPay: () => _pay(tx),
       ),
     );

@@ -490,6 +490,53 @@ class HomeController extends Notifier<HomeState> {
     );
   }
 
+  /// Puts [tx] among the rows when it belongs to the month on screen (replacing its earlier
+  /// version), or takes it off when it does not (an edit moved it to another month).
+  void _place(Transaction tx) {
+    final data = state.data;
+    if (data == null) return;
+    final rest = [
+      for (final t in data.items)
+        if (t.id != tx.id) t,
+    ];
+    final here = tx.date.startsWith(data.month);
+    // A page boundary hides what is below it: a row older than the last one loaded would sit at
+    // the end of a list that has more to come, so it waits for "Ver más movimientos".
+    final last = rest.isEmpty ? null : rest.last;
+    final beyond =
+        data.nextCursor != null && last != null && _newestFirst(tx, last) > 0 && tx.id != last.id;
+    _replaceItems(here && !beyond ? ([...rest, tx]..sort(_newestFirst)) : rest);
+  }
+
+  /// A movement the add sheet just saved: its row is there at once, what is saved for a start with
+  /// no network follows, and the summary is asked again (only the latest answer counts). Lukitas
+  /// talks about it once the figures are in, unless a newer event has taken over meanwhile.
+  Future<void> saved(Transaction tx) async {
+    if (state.data == null) return;
+    final eventBefore = _eventId;
+    _place(tx);
+    unawaited(_persist());
+    await _refreshSummary();
+    if (!_alive || _eventId != eventBefore) return;
+    report(
+      LukasEvent(
+        kind: LukasEventKind.saved,
+        categoryId: tx.categoryId,
+        amount: tx.amount,
+        name: tx.name,
+      ),
+    );
+  }
+
+  /// A movement the add sheet just edited: its row is replaced where it belongs, and the summary
+  /// follows. No event: an edit is no celebration.
+  Future<void> updated(Transaction tx) async {
+    if (state.data == null) return;
+    _place(tx);
+    unawaited(_persist());
+    await _refreshSummary();
+  }
+
   /// Lukitas talks about [event] for [eventLineDuration], then goes back to the month's line.
   /// Also for a save (the add sheet reports it).
   void report(LukasEvent event) {

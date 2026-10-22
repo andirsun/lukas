@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,11 +29,28 @@ class TransactionsPage {
 }
 
 /// A call home made did not work. [status] is the HTTP status, or 0 when there was no answer at all
-/// (offline, a timeout, a lost connection).
+/// (offline, a timeout, a lost connection). [code] is the API's own error code when it sent one
+/// (`category_not_found`, `idempotency_in_progress`).
 class HomeFailure implements Exception {
-  const HomeFailure(this.status);
+  const HomeFailure(this.status, {this.code});
+
+  /// What a failed Dio call means: the status and the problem document's `code`.
+  factory HomeFailure.fromDio(DioException error) {
+    final data = error.response?.data;
+    var body = data;
+    if (data is String && data.isNotEmpty) {
+      try {
+        body = jsonDecode(data);
+      } on FormatException {
+        body = null;
+      }
+    }
+    final code = body is Map ? body['code'] : null;
+    return HomeFailure(error.response?.statusCode ?? 0, code: code is String ? code : null);
+  }
 
   final int status;
+  final String? code;
 
   /// No answer from the server: the phone is offline or the server unreachable.
   bool get offline => status == 0;
@@ -75,7 +94,7 @@ class ApiHomeRepository implements HomeRepository {
       if (data == null) throw const HomeFailure(500);
       return data;
     } on DioException catch (error) {
-      throw HomeFailure(error.response?.statusCode ?? 0);
+      throw HomeFailure.fromDio(error);
     }
   }
 
@@ -107,7 +126,7 @@ class ApiHomeRepository implements HomeRepository {
     try {
       await _api.deleteTransaction(id: id);
     } on DioException catch (error) {
-      throw HomeFailure(error.response?.statusCode ?? 0);
+      throw HomeFailure.fromDio(error);
     }
   }
 

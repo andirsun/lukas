@@ -551,5 +551,175 @@
         "type": "String"
       }
     }
+  },
+  "addFabLabel": "Add expense",
+  "@addFabLabel": {
+    "description": "Home: label of the ＋ button that opens the add sheet."
+  },
+  "addTitleExpense": "New expense",
+  "@addTitleExpense": {
+    "description": "Add sheet: title when adding an expense."
+  },
+  "addTitleIncome": "New income",
+  "@addTitleIncome": {
+    "description": "Add sheet: title when adding an income."
+  },
+  "addTitleEdit": "Edit transaction",
+  "@addTitleEdit": {
+    "description": "Add sheet: title when editing a movement."
+  },
+  "addClose": "Close",
+  "@addClose": {
+    "description": "Add sheet: closes it without saving."
+  },
+  "addKindLabel": "Transaction type",
+  "@addKindLabel": {
+    "description": "Add sheet: names the expense/income switch."
+  },
+  "addKindExpense": "Expense",
+  "@addKindExpense": {
+    "description": "Add sheet: the expense choice."
+  },
+  "addKindIncome": "Income",
+  "@addKindIncome": {
+    "description": "Add sheet: the income choice."
+  },
+  "addCategoryLabel": "Category",
+  "@addCategoryLabel": {
+    "description": "Add sheet: names the category chips (screen readers)."
+  },
+  "addMoreCategories": "More",
+  "@addMoreCategories": {
+    "description": "Add sheet: shows every category."
+  },
+  "addFewerCategories": "Fewer",
+  "@addFewerCategories": {
+    "description": "Add sheet: folds the categories back."
+  },
+  "addNoCategoriesExpense": "You have no spending categories yet.",
+  "@addNoCategoriesExpense": {
+    "description": "Add sheet: no expense categories to pick."
+  },
+  "addNoCategoriesIncome": "You have no income categories yet.",
+  "@addNoCategoriesIncome": {
+    "description": "Add sheet: no income categories to pick."
+  },
+  "addArchived": "archived",
+  "@addArchived": {
+    "description": "Add sheet: marks an archived category on a movement that is still in it."
+  },
+  "addMoreOptions": "More options",
+  "@addMoreOptions": {
+    "description": "Add sheet: opens the date, pending and note."
+  },
+  "addDateLabel": "Date",
+  "@addDateLabel": {
+    "description": "Add sheet: the date field."
+  },
+  "addToday": "Today",
+  "@addToday": {
+    "description": "Add sheet: the date when it is today."
+  },
+  "addPendingLabel": "Pending (not paid yet)",
+  "@addPendingLabel": {
+    "description": "Add sheet: marks a movement as scheduled and unpaid."
+  },
+  "addNoteLabel": "Note (optional)",
+  "@addNoteLabel": {
+    "description": "Add sheet: the note field."
+  },
+  "addSave": "Save",
+  "@addSave": {
+    "description": "Add sheet: saves a new movement."
+  },
+  "addSaveChanges": "Save changes",
+  "@addSaveChanges": {
+    "description": "Add sheet: saves an edited movement."
+  },
+  "addSaving": "Saving…",
+  "@addSaving": {
+    "description": "Add sheet: while the save is under way."
+  },
+  "addSavedExpense": "Expense in {category}: {amount}",
+  "@addSavedExpense": {
+    "description": "Toast after saving an expense (it has Deshacer).",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addSavedIncome": "Income from {category}: {amount}",
+  "@addSavedIncome": {
+    "description": "Toast after saving an income (it has Deshacer).",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addUpdated": "Changes saved: {name}",
+  "@addUpdated": {
+    "description": "Toast after editing a movement.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addUndone": "Removed: {name}",
+  "@addUndone": {
+    "description": "Toast after Deshacer on a saved movement.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addNameIt": "Name it",
+  "@addNameIt": {
+    "description": "Toast action after saving without a name: opens the movement on its name."
+  },
+  "addErrorInvalid": "Some of the data isn't valid. Check it and try again.",
+  "@addErrorInvalid": {
+    "description": "Add sheet: the server refused the data."
+  },
+  "addErrorCategory": "Pick one of your active categories.",
+  "@addErrorCategory": {
+    "description": "Add sheet: the category is gone or archived."
+  },
+  "addErrorBusy": "We're still processing your previous request. Hold on a moment.",
+  "@addErrorBusy": {
+    "description": "Add sheet: the first try of this save is still running on the server."
+  },
+  "addErrorNotFound": "We couldn't find that transaction.",
+  "@addErrorNotFound": {
+    "description": "Add sheet: the edited movement no longer exists."
+  },
+  "keypadLabel": "Keypad",
+  "@keypadLabel": {
+    "description": "Add sheet: names the keypad (screen readers)."
+  },
+  "keypadDecimal": "Decimal point",
+  "@keypadDecimal": {
+    "description": "Add sheet: the decimal key (screen readers)."
+  },
+  "keypadBackspace": "Delete digit",
+  "@keypadBackspace": {
+    "description": "Add sheet: the backspace key (screen readers)."
+  },
+  "nameFieldLabel": "Name (optional)",
+  "@nameFieldLabel": {
+    "description": "Add sheet: the name field."
+  },
+  "nameFieldSuggestions": "Recent names",
+  "@nameFieldSuggestions": {
+    "description": "Add sheet: names the shortcuts under the name (screen readers)."
   }
 }

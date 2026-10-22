@@ -737,5 +737,175 @@
         "type": "String"
       }
     }
+  },
+  "addFabLabel": "Agregar gasto",
+  "@addFabLabel": {
+    "description": "Home: label of the ＋ button that opens the add sheet."
+  },
+  "addTitleExpense": "Nuevo gasto",
+  "@addTitleExpense": {
+    "description": "Add sheet: title when adding an expense."
+  },
+  "addTitleIncome": "Nuevo ingreso",
+  "@addTitleIncome": {
+    "description": "Add sheet: title when adding an income."
+  },
+  "addTitleEdit": "Editar movimiento",
+  "@addTitleEdit": {
+    "description": "Add sheet: title when editing a movement."
+  },
+  "addClose": "Cerrar",
+  "@addClose": {
+    "description": "Add sheet: closes it without saving."
+  },
+  "addKindLabel": "Tipo de movimiento",
+  "@addKindLabel": {
+    "description": "Add sheet: names the expense/income switch."
+  },
+  "addKindExpense": "Gasto",
+  "@addKindExpense": {
+    "description": "Add sheet: the expense choice."
+  },
+  "addKindIncome": "Ingreso",
+  "@addKindIncome": {
+    "description": "Add sheet: the income choice."
+  },
+  "addCategoryLabel": "Categoría",
+  "@addCategoryLabel": {
+    "description": "Add sheet: names the category chips (screen readers)."
+  },
+  "addMoreCategories": "Más",
+  "@addMoreCategories": {
+    "description": "Add sheet: shows every category."
+  },
+  "addFewerCategories": "Menos",
+  "@addFewerCategories": {
+    "description": "Add sheet: folds the categories back."
+  },
+  "addNoCategoriesExpense": "Aún no tienes categorías de gasto.",
+  "@addNoCategoriesExpense": {
+    "description": "Add sheet: no expense categories to pick."
+  },
+  "addNoCategoriesIncome": "Aún no tienes categorías de ingreso.",
+  "@addNoCategoriesIncome": {
+    "description": "Add sheet: no income categories to pick."
+  },
+  "addArchived": "archivada",
+  "@addArchived": {
+    "description": "Add sheet: marks an archived category on a movement that is still in it."
+  },
+  "addMoreOptions": "Más opciones",
+  "@addMoreOptions": {
+    "description": "Add sheet: opens the date, pending and note."
+  },
+  "addDateLabel": "Fecha",
+  "@addDateLabel": {
+    "description": "Add sheet: the date field."
+  },
+  "addToday": "Hoy",
+  "@addToday": {
+    "description": "Add sheet: the date when it is today."
+  },
+  "addPendingLabel": "Pendiente (aún no lo pagas)",
+  "@addPendingLabel": {
+    "description": "Add sheet: marks a movement as scheduled and unpaid."
+  },
+  "addNoteLabel": "Nota (opcional)",
+  "@addNoteLabel": {
+    "description": "Add sheet: the note field."
+  },
+  "addSave": "Guardar",
+  "@addSave": {
+    "description": "Add sheet: saves a new movement."
+  },
+  "addSaveChanges": "Guardar cambios",
+  "@addSaveChanges": {
+    "description": "Add sheet: saves an edited movement."
+  },
+  "addSaving": "Guardando…",
+  "@addSaving": {
+    "description": "Add sheet: while the save is under way."
+  },
+  "addSavedExpense": "Gasto en {category}: {amount}",
+  "@addSavedExpense": {
+    "description": "Toast after saving an expense (it has Deshacer).",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addSavedIncome": "Ingreso de {category}: {amount}",
+  "@addSavedIncome": {
+    "description": "Toast after saving an income (it has Deshacer).",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addUpdated": "Cambios guardados: {name}",
+  "@addUpdated": {
+    "description": "Toast after editing a movement.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addUndone": "Quitado: {name}",
+  "@addUndone": {
+    "description": "Toast after Deshacer on a saved movement.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addNameIt": "Ponerle nombre",
+  "@addNameIt": {
+    "description": "Toast action after saving without a name: opens the movement on its name."
+  },
+  "addErrorInvalid": "Hay datos que no son válidos. Revísalos e inténtalo otra vez.",
+  "@addErrorInvalid": {
+    "description": "Add sheet: the server refused the data."
+  },
+  "addErrorCategory": "Elige una de tus categorías activas.",
+  "@addErrorCategory": {
+    "description": "Add sheet: the category is gone or archived."
+  },
+  "addErrorBusy": "Seguimos procesando tu solicitud anterior. Espera un momento.",
+  "@addErrorBusy": {
+    "description": "Add sheet: the first try of this save is still running on the server."
+  },
+  "addErrorNotFound": "No encontramos ese movimiento.",
+  "@addErrorNotFound": {
+    "description": "Add sheet: the edited movement no longer exists."
+  },
+  "keypadLabel": "Teclado numérico",
+  "@keypadLabel": {
+    "description": "Add sheet: names the keypad (screen readers)."
+  },
+  "keypadDecimal": "Coma decimal",
+  "@keypadDecimal": {
+    "description": "Add sheet: the decimal key (screen readers)."
+  },
+  "keypadBackspace": "Borrar dígito",
+  "@keypadBackspace": {
+    "description": "Add sheet: the backspace key (screen readers)."
+  },
+  "nameFieldLabel": "Nombre (opcional)",
+  "@nameFieldLabel": {
+    "description": "Add sheet: the name field."
+  },
+  "nameFieldSuggestions": "Nombres recientes",
+  "@nameFieldSuggestions": {
+    "description": "Add sheet: names the shortcuts under the name (screen readers)."
   }
 }

@@ -103,4 +103,25 @@ void main() {
       expect(lukasHint(-pesos(50000), 'es'), '(50 lukas)');
     });
   });
+  group('formatAmountInput (the web\'s vectors)', () {
+    test('shows what is being typed as money, keeping a trailing separator or zero', () {
+      expect(formatAmountInput('', 'EUR', 'es'), '0$nbsp€');
+      expect(formatAmountInput('6', 'EUR', 'es'), '6$nbsp€');
+      expect(formatAmountInput('6,', 'EUR', 'es'), '6,$nbsp€');
+      expect(formatAmountInput('6,0', 'EUR', 'es'), '6,0$nbsp€');
+      expect(formatAmountInput('6,08', 'EUR', 'es'), '6,08$nbsp€');
+      expect(formatAmountInput('6.5', 'EUR', 'en'), '€6.5');
+    });
+
+    test('groups thousands like formatMoney does', () {
+      expect(formatAmountInput('50000', 'COP', 'es'), r'$50.000');
+      expect(formatAmountInput('4300000', 'COP', 'es'), r'$4.300.000');
+      expect(formatAmountInput('50000', 'COP', 'en'), 'COP${nbsp}50,000');
+      expect(formatAmountInput('12345,6', 'EUR', 'es'), '12.345,6$nbsp€');
+    });
+
+    test('pesos drop a separator that only ended the amount', () {
+      expect(formatAmountInput('50000,', 'COP', 'es'), r'$50.000');
+    });
+  });
 }
