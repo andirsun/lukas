@@ -29,7 +29,8 @@ export function LukasBubble({ message, mood, quietKey }: LukasBubbleProps) {
     shown.current = message;
     const seconds = durationToken("--fade");
     if (reduceMotion || !seconds) return;
-    line.current?.animate?.([{ opacity: 0 }, { opacity: 1 }], {
+    // From faint, never from nothing: the line is readable from its first frame.
+    line.current?.animate?.([{ opacity: 0.25 }, { opacity: 1 }], {
       duration: seconds * 1000,
       easing: "ease-out",
     });
