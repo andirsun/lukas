@@ -693,6 +693,17 @@ export const ArchivedCategory: Story = {
         name: /Transporte/,
       }),
     ).toBeNull();
+    // Opening the sheet fades the toast out: let it finish before the a11y run, or a half-faded
+    // toast fails its contrast check on a slow machine.
+    await waitFor(
+      () =>
+        expect(
+          [...document.querySelectorAll<HTMLElement>(".lk-toast")].every(
+            (toast) => getComputedStyle(toast).opacity === "1",
+          ),
+        ).toBe(true),
+      { timeout: 5000 },
+    );
   },
 };
 

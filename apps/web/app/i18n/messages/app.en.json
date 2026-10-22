@@ -173,6 +173,7 @@
     "budget_category_not_expense": "Only expense categories can have a budget.",
     "idempotency_in_progress": "We're still processing your previous request. Hold on a moment.",
     "idempotency_key_reused": "This request was already used with different details. Please try again.",
+    "idempotency_key_required": "The key that prevents saving twice is missing. Try again.",
     "import_duplicate_file": "You already imported this file.",
     "import_too_large": "That file is too large. The limit is 5 MB.",
     "import_unrecognized_format": "We don't recognize this file. Use a Budge export.",

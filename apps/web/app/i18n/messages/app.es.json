@@ -173,6 +173,7 @@
     "budget_category_not_expense": "Solo las categorías de gasto pueden tener presupuesto.",
     "idempotency_in_progress": "Seguimos procesando tu solicitud anterior. Espera un momento.",
     "idempotency_key_reused": "Esta solicitud ya se usó con otros datos. Vuelve a intentarlo.",
+    "idempotency_key_required": "Falta la clave que evita guardar dos veces. Inténtalo otra vez.",
     "import_duplicate_file": "Ya importaste este archivo.",
     "import_too_large": "El archivo es demasiado grande. El límite es de 5 MB.",
     "import_unrecognized_format": "No reconocemos este archivo. Usa una exportación de Budge.",
