@@ -64,19 +64,20 @@ beforeAll(async () => {
 afterAll(() => t?.stop());
 
 describe("transaction name suggestions", () => {
-  test("distinct by lowercase name, most recent spelling, most recent first", async () => {
+  test("distinct by lowercase name, most recent spelling, most used first", async () => {
+    // continente 4 times, café twice, pingo doce once (founder, 2026-10-22: the most common).
     const { items } = await suggest();
-    expect(items.map((i) => i.name)).toEqual(["café", "pingo doce", "Continente"]);
+    expect(items.map((i) => i.name)).toEqual(["Continente", "café", "pingo doce"]);
     expect(items.find((i) => i.name.toLowerCase() === "continente")?.categoryId).toBe(supermercado);
     expect(items.find((i) => i.name === "café")?.categoryId).toBe(restaurante);
   });
 
-  test("q matches by prefix first, then by substring, then by recency", async () => {
+  test("q matches by prefix first, then by substring, then by use", async () => {
     expect(await names("?q=pin")).toEqual(["pingo doce"]);
     expect(await names("?q=doce")).toEqual(["pingo doce"]);
     expect(await names("?q=CONT")).toEqual(["Continente"]);
     // "pingo doce" only contains a "c", so it trails the two prefix matches.
-    expect(await names("?q=c")).toEqual(["café", "Continente", "pingo doce"]);
+    expect(await names("?q=c")).toEqual(["Continente", "café", "pingo doce"]);
   });
 
   test("excludes deleted transactions, names equal to their category and archived categories", async () => {
@@ -86,7 +87,7 @@ describe("transaction name suggestions", () => {
   });
 
   test("limit caps the list and is validated", async () => {
-    expect(await names("?limit=2")).toEqual(["café", "pingo doce"]);
+    expect(await names("?limit=2")).toEqual(["Continente", "café"]);
     for (const limit of ["0", "21"]) {
       const res = await t.request("GET", `/v1/transactions/suggestions?limit=${limit}`, {
         headers: a,

@@ -695,7 +695,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Recently used transaction names with the category they usually go in, most recent first */
+                /** @description Transaction names already used, with the category they usually go in, most used first (ties: most recent) */
                 200: {
                     headers: {
                         [name: string]: unknown;

@@ -122,7 +122,7 @@ export function transactionRoutes(deps: AppDeps) {
       responses: {
         200: jsonResponse(
           z.object({ items: z.array(suggestionDto) }),
-          "Recently used transaction names with the category they usually go in, most recent first",
+          "Transaction names already used, with the category they usually go in, most used first (ties: most recent)",
         ),
         ...problems(422),
       },
@@ -147,6 +147,9 @@ export function transactionRoutes(deps: AppDeps) {
             from used
             order by key, date desc, created_at desc
           ),
+          uses as (
+            select key, count(*) as uses from used group by key
+          ),
           usual as (
             select distinct on (key) key, category_id
             from (
@@ -160,9 +163,10 @@ export function transactionRoutes(deps: AppDeps) {
           select latest.name, usual.category_id
           from latest
           join usual using (key)
+          join uses using (key)
           where ${needle} = '' or position(${needle} in latest.key) > 0
           order by (position(${needle} in latest.key) = 1) desc,
-            latest.date desc, latest.created_at desc
+            uses.uses desc, latest.date desc, latest.created_at desc
           limit ${limit}
         `),
       );

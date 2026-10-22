@@ -168,3 +168,45 @@ export const DayEnglish: Story = {
     );
   },
 };
+
+const MANY: NameSuggestion[] = [
+  "lidl",
+  "desayuno",
+  "filtro cafetera delonghi",
+  "continente",
+  "contador octubre",
+  "gas y luz",
+  "super",
+  "almuerzo con papás Rita",
+  "farmacia",
+  "gasolina",
+].map((name) => ({ name, categoryName: "Casa" }));
+
+/**
+ * Only the two rows of shortcuts that fit show (the most used first: the API's order), so the
+ * categories under the field stay in view; the rest are out of sight and out of the tab order.
+ */
+export const TwoRowsAtMost: Story = {
+  render: () => (
+    <div className="max-w-[340px]">
+      <NameField
+        value=""
+        placeholder="Supermercado"
+        suggestions={MANY}
+        onChange={() => {}}
+        onPick={() => {}}
+      />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const shown = canvas.getAllByRole("button");
+    const rows = new Set(shown.map((button) => Math.round(button.getBoundingClientRect().top)));
+    await expect(rows.size).toBe(2);
+    await expect(shown.length).toBeLessThan(MANY.length);
+    // The first ones are kept, in order.
+    await expect(shown.map((button) => button.textContent)).toEqual(
+      MANY.slice(0, shown.length).map((s) => s.name),
+    );
+  },
+};
