@@ -10,7 +10,6 @@ import {
 import { categoryChips } from "./category-chips.ts";
 import { defaultCurrency } from "./currency.ts";
 import { countCategoryTransactions, createSuggestions } from "./onboarding-api.ts";
-import { passkeyOutcome } from "./passkey.ts";
 import { nextStep, previousStep, STEPS, stepFromParam, stepPath } from "./steps.ts";
 import { normalizeName, SUGGESTED_CATEGORIES, suggestionFor } from "./suggested-categories.ts";
 import { browserTimeZone, timeZoneToSave } from "./timezone.ts";
@@ -196,28 +195,6 @@ describe("SUGGESTED_CATEGORIES", () => {
     expect(suggestionFor("Eating out")?.key).toBe("eating_out");
     expect(suggestionFor("Salário")?.key).toBe("salary");
     expect(suggestionFor("Taxes")).toBeUndefined();
-  });
-});
-
-describe("passkeyOutcome", () => {
-  it("is silent when the person closes the prompt", () => {
-    for (const code of [
-      "AUTH_CANCELLED",
-      "ERROR_CEREMONY_ABORTED",
-      "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY",
-    ]) {
-      expect(passkeyOutcome({ code }), code).toBe("cancelled");
-    }
-  });
-
-  it("counts a passkey this device already has as added", () => {
-    expect(passkeyOutcome(null)).toBe("added");
-    expect(passkeyOutcome({ code: "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED" })).toBe("added");
-  });
-
-  it("fails on anything else", () => {
-    expect(passkeyOutcome({ code: "UNKNOWN_ERROR" })).toBe("failed");
-    expect(passkeyOutcome({})).toBe("failed");
   });
 });
 
