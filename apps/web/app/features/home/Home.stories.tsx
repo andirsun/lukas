@@ -1,6 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, fn, screen, userEvent, waitFor, within } from "storybook/test";
-import { expectTarget, fingerDrag } from "../../../.storybook/story-utils.ts";
+import {
+  backgroundBehind,
+  contrastRatio,
+  expectBoundaryContrast,
+  expectSunk,
+  expectTarget,
+  fingerDrag,
+} from "../../../.storybook/story-utils.ts";
 import { HomeStage } from "./story-harness.tsx";
 
 /**
@@ -499,6 +506,45 @@ export const SheetDayTheme: Story = {
     const sheet = await openAdd(canvas);
     await typeAmount(sheet, "15500");
     await expect(sheet.getByTestId("amount")).toHaveTextContent("$15.500 (15,5 lukas)");
+    await expectPressableKeys(sheet);
+  },
+};
+
+/**
+ * The keys stand apart from the white sheet by day (a 3:1 outline, not a faint underline), and a
+ * pressed key both sinks and darkens.
+ */
+async function expectPressableKeys(sheet: Canvas) {
+  const keys = within(sheet.getByRole("group", { name: "Teclado numérico" })).getAllByRole(
+    "button",
+  );
+  for (const key of keys) await expectBoundaryContrast(key);
+  const five = sheet.getByRole("button", { name: "5" });
+  const face = getComputedStyle(five).backgroundColor;
+  await expect(contrastRatio(face, backgroundBehind(five.parentElement))).toBeGreaterThan(1.05);
+  five.classList.add("is-pressed");
+  await expectSunk(five, 3);
+  await expect(getComputedStyle(five).backgroundColor).not.toBe(face);
+  five.classList.remove("is-pressed");
+}
+
+/** The edit sheet by day, on the pending Spotify: keys, Eliminar and "Más opciones" stand out. */
+export const EditSheetDayTheme: Story = {
+  globals: { theme: "day" },
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));
+    await userEvent.click(await panel.findByRole("button", { name: /^Spotify/ }));
+    const edit = within(await screen.findByRole("dialog", { name: "Editar movimiento" }));
+    await expect(edit.getByRole("button", { name: /^Más opciones/ })).toHaveTextContent(
+      "Pendiente",
+    );
+    await expectPressableKeys(edit);
+    await expectBoundaryContrast(edit.getByRole("button", { name: "Eliminar" }));
+    await expectBoundaryContrast(edit.getByRole("button", { name: /^Más opciones/ }));
   },
 };
 

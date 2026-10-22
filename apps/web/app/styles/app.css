@@ -136,7 +136,7 @@
   .lk-btn-secondary {
     background: var(--surface-row);
     color: var(--ink);
-    border: 2px solid var(--stroke);
+    border: 2px solid var(--control-edge);
     box-shadow: var(--edge-sm);
   }
   .lk-btn-secondary:active,
@@ -424,21 +424,26 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
   }
+  /*
+   * Keys: a face, a 2px outline and a solid edge, each a token. By day the outline is 3:1 against
+   * the white sheet (WCAG 1.4.11); at night it is the face's own color and the dark edge does it.
+   */
   .lk-key {
-    border: 0;
+    border: 2px solid var(--key-border);
     font-family: var(--font-display);
     font-weight: 600;
     font-size: 18px;
     color: var(--ink);
-    background: var(--surface-row);
+    background: var(--key);
     border-radius: var(--radius-sm);
-    padding: 10px 0;
-    box-shadow: var(--edge-sm);
+    padding: 8px 0;
+    box-shadow: 0 3px 0 var(--key-edge);
     cursor: pointer;
   }
   .lk-key:active {
     transform: translateY(3px);
-    box-shadow: 0 1px 0 var(--surface-edge);
+    box-shadow: 0 1px 0 var(--key-edge);
+    background: var(--key-pressed);
   }
 
   /* Sheet */
@@ -754,11 +759,13 @@
   .lk-key {
     transition:
       transform var(--press) ease,
-      box-shadow var(--press) ease;
+      box-shadow var(--press) ease,
+      background-color var(--press) ease;
   }
   .lk-key.is-pressed {
     transform: translateY(3px);
-    box-shadow: 0 1px 0 var(--surface-edge);
+    box-shadow: 0 1px 0 var(--key-edge);
+    background: var(--key-pressed);
   }
 
   /* Bottom bar: tabs have no edge (as drawn); they dip slightly. The ＋ sinks into its edge. */
@@ -1143,7 +1150,7 @@
     gap: var(--space-2);
     min-height: 44px;
     padding: 0 var(--space-3);
-    border: 2px solid var(--stroke);
+    border: 2px solid var(--control-edge);
     border-radius: var(--radius-md);
     background: var(--surface-row);
     color: var(--ink);
@@ -1485,7 +1492,7 @@
       gap: 4px;
     }
     .lk-sheet.has-footer .lk-key {
-      padding: 6px 0;
+      padding: 4px 0;
     }
     .lk-sheet.has-footer .lk-sheet-footer {
       gap: var(--space-1);

@@ -87,7 +87,7 @@ body {
 .lk-btn-secondary {
   background: var(--surface-row);
   color: var(--ink);
-  border: 2px solid var(--stroke);
+  border: 2px solid var(--control-edge);
   box-shadow: var(--edge-sm);
 }
 .lk-btn-secondary:active,
@@ -376,20 +376,21 @@ body {
   gap: 6px;
 }
 .lk-key {
-  border: 0;
+  border: 2px solid var(--key-border);
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 18px;
   color: var(--ink);
-  background: var(--surface-row);
+  background: var(--key);
   border-radius: var(--radius-sm);
-  padding: 10px 0;
-  box-shadow: var(--edge-sm);
+  padding: 8px 0;
+  box-shadow: 0 3px 0 var(--key-edge);
   cursor: pointer;
 }
 .lk-key:active {
   transform: translateY(3px);
-  box-shadow: 0 1px 0 var(--surface-edge);
+  box-shadow: 0 1px 0 var(--key-edge);
+  background: var(--key-pressed);
 }
 
 /* Sheet */

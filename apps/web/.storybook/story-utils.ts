@@ -15,6 +15,46 @@ export function resolveColor(value: string): string {
   return color;
 }
 
+/** The channels of a computed color (`rgb(r, g, b)` or `rgba(r, g, b, a)`). */
+function channels(color: string): [number, number, number, number] {
+  const [r = 0, g = 0, b = 0, a = 1] = (color.match(/[\d.]+/g) ?? []).map(Number);
+  return [r, g, b, a];
+}
+
+/** WCAG 2 contrast ratio of two opaque computed colors. */
+export function contrastRatio(a: string, b: string): number {
+  const luminance = (color: string) => {
+    const [r, g, b] = channels(color).map((c) => {
+      const s = c / 255;
+      return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    }) as [number, number, number];
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** The opaque background an element sits on: its own, or its nearest ancestor's. */
+export function backgroundBehind(element: Element | null): string {
+  for (let at = element; at; at = at.parentElement) {
+    const color = getComputedStyle(at).backgroundColor;
+    if (channels(color)[3] === 1) return color;
+  }
+  return "rgb(255, 255, 255)";
+}
+
+/**
+ * The element's border (what tells it apart from what is behind it) has at least `min`:1 contrast
+ * with the background it sits on (WCAG 1.4.11 asks 3:1 for a control's boundary).
+ */
+export async function expectBoundaryContrast(element: Element, min = 3): Promise<void> {
+  const style = getComputedStyle(element);
+  await expect(Number.parseFloat(style.borderTopWidth)).toBeGreaterThanOrEqual(1);
+  const border = style.borderTopColor;
+  const behind = backgroundBehind(element.parentElement);
+  await expect(contrastRatio(border, behind)).toBeGreaterThanOrEqual(min);
+}
+
 /** The pressable's touch target is at least 44×44px. */
 export async function expectTarget(element: Element): Promise<void> {
   const box = element.getBoundingClientRect();

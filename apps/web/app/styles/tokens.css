@@ -9,6 +9,11 @@
   --surface-sunken: #120f26;
   --surface-edge: #0f0c22;
   --stroke: #2d2660;
+  --control-edge: #2d2660;
+  --key: #1f1a3e;
+  --key-pressed: #1f1a3e;
+  --key-border: #1f1a3e;
+  --key-edge: #0f0c22;
   --ink: #f3f0ff;
   --ink-muted: #b9b2e0;
   --brand: #7c4dff;
@@ -50,6 +55,11 @@
   --surface-sunken: #ece6ff;
   --surface-edge: #d6ccf5;
   --stroke: #e6defc;
+  --control-edge: #8a79d1;
+  --key: #f3efff;
+  --key-pressed: #e4dbff;
+  --key-border: #8a79d1;
+  --key-edge: #7d6cc9;
   --ink: #221a47;
   --ink-muted: #5b5285;
   --brand: #7b3df0;
