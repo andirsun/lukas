@@ -1,22 +1,19 @@
 import { useState } from "react";
-import { Outlet, useSearchParams } from "react-router";
-import { createTranslator } from "use-intl/core";
+import { Outlet, useLocation } from "react-router";
 import { ApiProvider } from "../api/ApiProvider.tsx";
 import { demoGuards } from "../auth/session.ts";
 import { DemoBanner } from "../demo/DemoBanner.tsx";
+import { demoLocale, rememberDemoLocale } from "../demo/demo-locale.ts";
 import { AppShell } from "../features/home/AppShell.tsx";
 import { ScreenError } from "../features/home/ScreenError.tsx";
 import { Celebration } from "../feedback/Celebration.tsx";
 import { useFeedbackWarmup } from "../feedback/warmup.ts";
-import { detectLocale, type Locale } from "../i18n/format.ts";
-import es from "../i18n/messages/es.json" with { type: "json" };
+import { demoMeta } from "../i18n/screen-meta.ts";
 import { ToastProvider } from "../ui/Toast.tsx";
 import type { Route } from "./+types/demo";
 
-export const meta = () => {
-  const t = createTranslator({ locale: "es", messages: es, namespace: "demo" });
-  return [{ title: t("meta_title") }, { name: "robots", content: "noindex" }];
-};
+/** "Demo · Lukitas" in the demo's language, while it loads (each screen then sets its own). */
+export const meta = ({ location }: Route.MetaArgs) => demoMeta(location);
 
 /**
  * The demo's guard (always "signed in", as the made-up user: no session call) and its backend,
@@ -46,12 +43,6 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return <ScreenError error={error} />;
 }
 
-/** The landing's `?lang=`, else the browser's language: it picks Valentina's language and money. */
-function demoLocale(lang: string | null): Locale {
-  if (lang === "es" || lang === "en") return lang;
-  return detectLocale(typeof navigator === "undefined" ? undefined : navigator.language);
-}
-
 /**
  * `/demo/*` (spec §2.6b): the app's own screens, as "Valentina (demo)", against a backend that
  * lives in this page. The same shell and screens as `/app/*` (routes.ts reuses their route
@@ -60,10 +51,15 @@ function demoLocale(lang: string | null): Locale {
  */
 export default function DemoRoute({ loaderData }: Route.ComponentProps) {
   const { createDemoBackend, DEMO_SEED } = loaderData;
-  const [params] = useSearchParams();
+  const { search } = useLocation();
   // Once per visit: the backend (and so the `fetch` the API client is bound to) never changes
-  // while the demo is open, or every screen would start over with an empty cache.
-  const [backend] = useState(() => createDemoBackend(DEMO_SEED[demoLocale(params.get("lang"))]));
+  // while the demo is open, or every screen would start over with an empty cache. Its language
+  // is remembered for the tab, so reloading a deep link (`/demo/insights`) keeps it.
+  const [backend] = useState(() => {
+    const locale = demoLocale(search);
+    rememberDemoLocale(locale);
+    return createDemoBackend(DEMO_SEED[locale]);
+  });
   useFeedbackWarmup();
   return (
     <ApiProvider mode="demo" fetch={backend.fetch}>

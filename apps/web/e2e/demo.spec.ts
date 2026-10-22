@@ -35,6 +35,7 @@ const LANG = {
     account: "Tu cuenta",
     home: "Inicio",
     off: "En el demo esto no está disponible. Crea tu cuenta para usarlo.",
+    viewing: "Estás viendo el demo de Valentina.",
     exportJson: "Descargar JSON",
     deleteAccount: "Eliminar mi cuenta",
     importAction: "Importar desde Budge",
@@ -63,6 +64,7 @@ const LANG = {
     account: "Your account",
     home: "Home",
     off: "Not available in the demo. Create your account to use it.",
+    viewing: "You're viewing Valentina's demo.",
     exportJson: "Download JSON",
     deleteAccount: "Delete my account",
     importAction: "Import from Budge",
@@ -86,6 +88,15 @@ function watchApi(page: Page): string[] {
 async function heroDigits(hero: Locator): Promise<number> {
   const text = (await hero.locator(".lk-hero-amount .sr-only").textContent()) ?? "";
   return Number(text.replace(/\D/g, ""));
+}
+
+/** No link on the screen leads into the signed-in app (its guard would send the visitor to sign-in). */
+async function expectLinksStayInDemo(page: Page) {
+  const hrefs = await page
+    .locator("a[href]")
+    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") ?? ""));
+  expect(hrefs.filter((href) => /^\/app(\/|$|\?)/.test(href))).toEqual([]);
+  expect(hrefs.some((href) => href.startsWith("/demo"))).toBe(true);
 }
 
 async function expectNoAxeViolations(page: Page) {
@@ -169,52 +180,76 @@ test("es: try it from the landing, add 5.000, and a reload puts the seed back", 
   expect(api).toEqual([]);
 });
 
-test("es: every link inside the demo stays in /demo, and settings turns off what can't work", async ({
+test("es: every demo screen keeps its links in /demo, and settings turns off what can't work", async ({
   page,
 }) => {
   const l = LANG.es;
   const api = watchApi(page);
   await page.goto("/demo?lang=es");
   await expect(page.getByRole("region", { name: l.left })).toBeVisible();
+  await expect(page).toHaveTitle("Demo · Inicio · Lukitas");
+  await expectLinksStayInDemo(page);
 
   // Insights from the bottom bar or the sidebar.
   await page.getByRole("navigation").getByRole("link", { name: l.insights }).click();
   await expect(page).toHaveURL(/\/demo\/insights$/);
+  await expect(page.getByRole("heading", { name: l.insights, level: 1 })).toBeVisible();
   await expect(page.getByRole("complementary", { name: "Demo" })).toBeVisible();
+  await expect(page).toHaveTitle("Demo · Análisis · Lukitas");
+  await expectLinksStayInDemo(page);
 
   // Categories, then one category's detail.
   await openSection(page, l, l.categories);
   await expect(page).toHaveURL(/\/demo\/categories$/);
-  await page
-    .getByRole("link", { name: /Restaurantes/ })
-    .first()
-    .click();
+  const restaurants = page.getByRole("link", { name: /Restaurantes/ }).first();
+  await expect(restaurants).toBeVisible();
+  await expectLinksStayInDemo(page);
+  await restaurants.click();
   await expect(page).toHaveURL(/\/demo\/categories\/[0-9a-f-]+/);
+  await expect(page.getByRole("heading", { name: "Restaurantes", level: 1 })).toBeVisible();
+  await expectLinksStayInDemo(page);
 
   // The recurring ones: rent, Spotify and the salary.
   await openSection(page, l, l.recurring);
   await expect(page).toHaveURL(/\/demo\/recurring$/);
   await expect(page.getByText("Spotify").first()).toBeVisible();
+  await expectLinksStayInDemo(page);
 
-  // Settings: export, delete, passkeys and import are off, each with the note.
+  // Settings: no sign-in to speak of; export, delete, passkeys and import are off, with the note.
   await openSection(page, l, l.settings);
   await expect(page).toHaveURL(/\/demo\/settings$/);
-  await expect(page.getByText("valentina@demo.lukas.app")).toBeVisible();
+  await expect(page).toHaveTitle("Demo · Ajustes · Lukitas");
+  await expect(page.getByText(l.viewing)).toBeVisible();
+  await expect(page.getByText(/Entraste como/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: l.exportJson })).toBeDisabled();
   await expect(page.getByRole("button", { name: l.deleteAccount })).toBeDisabled();
   await expect(page.getByRole("link", { name: l.importAction })).toHaveCount(0);
   await expect(page.getByText(l.off)).toHaveCount(3);
+  await expectLinksStayInDemo(page);
   await expectNoAxeViolations(page);
-
-  // Every link on the page that leads into the app stays in the demo.
-  const hrefs = await page
-    .locator("a[href]")
-    .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href") ?? ""));
-  expect(hrefs.filter((href) => /^\/app(\/|$|\?)/.test(href))).toEqual([]);
 
   // Back home from settings.
   await page.getByRole("navigation").getByRole("link", { name: l.home }).click();
   await expect(page).toHaveURL(/\/demo$/);
+
+  expect(api).toEqual([]);
+});
+
+test("en: reloading a deep link keeps the demo in English and in euros", async ({ page }) => {
+  const l = LANG.en;
+  const api = watchApi(page);
+  await page.goto("/demo?lang=en");
+  await expect(page.getByRole("region", { name: l.left })).toBeVisible();
+  await expect(page).toHaveTitle("Demo · Home · Lukitas");
+  await page.getByRole("navigation").getByRole("link", { name: l.insights }).click();
+  await expect(page).toHaveURL(/\/demo\/insights$/);
+
+  // No ?lang in the URL any more: the tab remembers it.
+  await page.reload();
+  await expect(page.getByRole("heading", { name: l.insights, level: 1 })).toBeVisible();
+  await expect(page).toHaveTitle("Demo · Insights · Lukitas");
+  await expect(page.getByRole("complementary", { name: "Demo" })).toContainText(l.banner);
+  await expect(page.getByText(/€[\d,]+\.\d\d/).first()).toBeVisible();
 
   expect(api).toEqual([]);
 });

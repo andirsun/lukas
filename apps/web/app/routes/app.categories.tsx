@@ -1,11 +1,9 @@
-import { createTranslator } from "use-intl/core";
 import { CategoriesPage } from "../features/categories/CategoriesPage.tsx";
-import es from "../i18n/messages/es.json" with { type: "json" };
+import { screenMeta } from "../i18n/screen-meta.ts";
 
-export const meta = () => {
-  const t = createTranslator({ locale: "es", messages: es, namespace: "categories" });
-  return [{ title: t("meta_title") }, { name: "robots", content: "noindex" }];
-};
+/** Spanish in the app; in the demo (which reuses this module), the demo's language. */
+export const meta = ({ location }: { location: { pathname: string; search: string } }) =>
+  screenMeta("categories", location);
 
 /** `/app/categories`: create, edit, archive and restore categories. Signed in and onboarded: the `/app` layout checks it. */
 export default function Route() {

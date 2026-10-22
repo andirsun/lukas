@@ -1,11 +1,9 @@
-import { createTranslator } from "use-intl/core";
 import { Insights } from "../features/insights/Insights.tsx";
-import es from "../i18n/messages/es.json" with { type: "json" };
+import { screenMeta } from "../i18n/screen-meta.ts";
 
-export const meta = () => {
-  const t = createTranslator({ locale: "es", messages: es, namespace: "insights" });
-  return [{ title: t("meta_title") }, { name: "robots", content: "noindex" }];
-};
+/** Spanish in the app; in the demo (which reuses this module), the demo's language. */
+export const meta = ({ location }: { location: { pathname: string; search: string } }) =>
+  screenMeta("insights", location);
 
 /**
  * `/app/insights`: where the money goes, month by month, and what living costs. Signed in and

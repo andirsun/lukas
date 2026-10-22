@@ -822,13 +822,15 @@
       "confirm": "Delete forever",
       "deleting": "Deleting…"
     },
-    "demo_off": "Not available in the demo. Create your account to use it."
+    "demo_off": "Not available in the demo. Create your account to use it.",
+    "demo_viewing": "You're viewing Valentina's demo."
   },
   "demo": {
     "meta_title": "Demo · Lukitas",
     "label": "Demo",
     "banner": "You're in the demo: the data is made up and goes away when you reload.",
     "create_account": "Create my account",
-    "leave": "Leave the demo"
+    "leave": "Leave the demo",
+    "meta_title_screen": "Demo · {screen}"
   }
 }

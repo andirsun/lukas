@@ -56,7 +56,8 @@ export function Settings({
         <div className="flex flex-col gap-(--space-1)">
           <h1 className="m-0 font-display text-[28px] font-bold text-ink">{t("title")}</h1>
           <p className="m-0 break-all text-[14px] text-ink-muted">
-            {t("signed_in_as", { email: me.email })}
+            {/* The demo has no sign-in: say whose made-up account this is. */}
+            {demo ? t("demo_viewing") : t("signed_in_as", { email: me.email })}
           </p>
         </div>
         <PreferencesSection />

@@ -3,9 +3,12 @@ import { useState } from "react";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { ApiProvider } from "../api/ApiProvider.tsx";
+import { CategoriesPage } from "../features/categories/CategoriesPage.tsx";
 import { CategoryDetail } from "../features/categories/CategoryDetail.tsx";
 import { AppShell } from "../features/home/AppShell.tsx";
 import { Home } from "../features/home/Home.tsx";
+import { Insights } from "../features/insights/Insights.tsx";
+import { RecurringPage } from "../features/recurring/RecurringPage.tsx";
 import { Settings } from "../features/settings/Settings.tsx";
 import { type Locale } from "../i18n/format.ts";
 import { IntlProvider, useLocale } from "../i18n/IntlProvider.tsx";
@@ -13,9 +16,19 @@ import { ToastProvider } from "../ui/Toast.tsx";
 import { DemoBanner } from "./DemoBanner.tsx";
 import { createDemoBackend } from "./demo-backend.ts";
 import { DEMO_SEED } from "./demo-data.ts";
+import { fakeClock } from "./fake-clock.ts";
 
-/** The demo's clock in these stories: mid-afternoon on 21 October 2026. */
+/**
+ * The page's clock in these stories: mid-afternoon on 21 October 2026, for the screens (which ask
+ * `new Date()` which month it is) and the backend alike, so the figures below hold on any real date.
+ */
 const NOW = new Date("2026-10-21T18:00:00Z");
+
+/**
+ * `VITE_STORY_SYSTEM_DATE=2026-11-15` pretends the machine's own date is another one, to check
+ * that nothing here still reads the real clock (`fakeClock` stacks on top of it).
+ */
+const SYSTEM_DATE = import.meta.env.VITE_STORY_SYSTEM_DATE as string | undefined;
 
 /**
  * The demo as routes/demo.tsx builds it, in a memory router: the app's shell and screens under
@@ -25,7 +38,8 @@ const NOW = new Date("2026-10-21T18:00:00Z");
 function DemoStage({ path }: { path: string }) {
   const storyLocale = useLocale().locale;
   const [locale, setLocale] = useState<Locale>(storyLocale);
-  const [backend] = useState(() => createDemoBackend(DEMO_SEED[storyLocale], () => NOW));
+  // The backend reads the same (faked) clock as the screens: `new Date()`.
+  const [backend] = useState(() => createDemoBackend(DEMO_SEED[storyLocale]));
   return (
     <IntlProvider locale={locale} onLocaleChange={setLocale}>
       <MemoryRouter initialEntries={[path]}>
@@ -41,7 +55,10 @@ function DemoStage({ path }: { path: string }) {
                 }
               >
                 <Route index element={<Home />} />
+                <Route path="categories" element={<CategoriesPage />} />
                 <Route path="categories/:id" element={<CategoryDetail />} />
+                <Route path="recurring" element={<RecurringPage />} />
+                <Route path="insights" element={<Insights />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
             </Routes>
@@ -56,6 +73,14 @@ const meta = {
   title: "Demo/Screens",
   component: DemoStage,
   parameters: { layout: "fullscreen" },
+  beforeEach: () => {
+    const restoreSystem = SYSTEM_DATE ? fakeClock(new Date(SYSTEM_DATE)) : () => {};
+    const restore = fakeClock(NOW);
+    return () => {
+      restore();
+      restoreSystem();
+    };
+  },
 } satisfies Meta<typeof DemoStage>;
 
 export default meta;
@@ -78,6 +103,33 @@ export const HomeInPesos: Story = {
     const hrefs = [...canvasElement.querySelectorAll("a[href]")].map((a) => a.getAttribute("href"));
     await expect(hrefs.filter((href) => href?.startsWith("/app"))).toEqual([]);
     await expect(hrefs).toContain("/demo/insights");
+    // October 2026 on any real date: the month on screen is the clock's.
+    await expect(canvas.getByRole("group", { name: "Mes" })).toHaveTextContent("Octubre");
+  },
+};
+
+/** Insights in pesos: October's spending by category, rent first, from the same clock. */
+export const InsightsInPesos: Story = {
+  args: { path: "/demo/insights" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      await canvas.findByText("Arriendo fue lo que más lukas se llevó en octubre: $1.800.000."),
+    ).toBeVisible();
+    const hrefs = [...canvasElement.querySelectorAll("a[href]")].map((a) => a.getAttribute("href"));
+    await expect(hrefs.filter((href) => href?.startsWith("/app"))).toEqual([]);
+    // The a11y check runs on the settled screen: nothing loading, nothing mid-fade (as in
+    // Insights.stories.tsx).
+    await waitFor(
+      () => {
+        expect(canvasElement.querySelector("[aria-busy='true']")).toBeNull();
+        const moving = canvasElement.querySelectorAll<HTMLElement>(
+          "section, li, .lk-insight-body, [style*='opacity']",
+        );
+        for (const el of moving) expect(getComputedStyle(el).opacity).toBe("1");
+      },
+      { timeout: 8000 },
+    );
   },
 };
 
@@ -91,6 +143,9 @@ export const SettingsOffByDay: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByRole("heading", { name: "Settings", level: 1 });
+    // No sign-in happened: the line says whose made-up account this is.
+    await expect(canvas.getByText("You're viewing Valentina's demo.")).toBeVisible();
+    await expect(canvas.queryByText(/Signed in as/)).toBeNull();
     const note = "Not available in the demo. Create your account to use it.";
     await expect(canvas.getAllByText(note)).toHaveLength(3);
     for (const name of [
