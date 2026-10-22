@@ -35,7 +35,7 @@ function item(id: string, status: RoadmapStatus, glyph: string): RoadmapItem {
 export const ROADMAP_ITEMS: readonly RoadmapItem[] = [
   item("web_app", "building", "🌐"),
   item("import_budge", "building", "📥"),
-  item("demo", "building", "🧪"),
+  item("demo", "done", "🧪"),
   item("widget_mic", "next", "🎤"),
   item("multi_expense", "next", "💬"),
   item("connect_ai", "next", "✨"),

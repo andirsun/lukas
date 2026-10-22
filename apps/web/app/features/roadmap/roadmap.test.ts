@@ -94,8 +94,7 @@ describe("roadmapColumns", () => {
     const columns = roadmapColumns();
     expect(columns.length).toBeGreaterThan(0);
     for (const column of columns) expect(column.items.length).toBeGreaterThan(0);
-    // Nothing is done yet, so that column does not render.
-    expect(columns.map((column) => column.status)).toEqual(["building", "next", "later"]);
+    expect(columns.map((column) => column.status)).toEqual(["done", "building", "next", "later"]);
   });
 });
 
