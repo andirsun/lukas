@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:async' as dart_async show AsyncError;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -96,6 +97,7 @@ class HomeState {
     this.loading = true,
     this.failure,
     this.stale = false,
+    this.staleOffline = false,
     this.loadingMore = false,
     this.event,
     this.restored = const {},
@@ -113,6 +115,9 @@ class HomeState {
 
   /// The last refresh failed: [data] is from an earlier load.
   final bool stale;
+
+  /// With [stale]: the failure was no answer at all (offline), not a server error.
+  final bool staleOffline;
   final bool loadingMore;
 
   /// While Lukitas should still talk about it.
@@ -129,6 +134,7 @@ class HomeState {
     bool? loading,
     HomeFailure? Function()? failure,
     bool? stale,
+    bool? staleOffline,
     bool? loadingMore,
     HomeEvent? Function()? event,
     Set<String>? restored,
@@ -138,6 +144,7 @@ class HomeState {
     loading: loading ?? this.loading,
     failure: failure == null ? this.failure : failure(),
     stale: stale ?? this.stale,
+    staleOffline: staleOffline ?? this.staleOffline,
     loadingMore: loadingMore ?? this.loadingMore,
     event: event == null ? this.event : event(),
     restored: restored ?? this.restored,
@@ -165,6 +172,10 @@ class HomeController extends Notifier<HomeState> {
   Timer? _eventTimer;
   var _eventId = 0;
   Future<void>? _loading;
+
+  /// Counts the summary requests: only the latest one may touch the screen, the cache and the
+  /// widget, so an old answer that lands late cannot undo a newer one.
+  var _summarySeq = 0;
   HomeProfile? _profile;
 
   @override
@@ -174,6 +185,7 @@ class HomeController extends Notifier<HomeState> {
     ref.watch(homeCacheProvider);
     _alive = true;
     _loading = null;
+    _summarySeq = 0;
     _profile = null;
     _eventTimer?.cancel();
     ref.onDispose(() {
@@ -222,6 +234,8 @@ class HomeController extends Notifier<HomeState> {
       ).wait;
       // Home was left (signed out, say) while this was on its way: nobody is waiting for it.
       if (!_alive) return;
+      // This load is the latest word: an older summary still on its way is dropped.
+      _summarySeq++;
       final data = HomeData(
         month: month,
         today: today,
@@ -243,9 +257,20 @@ class HomeController extends Notifier<HomeState> {
       unawaited(_writeSnapshot(summary, data.currency));
       unawaited(_persist());
     } on ParallelWaitError<dynamic, dynamic> catch (error) {
-      // The first of the three that failed.
-      final errors = error.errors as (Object?, Object?, Object?);
-      await _loadFailed(errors.$1 ?? errors.$2 ?? errors.$3 ?? const HomeFailure(0));
+      // What each of the three failed with (a record of dart:async AsyncError, null for the ones that
+      // worked; not Riverpod's AsyncError, which shares the name).
+      final failed = error.errors as (Object?, Object?, Object?);
+      final errors = [
+        for (final e in [failed.$1, failed.$2, failed.$3])
+          if (e != null) e is dart_async.AsyncError ? e.error : e,
+      ];
+      // A refused session wins over any other failure: it ends the session.
+      await _loadFailed(
+        errors.firstWhere(
+          (e) => e is HomeFailure && e.unauthorized,
+          orElse: () => errors.firstOrNull ?? const HomeFailure(0),
+        ),
+      );
     } on Object catch (error) {
       await _loadFailed(error);
     }
@@ -258,7 +283,7 @@ class HomeController extends Notifier<HomeState> {
     if (!_alive) return;
     final failure = _failure(error);
     if (state.data != null) {
-      _set(state.copyWith(loading: false, stale: true));
+      _set(state.copyWith(loading: false, stale: true, staleOffline: failure.offline));
       return;
     }
     // A refused session shows nothing: signing out wipes the cache.
@@ -275,6 +300,7 @@ class HomeController extends Notifier<HomeState> {
       HomeState(
         loading: false,
         stale: true,
+        staleOffline: failure.offline,
         data: HomeData(
           month: cached.month,
           today: today,
@@ -294,7 +320,7 @@ class HomeController extends Notifier<HomeState> {
     if (!_alive) return;
     final data = state.data;
     final profile = _profile;
-    if (data == null || profile == null || state.stale) return;
+    if (data == null || profile == null) return;
     await _cache.write(
       CachedHome(
         userId: profile.id,
@@ -348,18 +374,20 @@ class HomeController extends Notifier<HomeState> {
     if (!_alive) return;
     final data = state.data;
     if (data == null) return;
+    final request = ++_summarySeq;
     try {
       final summary = await _repo.summary(data.month);
-      if (!_alive) return;
+      // Dropped when it is not the latest request (see [_summarySeq]).
+      if (!_alive || request != _summarySeq) return;
       final current = state.data;
       if (current == null) return;
       _set(state.copyWith(data: current.copyWith(summary: summary)));
       unawaited(_writeSnapshot(summary, current.currency));
       unawaited(_persist());
     } on Object catch (error) {
-      if (!_alive) return;
+      if (!_alive || request != _summarySeq) return;
       _checkSession(error);
-      _set(state.copyWith(stale: true));
+      _set(state.copyWith(stale: true, staleOffline: error is HomeFailure && error.offline));
     }
   }
 
@@ -392,8 +420,10 @@ class HomeController extends Notifier<HomeState> {
       }
       throw _failure(error);
     }
-    // The row is already gone: the summary follows in the background, so Deshacer shows as soon as
-    // the server has the delete, however slow the summary is.
+    // The row is already gone: what is saved for a start with no network follows it at once, and
+    // the summary in the background, so Deshacer shows as soon as the server has the delete,
+    // however slow the summary is.
+    unawaited(_persist());
     unawaited(_refreshSummary());
   }
 
@@ -401,6 +431,7 @@ class HomeController extends Notifier<HomeState> {
   Future<void> restore(Transaction tx) async {
     try {
       final back = await _repo.restore(tx.id);
+      if (!_alive) return;
       final data = state.data;
       if (data == null) return;
       _set(
@@ -418,6 +449,7 @@ class HomeController extends Notifier<HomeState> {
     } on Object catch (error) {
       throw _failure(error);
     }
+    unawaited(_persist());
     unawaited(_refreshSummary());
   }
 

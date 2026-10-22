@@ -181,6 +181,26 @@ void main() {
     },
   );
 
+  test('a refused session found by the summary, not the profile, signs out too', () async {
+    final session = _FakeSession();
+    final repo = FakeHomeRepository()
+      ..failures['summary'] = const HomeFailure(401)
+      ..failures['categories'] = const HomeFailure(500);
+    final container = ProviderContainer(
+      overrides: [
+        homeRepositoryProvider.overrideWithValue(repo),
+        homeCacheProvider.overrideWithValue(HomeCache(FakeCacheStore(), token: 't1')),
+        sessionProvider.overrideWith(() => session),
+        clockProvider.overrideWithValue(() => _now),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.listen(homeProvider, (_, _) {});
+    await settleAll();
+    expect(session.signOuts, 1, reason: 'the 401 wins over the 500 next to it');
+    expect(container.read(homeProvider).failure!.unauthorized, isTrue);
+  });
+
   test('the server not knowing the token signs the person out', () async {
     final session = _FakeSession();
     final repo = FakeHomeRepository()..failures['profile'] = const HomeFailure(401);
@@ -375,6 +395,28 @@ void main() {
       expect((state.data!.currency, state.data!.today), ('COP', '2026-10-22'));
     });
 
+    test('a delete and its undo reach the cache even when the summary fails', () async {
+      final store = FakeCacheStore();
+      final (container, repo, _) = setup(
+        FakeHomeRepository(items: [tx('a', '2026-10-22', -1000), tx('b', '2026-10-21', -2000)]),
+        cacheStore: store,
+      );
+      container.listen(homeProvider, (_, _) {});
+      await settleAll();
+      final controller = container.read(homeProvider.notifier);
+      final a = container.read(homeProvider).data!.items.first;
+
+      repo.failures['summary'] = const HomeFailure(500);
+      await controller.remove(a);
+      await settleAll();
+      expect((await HomeCache(store, token: 't1').read())!.items.map((t) => t.id), ['b']);
+
+      repo.failures['summary'] = const HomeFailure(500);
+      await controller.restore(a);
+      await settleAll();
+      expect((await HomeCache(store, token: 't1').read())!.items.map((t) => t.id), ['a', 'b']);
+    });
+
     test('no cache: the failure shows as before; another session never sees the cache', () async {
       final store = FakeCacheStore();
       final (first, _, _) = setup(
@@ -403,6 +445,41 @@ void main() {
     });
   });
 
+  group('summaries that arrive out of order', () {
+    test(
+      'the latest request wins: the screen, the cache and the widget end with its figures',
+      () async {
+        final store = FakeCacheStore();
+        final repo = FakeHomeRepository(
+          items: [tx('a', '2026-10-22', -1000), tx('b', '2026-10-21', -2000)],
+        );
+        final (container, _, snapshots) = setup(repo, cacheStore: store);
+        container.listen(homeProvider, (_, _) {});
+        await settleAll();
+        final controller = container.read(homeProvider.notifier);
+        final a = container.read(homeProvider).data!.items.first;
+        snapshots.clear();
+
+        // The delete's summary is slow; the undo's is fast and lands first.
+        final slow = Completer<void>();
+        repo.summaryGates.add(slow);
+        await controller.remove(a);
+        await controller.restore(a);
+        await settleAll();
+        expect(container.read(homeProvider).data!.summary.spent, 3000);
+
+        slow.complete();
+        await settleAll();
+        final state = container.read(homeProvider);
+        expect(state.data!.items.map((t) => t.id), ['a', 'b']);
+        expect(state.data!.summary.spent, 3000, reason: 'the old answer was dropped');
+        expect((await HomeCache(store, token: 't1').read())!.summary.spent, 3000);
+        expect(snapshots.map((s) => s.summary.spent), everyElement(3000));
+        expect(snapshots, isNotEmpty);
+      },
+    );
+  });
+
   group('after the screen is gone', () {
     test('a load that finishes later writes no snapshot and throws nothing', () async {
       final repo = FakeHomeRepository(items: [tx('a', '2026-10-22', -1000)]);
@@ -428,8 +505,21 @@ void main() {
       final repo = FakeHomeRepository();
       final gate = Completer<void>();
       repo.holdSummary = gate;
-      repo.failures['categories'] = const HomeFailure(401);
-      final (container, _, _) = setup(repo);
+      // Not a refused session (that skips the cache): the cache is read after home was left.
+      repo.failures['categories'] = const HomeFailure(500);
+      final store = FakeCacheStore();
+      await HomeCache(store, token: 't1').write(
+        CachedHome(
+          userId: 'user-1',
+          currency: 'COP',
+          timezone: 'America/Bogota',
+          month: '2026-10',
+          summary: summary(),
+          categories: const [],
+          items: const [],
+        ),
+      );
+      final (container, _, _) = setup(repo, cacheStore: store);
       final errors = <Object>[];
       await runZonedGuarded(() async {
         container.listen(homeProvider, (_, _) {});

@@ -200,6 +200,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   ) {
     final locale = l10n.localeName;
     String money(int cents) => formatMoney(cents, data.currency, locale);
+    final worriedMood = data.summary.categories.any(
+      (c) => c.state != SummaryCategoriesInnerStateEnum.ok,
+    );
+    // Figures of an earlier month (a cache opened after the month changed): Lukitas says so, and
+    // never talks about "this month" or a month that just closed as if it were live.
+    if (data.month != data.today.substring(0, 7)) {
+      return (
+        message: l10n.lukasOtherMonth(monthInSentence(data.month, locale)),
+        mood: worriedMood ? LukitasMood.worried : LukitasMood.happy,
+        announce: false,
+      );
+    }
     final event = fresh != null && fresh.event.categoryId.isNotEmpty ? fresh : null;
     final line = lukasLine(
       summary: data.summary,
@@ -304,7 +316,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                             child: Semantics(
                               liveRegion: true,
                               child: Text(
-                                l10n.homeOffline,
+                                _staleNote(l10n, home, data),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
@@ -320,7 +332,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           announce: lukitas.announce,
                         ),
                         const SizedBox(height: LukitasTokens.space3),
-                        MonthHero(summary: data.summary, currency: data.currency, locale: locale),
+                        MonthHero(
+                          summary: data.summary,
+                          currency: data.currency,
+                          locale: locale,
+                          pastMonth: data.month == data.today.substring(0, 7)
+                              ? null
+                              : monthInSentence(data.month, locale),
+                        ),
                         const SizedBox(height: LukitasTokens.space3),
                       ],
                     ),
@@ -360,6 +379,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         );
       },
     );
+  }
+
+  /// Why what is on screen may be old: no answer at all, or a failed refresh with the network up;
+  /// naming the month when it is not this one.
+  String _staleNote(AppLocalizations l10n, HomeState home, HomeData data) {
+    final other = data.month != data.today.substring(0, 7);
+    final month = monthInSentence(data.month, l10n.localeName);
+    if (home.staleOffline) return other ? l10n.homeOfflineMonth(month) : l10n.homeOffline;
+    return other ? l10n.homeRefreshFailedMonth(month) : l10n.homeRefreshFailed;
   }
 
   /// The movements list as widgets in order: each day's heading and rows, then "Ver más

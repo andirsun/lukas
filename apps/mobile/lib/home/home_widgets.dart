@@ -180,24 +180,35 @@ class CountUpMoney extends StatelessWidget {
 /// What is left of the month (or, without budgets, what was spent), in large type: the label, the
 /// amount, and a bar with what was spent against the budgets. The web's `Hero`.
 class MonthHero extends StatelessWidget {
-  const MonthHero({super.key, required this.summary, required this.currency, required this.locale});
+  const MonthHero({
+    super.key,
+    required this.summary,
+    required this.currency,
+    required this.locale,
+    this.pastMonth,
+  });
 
   final Summary summary;
   final String currency;
   final String locale;
 
+  /// The month's name (mid-sentence) when the figures are not this month's, so the labels never
+  /// say "este mes" about another one. Null: this month.
+  final String? pastMonth;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    final past = pastMonth;
     String money(int cents) => formatMoney(cents, currency, locale);
     final hasBudget = summary.budgetTotal > 0;
     final over = hasBudget && summary.remaining < 0;
     final label = !hasBudget
-        ? l10n.homeSpentLabel
+        ? (past == null ? l10n.homeSpentLabel : l10n.homeSpentLabelPast(past))
         : over
-        ? l10n.homeOverLabel
-        : l10n.homeRemainingLabel;
+        ? (past == null ? l10n.homeOverLabel : l10n.homeOverLabelPast(past))
+        : (past == null ? l10n.homeRemainingLabel : l10n.homeRemainingLabelPast(past));
     final amountColor = over ? colors.over : (hasBudget ? colors.good : colors.ink);
     final meta = TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: colors.inkMuted);
 

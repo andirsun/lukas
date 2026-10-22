@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/home/home_cache.dart';
 
@@ -35,6 +36,16 @@ void main() {
     ]);
   });
 
+  test('the session token is never stored, only its SHA-256', () async {
+    final store = FakeCacheStore();
+    await HomeCache(store, token: 'secret-bearer-token').write(sample());
+
+    expect(store.value, isNot(contains('secret-bearer-token')));
+    expect(store.value, contains(sha256.convert(utf8.encode('secret-bearer-token')).toString()));
+    expect(await HomeCache(store, token: 'secret-bearer-token').read(), isNotNull);
+    expect(await HomeCache(store, token: 'other-bearer-token').read(), isNull);
+  });
+
   test('nothing stored reads as nothing', () async {
     expect(await HomeCache(FakeCacheStore(), token: 't1').read(), isNull);
   });
@@ -62,7 +73,7 @@ void main() {
     expect(await HomeCache(store, token: 't1').read(), isNull);
     store.value = '{not json';
     expect(await HomeCache(store, token: 't1').read(), isNull);
-    store.value = jsonEncode({'v': 1, 'token': 't1'});
+    store.value = jsonEncode({'v': 1, 'owner': 'x'});
     expect(await HomeCache(store, token: 't1').read(), isNull);
     store.failure = Exception('keystore gone');
     expect(await HomeCache(store, token: 't1').read(), isNull);

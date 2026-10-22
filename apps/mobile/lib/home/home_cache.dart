@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -73,12 +74,13 @@ class CachedHome {
 /// The home cache of one session. It is a single JSON document, version 1:
 ///
 /// ```json
-/// {"v": 1, "token": "...", "userId": "...", "currency": "COP", "timezone": "America/Bogota",
+/// {"v": 1, "owner": "<sha-256 of the session token>", "userId": "...", "currency": "COP", "timezone": "America/Bogota",
 ///  "month": "2026-10", "summary": {...}, "categories": [...], "items": [...]}
 /// ```
 ///
 /// with the API's own JSON for the summary, categories and transactions. It is bound to the user
-/// ([CachedHome.userId]) and to the session it was written in (`token`): another session, such as
+/// ([CachedHome.userId]) and to the session it was written in (`owner`, a SHA-256 of the token, so
+/// the token itself stays only in the session store): another session, such as
 /// another person signing in on this phone, reads nothing, and sign-out deletes it
 /// ([clearHomeCache]). A cache that is missing, unreadable or of another version reads as nothing,
 /// and a write that fails is ignored: it only ever makes home better, never worse.
@@ -92,14 +94,18 @@ class HomeCache {
   /// The session's token; null when signed out (nothing is read or written then).
   final String? token;
 
+  /// What binds the document to its session: a hash of the token, never the token.
+  static String _ownerOf(String token) => sha256.convert(utf8.encode(token)).toString();
+
   Future<CachedHome?> read() async {
-    final owner = token;
-    if (owner == null) return null;
+    final token = this.token;
+    if (token == null) return null;
+    final owner = _ownerOf(token);
     try {
       final raw = await store.read();
       if (raw == null) return null;
       final doc = jsonDecode(raw) as Map<String, Object?>;
-      if (doc['v'] != version || doc['token'] != owner) return null;
+      if (doc['v'] != version || doc['owner'] != owner) return null;
       return CachedHome(
         userId: doc['userId']! as String,
         currency: doc['currency']! as String,
@@ -121,13 +127,14 @@ class HomeCache {
   }
 
   Future<void> write(CachedHome home) async {
-    final owner = token;
-    if (owner == null) return;
+    final token = this.token;
+    if (token == null) return;
+    final owner = _ownerOf(token);
     try {
       await store.write(
         jsonEncode({
           'v': version,
-          'token': owner,
+          'owner': owner,
           'userId': home.userId,
           'currency': home.currency,
           'timezone': home.timezone,

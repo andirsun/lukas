@@ -679,5 +679,63 @@
         "type": "String"
       }
     }
+  },
+  "homeOfflineMonth": "Sin conexión · mostrando {month}",
+  "@homeOfflineMonth": {
+    "description": "Home: offline, showing the last good figures of an earlier month. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRefreshFailed": "No pudimos actualizar. Te mostramos lo último que cargó.",
+  "@homeRefreshFailed": {
+    "description": "Home: a refresh failed with the network up (a server error); what is on screen is from the last time it loaded."
+  },
+  "homeRefreshFailedMonth": "No pudimos actualizar · mostrando {month}",
+  "@homeRefreshFailedMonth": {
+    "description": "Home: a refresh failed with the network up, and the figures on screen are of an earlier month.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRemainingLabelPast": "Te quedaron en {month}",
+  "@homeRemainingLabelPast": {
+    "description": "Home: label of the big amount for an earlier month with budgets and money left.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOverLabelPast": "Te pasaste en {month}",
+  "@homeOverLabelPast": {
+    "description": "Home: label of the big amount for an earlier month over its total budget.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSpentLabelPast": "Gastado en {month}",
+  "@homeSpentLabelPast": {
+    "description": "Home: label of the big amount for an earlier month without budgets.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOtherMonth": "Estos son tus números de {month}. Cuando vuelva la conexión te muestro los más recientes.",
+  "@lukasOtherMonth": {
+    "description": "Lukitas' line when home shows figures of an earlier month (a cache opened offline).",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
   }
 }

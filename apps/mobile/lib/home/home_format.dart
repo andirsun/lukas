@@ -20,6 +20,13 @@ String formatMonthName(String month, String locale) {
   return name.isEmpty ? name : name[0].toUpperCase() + name.substring(1);
 }
 
+/// A month's name in the middle of a sentence: lowercase in Spanish (`mostrando octubre`), as is in
+/// English (`showing October`) (the web's `monthInSentence`).
+String monthInSentence(String month, String locale) {
+  final name = formatMonthName(month, locale);
+  return locale == 'es' ? name.toLowerCase() : name;
+}
+
 /// The words of [line], from the catalog: one of its three [variant]s (1 to 3) when it has them.
 /// [money] writes cents in the person's currency and language.
 String lukasLineText(AppLocalizations l, LukasLine line, int variant, String Function(int) money) {

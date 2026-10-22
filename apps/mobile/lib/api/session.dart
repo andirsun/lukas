@@ -132,6 +132,10 @@ class SessionController extends Notifier<SessionState> {
   }
 
   Future<void> _signedIn(String token, {required bool guest}) async {
+    // Another token is another session (a guest replaced by an email account, say): what the old
+    // one left on this phone goes with it. The same token (a claim, a corrected flag) keeps it.
+    final previous = state.stored?.token;
+    if (previous != null && previous != token) _forgetWidget();
     await _store.write(token, guest: guest);
     state = SessionState.signedIn(StoredSession(token: token, guest: guest));
   }

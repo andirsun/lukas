@@ -19,6 +19,9 @@ dependencies:
   # The generated API client (lib/api/gen) needs dio, built_value, built_collection and one_of.
   built_collection: 5.1.2
   built_value: 8.13.0
+  # SHA-256 of the session token, which binds the home cache to its session (lib/home/home_cache.dart).
+  # BSD-3-Clause, from the Dart team; already in the app through other packages.
+  crypto: 3.0.7
   dio: 5.11.1
   flutter_riverpod: 3.4.3
   # The session's bearer token, encrypted with a key kept in the Android Keystore (spec section

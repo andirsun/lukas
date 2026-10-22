@@ -149,6 +149,31 @@ void main() {
         expect(container.read(sessionProvider).stored?.token, 'email-token-1');
       });
 
+      test("a replaced guest's home cache and widget figures are cleared", () async {
+        auth.guests['guest-token-0'] = true;
+        homeCache.value = '{"v":1}';
+        widget.saved[widgetSnapshotKey] = '{"v":1}';
+        final container = containerWith();
+        final controller = await ready(container);
+
+        await controller.verifyCode('ana@correo.com', '123456', replaceGuest: true);
+
+        expect(container.read(sessionProvider).stored?.token, 'email-token-1');
+        expect(homeCache.value, isNull);
+        expect(widget.saved, isEmpty);
+      });
+
+      test('claiming an email keeps the same token, so the cache stays', () async {
+        homeCache.value = '{"v":1}';
+        final container = containerWith();
+        final controller = await ready(container);
+
+        await controller.claimEmail('ana@correo.com');
+        await controller.confirmClaim('ana@correo.com', '123456');
+
+        expect(homeCache.value, '{"v":1}');
+      });
+
       test('a guest whose stored flag is stale is still caught by /v1/me', () async {
         mockStorage(token: 'guest-token-0', guest: false);
         auth.guests['guest-token-0'] = true;

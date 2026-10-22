@@ -493,5 +493,63 @@
         "type": "String"
       }
     }
+  },
+  "homeOfflineMonth": "No connection · showing {month}",
+  "@homeOfflineMonth": {
+    "description": "Home: offline, showing the last good figures of an earlier month. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRefreshFailed": "Couldn't refresh. Showing what loaded last.",
+  "@homeRefreshFailed": {
+    "description": "Home: a refresh failed with the network up (a server error); what is on screen is from the last time it loaded."
+  },
+  "homeRefreshFailedMonth": "Couldn't refresh · showing {month}",
+  "@homeRefreshFailedMonth": {
+    "description": "Home: a refresh failed with the network up, and the figures on screen are of an earlier month.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRemainingLabelPast": "Left in {month}",
+  "@homeRemainingLabelPast": {
+    "description": "Home: label of the big amount for an earlier month with budgets and money left.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOverLabelPast": "Over in {month}",
+  "@homeOverLabelPast": {
+    "description": "Home: label of the big amount for an earlier month over its total budget.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSpentLabelPast": "Spent in {month}",
+  "@homeSpentLabelPast": {
+    "description": "Home: label of the big amount for an earlier month without budgets.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOtherMonth": "These are your {month} numbers. When the connection is back, I'll show the latest ones.",
+  "@lukasOtherMonth": {
+    "description": "Lukitas' line when home shows figures of an earlier month (a cache opened offline).",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
   }
 }

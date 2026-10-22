@@ -444,6 +444,70 @@ void main() {
       await leave(tester);
     });
 
+    testWidgets('an October cache opened on 3 November never says this month', (tester) async {
+      final store = FakeCacheStore();
+      await pumpHome(tester, monthWithBudgets(), cacheStore: store);
+
+      final offline = monthWithBudgets()..failures['profile'] = const HomeFailure(0);
+      await pumpHome(tester, offline, cacheStore: store, now: DateTime.utc(2026, 11, 3, 15));
+      expect(find.text('Octubre'), findsOneWidget);
+      expect(find.text('Sin conexión · mostrando octubre'), findsOneWidget);
+      expect(find.text('Te quedaron en octubre'), findsOneWidget);
+      expect(find.textContaining('este mes'), findsNothing);
+      expect(find.textContaining('Mes cerrado'), findsNothing);
+      expect(find.textContaining('octubre'), findsWidgets);
+      expect(find.textContaining('Estos son tus números de octubre'), findsOneWidget);
+      // Its days are not today: no "Hoy" heading for last month's rows.
+      expect(find.textContaining('HOY'), findsNothing);
+      await leave(tester);
+    });
+
+    testWidgets('the same in English, and without budgets it says Spent in October', (
+      tester,
+    ) async {
+      final store = FakeCacheStore();
+      final repo = monthWithBudgets()..budgetTotal = 0;
+      await pumpHome(tester, repo, cacheStore: store, locale: const Locale('en'));
+
+      final offline = (monthWithBudgets()..budgetTotal = 0)
+        ..failures['profile'] = const HomeFailure(0);
+      await pumpHome(
+        tester,
+        offline,
+        cacheStore: store,
+        locale: const Locale('en'),
+        now: DateTime.utc(2026, 11, 3, 15),
+      );
+      expect(find.text('No connection · showing October'), findsOneWidget);
+      expect(find.text('Spent in October'), findsOneWidget);
+      expect(find.textContaining('this month'), findsNothing);
+      await leave(tester);
+    });
+
+    testWidgets('a server error with the network up does not say there is no connection', (
+      tester,
+    ) async {
+      final store = FakeCacheStore();
+      await pumpHome(tester, monthWithBudgets(), cacheStore: store);
+
+      final broken = monthWithBudgets()..failures['profile'] = const HomeFailure(503);
+      await pumpHome(tester, broken, cacheStore: store);
+      expect(find.text('No pudimos actualizar. Te mostramos lo último que cargó.'), findsOneWidget);
+      expect(find.textContaining('Sin conexión'), findsNothing);
+      expect(find.text('Café'), findsOneWidget);
+      await leave(tester);
+    });
+
+    testWidgets('a refresh that fails with a server error says so too', (tester) async {
+      final repo = monthWithBudgets();
+      await pumpHome(tester, repo);
+      repo.failures['summary'] = const HomeFailure(500);
+      await tester.fling(find.byType(CustomScrollView), const Offset(0, 400), 1000);
+      await tester.pumpAndSettle();
+      expect(find.text('No pudimos actualizar. Te mostramos lo último que cargó.'), findsOneWidget);
+      expect(find.textContaining('Sin conexión'), findsNothing);
+    });
+
     testWidgets('another person never sees the last person\'s month', (tester) async {
       final store = FakeCacheStore();
       await pumpHome(tester, monthWithBudgets(), cacheStore: store, token: 't1');

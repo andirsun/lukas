@@ -45,8 +45,12 @@ class FakeHomeRepository implements HomeRepository {
 
   final calls = <String>[];
 
-  /// While set, [summary] waits for it (a slow connection).
+  /// While set, every [summary] answer waits for it (a slow connection).
   Completer<void>? holdSummary;
+
+  /// The next [summary] calls each take (and wait for) one of these, in order: a slow request
+  /// followed by faster ones.
+  final summaryGates = <Completer<void>>[];
 
   /// What the next call of that name throws (then cleared).
   final failures = <String, Object>{};
@@ -66,13 +70,14 @@ class FakeHomeRepository implements HomeRepository {
   @override
   Future<Summary> summary(String month) async {
     _call('summary $month');
-    await holdSummary?.future;
+    final gate = summaryGates.isEmpty ? null : summaryGates.removeAt(0);
     final spent = items
         .where(
           (t) => t.date.startsWith(month) && t.amount < 0 && t.status == TransactionStatusEnum.paid,
         )
         .fold<int>(0, (sum, t) => sum - t.amount);
-    return Summary(
+    // The server computes it when the request arrives, and answers when it is done.
+    final answer = Summary(
       (b) => b
         ..month = month
         ..budgetTotal = budgetTotal
@@ -82,6 +87,9 @@ class FakeHomeRepository implements HomeRepository {
         ..balance = -spent
         ..categories.replace(categoryLines),
     );
+    await holdSummary?.future;
+    await gate?.future;
+    return answer;
   }
 
   /// The summary's per-category lines (budgets and states), as the test needs them.
