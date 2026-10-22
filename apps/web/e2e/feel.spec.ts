@@ -706,6 +706,45 @@ test.describe("the whole sheet on a phone", () => {
     });
   }
 
+  // The founder's frame: editing a pending one, the middle scrolled with nothing focused. The
+  // amount must never sit over the name field (it used to be sticky inside the middle).
+  for (const size of [
+    { width: 360, height: 640 },
+    { width: 412, height: 760 },
+  ]) {
+    test(`at ${size.width}×${size.height}, editing a pending one, the amount never covers the name field while the middle scrolls`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size);
+      await openDemo(page);
+      const sheet = await openSheet(page, "pending");
+      const body = sheet.locator(".lk-sheet-body");
+      const seen: Record<string, { amountAboveScroller: boolean; nameUnderAmount: boolean }> = {};
+      for (const to of ["40", "bottom"] as const) {
+        seen[to] = await body.evaluate((element, to) => {
+          element.scrollTop = to === "bottom" ? element.scrollHeight : Number(to);
+          const scroller = element.getBoundingClientRect();
+          const dialog = element.closest('[role="dialog"]') as HTMLElement;
+          const amount = (
+            dialog.querySelector('[data-testid="amount"]') as HTMLElement
+          ).getBoundingClientRect();
+          const name = (dialog.querySelector(".lk-input") as HTMLElement).getBoundingClientRect();
+          // The name field's visible top-left, just inside it.
+          const at =
+            name.bottom > scroller.top
+              ? document.elementFromPoint(name.left + 12, Math.max(name.top, scroller.top) + 4)
+              : null;
+          return {
+            amountAboveScroller: amount.bottom <= scroller.top + 0.5,
+            nameUnderAmount: at?.closest('[data-testid="amount"]') != null,
+          };
+        }, to);
+      }
+      const clear = { amountAboveScroller: true, nameUnderAmount: false };
+      expect(seen).toEqual({ "40": clear, bottom: clear });
+    });
+  }
+
   test("at 360×640, a scrolled middle shows its top edge, and nothing is laid over it", async ({
     page,
   }) => {
