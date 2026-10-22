@@ -255,10 +255,13 @@ export const DoubleClickSavesOnce: Story = {
   },
 };
 
-/** The API says no: what is left goes back to what it was, and the error is announced. */
+/**
+ * The API fails: what is left goes back to what it was, and the error is announced with
+ * Reintentar, which sends the same request again.
+ */
 export const FailingCreateRollsBack: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} failCreate createDelayMs={400} />,
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const region = await hero(canvas);
     await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
@@ -269,8 +272,17 @@ export const FailingCreateRollsBack: Story = {
     // Optimistic: it shows at once...
     await waitFor(() => expect(region).toHaveTextContent(eur("495,05")));
     // ...and goes back when the API fails.
+    const failed = await toastSaying("Tuvimos un problema de nuestro lado", "alert");
+    await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
+    // A server error may pass: Reintentar sends the same request again (same key).
+    await userEvent.click(failed.getByRole("button", { name: "Reintentar" }));
+    await waitFor(() => expect(region).toHaveTextContent(eur("495,05")));
     await toastSaying("Tuvimos un problema de nuestro lado", "alert");
     await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
+    const sent = posts(args.onRequest);
+    await expect(sent).toHaveLength(2);
+    await expect(sent[1]?.[1]["idempotency-key"]).toBe(sent[0]?.[1]["idempotency-key"]);
+    await expect(sent[1]?.[0]).toBe(sent[0]?.[0]);
   },
 };
 

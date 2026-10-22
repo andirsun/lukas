@@ -69,6 +69,7 @@
     "pending_label": "Pending (not paid yet)",
     "note_label": "Note (optional)",
     "save_changes": "Save changes",
+    "retry": "Retry",
     "delete": "Delete",
     "saved_expense": "Expense in {category}: {amount}",
     "saved_income": "Income from {category}: {amount}",

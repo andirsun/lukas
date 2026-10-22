@@ -51,6 +51,22 @@ export interface TransactionActionsDeps {
   onRestored?(id: string): void;
 }
 
+/**
+ * Whether sending the same request again can work: no answer at all (offline, a lost connection),
+ * a server error or timeout, too many requests, or the first try still running. Not a refusal
+ * (a 4xx such as an invalid amount), which says the same every time.
+ */
+export function canRetry(problem: unknown): boolean {
+  if (!(problem instanceof ApiProblem)) return false;
+  return (
+    problem.status === 0 ||
+    problem.status >= 500 ||
+    problem.status === 408 ||
+    problem.status === 429 ||
+    problem.code === "idempotency_in_progress"
+  );
+}
+
 /** "−6,08 €"-style money, and the COP hint ("50 lukas") as a small muted part after it. */
 function moneyWithHint(cents: number, currency: string, locale: Locale) {
   const amount = formatMoney(Math.abs(cents), currency, locale);
@@ -110,44 +126,65 @@ export function useTransactionActions({
     }
   }
 
-  return {
-    /** Creates; the key is the sheet's (one per opening), so a repeated save is one transaction. */
-    async create(
-      input: NewTransaction,
-      idempotencyKey: string,
-      details: { kind: Kind; categoryName: string; unnamed: boolean },
-    ) {
-      try {
-        const created = await create.mutateAsync({ input, idempotencyKey });
-        const month = monthOf(created.date);
-        const after = qc.getQueryData<MonthSummary>(queryKeys.summary(month));
-        feedback(feedbackForSave(after, created.categoryId, details.kind));
-        report({ kind: "saved", categoryId: created.categoryId, amount: created.amount, month });
-        const { amount, hint } = moneyWithHint(created.amount, currency, locale);
-        const line = t(details.kind === "income" ? "saved_income" : "saved_expense", {
-          category: details.categoryName,
-          amount,
-        });
-        toast.show({
-          message: hint
-            ? createElement(
-                Fragment,
-                null,
-                `${line} `,
-                createElement("span", { className: "text-[11px] text-ink-muted" }, `(${hint})`),
-              )
-            : line,
-          actions: [
-            { label: tRoot("common.undo"), onClick: () => void undoCreate(created) },
-            ...(details.unnamed
-              ? [{ label: t("name_it"), onClick: () => openEdit(created, { focusName: true }) }]
-              : []),
-          ],
-        });
-      } catch (problem) {
+  /**
+   * Creates; the key is the sheet's (one per opening), so a repeated save is one transaction.
+   * When it fails on the way (offline, a timeout, a server error), the error toast stays with
+   * "Reintentar", which sends the same input with the same key: what was typed is kept, and if
+   * the first try did reach the server, the retry gets its answer instead of a second one.
+   */
+  async function createOne(
+    input: NewTransaction,
+    idempotencyKey: string,
+    details: { kind: Kind; categoryName: string; unnamed: boolean },
+  ) {
+    try {
+      const created = await create.mutateAsync({ input, idempotencyKey });
+      const month = monthOf(created.date);
+      const after = qc.getQueryData<MonthSummary>(queryKeys.summary(month));
+      feedback(feedbackForSave(after, created.categoryId, details.kind));
+      report({ kind: "saved", categoryId: created.categoryId, amount: created.amount, month });
+      const { amount, hint } = moneyWithHint(created.amount, currency, locale);
+      const line = t(details.kind === "income" ? "saved_income" : "saved_expense", {
+        category: details.categoryName,
+        amount,
+      });
+      toast.show({
+        message: hint
+          ? createElement(
+              Fragment,
+              null,
+              `${line} `,
+              createElement("span", { className: "text-[11px] text-ink-muted" }, `(${hint})`),
+            )
+          : line,
+        actions: [
+          { label: tRoot("common.undo"), onClick: () => void undoCreate(created) },
+          ...(details.unnamed
+            ? [{ label: t("name_it"), onClick: () => openEdit(created, { focusName: true }) }]
+            : []),
+        ],
+      });
+    } catch (problem) {
+      if (!canRetry(problem)) {
         fail(problem);
+        return;
       }
-    },
+      toast.show({
+        tone: "error",
+        message: problemMessage(problem as ApiProblem, tRoot),
+        persistent: true,
+        actions: [
+          {
+            label: t("retry"),
+            onClick: () => void createOne(input, idempotencyKey, details),
+          },
+        ],
+      });
+    }
+  }
+
+  return {
+    create: createOne,
 
     /** Saves only what changed. */
     async update(tx: TransactionDto, patch: TransactionPatch) {

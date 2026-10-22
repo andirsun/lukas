@@ -335,3 +335,40 @@ export const SwipeDismisses: Story = {
     await waitFor(() => expect(status).toBeEmptyDOMElement());
   },
 };
+
+function RetryToastDemo({ onRetry }: { onRetry?: () => void }) {
+  const toast = useToast();
+  return (
+    <PressButton
+      variant="secondary"
+      onClick={() =>
+        toast.show({
+          tone: "error",
+          message: "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
+          persistent: true,
+          actions: [{ label: "Reintentar", onClick: () => onRetry?.() }],
+        })
+      }
+    >
+      Guardar
+    </PressButton>
+  );
+}
+
+/** A persistent error (a save to retry) has no countdown: it stays until Reintentar. */
+export const PersistentStays: Story = {
+  parameters: { toastDismissMs: 300 },
+  render: (args) => <RetryToastDemo onRetry={args.onUndo} />,
+  play: async ({ canvasElement, args }) => {
+    await userEvent.click(within(canvasElement).getByRole("button", { name: "Guardar" }));
+    const alert = await screen.findByRole("alert");
+    const toast = await entered(alert);
+    await expect(toast.querySelector(".lk-toast-progress")).toBeNull();
+    // Well past every other toast's time.
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    await expect(alert).toHaveTextContent("Sin conexión");
+    await userEvent.click(within(alert).getByRole("button", { name: "Reintentar" }));
+    await expect(args.onUndo).toHaveBeenCalledOnce();
+    await waitFor(() => expect(alert).toBeEmptyDOMElement());
+  },
+};

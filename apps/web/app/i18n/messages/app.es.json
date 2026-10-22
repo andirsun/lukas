@@ -69,6 +69,7 @@
     "pending_label": "Pendiente (aún no lo pagas)",
     "note_label": "Nota (opcional)",
     "save_changes": "Guardar cambios",
+    "retry": "Reintentar",
     "delete": "Eliminar",
     "saved_expense": "Gasto en {category}: {amount}",
     "saved_income": "Ingreso de {category}: {amount}",

@@ -25,6 +25,11 @@ export interface ToastOptions {
   actions?: ToastAction[];
   /** `error` is announced assertively and outlined in `over`. */
   tone?: "info" | "error";
+  /**
+   * Stays until an action is taken, it is swiped away or another toast replaces it: no countdown.
+   * For an error whose action keeps something that would otherwise be lost (Reintentar).
+   */
+  persistent?: boolean;
 }
 
 interface ToastApi {
@@ -38,6 +43,7 @@ const UNDO_FALLBACK_MS = 8000;
 
 /** How long `toast` stays: `--undo` with actions, 5 s without; a test's override wins. */
 function lifetime(toast: ToastOptions, override: number | undefined): number {
+  if (toast.persistent) return Number.POSITIVE_INFINITY;
   if (override !== undefined) return override;
   if (!toast.actions?.length) return TOAST_MS;
   return Math.round(durationToken("--undo") * 1000) || UNDO_FALLBACK_MS;
@@ -101,7 +107,7 @@ export function ToastProvider({
 
   // Counts down what is left; a pause keeps the rest for when it resumes.
   useEffect(() => {
-    if (!toast || paused) return;
+    if (!toast || paused || toast.persistent) return;
     const started = Date.now();
     const timer = setTimeout(dismiss, remaining.current.ms);
     return () => {
@@ -163,14 +169,16 @@ export function ToastProvider({
             onFocus={() => setPaused(true)}
             onBlur={() => setPaused(false)}
           >
-            <span
-              aria-hidden="true"
-              className="lk-toast-progress"
-              style={{
-                animationDuration: `${current.ms}ms`,
-                animationPlayState: paused ? "paused" : "running",
-              }}
-            />
+            {!current.persistent && (
+              <span
+                aria-hidden="true"
+                className="lk-toast-progress"
+                style={{
+                  animationDuration: `${current.ms}ms`,
+                  animationPlayState: paused ? "paused" : "running",
+                }}
+              />
+            )}
             <span className="min-w-0 flex-1">{current.message}</span>
             {current.actions?.length ? (
               <span className="lk-toast-actions">

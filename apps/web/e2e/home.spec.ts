@@ -100,6 +100,102 @@ test.describe("in Madrid, on 21 October 2026", () => {
   });
 });
 
+test.describe("a save that fails on the way", () => {
+  test.use({ locale: "es-ES", timezoneId: "Europe/Madrid" });
+
+  test.beforeEach(async ({ page }) => {
+    await pinClock(page);
+  });
+
+  /** Adds a 6,08 € expense named `name` in Supermercado through the sheet. */
+  async function addExpense(page: Page, name: string) {
+    await page.getByRole("button", { name: "Agregar", exact: true }).click();
+    const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
+    const keypad = sheet.getByRole("group", { name: "Teclado numérico" });
+    for (const key of ["6", "Coma decimal", "0", "8"]) {
+      await keypad.getByRole("button", { name: key, exact: true }).click();
+    }
+    await sheet.getByRole("textbox", { name: "Nombre (opcional)" }).fill(name);
+    await sheet
+      .getByRole("group", { name: "Categoría" })
+      .getByRole("button", { name: "Supermercado" })
+      .click();
+    await sheet.getByRole("button", { name: "Guardar" }).click();
+    await expect(sheet).toBeHidden();
+  }
+
+  /** How many of this month's transactions are called `name`, on the server. */
+  async function saved(page: Page, name: string): Promise<number> {
+    const october = (await (
+      await page.request.get("/api/v1/transactions?month=2026-10&limit=200")
+    ).json()) as { items: { name: string }[] };
+    return october.items.filter((t) => t.name === name).length;
+  }
+
+  test("offline: Reintentar sends the same expense again, and it is saved once", async ({
+    page,
+  }) => {
+    await signUpNewUser(page);
+    await onboardWithSample(page, "Europe/Madrid");
+    await page.goto("/app");
+
+    const posts: (string | null)[] = [];
+    let failures = 1;
+    await page.route("**/api/v1/transactions", async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      posts.push(route.request().headers()["idempotency-key"] ?? null);
+      // The first request never leaves the phone, as with no signal.
+      if (failures-- > 0) return route.abort("internetdisconnected");
+      return route.fallback();
+    });
+
+    await addExpense(page, "pan offline");
+    const alert = page.getByRole("alert");
+    await expect(alert).toContainText("Sin conexión");
+    expect(await saved(page, "pan offline")).toBe(0);
+    await alert.getByRole("button", { name: "Reintentar" }).click();
+
+    await expect(page.getByRole("status")).toContainText("Gasto en Supermercado: 6,08 €");
+    const list = await showTransactions(page);
+    await expect(list.getByRole("button", { name: /^pan offline\b/ })).toHaveCount(1);
+    expect(await saved(page, "pan offline")).toBe(1);
+    // The retry was the same request: same key.
+    expect(posts).toHaveLength(2);
+    expect(posts[0]).toBeTruthy();
+    expect(posts[1]).toBe(posts[0]);
+  });
+
+  test("the answer is lost after the server saved it: Reintentar does not save it twice", async ({
+    page,
+  }) => {
+    await signUpNewUser(page);
+    await onboardWithSample(page, "Europe/Madrid");
+    await page.goto("/app");
+
+    let lost = 1;
+    await page.route("**/api/v1/transactions", async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      if (lost-- > 0) {
+        // The request reaches the server and is saved; the answer never comes back.
+        await route.fetch();
+        return route.abort("connectionreset");
+      }
+      return route.fallback();
+    });
+
+    await addExpense(page, "pan perdido");
+    const alert = page.getByRole("alert");
+    await expect(alert).toContainText("Sin conexión");
+    expect(await saved(page, "pan perdido")).toBe(1);
+    await alert.getByRole("button", { name: "Reintentar" }).click();
+
+    await expect(page.getByRole("status")).toContainText("Gasto en Supermercado: 6,08 €");
+    const list = await showTransactions(page);
+    await expect(list.getByRole("button", { name: /^pan perdido\b/ })).toHaveCount(1);
+    expect(await saved(page, "pan perdido")).toBe(1);
+  });
+});
+
 test.describe("the person in Bogotá, the browser in Lisbon", () => {
   test.use({ locale: "es-ES", timezoneId: "Europe/Lisbon" });
 
