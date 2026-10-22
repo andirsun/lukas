@@ -72,6 +72,8 @@ services:
       SMTP_TLS_INSECURE: ${SMTP_TLS_INSECURE:-false}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       SIGN_IN_ALLOWLIST: ${SIGN_IN_ALLOWLIST:?Set SIGN_IN_ALLOWLIST in .env}
+      # Guest sign-up from the Android app (an account without an email). On unless set to false.
+      GUEST_SIGNUP: ${GUEST_SIGNUP:-true}
       # Caddy puts the client address Cloudflare reports into X-Forwarded-For. Only that hop is
       # trusted: Caddy's fixed address in this network.
       CLIENT_IP_HEADER: x-forwarded-for
@@ -104,6 +106,9 @@ services:
     environment:
       # Where `/`, `/en` and the roadmap redirect: the public landing site.
       LANDING_URL: ${LANDING_URL:-https://lukitas.andersonlaverde.com}
+      # The SHA-256 fingerprints (comma-separated) of the certificates the Android app is signed with,
+      # written into /.well-known/assetlinks.json at start. Empty: the file is `[]`.
+      ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
     ports:
       - "127.0.0.1:${WEB_PORT:-8088}:80"
     networks:

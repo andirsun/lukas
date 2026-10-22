@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Checks the install from this machine, without the tunnel: the landing, the app shell, the API
-# health, that OAuth and the API schema are blocked at Caddy, and that an address outside the
-# allowlist is refused without sending an email.
+# health, the Android asset links, that OAuth and the API schema are blocked at Caddy, and that an
+# address outside the allowlist is refused without sending an email.
 # Usage: ./smoke.sh [BASE_URL]   (default http://127.0.0.1:$WEB_PORT)
 set -euo pipefail
 # shellcheck source=lib.sh
@@ -26,6 +26,9 @@ check "GET /api/health       API" 200 "$(status "$base/api/health")"
 check "GET /app              app shell" 200 "$(status "$base/app")"
 check "GET /sign-in          app shell" 200 "$(status "$base/sign-in")"
 check "GET /nope.png         missing file" 404 "$(status "$base/nope.png")"
+# Android App Links: always answered (`[]` until ANDROID_CERT_SHA256 is set), always as JSON.
+links="$(curl -s -o /dev/null -w '%{http_code} %{content_type}' "$base/.well-known/assetlinks.json")"
+check "GET assetlinks.json   200 and JSON" "200 application/json" "${links%%;*}"
 check "GET /api/v1/me        needs a session" 401 "$(status "$base/api/v1/me")"
 
 # Kept off the internet by Caddy (not in the API): OAuth registration and flows, and the schema.
