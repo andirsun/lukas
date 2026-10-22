@@ -80,7 +80,7 @@ table_counts() {
 # what is about to be deployed either way.
 guard_checkout() {
   local force="$1" branch wanted commit dirty problems=""
-  wanted="$(cfg PERSONAL_BRANCH feat/stage-2-web)"
+  wanted="$(cfg PERSONAL_BRANCH main)"
   branch="$(git -C "$REPO_DIR" symbolic-ref --short -q HEAD || echo "(detached HEAD)")"
   commit="$(git -C "$REPO_DIR" rev-parse --short HEAD)"
   dirty="$(git -C "$REPO_DIR" status --porcelain --untracked-files=no)"
