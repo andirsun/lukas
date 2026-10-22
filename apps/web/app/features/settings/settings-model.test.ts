@@ -6,6 +6,7 @@ import {
   zoneCity,
   zoneOffset,
   zoneRegion,
+  zoneSearchIndex,
 } from "./settings-model.ts";
 
 describe("emailMatches", () => {
@@ -83,5 +84,39 @@ describe("zones", () => {
     expect(zoneOffset("Europe/Madrid", "en", october)).toBe("GMT+2");
     expect(zoneOffset("UTC", "es", october)).toMatch(/^GMT(\+0)?$/);
     expect(zoneOffset("Not/AZone", "es", october)).toBe("");
+  });
+});
+
+describe("finding zones by country", () => {
+  const zones = Intl.supportedValuesOf("timeZone");
+  const index = zoneSearchIndex(zones);
+  const find = (query: string) => searchZones(zones, query, 50, index).matches;
+
+  it("matches the zone's generic name in Spanish or English, without accents", () => {
+    expect(find("Colombia")).toContain("America/Bogota");
+    expect(find("perú")).toContain("America/Lima");
+    expect(find("peru")).toContain("America/Lima");
+    expect(find("Chile")).toContain("America/Santiago");
+  });
+
+  it("knows the countries Intl names otherwise", () => {
+    expect(find("España")).toContain("Europe/Madrid");
+    expect(find("spain")).toContain("Europe/Madrid");
+    for (const query of ["Estados Unidos", "USA"]) {
+      expect(find(query)).toEqual(
+        expect.arrayContaining([
+          "America/New_York",
+          "America/Chicago",
+          "America/Denver",
+          "America/Los_Angeles",
+        ]),
+      );
+    }
+    expect(find("mexico")).toContain("America/Mexico_City");
+  });
+
+  it("still finds by city first, and is built once per list", () => {
+    expect(find("bogo")).toEqual(["America/Bogota"]);
+    expect(zoneSearchIndex(zones)).toBe(index);
   });
 });

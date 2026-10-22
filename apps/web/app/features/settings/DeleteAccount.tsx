@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslations } from "use-intl";
 import { useApi } from "../../api/ApiProvider.tsx";
@@ -37,6 +37,8 @@ export function DeleteAccount({
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
+  // A ref, not state: a double tap, or Enter and a tap together, must send one DELETE.
+  const inFlight = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const inputId = useId();
   const hintId = useId();
@@ -51,7 +53,8 @@ export function DeleteAccount({
   };
 
   const remove = async () => {
-    if (!ready || busy) return;
+    if (!ready || inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setError(null);
     // Nothing should refetch with a session that is about to end.
@@ -60,6 +63,7 @@ export function DeleteAccount({
       await api.DELETE("/v1/me");
     } catch (problem) {
       setError(failureMessage(problem, tRoot));
+      inFlight.current = false;
       setBusy(false);
       return;
     }

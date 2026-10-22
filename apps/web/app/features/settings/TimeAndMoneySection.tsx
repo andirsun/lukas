@@ -14,7 +14,13 @@ import { isSupportedCurrency } from "../onboarding/currency.ts";
 import { type Profile, useHasTransactions } from "../onboarding/onboarding-api.ts";
 import { browserTimeZone } from "../onboarding/timezone.ts";
 import { SettingLabel, SettingsSection } from "./parts.tsx";
-import { searchZones, zoneCity, zoneOffset, zoneRegion } from "./settings-model.ts";
+import {
+  searchZones,
+  zoneCity,
+  zoneOffset,
+  zoneRegion,
+  zoneSearchIndex,
+} from "./settings-model.ts";
 import { failureMessage, refreshAllButProfile, useSaveProfile } from "./use-profile.ts";
 
 /** The time zone, and the currency while it can still change. */
@@ -52,7 +58,9 @@ function TimeZoneSetting({ zone }: { zone: string }) {
     () => (supported.includes(zone) ? supported : [zone, ...supported]),
     [supported, zone],
   );
-  const found = useMemo(() => searchZones(zones, query, ZONES_SHOWN), [zones, query]);
+  // Countries' names for every zone, built the first time the sheet opens (then kept).
+  const index = useMemo(() => (open ? zoneSearchIndex(zones) : undefined), [open, zones]);
+  const found = useMemo(() => searchZones(zones, query, ZONES_SHOWN, index), [zones, query, index]);
   const offset = zoneOffset(zone, locale);
 
   const choose = async (next: string) => {
@@ -189,10 +197,12 @@ function ZoneOption({
 const EXAMPLE: Record<SupportedCurrency, number> = { COP: 5_000_000, USD: 5_000, EUR: 5_000 };
 
 /**
- * The account's currency, while it can still change (no transactions, deleted ones included, and
- * no recurrences): one radio per supported currency with an example amount. The server has the
- * last word: a 409 `currency_locked` turns the choice into the same short line as an account
- * that already has transactions here.
+ * The account's currency, while it can still change: one radio per supported currency with an
+ * example amount, shown while this screen sees no transactions and no recurrences. The server has
+ * the last word, since it also counts deleted transactions, which the list here never returns: a
+ * 409 `currency_locked` turns the choice into the same short line as an account that visibly has
+ * transactions. While a choice saves the radios stay enabled (marked busy), so the keyboard's
+ * focus stays where it is; `choose` ignores another pick until the first one is answered.
  */
 function CurrencySetting({ currency }: { currency: string }) {
   const t = useTranslations("settings.currency");
@@ -247,7 +257,7 @@ function CurrencySetting({ currency }: { currency: string }) {
   return (
     <fieldset
       className="m-0 flex min-w-0 flex-col gap-(--space-2) border-0 p-0"
-      disabled={!known || busy}
+      disabled={!known}
       aria-busy={!known || busy || undefined}
       aria-describedby={hintId}
     >

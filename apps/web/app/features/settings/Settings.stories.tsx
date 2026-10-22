@@ -129,6 +129,32 @@ export const DeleteNeedsExactEmail: Story = {
   },
 };
 
+/**
+ * Enter in the email field deletes only once the email matches, and a burst of Enters and taps
+ * sends one DELETE.
+ */
+export const DeleteWithEnter: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    await userEvent.click(canvas.getByRole("button", { name: "Eliminar mi cuenta" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "¿Eliminar tu cuenta?" }));
+    const email = sheet.getByRole("textbox", { name: "Escribe tu correo para confirmar" });
+    await userEvent.type(email, "ana@example.co{Enter}");
+    await expect(writesTo(args.onRequest, "DELETE /api/v1/me")).toHaveLength(0);
+    await expect(sheet.getByRole("button", { name: "Eliminar para siempre" })).toBeDisabled();
+
+    await userEvent.type(email, "m{Enter}{Enter}");
+    await userEvent.click(sheet.getByRole("button", { name: /Eliminar para siempre|Eliminando…/ }));
+    await expect(
+      await canvas.findByText("Landing (stand-in)", {}, { timeout: 4000 }),
+    ).toBeVisible();
+    await expect(writesTo(args.onRequest, "DELETE /api/v1/me")).toHaveLength(1);
+    await expect(args.signOut).toHaveBeenCalledTimes(1);
+  },
+};
+
 /** Before deleting, the data can be downloaded; a failed delete says so and keeps the account. */
 export const DeleteOffersExportAndSurvivesFailure: Story = {
   render: (args) => stage(args, { failDelete: true }),
@@ -230,7 +256,10 @@ export const TimeZone: Story = {
     await expect(time.getByText("Madrid")).toBeVisible();
     await userEvent.click(time.getByRole("button", { name: "Cambiar zona horaria" }));
     const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
-    await userEvent.type(sheet.getByRole("searchbox", { name: "Busca tu ciudad" }), "bogotá");
+    await userEvent.type(
+      sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" }),
+      "bogotá",
+    );
     await userEvent.click(await sheet.findByRole("button", { name: /^Bogota/ }));
     await dialogGone();
     await waitFor(() =>
@@ -243,6 +272,23 @@ export const TimeZone: Story = {
   },
 };
 
+/** A country finds its zones too, by Intl's name for them or a known alias. */
+export const TimeZoneByCountry: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
+    const search = sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" });
+    await userEvent.type(search, "colombia");
+    await expect(await sheet.findByRole("button", { name: /^Bogota/ })).toBeVisible();
+    await userEvent.clear(search);
+    await userEvent.type(search, "españa");
+    await expect(await sheet.findByRole("button", { name: /^Madrid/ })).toBeVisible();
+  },
+};
+
 /** A search that finds nothing says so. */
 export const TimeZoneNoMatch: Story = {
   render: (args) => stage(args),
@@ -251,7 +297,7 @@ export const TimeZoneNoMatch: Story = {
     await title(canvas);
     await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
     const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
-    await userEvent.type(sheet.getByRole("searchbox", { name: "Busca tu ciudad" }), "zzzz");
+    await userEvent.type(sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" }), "zzzz");
     await expect(await sheet.findByText(/No encontramos «zzzz»/)).toBeVisible();
   },
 };
@@ -340,7 +386,7 @@ export const Passkeys: Story = {
     await waitFor(() => expect(keys.getAllByRole("listitem")).toHaveLength(2));
 
     await userEvent.click(
-      keys.getByRole("button", { name: "Eliminar la passkey creada el 2 oct 2026" }),
+      keys.getByRole("button", { name: "Eliminar la huella creada el 2 oct 2026" }),
     );
     const sheet = within(await screen.findByRole("dialog", { name: "¿Eliminar esta huella?" }));
     await userEvent.click(sheet.getByRole("button", { name: "Sí, eliminar" }));

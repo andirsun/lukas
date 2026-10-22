@@ -43,16 +43,74 @@ function normalize(text: string): string {
 }
 
 /**
- * The zones matching `query` (any part of the name; zones whose city starts with it first, then
- * the rest in their given order), at most `limit` of them, and how many more matched.
+ * Countries whose zones `Intl` doesn't name after them (Spain's is "Central European Time", the
+ * United States' "Eastern Time"…), by the names people type, in Spanish and English.
+ */
+export const ZONE_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  "Europe/Madrid": ["España", "Spain"],
+  "America/New_York": ["Estados Unidos", "EEUU", "EE UU", "USA", "United States"],
+  "America/Chicago": ["Estados Unidos", "EEUU", "EE UU", "USA", "United States"],
+  "America/Denver": ["Estados Unidos", "EEUU", "EE UU", "USA", "United States"],
+  "America/Los_Angeles": ["Estados Unidos", "EEUU", "EE UU", "USA", "United States"],
+  "America/Mexico_City": ["México", "Mexico"],
+};
+
+/** The zone's generic name in `locale` ("hora estándar de Colombia"), or "" where there is none. */
+function genericName(zone: string, locale: string): string {
+  try {
+    return (
+      new Intl.DateTimeFormat(locale, { timeZone: zone, timeZoneName: "longGeneric" })
+        .formatToParts(0)
+        .find((part) => part.type === "timeZoneName")?.value ?? ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+/** What a search matches each zone against: its id, its generic names and its aliases. */
+export type ZoneSearchIndex = ReadonlyMap<string, string>;
+
+const indexes = new WeakMap<readonly string[], ZoneSearchIndex>();
+
+/**
+ * The search text of every zone: the id, the generic name in Spanish and English (so "Colombia",
+ * "Perú" or "Chile" find their zones) and the aliases above, normalized. Built once per list of
+ * zones (a few hundred `Intl` formatters, some tens of ms) and kept.
+ */
+export function zoneSearchIndex(zones: readonly string[]): ZoneSearchIndex {
+  const cached = indexes.get(zones);
+  if (cached) return cached;
+  const index = new Map(
+    zones.map((zone) => [
+      zone,
+      normalize(
+        [
+          zone,
+          genericName(zone, "es"),
+          genericName(zone, "en"),
+          ...(ZONE_ALIASES[zone] ?? []),
+        ].join(" "),
+      ),
+    ]),
+  );
+  indexes.set(zones, index);
+  return index;
+}
+
+/**
+ * The zones matching `query` (any part of the name, or of the zone's text in `index`; zones whose
+ * city starts with it first, then the rest in their given order), at most `limit` of them, and
+ * how many more matched.
  */
 export function searchZones(
   zones: readonly string[],
   query: string,
   limit: number,
+  index?: ZoneSearchIndex,
 ): { matches: string[]; more: number } {
   const wanted = normalize(query);
-  const found = zones.filter((zone) => normalize(zone).includes(wanted));
+  const found = zones.filter((zone) => (index?.get(zone) ?? normalize(zone)).includes(wanted));
   const cityFirst = [
     ...found.filter((zone) => normalize(zoneCity(zone)).startsWith(wanted)),
     ...found.filter((zone) => !normalize(zoneCity(zone)).startsWith(wanted)),
