@@ -23,7 +23,9 @@ with `docker compose up` in the root (ports 5433, 3000, 5173, 8025, 1026), so bo
   gets "Lukitas todavía no está abierto al público" and no email is sent.
 - **The landing lives elsewhere.** `/`, `/en` and the roadmap redirect (302, same path and query)
   to the public landing at `LANDING_URL` (default `https://lukitas.andersonlaverde.com`), whose
-  buttons come back here to `/sign-in` and `/demo`.
+  buttons come back here to `/sign-in` and `/demo`. The web build gets the same value
+  (`VITE_LANDING_URL`), so the sign-in screen's logo and the end of "delete my account" leave
+  for the landing too.
 - **Not everything is public.** Caddy answers 404 for `/api/auth/oauth2/*` (OAuth client
   registration and flows, for MCP clients that this install does not use yet) and for
   `/api/openapi.json`. Re-enable OAuth when the MCP stage needs it (Caddyfile, `@notPublic`).

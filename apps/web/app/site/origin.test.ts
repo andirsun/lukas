@@ -3,7 +3,9 @@ import {
   DEFAULT_SITE_ORIGIN,
   isComingSoon,
   isLandingOnly,
+  landingTarget,
   resolveAppOrigin,
+  resolveLandingOrigin,
   resolveSiteOrigin,
 } from "./origin.ts";
 
@@ -80,5 +82,36 @@ describe("isComingSoon", () => {
     expect(isComingSoon(true, "https://app.example.test")).toBe(false);
     expect(isComingSoon(false, undefined)).toBe(false);
     expect(isComingSoon(false, "https://app.example.test")).toBe(false);
+  });
+});
+
+describe("resolveLandingOrigin", () => {
+  it("is undefined when VITE_LANDING_URL is unset or blank: the landing is this site's own", () => {
+    expect(resolveLandingOrigin(undefined)).toBeUndefined();
+    expect(resolveLandingOrigin(" ")).toBeUndefined();
+  });
+
+  it("uses the configured origin, and fails clearly naming VITE_LANDING_URL", () => {
+    expect(resolveLandingOrigin("https://lukitas.andersonlaverde.com/")).toBe(
+      "https://lukitas.andersonlaverde.com",
+    );
+    expect(() => resolveLandingOrigin("lukitas.andersonlaverde.com")).toThrow(/VITE_LANDING_URL/);
+  });
+});
+
+describe("landingTarget", () => {
+  it("stays inside the app when the landing is its own", () => {
+    expect(landingTarget(undefined, "/")).toEqual({ external: false, href: "/" });
+  });
+
+  it("leaves for the landing's site, a full page load, when it lives elsewhere", () => {
+    expect(landingTarget("https://lukitas.andersonlaverde.com", "/")).toEqual({
+      external: true,
+      href: "https://lukitas.andersonlaverde.com/",
+    });
+    expect(landingTarget("https://lukitas.andersonlaverde.com", "/en")).toEqual({
+      external: true,
+      href: "https://lukitas.andersonlaverde.com/en",
+    });
   });
 });

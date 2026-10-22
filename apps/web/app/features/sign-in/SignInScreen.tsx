@@ -2,6 +2,7 @@ import type { ReactNode, Ref } from "react";
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { Lukas, type LukasMood } from "../../lukas/Lukas.tsx";
+import { landingLink } from "../../site/config.ts";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
 
 /** Lukitas' size on the sign-in screens: friendly, never crowding the form. */
@@ -12,6 +13,9 @@ const MASCOT_PX = 96;
  * day/night switch on top, then one column with Lukitas above the content. On a phone the column
  * sits on the background, so the code boxes get the whole width; from `sm` up it is a raised card.
  */
+const LOGO_CLASS =
+  "lk-logo inline-flex min-h-11 items-center rounded-sm no-underline focus-visible:outline-3 focus-visible:outline-focus focus-visible:outline-offset-2";
+
 export function SignInScreen({
   mood = "happy",
   children,
@@ -20,16 +24,20 @@ export function SignInScreen({
   children: ReactNode;
 }) {
   const t = useTranslations("sign_in");
+  const home = landingLink();
   return (
     <div className="lk-screen flex min-h-dvh flex-col">
       <header className="mx-auto flex w-full max-w-[480px] items-center justify-between px-(--space-4) py-(--space-3)">
-        <Link
-          to="/"
-          aria-label={t("home")}
-          className="lk-logo inline-flex min-h-11 items-center rounded-sm no-underline focus-visible:outline-3 focus-visible:outline-focus focus-visible:outline-offset-2"
-        >
-          Lukitas
-        </Link>
+        {home.external ? (
+          // The landing lives on its own site here: a full page load, not a route of this app.
+          <a href={home.href} aria-label={t("home")} className={LOGO_CLASS}>
+            Lukitas
+          </a>
+        ) : (
+          <Link to={home.href} aria-label={t("home")} className={LOGO_CLASS}>
+            Lukitas
+          </Link>
+        )}
         <ThemeToggle />
       </header>
       <main className="flex flex-1 flex-col items-center px-(--space-4) pb-(--space-6)">

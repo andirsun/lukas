@@ -42,6 +42,7 @@ if [ "$with_tunnel" = 1 ]; then
 fi
 
 if [ "$build_web" = 1 ]; then
+  landing_url="$(cfg LANDING_URL https://lukitas.andersonlaverde.com)"
   say "Building the web app for https://$host"
   command -v pnpm >/dev/null 2>&1 || die "pnpm is not installed (corepack enable)"
   (
@@ -49,8 +50,9 @@ if [ "$build_web" = 1 ]; then
     pnpm install --frozen-lockfile
     # Its own folder: apps/web/build/client holds the landing release and must stay as it is.
     rm -rf apps/web/build-personal
+    # `/` redirects to the public landing (Caddyfile), so the app's own links to it leave too.
     VITE_SITE_URL="https://$host" VITE_LANDING_ONLY=false LUKAS_BUILD_DIR=build-personal \
-      pnpm --filter @lukas/web build
+      VITE_LANDING_URL="$landing_url" pnpm --filter @lukas/web build
   )
 fi
 [ -f "$REPO_DIR/apps/web/build-personal/client/index.html" ] ||

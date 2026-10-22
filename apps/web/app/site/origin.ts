@@ -42,6 +42,28 @@ export function resolveAppOrigin(raw: string | undefined): string | undefined {
 }
 
 /**
+ * Where the public landing lives when the app is served on its own origin (`VITE_LANDING_URL`, the
+ * personal install): `undefined` when unset or blank, which means the landing is this site's own.
+ */
+export function resolveLandingOrigin(raw: string | undefined): string | undefined {
+  if (!raw?.trim()) return undefined;
+  return parseOrigin(raw, "VITE_LANDING_URL");
+}
+
+/**
+ * Where a link to a landing page (`path`, like `/` or `/en`) goes: inside the app, or to the
+ * landing's own site with a full page load when it lives elsewhere.
+ */
+export function landingTarget(
+  landingOrigin: string | undefined,
+  path: string,
+): { external: boolean; href: string } {
+  return landingOrigin
+    ? { external: true, href: `${landingOrigin}${path}` }
+    : { external: false, href: path };
+}
+
+/**
  * `VITE_LANDING_ONLY=true` builds only the landing. Its calls to action lead to GitHub as "coming
  * soon" (see `isComingSoon`), or to the live app when `VITE_APP_URL` is set.
  */

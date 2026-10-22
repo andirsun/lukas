@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { useTranslations } from "use-intl";
 import { useApi } from "../../api/ApiProvider.tsx";
 import type { Translator } from "../../api/errors.ts";
+import { landingLink } from "../../site/config.ts";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { Sheet } from "../../ui/Sheet.tsx";
 import type { SignOutRequest } from "../home/use-sign-out.ts";
@@ -76,10 +77,13 @@ export function DeleteAccount({
     } catch {
       // The account and its sessions are gone already; the cookie goes with the next request.
     }
-    // The landing is outside the app's layout, so the cache goes with it as the layout unmounts.
-    // It is not emptied here: emptied while the app's screens are still mounted, they would refetch,
-    // get a 401 and send the browser to sign-in instead.
-    navigate("/", { replace: true });
+    // The landing is outside the app's layout, so the cache goes with it as the layout unmounts
+    // (or with the page, when the landing lives on its own site). It is not emptied here: emptied
+    // while the app's screens are still mounted, they would refetch, get a 401 and send the
+    // browser to sign-in instead.
+    const landing = landingLink();
+    if (landing.external) window.location.replace(landing.href);
+    else navigate(landing.href, { replace: true });
   };
 
   return (
