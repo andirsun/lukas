@@ -5,6 +5,7 @@ import en from "../../i18n/messages/en.json" with { type: "json" };
 import es from "../../i18n/messages/es.json" with { type: "json" };
 import { SITE_ORIGIN } from "../../site/config.ts";
 import { LANDING_PATH, PAGE_PATH, ROADMAP_PATH, type SitePage } from "../../site/paths.ts";
+import { landingFontPreloads } from "./font-preloads.ts";
 
 export { LANDING_PATH };
 
@@ -77,6 +78,7 @@ export function landingMeta(locale: Locale): MetaDescriptor[] {
 export function landingLinks(locale: Locale): LinkDescriptor[] {
   return [
     ...pageLinks("landing", locale),
+    ...landingFontPreloads(),
     { rel: "preload", as: "image", href: "/lukas/wave.webp", type: "image/webp" },
   ];
 }
@@ -100,5 +102,5 @@ export function roadmapMeta(locale: Locale): MetaDescriptor[] {
 
 /** Canonical and `hreflang` alternates of the roadmap page. */
 export function roadmapLinks(locale: Locale): LinkDescriptor[] {
-  return pageLinks("roadmap", locale);
+  return [...pageLinks("roadmap", locale), ...landingFontPreloads()];
 }
