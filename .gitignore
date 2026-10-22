@@ -161,3 +161,11 @@ apps/web/.react-router/
 apps/web/storybook-static/
 apps/web/test-results/
 apps/web/playwright-report/
+
+# Mobile (apps/mobile/.gitignore has the full list)
+apps/mobile/build/
+apps/mobile/dist/
+apps/mobile/.dart_tool/
+apps/mobile/android/.gradle/
+apps/mobile/android/.kotlin/
+apps/mobile/android/local.properties

@@ -1,0 +1,20 @@
+{
+  "@@locale": "es",
+  "appName": "Lukitas",
+  "@appName": {
+    "description": "The app's name, in the launcher, the task switcher and the app bar."
+  },
+  "savedMovements": "{count, plural, =1{Guardaste 1 movimiento en {category}} other{Guardaste {count} movimientos en {category}}}",
+  "@savedMovements": {
+    "description": "Confirmation after saving movements into one category.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "category": {
+        "type": "String",
+        "example": "Mercado"
+      }
+    }
+  }
+}

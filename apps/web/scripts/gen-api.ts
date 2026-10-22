@@ -6,6 +6,9 @@
  *                                                   server and no database (what CI does)
  *   pnpm --filter @lukas/web api:types --url <url>  fetches it from another address
  *
+ * With `--document <absolute path>`, it writes the OpenAPI document itself there as JSON instead of
+ * the types (the Android app's client generator, apps/mobile/scripts/gen-api.sh, reads it).
+ *
  * The paths in the document carry no prefix (the API serves them under the pathname of its
  * API_URL, `/api`), so the web client sets `baseUrl: "/api"` and uses them as they are.
  */
@@ -90,6 +93,14 @@ const document = args.includes("--file")
       urlFlag >= 0 && args[urlFlag + 1] ? [args[urlFlag + 1] as string] : DEFAULT_URLS,
     );
 
-const ast = await openapiTS(document);
-writeFileSync(OUTPUT, HEADER + astToString(ast));
-console.log(`Wrote ${OUTPUT}`);
+const documentFlag = args.indexOf("--document");
+if (documentFlag >= 0) {
+  const target = args[documentFlag + 1];
+  if (!target) throw new Error("--document needs the path to write the OpenAPI document to");
+  writeFileSync(target, `${JSON.stringify(document, null, 2)}\n`);
+  console.log(`Wrote ${target}`);
+} else {
+  const ast = await openapiTS(document);
+  writeFileSync(OUTPUT, HEADER + astToString(ast));
+  console.log(`Wrote ${OUTPUT}`);
+}

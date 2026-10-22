@@ -1,0 +1,5 @@
+{
+  "@@locale": "en",
+  "appName": "Lukitas",
+  "savedMovements": "{count, plural, =1{You saved 1 movement in {category}} other{You saved {count} movements in {category}}}"
+}
