@@ -249,11 +249,11 @@ const byName = (items: { name: string; total: number }[]) =>
 describe("recurrences materialize on read, as the API's materializeRecurrences", () => {
   it("adds the month's pending salary once, and paying it moves it to the paid totals", async () => {
     const { api } = demo();
-    // Before any month is read, reports (which never materialize) see no October salary.
+    // A report is a read too: before any screen opened October, it already sees the salary.
     const before = await api.GET("/v1/reports/trend", {
       params: { query: { from: "2026-10", to: "2026-10" } },
     });
-    expect(before.data?.months[0]?.income).toBe(0);
+    expect(before.data?.months[0]?.income).toBe(5_200_000_00);
 
     const items = await list(api, "2026-10");
     const salary = items.filter((t) => t.name === "Salario");
@@ -347,9 +347,22 @@ describe("reports, against the seed worked out by hand (es, 21 October 2026)", (
       { month: "2026-07", income: 0, expenses: 0, budget: 0 },
       { month: "2026-08", income: 5_200_000_00, expenses: 3_209_200_00, budget: 3_980_000_00 },
       { month: "2026-09", income: 5_200_000_00, expenses: 3_422_900_00, budget: 3_980_000_00 },
-      // October's salary is due on the 28th: not paid yet, and reports never materialize.
-      { month: "2026-10", income: 0, expenses: 3_341_900_00, budget: 3_980_000_00 },
+      // October's salary is due on the 28th: pending, and a report counts it like the home
+      // screen does (reports materialize the months they read, as the API's do).
+      { month: "2026-10", income: 5_200_000_00, expenses: 3_341_900_00, budget: 3_980_000_00 },
     ]);
+  });
+
+  it("trend: a month gives the same figures alone or inside a longer range", async () => {
+    const { api } = demo();
+    const one = await api.GET("/v1/reports/trend", {
+      params: { query: { from: "2026-10", to: "2026-10" } },
+    });
+    const three = await api.GET("/v1/reports/trend", {
+      params: { query: { from: "2026-08", to: "2026-10" } },
+    });
+    expect(one.data?.months[0]).toEqual(three.data?.months[2]);
+    expect(one.data?.months[0]?.income).toBe(5_200_000_00);
   });
 
   it("cost of living: August and September averaged, rent and Spotify's category fixed", async () => {

@@ -740,6 +740,8 @@ export function createDemoBackend(seed: DemoSeed, now: () => Date = () => new Da
 
   function byCategory(params: URLSearchParams): Answer {
     const months = rangeParams(params);
+    // Reports read their months like the screens do, as the API's reports.ts does.
+    for (const month of months) materialize(month);
     const kind = enumParam(params, "kind", ["expense", "income"] as const) ?? "expense";
     const status = enumParam(params, "status", ["paid", "pending"] as const);
     const from = firstDay(months[0] as Month);
@@ -773,6 +775,7 @@ export function createDemoBackend(seed: DemoSeed, now: () => Date = () => new Da
 
   function trend(params: URLSearchParams): Answer {
     const months = rangeParams(params);
+    for (const month of months) materialize(month);
     const kindOf = new Map(state.categories.map((c) => [c.id, c.kind]));
     return ok({
       months: months.map((month) => {
@@ -796,6 +799,7 @@ export function createDemoBackend(seed: DemoSeed, now: () => Date = () => new Da
     const count = intParam(params, "months", 1, 24, 6);
     const to = addMonths(currentMonth(), -1);
     const from = addMonths(to, 1 - count);
+    for (const month of monthsBetween(from, to)) materialize(month);
     const start = firstDay(from);
     return ok(
       costOfLiving({

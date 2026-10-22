@@ -79,6 +79,83 @@ test("ranges are validated", async () => {
   expect(tooLong).toMatchObject({ status: 422, body: { code: "range_too_large" } });
 });
 
+describe("recurrences no screen has opened yet", () => {
+  // Pending occurrences are created lazily, when a month is read. A report must see them even
+  // when the home screen never opened those months (Insights opened first, straight after a
+  // recurrence was created or edited): the same month gives the same figure whatever the range.
+  let r: { authorization: string };
+  let salary: string;
+  let rent: string;
+  const getR = async <T>(path: string) => {
+    const res = await t.request("GET", path, { headers: r });
+    return (await res.json()) as T;
+  };
+
+  beforeAll(async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-15T12:00:00Z"));
+    r = (await t.signIn("r@lukas.test")).headers;
+    const make = async (name: string, kind: "income" | "expense") => {
+      const res = await t.request("POST", "/v1/categories", {
+        headers: r,
+        body: { name, icon: "💰", color: "green", kind },
+      });
+      return ((await res.json()) as { id: string }).id;
+    };
+    salary = await make("Sueldo", "income");
+    rent = await make("Renta", "expense");
+    const recur = (categoryId: string, amount: number, dayOfMonth: number) =>
+      t.request("POST", "/v1/recurrences", {
+        headers: r,
+        body: {
+          name: "recurring",
+          amount,
+          categoryId,
+          frequency: "monthly",
+          dayOfMonth,
+          startDate: "2026-09-01",
+        },
+      });
+    expect((await recur(salary, 500000, 28)).status).toBe(201);
+    expect((await recur(rent, -150000, 5)).status).toBe(201);
+    vi.useRealTimers();
+  }, 60_000);
+  afterEach(() => vi.useRealTimers());
+
+  const fakeNovember = () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-15T12:00:00Z"));
+  };
+
+  test("the trend counts them, for one month and for three alike", async () => {
+    fakeNovember();
+    type Trend = { months: { month: string; income: number; expenses: number }[] };
+    const one = await getR<Trend>("/v1/reports/trend?from=2026-11&to=2026-11");
+    expect(one.months).toEqual([expect.objectContaining({ income: 500000, expenses: 150000 })]);
+    const three = await getR<Trend>("/v1/reports/trend?from=2026-09&to=2026-11");
+    expect(three.months.map((m) => [m.month, m.income, m.expenses])).toEqual([
+      ["2026-09", 500000, 150000],
+      ["2026-10", 500000, 150000],
+      ["2026-11", 500000, 150000],
+    ]);
+  });
+
+  test("so does spending by category", async () => {
+    fakeNovember();
+    const spent = await getR<ByCategory>("/v1/reports/by-category?from=2026-09&to=2026-11");
+    expect(spent.total).toBe(450000);
+    expect(spent.items).toEqual([expect.objectContaining({ categoryId: rent, total: 450000 })]);
+  });
+
+  test("and what living costs, as fixed spending", async () => {
+    fakeNovember();
+    const living = await getR<{ total: number; fixed: number; variable: number }>(
+      "/v1/reports/cost-of-living?months=2",
+    );
+    expect(living).toMatchObject({ total: 150000, fixed: 150000, variable: 0 });
+  });
+});
+
 describe("cost of living", () => {
   interface CostOfLiving {
     months: number;
@@ -139,16 +216,18 @@ describe("cost of living", () => {
     fakeNovember();
     const { status, body } = await costOfLiving("?months=2");
     expect(status).toBe(200);
-    expect(body).toMatchObject({ months: 2, total: 161855, fixed: 121405, variable: 40450 });
+    // The recurrences' own occurrences count too (created as the months are read): Casa's 10,00
+    // in September and October, Vida's 10,00 in September only (it ends on the 30th).
+    expect(body).toMatchObject({ months: 2, total: 163355, fixed: 122905, variable: 40450 });
     expect(body.categories[0]).toEqual({
       categoryId: cIds.casa,
-      average: 116489,
+      average: 117489,
       type: "fixed",
     });
     const byId = new Map(body.categories.map((x) => [x.categoryId, x]));
     expect(byId.get(cIds.vida as string)).toEqual({
       categoryId: cIds.vida,
-      average: 4916,
+      average: 5416,
       type: "fixed",
     });
     expect(byId.get(cIds.suscripciones as string)).toMatchObject({
@@ -162,7 +241,7 @@ describe("cost of living", () => {
   test("a single month is October alone, and ended recurrences stop being fixed", async () => {
     fakeNovember();
     const { body } = await costOfLiving("?months=1");
-    expect(body).toMatchObject({ months: 1, total: 223708, fixed: 132978, variable: 90730 });
+    expect(body).toMatchObject({ months: 1, total: 224708, fixed: 133978, variable: 90730 });
     expect(body.categories.find((x) => x.categoryId === cIds.vida)?.type).toBe("variable");
   });
 

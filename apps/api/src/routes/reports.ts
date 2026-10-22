@@ -9,12 +9,21 @@ import {
   monthSchema,
   monthsBetween,
 } from "@lukas/core";
-import { categories, categoryBudgets, recurrences, transactions, withUser } from "@lukas/db";
+import {
+  categories,
+  categoryBudgets,
+  recurrences,
+  type Tx,
+  transactions,
+  withUser,
+} from "@lukas/db";
 import { and, eq, gte, isNull, lte, or, sql } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
+import type { SessionUser } from "../env.ts";
 import { jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { materializeRecurrences } from "../services/materialize.ts";
 import { currentMonth } from "../services/time.ts";
 
 const MAX_MONTHS = 36;
@@ -38,6 +47,16 @@ const inRange = (from: Month, to: Month) =>
     gte(transactions.date, firstDay(from)),
     lte(transactions.date, lastDay(to)),
   );
+
+/**
+ * Pending occurrences are created when a month is read (see materializeRecurrences). A report
+ * reads its months the same way, so it counts the same rows as the home screen whether or not
+ * that screen opened those months first.
+ */
+async function materializeMonths(tx: Tx, user: SessionUser, months: Month[]) {
+  const current = currentMonth(user);
+  for (const month of months) await materializeRecurrences(tx, user.id, month, current);
+}
 
 export function reportRoutes(deps: AppDeps) {
   const app = router();
@@ -76,9 +95,11 @@ export function reportRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const { from, to, kind, status } = c.req.valid("query");
-      checkRange(from, to);
-      const rows = await withUser(deps.db, c.get("userId"), (tx) =>
-        tx
+      const months = checkRange(from, to);
+      const user = c.get("user");
+      const rows = await withUser(deps.db, user.id, async (tx) => {
+        await materializeMonths(tx, user, months);
+        return tx
           .select({
             categoryId: categories.id,
             name: categories.name,
@@ -95,8 +116,8 @@ export function reportRoutes(deps: AppDeps) {
               status ? eq(transactions.status, status) : undefined,
             ),
           )
-          .groupBy(categories.id),
-      );
+          .groupBy(categories.id);
+      });
       const sign = kind === "expense" ? -1 : 1;
       const items = rows
         .map(({ sum, ...category }) => ({ ...category, total: sign * Number(sum) }))
@@ -141,23 +162,27 @@ export function reportRoutes(deps: AppDeps) {
     async (c) => {
       const { from, to } = c.req.valid("query");
       const months = checkRange(from, to);
-      const { totals, cats, budgets } = await withUser(deps.db, c.get("userId"), async (tx) => ({
-        totals: await tx
-          .select({
-            month: sql<string>`to_char(${transactions.date}, 'YYYY-MM')`,
-            categoryId: transactions.categoryId,
-            sum: sql<string>`sum(${transactions.amount})`,
-          })
-          .from(transactions)
-          .where(inRange(from, to))
-          .groupBy(sql`1`, transactions.categoryId),
-        cats: await tx.select().from(categories),
-        budgets: (await tx.select().from(categoryBudgets)).map((b) => ({
-          categoryId: b.categoryId,
-          amount: b.amount,
-          effectiveFrom: b.effectiveFrom.slice(0, 7),
-        })),
-      }));
+      const user = c.get("user");
+      const { totals, cats, budgets } = await withUser(deps.db, user.id, async (tx) => {
+        await materializeMonths(tx, user, months);
+        return {
+          totals: await tx
+            .select({
+              month: sql<string>`to_char(${transactions.date}, 'YYYY-MM')`,
+              categoryId: transactions.categoryId,
+              sum: sql<string>`sum(${transactions.amount})`,
+            })
+            .from(transactions)
+            .where(inRange(from, to))
+            .groupBy(sql`1`, transactions.categoryId),
+          cats: await tx.select().from(categories),
+          budgets: (await tx.select().from(categoryBudgets)).map((b) => ({
+            categoryId: b.categoryId,
+            amount: b.amount,
+            effectiveFrom: b.effectiveFrom.slice(0, 7),
+          })),
+        };
+      });
       const kindOf = new Map(cats.map((cat) => [cat.id, cat.kind]));
       const result = months.map((month) => {
         const rows = totals.filter((r) => r.month === month);
@@ -207,24 +232,28 @@ export function reportRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const { months: count } = c.req.valid("query");
-      const to = addMonths(currentMonth(c.get("user")), -1);
+      const user = c.get("user");
+      const to = addMonths(currentMonth(user), -1);
       const from = addMonths(to, 1 - count);
-      const { cats, txs, recurring } = await withUser(deps.db, c.get("userId"), async (tx) => ({
-        cats: await tx.select({ id: categories.id, kind: categories.kind }).from(categories),
-        txs: await tx
-          .select({
-            categoryId: transactions.categoryId,
-            amount: transactions.amount,
-            date: transactions.date,
-          })
-          .from(transactions)
-          .where(inRange(from, to)),
-        // Recurrences still running at the start of the window (or later) make a category fixed.
-        recurring: await tx
-          .selectDistinct({ categoryId: recurrences.categoryId })
-          .from(recurrences)
-          .where(or(isNull(recurrences.endDate), gte(recurrences.endDate, firstDay(from)))),
-      }));
+      const { cats, txs, recurring } = await withUser(deps.db, user.id, async (tx) => {
+        await materializeMonths(tx, user, monthsBetween(from, to));
+        return {
+          cats: await tx.select({ id: categories.id, kind: categories.kind }).from(categories),
+          txs: await tx
+            .select({
+              categoryId: transactions.categoryId,
+              amount: transactions.amount,
+              date: transactions.date,
+            })
+            .from(transactions)
+            .where(inRange(from, to)),
+          // Recurrences still running at the start of the window (or later) make a category fixed.
+          recurring: await tx
+            .selectDistinct({ categoryId: recurrences.categoryId })
+            .from(recurrences)
+            .where(or(isNull(recurrences.endDate), gte(recurrences.endDate, firstDay(from)))),
+        };
+      });
       return c.json(
         costOfLiving({
           months: monthsBetween(from, to),
