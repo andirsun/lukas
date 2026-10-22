@@ -269,6 +269,25 @@ export function linkNext(value: string | null | undefined): string | null {
   return value;
 }
 
+/**
+ * The origin Android's Credential Manager puts in a passkey's client data for an app (rather than a
+ * web page): `android:apk-key-hash:` and the SHA-256 of the app's signing certificate, in base64url
+ * with no padding. `fingerprint` is that SHA-256 as hex pairs (AA:BB:…), in either case.
+ */
+export function androidApkKeyHashOrigin(fingerprint: string): string {
+  const hash = Buffer.from(fingerprint.replaceAll(":", ""), "hex");
+  return `android:apk-key-hash:${hash.toString("base64url")}`;
+}
+
+/**
+ * The origins a passkey ceremony may come from: the web, and the Android app for each of its
+ * signing certificates (ANDROID_CERT_SHA256). The relying party id stays the web host either way;
+ * /.well-known/assetlinks.json on that host is what lets the app use it.
+ */
+export function passkeyOrigins(config: Pick<Config, "WEB_URL" | "ANDROID_CERT_SHA256">): string[] {
+  return [config.WEB_URL, ...(config.ANDROID_CERT_SHA256 ?? []).map(androidApkKeyHashOrigin)];
+}
+
 export function createAuth(deps: AppDeps) {
   const { config } = deps;
   return betterAuth({
@@ -398,7 +417,7 @@ export function createAuth(deps: AppDeps) {
       passkey({
         rpID: new URL(config.WEB_URL).hostname,
         rpName: "Lukitas",
-        origin: config.WEB_URL,
+        origin: passkeyOrigins(config),
       }),
       anonymous({
         emailDomainName: GUEST_EMAIL_DOMAIN,

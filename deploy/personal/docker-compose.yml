@@ -74,6 +74,9 @@ services:
       SIGN_IN_ALLOWLIST: ${SIGN_IN_ALLOWLIST:?Set SIGN_IN_ALLOWLIST in .env}
       # Guest sign-up from the Android app (an account without an email). On unless set to false.
       GUEST_SIGNUP: ${GUEST_SIGNUP:-true}
+      # The Android app's signing-certificate fingerprints (the web's assetlinks.json reads the same
+      # value): passkeys made in the app are accepted for these. Empty: passkeys from the web only.
+      ANDROID_CERT_SHA256: ${ANDROID_CERT_SHA256:-}
       # Caddy puts the client address Cloudflare reports into X-Forwarded-For. Only that hop is
       # trusted: Caddy's fixed address in this network.
       CLIENT_IP_HEADER: x-forwarded-for
