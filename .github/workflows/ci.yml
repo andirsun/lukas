@@ -110,8 +110,9 @@ jobs:
       - run: npx --yes wrangler@4.151.3 deploy
         working-directory: deploy/landing
 
-  # Whether the Android app's job below has anything to check: the app itself, the API it generates
-  # its client from, the shared core, or this workflow.
+  # Whether the Android app's job below has anything to check: the app itself, or an input of its
+  # generated code (the design tokens; the API contract: the API's source, its dependencies and the
+  # document builder), the shared core, or this workflow.
   mobile-changes:
     runs-on: ubuntu-latest
     permissions:
@@ -128,7 +129,11 @@ jobs:
             mobile:
               - 'apps/mobile/**'
               - 'apps/api/src/**'
+              - 'apps/api/package.json'
+              - 'apps/web/scripts/gen-api.ts'
+              - 'docs/design/system/project/tokens.json'
               - 'packages/core/**'
+              - 'pnpm-lock.yaml'
               - '.github/workflows/ci.yml'
 
   # The Android app (apps/mobile, docs/mobile/setup.md). Skipped, which counts as passing, when
@@ -162,8 +167,9 @@ jobs:
           flutter-version: ${{ steps.flutter-version.outputs.version }}
           channel: stable
           cache: true
+      # Exactly the locked versions (pubspec.lock pins every package, transitive ones included).
       # Also generates AppLocalizations from lib/l10n/*.arb.
-      - run: flutter pub get
+      - run: flutter pub get --enforce-lockfile
       - run: flutter analyze
       - run: flutter test
       # Generated files must be committed as generated: run the generator and commit its output.
@@ -184,6 +190,13 @@ jobs:
             echo "::error::lib/api/gen is stale: run apps/mobile/scripts/gen-api.sh and commit it."
             exit 1
           fi
-      # No Google Play Services, Firebase, ML Kit or Play Core in the resolved dependencies.
+      # No Google Play Services, Firebase, ML Kit, Play Core, ARCore… in any variant's resolved
+      # dependencies or in the Gradle build files; then the same check, probed end to end on a copy
+      # of the app with banned dependencies added.
       - run: scripts/check-no-google.sh
+      - run: scripts/test-no-google-probes.sh
       - run: flutter build apk --debug
+      # The release APK (signed with the runner's debug key, only to inspect it) asks for INTERNET
+      # and for no permission nobody chose.
+      - run: flutter build apk --release
+      - run: scripts/check-permissions.sh

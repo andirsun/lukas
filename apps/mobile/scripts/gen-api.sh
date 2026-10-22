@@ -45,7 +45,7 @@ find "$OUT" -name '*.dart' -exec perl -pi -e 's#package:lukitas_api/#package:luk
 
 cd "$MOBILE"
 echo "==> build_runner (built_value parts)"
-flutter pub get >/dev/null
+flutter pub get --enforce-lockfile >/dev/null
 dart run build_runner build --delete-conflicting-outputs >"$WORK/build_runner.log" 2>&1 || {
   cat "$WORK/build_runner.log"
   exit 1

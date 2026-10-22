@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The API at <server>/api. Release builds need it too (scripts/check-permissions.sh). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Lukitas"
         android:name="${applicationName}"

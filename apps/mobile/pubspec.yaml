@@ -22,8 +22,8 @@ dependencies:
   dio: 5.11.1
   flutter_riverpod: 3.4.3
   go_router: 18.0.2
-  # Pinned by flutter_localizations.
-  intl: any
+  # The version flutter_localizations pins.
+  intl: 0.20.3
   one_of: 1.5.0
   one_of_serializer: 1.5.0
 
