@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import { feedback } from "../feedback/feedback.ts";
-import { pagerTarget, rubberBand } from "./gesture.ts";
+import { gestureOwner, pagerTarget, rubberBand } from "./gesture.ts";
 import { durationToken, GESTURE, SPRINGS, useReducedMotionPreference } from "./motion-tokens.ts";
 import { useAxisDrag } from "./use-axis-drag.ts";
 
@@ -100,7 +100,7 @@ export function usePager({ index, count, onIndexChange, enabled = true }: PagerO
   /** The drag under way: where the track was (in pages, maybe mid-spring) and one page's px. */
   const from = useRef({ position: 0, width: 1 });
   const gesture = useAxisDrag(
-    "pager",
+    { accept: (target) => gestureOwner(target) === "pager", enabled },
     {
       onStart() {
         const page = frame.current?.offsetWidth ?? 0;
@@ -111,7 +111,10 @@ export function usePager({ index, count, onIndexChange, enabled = true }: PagerO
         from.current = { position: position.get(), width: page + GESTURE.pagerGap };
         return true;
       },
-      onLock: () => setSettled(false),
+      onLock() {
+        setSettled(false);
+        return true;
+      },
       onMove(dx) {
         if (reduceMotion) return;
         const { position: start, width } = from.current;
@@ -145,7 +148,6 @@ export function usePager({ index, count, onIndexChange, enabled = true }: PagerO
         if (position.get() !== index) settle(index, 0);
       },
     },
-    enabled,
   );
 
   return {

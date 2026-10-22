@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
-import { expect, fn, screen, userEvent, waitFor, within } from "storybook/test";
+import { expect, fn, screen, spyOn, userEvent, waitFor, within } from "storybook/test";
 import { useTranslations } from "use-intl";
+import { fingerDrag } from "../../.storybook/story-utils.ts";
 import { PressButton } from "./PressButton.tsx";
 import { Sheet } from "./Sheet.tsx";
 
@@ -132,5 +133,78 @@ export const OpenReducedMotion: Story = {
       expect(getComputedStyle(dialog).opacity).toBe("1");
     });
     await expect(offsets.every((y) => y === 0)).toBe(true);
+  },
+};
+
+/** How far the sheet is dragged down from where it rests, in px. */
+const dragOffset = () =>
+  new DOMMatrix(
+    getComputedStyle(document.querySelector("[data-sheet-drag]") as HTMLElement).transform,
+  ).m42;
+
+/**
+ * Dragged down from anywhere (here the Guardar button): it follows the finger, ticks once past a
+ * quarter of its height, and closes on release, through the same path as Cerrar. The button a drag
+ * starts on is never pressed.
+ */
+export const DragDownFromAnywhereCloses: Story = {
+  args: { initiallyOpen: true },
+  play: async ({ args }) => {
+    const vibrate = spyOn(navigator, "vibrate").mockImplementation(() => true);
+    try {
+      const dialog = await settled("Agregar gasto");
+      const save = within(dialog).getByRole("button", { name: "Guardar" });
+      const height = dialog.getBoundingClientRect().height;
+      await fingerDrag(save, {
+        dy: height * 0.5,
+        steps: 12,
+        stepMs: 20,
+        hold: async () => {
+          await expect(dragOffset()).toBeGreaterThan(height * 0.5 - 12);
+        },
+      });
+      await waitFor(() => expect(args.onClose).toHaveBeenCalledOnce());
+      await expect(vibrate).toHaveBeenCalledWith([10]);
+    } finally {
+      vibrate.mockRestore();
+    }
+  },
+};
+
+/** A short drag springs back; upward it resists (0.3× the finger). */
+export const ShortDragSpringsBack: Story = {
+  args: { initiallyOpen: true },
+  play: async ({ args }) => {
+    const dialog = await settled("Agregar gasto");
+    await fingerDrag(dialog, {
+      dy: -100,
+      steps: 10,
+      stepMs: 20,
+      hold: async () => {
+        await expect(dragOffset()).toBeGreaterThan(-35);
+        await expect(dragOffset()).toBeLessThan(-20);
+      },
+    });
+    await fingerDrag(dialog, { dy: 40, steps: 10, stepMs: 24 });
+    await waitFor(() => expect(Math.abs(dragOffset())).toBeLessThan(1), { timeout: 4000 });
+    await expect(args.onClose).not.toHaveBeenCalled();
+  },
+};
+
+/** Reduced motion: no follow-the-finger, but a drag down still closes it on release. */
+export const DragClosesReducedMotion: Story = {
+  args: { initiallyOpen: true },
+  parameters: { reducedMotion: true },
+  play: async ({ args }) => {
+    const dialog = await screen.findByRole("dialog", { name: "Agregar gasto" });
+    const height = dialog.getBoundingClientRect().height;
+    await fingerDrag(dialog, {
+      dy: height * 0.5,
+      steps: 12,
+      hold: async () => {
+        await expect(dragOffset()).toBe(0);
+      },
+    });
+    await waitFor(() => expect(args.onClose).toHaveBeenCalledOnce());
   },
 };

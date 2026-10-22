@@ -329,6 +329,130 @@ test.describe("in Madrid, on 21 October 2026", () => {
   });
 });
 
+test.describe("dragging the sheet down from anywhere", () => {
+  /** How far the sheet is dragged down, in px (0 at rest). */
+  const sheetY = (page: Page) =>
+    page
+      .locator("[data-sheet-drag]")
+      .evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m42);
+
+  async function openSheet(page: Page) {
+    await openDemo(page);
+    await tap(page, plus(page));
+    const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
+    await expect(sheet).toBeVisible();
+    // Done sliding in: its bottom edge is the screen's.
+    const height = page.viewportSize()?.height ?? 0;
+    await expect
+      .poll(async () => {
+        const box = await sheet.boundingBox();
+        return box ? Math.round(box.y + box.height) : -1;
+      })
+      .toBe(height);
+    return sheet;
+  }
+
+  test("down from a key follows the finger, closes the sheet, and types nothing", async ({
+    page,
+  }) => {
+    const sheet = await openSheet(page);
+    const amount = sheet.getByTestId("amount");
+    const shown = await amount.innerText();
+    const key = await centerOf(sheet.getByRole("button", { name: "5", exact: true }));
+    const finger = await touchDown(page, key);
+    await finger.moveTo({ x: key.x, y: key.y + 120 }, { steps: 12, stepMs: 20 });
+    await page.waitForTimeout(50);
+    // 1:1 with the finger, less the few px before the drag picks its axis.
+    expect(await sheetY(page)).toBeGreaterThan(105);
+    expect(await amount.innerText()).toBe(shown);
+    await finger.moveTo({ x: key.x, y: key.y + 260 }, { steps: 10, stepMs: 20 });
+    await finger.up();
+    await expect(sheet).toBeHidden();
+    // No digit went in: a new sheet starts empty, and nothing was saved.
+    await expect(page.getByRole("status")).not.toContainText("Gasto");
+  });
+
+  test("a short drag springs back", async ({ page }) => {
+    const sheet = await openSheet(page);
+    await swipe(page, await centerOf(sheet.getByTestId("amount")), {
+      dy: 60,
+      steps: 12,
+      stepMs: 24,
+    });
+    await page.waitForTimeout(500);
+    await expect(sheet).toBeVisible();
+    expect(Math.abs(await sheetY(page))).toBeLessThanOrEqual(1);
+  });
+
+  test("a downward flick closes it", async ({ page }) => {
+    const sheet = await openSheet(page);
+    await swipe(page, await centerOf(sheet.getByTestId("amount")), {
+      dy: 70,
+      steps: 2,
+      stepMs: 0,
+    });
+    await expect(sheet).toBeHidden();
+  });
+
+  test("a tap on a key still types", async ({ page }) => {
+    const sheet = await openSheet(page);
+    await tap(page, sheet.getByRole("button", { name: "5", exact: true }));
+    await expect(sheet.getByTestId("amount")).toContainText("5");
+    expect(Math.abs(await sheetY(page))).toBeLessThanOrEqual(1);
+  });
+
+  test("a sideways swipe on the chips never moves the sheet", async ({ page }) => {
+    const sheet = await openSheet(page);
+    const chips = sheet.getByRole("group", { name: "Categoría" });
+    const at = await centerOf(chips);
+    const finger = await touchDown(page, { x: at.x + 100, y: at.y });
+    await finger.moveTo({ x: at.x - 100, y: at.y + 10 }, { steps: 12 });
+    expect(Math.abs(await sheetY(page))).toBeLessThanOrEqual(1);
+    await finger.up();
+    await page.waitForTimeout(300);
+    await expect(sheet).toBeVisible();
+    expect(Math.abs(await sheetY(page))).toBeLessThanOrEqual(1);
+  });
+
+  test("upward, a middle with more below scrolls; the sheet stays", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    const sheet = await openSheet(page);
+    const body = sheet.locator(".lk-sheet-body");
+    const box = await body.boundingBox();
+    if (!box) throw new Error("no body");
+    await swipe(
+      page,
+      { x: box.x + box.width / 2, y: box.y + box.height - 20 },
+      { dy: -120, steps: 12, stepMs: 20 },
+    );
+    await page.waitForTimeout(300);
+    expect(await body.evaluate((element) => element.scrollTop)).toBeGreaterThan(40);
+    expect(Math.abs(await sheetY(page))).toBeLessThanOrEqual(1);
+  });
+
+  test("a scrolled middle scrolls back to its top before the sheet moves", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    const sheet = await openSheet(page);
+    const body = sheet.locator(".lk-sheet-body");
+    await body.evaluate((element) => {
+      element.scrollTop = 120;
+    });
+    expect(await body.evaluate((element) => element.scrollTop)).toBeGreaterThan(60);
+    // A finger on the scrolled middle (no scrolling things into view first: that would move it).
+    const box = await body.boundingBox();
+    if (!box) throw new Error("no body");
+    await swipe(
+      page,
+      { x: box.x + box.width / 2, y: box.y + 40 },
+      { dy: 100, steps: 12, stepMs: 20 },
+    );
+    await page.waitForTimeout(400);
+    await expect(sheet).toBeVisible();
+    expect(Math.abs(await sheetY(page))).toBeLessThanOrEqual(1);
+    expect(await body.evaluate((element) => element.scrollTop)).toBeLessThan(60);
+  });
+});
+
 test.describe("the keypad on short phones", () => {
   const sizes = [
     { width: 375, height: 667 },
@@ -430,6 +554,13 @@ test.describe("the celebration", () => {
     await openDemo(page);
     await tap(page, plus(page));
     const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
+    // Done sliding in (keys tapped mid-slide can move from under the finger).
+    await expect
+      .poll(async () => {
+        const box = await sheet.boundingBox();
+        return box ? Math.round(box.y + box.height) : -1;
+      })
+      .toBe(844);
     for (const key of ["5", "0", "0", "0"])
       await tap(page, sheet.getByRole("button", { name: key, exact: true }));
     await tap(
@@ -437,10 +568,10 @@ test.describe("the celebration", () => {
       sheet.getByRole("group", { name: "Categoría" }).getByRole("button", { name: "Mercado" }),
     );
     await tap(page, sheet.getByRole("button", { name: "Guardar", exact: true }));
-    await expect(sheet).toBeHidden();
     const lukas = page.locator(".lk-celebration-lukas");
     await expect(lukas).toBeVisible();
-    await page.waitForTimeout(400);
+    // Past the pop (it lasts one --celebrate, 1.2 s): standing where he lands.
+    await page.waitForTimeout(300);
     const box = await lukas.boundingBox();
     const button = await plus(page).boundingBox();
     if (!box || !button) throw new Error("not on screen");
@@ -452,12 +583,15 @@ test.describe("the celebration", () => {
     ).toBe("none");
     // The ＋ is what a finger finds at its center, and a tap there opens the sheet mid-party.
     const center = { x: button.x + button.width / 2, y: button.y + button.height / 2 };
-    expect(
-      await page.evaluate(
-        ({ x, y }) => document.elementFromPoint(x, y)?.closest(".lk-plus") !== null,
-        center,
-      ),
-    ).toBe(true);
+    // (Once the closing sheet's backdrop is gone, while Lukitas is still up.)
+    await expect
+      .poll(() =>
+        page.evaluate(
+          ({ x, y }) => document.elementFromPoint(x, y)?.closest(".lk-plus")?.tagName ?? "none",
+          center,
+        ),
+      )
+      .toBe("BUTTON");
     await expect(page.getByTestId("celebration")).toBeAttached();
     await (await touchDown(page, center)).up();
     await expect(page.getByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();

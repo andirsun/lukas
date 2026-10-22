@@ -46,6 +46,8 @@ export const GESTURE = {
   rowActionWidth: 88,
   /** A deleted row starts folding away once this much of it has left the screen. */
   rowGoneAt: 0.9,
+  /** A sheet dragged down past this fraction of its height closes when let go. */
+  sheetCloseAt: 0.25,
   /** px: a toast dragged this far down or sideways is dismissed. */
   toastDismiss: 48,
 } as const;
@@ -54,6 +56,8 @@ export const GESTURE = {
 export const SPRINGS = {
   /** The tab pager settling on a page: stiff, a hint of bounce. Its value is in pages. */
   pager: { type: "spring", stiffness: 400, damping: 35, restDelta: 0.0005, restSpeed: 0.01 },
+  /** A sheet let go short of closing, back to where it rests; in px. */
+  sheetBack: { type: "spring", stiffness: 500, damping: 40, restDelta: 0.5 },
   /** A row snapping open, shut, or back after its action; in px. */
   row: { type: "spring", stiffness: 520, damping: 38, restDelta: 0.5 },
   /** A row flying off the screen when deleted (or back in after Deshacer); in px. */

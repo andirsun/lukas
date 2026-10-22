@@ -15,7 +15,7 @@ import {
 import { useTranslations } from "use-intl";
 import { feedback } from "../feedback/feedback.ts";
 import { cx } from "./cx.ts";
-import { armedSide, rowOffset, rowRelease, SWIPE_ROW_ATTRIBUTE } from "./gesture.ts";
+import { armedSide, gestureOwner, rowOffset, rowRelease, SWIPE_ROW_ATTRIBUTE } from "./gesture.ts";
 import { durationToken, GESTURE, SPRINGS, useReducedMotionPreference } from "./motion-tokens.ts";
 import { useAxisDrag } from "./use-axis-drag.ts";
 
@@ -196,7 +196,7 @@ export function SwipeRow({ children, onDelete, right, enter = false }: SwipeRowP
   /** The side armed so far in this drag (a ref: two moves in one frame must agree). */
   const armedNow = useRef<Side | null>(null);
   const gesture = useAxisDrag(
-    "row",
+    { accept: (target) => gestureOwner(target) === "row", enabled: left || hasRight },
     {
       onStart(event) {
         if (gone) return false;
@@ -209,6 +209,7 @@ export function SwipeRow({ children, onDelete, right, enter = false }: SwipeRowP
       onLock() {
         setRevealed(true);
         if (closeOpenRow && closeOpenRow !== close) closeOpenRow();
+        return true;
       },
       onMove(dx) {
         const { offset: start, width } = from.current;
@@ -253,7 +254,6 @@ export function SwipeRow({ children, onDelete, right, enter = false }: SwipeRowP
         if (!gone && x.get() !== rest()) springTo(rest());
       },
     },
-    left || hasRight,
   );
 
   // A drag (or a tap on an open row, which closes it) is never also a tap on the row.
