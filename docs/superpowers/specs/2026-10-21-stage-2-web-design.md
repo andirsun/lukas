@@ -105,7 +105,7 @@ Reference: `docs/design/stage-2-mockups/home.html` (options 1 and 2).
 - Header: logo, month selector (current month by default; previous months browsable), avatar menu.
 - **Lukas** with a message bubble (rule-based message, §4.4) and a mood derived from the month: `happy` (all categories ok), `worried` (any category near or over), `celebrating` (right after a save, or month closed within budget).
 - **Hero card:** "Te quedan este mes" + `remaining` (big, animated count), a bar filled with what was spent, "Gastado X de Y".
-- **Segmented control: Presupuestos ⇄ Movimientos** (tap or swipe).
+- **Segmented control: Movimientos ⇄ Presupuestos** (tap or swipe). Movimientos comes first and is the default (founder decision 2026-10-22); a choice the person makes is remembered per device.
   - **Budgets:** one row per expense category: icon, name, budget, a bar that fills with spending and changes color by state (`ok` green, `near` amber, `over` red), and the remaining amount in words ("Quedan 46,33 €" / "Te pasaste 14,12 €"). Tapping a row opens the category detail.
   - **Transactions:** grouped by day, newest first, today on top; upcoming pending transactions shown with a **PENDIENTE** badge. Tapping the badge marks the transaction as paid (with a small celebration). Tapping a row opens the edit sheet.
 - **Bottom bar:** Home · **＋** (raised center button) · Insights. On desktop widths it becomes a left sidebar (Home, Insights, Recurring, Categories, Settings) and the home screen shows budgets and recent transactions side by side.
