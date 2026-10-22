@@ -24,6 +24,42 @@ export const CELEBRATION_ANCHOR = "data-celebration-anchor";
 /** px between Lukitas's feet and the element he stands above. */
 const ABOVE_GAP = 4;
 
+/**
+ * Marks what Lukitas must never cover besides his spot: the toasts (with their Deshacer), which a
+ * save shows at the same moment. Its box is its layout box (an entering toast's slide is ignored).
+ */
+export const CELEBRATION_AVOID = "data-celebration-avoid";
+
+/** Lukitas's box at `spot`, in viewport px. */
+const boxAt = (spot: Spot) => ({
+  left: spot.x - spot.size / 2,
+  right: spot.x + spot.size / 2,
+  top: spot.top,
+  bottom: spot.top + spot.size,
+});
+
+/** Moves `spot` up until Lukitas's box clears every `CELEBRATION_AVOID` box on screen. */
+function clearOfObstacles(spot: Spot): Spot {
+  const obstacles = [...document.querySelectorAll<HTMLElement>(`[${CELEBRATION_AVOID}]`)]
+    .map((element) => element.getBoundingClientRect())
+    .filter((rect) => rect.width > 0 && rect.height > 0);
+  let current = spot;
+  // Each step only moves him up, so a few passes settle it (he can't bounce between two).
+  for (let pass = 0; pass < obstacles.length + 1; pass++) {
+    const box = boxAt(current);
+    const hit = obstacles.find(
+      (rect) =>
+        box.left < rect.right &&
+        rect.left < box.right &&
+        box.top < rect.bottom + ABOVE_GAP &&
+        rect.top < box.bottom + ABOVE_GAP,
+    );
+    if (!hit) return current;
+    current = { ...current, top: hit.top - current.size - ABOVE_GAP };
+  }
+  return current;
+}
+
 interface Spot {
   /** The spot's horizontal center and top, in viewport px. */
   x: number;
@@ -80,7 +116,8 @@ const BURST: readonly Piece[] = Array.from({ length: PIECES }, (_, index) => {
 /**
  * Confetti and a celebrating Lukitas, shown when `feedback()` reports something worth
  * celebrating. Lukitas lands in free space, never over text or figures: just above the ＋ of the
- * bottom bar on phones (never on it: it stays visible and tappable), in the sidebar's empty spot on wide screens (`CELEBRATION_ANCHOR`), and the confetti
+ * bottom bar on phones (never on it: it stays visible and tappable), and above the undo toast while
+ * one is up (`CELEBRATION_AVOID`), in the sidebar's empty spot on wide screens (`CELEBRATION_ANCHOR`), and the confetti
  * bursts from there. Purely decorative (hidden from assistive technology: the toast or screen
  * already says what happened) and it never takes a tap. Under reduced motion there is no confetti:
  * Lukitas shows as his still celebrating frame and only fades in and out. Mounted once, in the app
@@ -110,11 +147,24 @@ export function Celebration() {
           frame = requestAnimationFrame(place);
           return;
         }
-        setShown({ id: mine, ...(spot ?? fallbackSpot()) });
+        let placed = clearOfObstacles(spot ?? fallbackSpot());
+        setShown({ id: mine, ...placed });
         const ms = durationToken("--celebrate") * 1000 || FALLBACK_MS;
         timer = setTimeout(() => setShown(null), ms + 50);
+        // A toast that shows a moment later (or grows) pushes him up; he never moves down.
+        const follow = () => {
+          if (mine !== id || performance.now() - started > ms) return;
+          const next = clearOfObstacles(placed);
+          if (next.top < placed.top - 0.5) {
+            placed = next;
+            setShown({ id: mine, ...placed });
+          }
+          frame = requestAnimationFrame(follow);
+        };
+        frame = requestAnimationFrame(follow);
       };
-      place();
+      // One frame on: the toast a save shows with its celebration is on the page by then.
+      frame = requestAnimationFrame(place);
     };
     window.addEventListener(FEEDBACK_DOM_EVENT, onFeedback);
     return () => {

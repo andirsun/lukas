@@ -5,7 +5,15 @@ import { PressButton } from "../ui/PressButton.tsx";
 import { Celebration } from "./Celebration.tsx";
 import { type FeedbackEvent, feedback } from "./feedback.ts";
 
-function CelebrationDemo({ event, spot = true }: { event: FeedbackEvent; spot?: boolean }) {
+function CelebrationDemo({
+  event,
+  spot = true,
+  toast = false,
+}: {
+  event: FeedbackEvent;
+  spot?: boolean;
+  toast?: boolean;
+}) {
   return (
     <>
       <PressButton variant="primary" onClick={() => feedback(event)}>
@@ -18,6 +26,14 @@ function CelebrationDemo({ event, spot = true }: { event: FeedbackEvent; spot?: 
           data-celebration-anchor="64"
           data-celebration-place="above"
           className="fixed bottom-6 left-1/2 block size-[58px] -translate-x-1/2"
+        />
+      )}
+      {/* Where the undo toast would be: just above the ＋. */}
+      {spot && toast && (
+        <span
+          data-testid="toast"
+          data-celebration-avoid=""
+          className="fixed bottom-[96px] left-4 right-4 block h-16"
         />
       )}
       <Celebration />
@@ -51,6 +67,20 @@ export const LandsOnTheSpot: Story = {
     await expect(Math.abs((box.left + box.right) / 2 - (spot.left + spot.right) / 2)).toBeLessThan(
       2,
     );
+  },
+};
+
+/** With the undo toast up, he stands above the toast instead of over its Deshacer. */
+export const ClearOfTheToast: Story = {
+  args: { toast: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "paid" }));
+    const overlay = await canvas.findByTestId("celebration");
+    const lukas = overlay.querySelector<HTMLElement>(".lk-celebration-lukas") as HTMLElement;
+    const toast = canvas.getByTestId("toast").getBoundingClientRect();
+    await sleep(500);
+    await expect(lukas.getBoundingClientRect().bottom).toBeLessThanOrEqual(toast.top + 1);
   },
 };
 

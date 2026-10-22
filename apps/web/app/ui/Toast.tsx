@@ -209,10 +209,11 @@ export function ToastProvider({
                 : "fixed inset-x-0 bottom-0 z-50 px-(--space-4) pb-[calc(max(var(--space-4),env(safe-area-inset-bottom))+var(--toast-lift,0px))]",
             )}
           >
-            <div role="status" className="w-full max-w-[480px]">
+            {/* Lukitas celebrates clear of the toasts (Celebration.tsx). */}
+            <div role="status" data-celebration-avoid="" className="w-full max-w-[480px]">
               {render("info")}
             </div>
-            <div role="alert" className="w-full max-w-[480px]">
+            <div role="alert" data-celebration-avoid="" className="w-full max-w-[480px]">
               {render("error")}
             </div>
           </div>,

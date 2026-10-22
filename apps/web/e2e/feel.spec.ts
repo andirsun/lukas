@@ -15,7 +15,11 @@ test.use({
 });
 
 test.beforeEach(({}, testInfo) => {
-  test.skip(testInfo.project.name !== "phone", "Touch gestures: the phone project only");
+  // Tests tagged @desktop run on wide screens too; the rest are touch gestures, phone only.
+  test.skip(
+    testInfo.project.name !== "phone" && !testInfo.tags.includes("@desktop"),
+    "Touch gestures: the phone project only",
+  );
 });
 
 const plus = (page: Page) => page.getByRole("button", { name: "Agregar", exact: true });
@@ -549,53 +553,102 @@ test.describe("the keypad on short phones", () => {
   }
 });
 
+type Box = { x: number; y: number; width: number; height: number };
+const intersects = (a: Box, b: Box) =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+/**
+ * Saves 5.000 in Mercado (touch on phones, the mouse on wide screens), then, while the undo toast
+ * is up and Lukitas past his pop, returns his box, the toast's and the add button's.
+ */
+async function celebrate(page: Page, touch: boolean) {
+  const press = (target: Locator) => (touch ? tap(page, target) : target.click());
+  await press(
+    touch ? plus(page) : page.getByRole("navigation").getByRole("button", { name: "Agregar" }),
+  );
+  const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
+  // Done sliding in (keys pressed mid-slide can move from under the finger).
+  const height = page.viewportSize()?.height ?? 0;
+  await expect
+    .poll(async () => {
+      const box = await sheet.boundingBox();
+      return box ? Math.round(box.y + box.height) : -1;
+    })
+    .toBe(height);
+  for (const key of ["5", "0", "0", "0"])
+    await press(sheet.getByRole("button", { name: key, exact: true }));
+  await press(
+    sheet.getByRole("group", { name: "Categoría" }).getByRole("button", { name: "Mercado" }),
+  );
+  await press(sheet.getByRole("button", { name: "Guardar", exact: true }));
+  const toast = page.getByRole("status").locator(".lk-toast");
+  await expect(toast).toContainText("Deshacer");
+  const lukas = page.locator(".lk-celebration-lukas");
+  await expect(lukas).toBeVisible();
+  // Past the pop (it lasts one --celebrate, 1.2 s): standing where he lands.
+  await page.waitForTimeout(300);
+  const lukasBox = await lukas.boundingBox();
+  const toastBox = await toast.boundingBox();
+  const button = touch
+    ? plus(page)
+    : page.getByRole("navigation").getByRole("button", { name: "Agregar" });
+  const buttonBox = await button.boundingBox();
+  if (!lukasBox || !toastBox || !buttonBox) throw new Error("not on screen");
+  return { lukasBox, toastBox, buttonBox };
+}
+
 test.describe("the celebration", () => {
-  test("Lukitas lands above the ＋, which stays visible and tappable", async ({ page }) => {
-    await openDemo(page);
-    await tap(page, plus(page));
-    const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
-    // Done sliding in (keys tapped mid-slide can move from under the finger).
-    await expect
-      .poll(async () => {
-        const box = await sheet.boundingBox();
-        return box ? Math.round(box.y + box.height) : -1;
-      })
-      .toBe(844);
-    for (const key of ["5", "0", "0", "0"])
-      await tap(page, sheet.getByRole("button", { name: key, exact: true }));
-    await tap(
+  for (const size of [
+    { width: 390, height: 844 },
+    { width: 360, height: 640 },
+  ]) {
+    test(`at ${size.width}×${size.height}, Lukitas lands clear of the toast and the ＋, which stays tappable`, async ({
       page,
-      sheet.getByRole("group", { name: "Categoría" }).getByRole("button", { name: "Mercado" }),
-    );
-    await tap(page, sheet.getByRole("button", { name: "Guardar", exact: true }));
-    const lukas = page.locator(".lk-celebration-lukas");
-    await expect(lukas).toBeVisible();
-    // Past the pop (it lasts one --celebrate, 1.2 s): standing where he lands.
-    await page.waitForTimeout(300);
-    const box = await lukas.boundingBox();
-    const button = await plus(page).boundingBox();
-    if (!box || !button) throw new Error("not on screen");
-    // Above the ＋ (never on it), centered on its column.
-    expect(box.y + box.height).toBeLessThanOrEqual(button.y + 1);
-    expect(Math.abs(box.x + box.width / 2 - (button.x + button.width / 2))).toBeLessThan(2);
-    expect(
-      await page.locator(".lk-celebration").evaluate((el) => getComputedStyle(el).pointerEvents),
-    ).toBe("none");
-    // The ＋ is what a finger finds at its center, and a tap there opens the sheet mid-party.
-    const center = { x: button.x + button.width / 2, y: button.y + button.height / 2 };
-    // (Once the closing sheet's backdrop is gone, while Lukitas is still up.)
-    await expect
-      .poll(() =>
-        page.evaluate(
-          ({ x, y }) => document.elementFromPoint(x, y)?.closest(".lk-plus")?.tagName ?? "none",
-          center,
-        ),
-      )
-      .toBe("BUTTON");
-    await expect(page.getByTestId("celebration")).toBeAttached();
-    await (await touchDown(page, center)).up();
-    await expect(page.getByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
-  });
+    }) => {
+      await page.setViewportSize(size);
+      await openDemo(page);
+      const { lukasBox, toastBox, buttonBox } = await celebrate(page, true);
+      expect(intersects(lukasBox, toastBox), "Lukitas over the undo toast").toBe(false);
+      expect(intersects(lukasBox, buttonBox), "Lukitas over the ＋").toBe(false);
+      // Centered on the ＋'s column, somewhere above it.
+      expect(lukasBox.y + lukasBox.height).toBeLessThanOrEqual(buttonBox.y + 1);
+      expect(
+        Math.abs(lukasBox.x + lukasBox.width / 2 - (buttonBox.x + buttonBox.width / 2)),
+      ).toBeLessThan(2);
+      expect(
+        await page.locator(".lk-celebration").evaluate((el) => getComputedStyle(el).pointerEvents),
+      ).toBe("none");
+      // The ＋ is what a finger finds at its center, and a tap there opens the sheet mid-party.
+      const center = {
+        x: buttonBox.x + buttonBox.width / 2,
+        y: buttonBox.y + buttonBox.height / 2,
+      };
+      // (Once the closing sheet's backdrop is gone, while Lukitas is still up.)
+      await expect
+        .poll(() =>
+          page.evaluate(
+            ({ x, y }) => document.elementFromPoint(x, y)?.closest(".lk-plus")?.tagName ?? "none",
+            center,
+          ),
+        )
+        .toBe("BUTTON");
+      await expect(page.getByTestId("celebration")).toBeAttached();
+      await (await touchDown(page, center)).up();
+      await expect(page.getByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
+    });
+  }
+
+  test(
+    "on a wide screen, Lukitas lands clear of the toast and Agregar",
+    { tag: "@desktop" },
+    async ({ page }, testInfo) => {
+      test.skip(testInfo.project.name !== "desktop", "Wide screens: the desktop project");
+      await openDemo(page);
+      const { lukasBox, toastBox, buttonBox } = await celebrate(page, false);
+      expect(intersects(lukasBox, toastBox), "Lukitas over the undo toast").toBe(false);
+      expect(intersects(lukasBox, buttonBox), "Lukitas over Agregar").toBe(false);
+    },
+  );
 });
 
 test.describe("the first ＋ after onboarding", () => {
