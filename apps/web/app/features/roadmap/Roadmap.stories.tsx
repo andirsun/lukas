@@ -21,7 +21,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** The page in Spanish, night theme: a column per status that has items ("Ya está" is empty). */
+/** The page in Spanish, night theme: a column per status that has items, the demo under "Ya está". */
 export const Page: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -29,11 +29,11 @@ export const Page: Story = {
     await expect(canvas.getByText(/Puede cambiar con el tiempo/)).toBeVisible();
     const columns = canvas.getAllByRole("heading", { level: 2 });
     await expect(columns.map((heading) => heading.textContent)).toEqual([
+      "Ya está",
       "En construcción",
       "Próximo",
       "Más adelante",
     ]);
-    await expect(canvas.queryByText("Ya está")).toBeNull();
     await expect(canvas.getByRole("heading", { name: "Conecta tu IA" })).toBeVisible();
   },
 };
