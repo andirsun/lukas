@@ -1,0 +1,283 @@
+> Brand renamed to **Lukitas** on 2026-10-21 (an unrelated app already uses "Lukas"); code identifiers keep `lukas`.
+
+# Lukas — Stage 2: Web (landing + app)
+
+- **Date:** 2026-10-21
+- **Status:** draft for review
+- **Builds on:** `docs/superpowers/specs/2026-10-20-lukas-design.md` (overall design) and the Stage 1 API.
+- **Visual references:** `docs/design/stage-2-mockups/` (chosen mockups) and `docs/brand/lukas-mascot-concept.webp` (mascot concept).
+
+## 1. Goal
+
+Ship the first product people can use: a public landing page and a web app that works great on a phone, so the author can stop using Budge before the Android app exists.
+
+**Message:** the questions "¿En qué se me va la plata?" and "¿Cuánto me cuesta vivir?" stop being unanswered. Lukas makes budgeting easy and fun.
+
+### Success criteria
+
+1. The author signs up, imports the Budge history and uses the web app on the phone daily instead of Budge.
+2. Logging an expense takes under 5 seconds from the home screen and ends in a celebration.
+3. The landing page is indexable in Spanish and English and its text is visible before any animated or JavaScript-heavy content loads.
+4. Everything works in Spanish (default) and English, in night and day themes, on phone and desktop widths.
+
+### Out of scope (this stage)
+
+- PWA (installable app, service worker, offline writes).
+- Connecting AI assistants (MCP) — shown as "soon" on the landing page.
+- Android app — shown as "soon".
+- AI-generated insights (rule-based messages only; AI comes later as an opt-in).
+- Streaks, levels and achievements (Stage 5).
+- More mascot artwork (further moods and poses beyond the founder's three sprite sheets; see §5.3).
+
+## 2. Product
+
+### 2.1 Languages and URLs
+
+- All routes are English. The UI ships in **Spanish (default)** and **English**.
+- Landing: `/` (Spanish) and `/en` (English), both prerendered, each with its own `<title>`, meta description, Open Graph tags and `hreflang` alternates.
+- App: language comes from the user's profile `locale` (Stage 1 `PATCH /v1/me`). At sign-up it is taken from the landing page the user came from, else from `navigator.language` (`es*` → `es`, otherwise `en`). Changing it in settings re-renders the UI immediately.
+- Money and dates are formatted with `Intl` for the active locale (`562,92 €` / `€562.92`).
+
+### 2.2 Routes
+
+| Route | Screen | Access |
+|---|---|---|
+| `/`, `/en` | Landing page | Public, prerendered |
+| `/roadmap`, `/en/roadmap` | Public roadmap (§2.8) | Public, prerendered |
+| `/sign-in` | Email → code or magic link; "Sign in with fingerprint" when a passkey exists | Public |
+| `/auth/verify` | Magic-link target: submits `email` + `code` from the query and signs in | Public |
+| `/welcome/*` | Onboarding: offer passkey → pick categories → set budgets → import Budge (optional) → done | Signed in, until onboarding is completed |
+| `/app` | Home | Signed in |
+| `/app/categories/:id` | Category detail: that month's transactions and its budget | Signed in |
+| `/app/insights` | Donut by category, month-over-month trend, "How much does living cost me?" | Signed in |
+| `/app/recurring` | Recurring transactions | Signed in (avatar menu) |
+| `/app/categories` | Create, edit, archive categories | Signed in (avatar menu) |
+| `/app/settings` | Time zone, language, theme (auto/night/day), sound, passkeys, import, export, delete account | Signed in (avatar menu) |
+
+A signed-out visit to `/app/*` goes to `/sign-in` and returns to the original route after signing in. A signed-in user without `onboardingCompletedAt` is sent to `/welcome`.
+
+### 2.3 Landing page
+
+Reference: `docs/design/stage-2-mockups/landing.html`.
+
+- **Hero** (revised 2026-10-21 by the founder): a tilted handwritten annotation **"¡Gratis, y siempre lo será!"**, the headline **"Tus lukas, por fin claras."** with "lukas" on a gold marker highlight (English: "Your money, finally clear."), the lead **"Lukas es tu presupuesto, y te va a dar gusto cuidarlo."** plus a short description, and one primary action: **Empieza ahora / Get started** → `/sign-in`. Under it: "Gratis para siempre · Código abierto · Sin contraseñas" (open source links to the GitHub repo). Lukas is never described as a game, the app is free forever and open source, the mobile app is Android and iOS, and imports come from other apps (Budge today, Buddy and others soon). Privacy copy only claims what is true today.
+- **Lukas in 2.5D** (§5.3, revised 2026-10-21: the founder found the 3D model not tender enough) beside or above the hero: drawn from the founder's hand-made sprite sheets with CSS depth on top (a ground shadow, an idle bob, a tilt of up to ±12° toward the pointer on desktop). Once per session he rolls in from the side away from the text, settles, unfolds and waves. He stands on one spot per section in that spot's mood (happy in the hero, "use it your way" and the FAQ; worried in "how it works", reacting to the budget; celebrating next to the final call to action) and moves between spots by turning edge-on like a coin and fading, so he never passes over text; hovering or tapping makes him hop.
+- **"Úsalo como prefieras / Use it your way":** three cards — Web (active, "Start"), Android app ("soon"), With your AI — Claude / ChatGPT ("soon").
+- Sections explaining the product (what you spend on, budgets that warn you, import from Budge), an FAQ, and a footer with language switch and the privacy policy.
+
+### 2.4 Sign-in and onboarding
+
+- `/sign-in`: email field → "send code". The page shows a 6-digit code input; the same email carries a magic link to `/auth/verify`. If the browser offers a passkey for this site, a "Sign in with fingerprint" button is shown first.
+- After the first sign-in, `/welcome` runs once. It was **revised 2026-10-21 after founder feedback**: onboarding is optional, short and skippable.
+  1. **Welcome:** two buttons, **CONFIGURAR EN 1 MINUTO** and **ENTRAR DIRECTO**.
+     - *Entrar directo* skips everything and still leaves a usable account: the currency is preselected from region and language, the suggested categories are created, there are no budgets, and onboarding is marked complete.
+     - Home then shows gentle nudges: "Ponle presupuesto a tus categorías" and "Trae tu historial".
+  2. **Currency:** **COP, USD, EUR** only at launch, preselected. An imported file's currency wins (the import switches the account currency before confirming, while the account is still empty).
+  3. **Categories:**
+     - The suggested categories (Supermercado, Restaurante, Casa, Transporte, Ocio, Suscripciones, Vida, Salario…) come **pre-selected**, so SIGUIENTE works with no input. Tapping one deselects it.
+     - **＋ Agregar categoría** creates your own: name, emoji glyph, tint, and expense or income.
+  4. **¿Traes tu historial?** A list of sources:
+     - **Budge:** a short how-to-export tutorial (the founder confirms the exact steps), then upload, preview and confirm.
+     - **Buddy** and **otras apps:** marked "pronto".
+     - **Excel / Google Sheets / CSV:** upload `.xlsx` or `.csv`. Columns (date, description, amount, category) are auto-detected and the user can fix the mapping. Category names in the file are created as is. Rows without one get a suggestion from the name → category rules. Then the same preview and confirm.
+     - A later, opt-in "Sugerir categorías con IA" for messy sheets.
+  5. **Budgets (last):** an amount per selected expense category, with the running total.
+     - After an import they are prefilled from the **last 3 complete months**, with the line "Basado en lo que gastaste en tus últimos 3 meses".
+     - Without an import they start empty.
+     - For COP, the lukas hint (§2.6c) shows.
+- **Every step has SIGUIENTE and SALTAR.** No step forces input. Finishing or skipping lands on `/app` with the celebration and sets `onboardingCompletedAt`.
+- **Passkey offer, after the first sign-in** (founder decision 2026-10-21): right after the first email sign-in, Lukitas offers "¿Entrar con tu huella la próxima vez?". The offer explains in plain words:
+  - a passkey is a key saved on this phone, in Google, Samsung Pass, iCloud or Proton Pass;
+  - the fingerprint or face only unlocks that key;
+  - it syncs to your other devices that use the same account;
+  - email still works as a backup.
+
+  The offer can be skipped. Settings also offers it.
+- **Sign-in screen clarity:**
+  - The fingerprint button only shows when this browser has signed in with a passkey before.
+  - Existing passkeys appear in the email field's autofill (WebAuthn conditional mediation).
+  - A short line reads "¿Primera vez? Entra con tu correo; después podrás usar tu huella."
+
+### 2.5 Home (`/app`)
+
+Reference: `docs/design/stage-2-mockups/home.html` (options 1 and 2).
+
+- Header: logo, month selector (current month by default; previous months browsable), avatar menu.
+- **Lukas** with a message bubble (rule-based message, §4.4) and a mood derived from the month: `happy` (all categories ok), `worried` (any category near or over), `celebrating` (right after a save, or month closed within budget).
+- **Hero card:** "Te quedan este mes" + `remaining` (big, animated count), a bar filled with what was spent, "Gastado X de Y".
+- **Segmented control: Movimientos ⇄ Presupuestos** (tap or swipe). Movimientos comes first and is the default (founder decision 2026-10-22); a choice the person makes is remembered per device.
+  - **Budgets:** one row per expense category: icon, name, budget, a bar that fills with spending and changes color by state (`ok` green, `near` amber, `over` red), and the remaining amount in words ("Quedan 46,33 €" / "Te pasaste 14,12 €"). Tapping a row opens the category detail.
+  - **Transactions:** grouped by day, newest first, today on top; upcoming pending transactions shown with a **PENDIENTE** badge. Tapping the badge marks the transaction as paid (with a small celebration). Tapping a row opens the edit sheet.
+- **Bottom bar:** Home · **＋** (raised center button) · Insights. On desktop widths it becomes a left sidebar (Home, Insights, Recurring, Categories, Settings) and the home screen shows budgets and recent transactions side by side.
+
+### 2.6 Add / edit transaction
+
+Reference: `docs/design/stage-2-mockups/add-transaction.html`.
+
+- Opens as a bottom sheet from ＋ (or from a transaction row, for editing).
+- Expense / income toggle; **amount first** with a large numeric keypad.
+- **Name field always visible**, optional: its placeholder shows the name that will be used (the category's name). Under it, **recent name shortcuts**; tapping one fills the name **and** selects its usual category. Typing filters the shortcuts, each labelled with its category.
+- Category chips (most used first, "more" for the rest); date defaults to today in the user's time zone; optional note; paid/pending.
+- **Save** → sheet closes → celebration (Lukas, confetti, sound, vibration) → toast with the rule-based message, **Undo** and **Name it** (when saved without a name).
+- Edit mode adds delete (soft, with undo).
+- The sheet closes when you drag it down from anywhere on it, not only its top edge; taps on keys and chips stay taps, and an inner area that is scrolled scrolls first (founder request 2026-10-22).
+- **Row swipes** (founder request 2026-10-22): swipe left on a movement to delete (undo for 8 s), swipe right to edit, or on a pending row to mark it paid. They are shortcuts; every action is also reachable by tapping. The Movimientos ⇄ Presupuestos pager follows the finger with a spring and a light vibration on change.
+
+### 2.6c Lukas hint for COP amounts (added 2026-10-21, revised the same day)
+
+Colombians count money in *lukas* (1 luka = $1.000 COP) and *palos* (1 palo = $1.000.000). The tone appeals to young people, but a whole interface built on those words is hard to get right up front. So v1 keeps **full numbers everywhere** (hero, rows, budgets, insights, charts) and adds only a **small, muted hint** next to amounts the user enters or confirms. It applies to COP only; other currencies get no hint.
+
+- **Where the hint shows:**
+  - the add/edit sheet, under the amount while typing;
+  - the confirmation toast after saving;
+  - the quick-capture preview cards, when they exist.
+
+  For example "Gasto en Comida: $50.000 (50 lukas)" or "Ingreso de Salario: $4.300.000 (4,3 palos)".
+- **Hint text (es):**
+
+  | Amount (COP) | Hint |
+  |---|---|
+  | under 1.000 | none |
+  | 1.000 | "1 luka" |
+  | 50.000 | "50 lukas" |
+  | 15.500 | "15,5 lukas" (at most one decimal, rounded; ",0" dropped) |
+  | 1.000.000 or more | in palos, with up to two decimals: 1.000.000 → "1 palo", 4.300.000 → "4,3 palos", 1.250.000 → "1,25 palos" |
+
+  The palos threshold applies after rounding, so 999.990 → "1 palo". In English the hint is "50k" or "4.3M".
+- **Style:** smaller and in `ink-muted`, in parentheses after the full amount. Screen readers read it as part of the amount.
+- **Later, depending on user feedback:** a full lukas mode with a profile preference, everything shown in lukas or palos, and a keypad that takes lukas. It is not part of v1.
+
+### 2.6b Try-before-signup demo (added 2026-10-21)
+
+To lower the barrier of creating an account, `/demo` lets anyone use the full app with an invented user, "Valentina (demo)": 3 months of transactions, budgets (one category over, one near), recurring rent/Spotify/salary. Everything works — add/edit/delete transactions, create categories and budgets, mark pending as paid, insights — against an in-memory backend in the browser that applies the same `@lukas/core` rules and answers the same API shapes. Nothing is saved anywhere; reloading the page resets the demo. A sticky banner says it's a demo with invented data and offers "Crear mi cuenta". The landing hero adds a secondary call to action, "Pruébalo sin cuenta". Settings that don't apply (export, delete account, passkeys, import) are disabled with a note.
+
+### 2.7 Other screens
+
+- **Category detail:** the month's transactions in that category, its budget with an edit action (`PUT /v1/categories/:id/budget` from the selected month), rename / icon / color, archive.
+- **Insights:** donut by category (expenses or income; paid/pending filter) for the selected month or range; month-over-month trend (income, expenses, budget) over the same span as the donut (founder, 2026-10-22); **"¿Cuánto me cuesta vivir?"**: average monthly spending over the last 6 complete months, per category, split into fixed (categories with active recurrences) and variable.
+- **Recurring:** list with next date; create / edit / delete.
+- **Categories:** list (with archived toggle), create, edit, archive.
+- **Settings:** profile time zone and language, theme (auto / night / day), sound on/off, passkeys (add / remove), import from Budge, export (JSON / CSV), delete account (typed confirmation).
+
+### 2.8 Public roadmap (v1, added 2026-10-21)
+
+Visitors can see what is planned. It is a public, prerendered page plus a short section on the landing.
+
+- **Routes:** `/roadmap` (Spanish) and `/en/roadmap` (English), prerendered in the default build and in the landing-only build, listed in `sitemap.xml` with `hreflang` alternates, each with its own `<title>`, meta description, canonical and Open Graph tags. Same header, footer, theme switch and look as the landing.
+- **Single source:** `apps/web/app/features/roadmap/roadmap.ts` lists the items. Each has an `id`, a `status` (`done`, `building`, `next` or `later`), an emoji glyph and catalog keys for its title and one-line description (`roadmap.items.<id>.*` in both message catalogs). The page and the landing section both read it, so there is one place to edit.
+- **Page:** a title, a short intro saying the plans can change, and a column per status that has items (a single column on a phone, side by side from 900px). Labels: Ya está / En construcción / Próximo / Más adelante (Live / Being built / Next / Later). `done` is empty for now, so its column does not render. No dates anywhere, and Lukitas is never called a game.
+- **Landing:** a "Lo que viene" / "What's next" section between "Código abierto" and the FAQ, in the same cards as "Úsalo como prefieras": the widget microphone, several expenses in one sentence, and connect your AI, with a button "Ver el roadmap". It has no Lukitas spot: he travels from "how it works" to the FAQ past it.
+- **Navigation:** a "Lo que viene" link in the footer, and in the desktop header between "Cómo funciona" and "Preguntas" (the phone header stays as it is).
+- **Not in v1:** no link to GitHub Discussions and no "propose or vote" call to action.
+- **Later, inside the app (once accounts exist):** idea proposals and voting, with one vote per account per idea and statuses moderated by the founder. It gets its own spec then; nothing of it is built or promised on the public page.
+
+## 3. Design system
+
+Reference: `docs/design/stage-2-mockups/theme-arcade-day-night.html`.
+
+### 3.1 Tokens
+
+CSS variables, two themes (`night`, `day`) plus `auto` (follows `prefers-color-scheme`), persisted per device. **`night` (purple) is the default for everyone** regardless of the OS setting (founder decision, 2026-10-21); a visible ☾/☀ toggle sits in the landing header and in the app, and settings offer auto/night/day:
+
+| Token | Night | Day | Use |
+|---|---|---|---|
+| `--brand` | `#8b5cff` | `#7b3df0` | Primary actions |
+| `--brand-edge` | `#3f22a3` | `#4a2bbf` | Pressable bottom edge |
+| `--good` | `#7cffb2` | `#16c172` | Remaining, `ok` |
+| `--near` | `#ffb547` | `#ff9f1c` | `near` |
+| `--over` | `#ff5c7a` | `#f0386b` | `over` |
+| `--gold` | `#ffe66d` | `#ffd23f` | Lukas, highlights |
+| `--bg` | radial `#3a1f6e` → `#15122b` | radial `#e9ddff` → `#f7f4ff` | Page background |
+| `--surface` / `--surface-edge` | `#241f48` / `#0f0c22` | `#ffffff` / `#d6ccf5` | Cards and their solid shadow |
+
+- Type: **Fredoka** (figures, headings), **Nunito** (text), self-hosted.
+- Radii 14–24 px; every pressable element has a solid bottom edge that collapses on press.
+- All text/background pairs meet WCAG AA in both themes.
+
+### 3.2 Components (`apps/web/src/ui`)
+
+`PressButton` (primary / secondary / ghost), `PressCard`, `BudgetBar` (`ok` / `near` / `over`), `Money` (locale formatting, animated count-up for hero figures), `Sheet` (bottom sheet with drag-to-close), `Toast` (with actions), `SegmentedControl`, `PendingBadge`, `MonthPicker`, `Keypad`, `CategoryChip`, `Lukas` and `Lukas3D` (§5.3).
+
+### 3.3 Feedback
+
+One `feedback` module maps semantic events to animation, sound and vibration:
+
+| Event | When |
+|---|---|
+| `tap` | Any pressable |
+| `expenseSaved` / `incomeSaved` | Transaction created |
+| `paid` | Pending marked as paid |
+| `nearLimit` / `overBudget` | Save pushed a category to `near` / `over` |
+| `undo` | Undo |
+
+- Animation via Motion; short sounds (mutable in settings); vibration via the Vibration API where available (Android browsers; not available in iOS Safari).
+- `prefers-reduced-motion`: animations are reduced to fades, and the landing's traveling Lukas is replaced by the static, prerendered sprites.
+
+## 4. Data and API
+
+### 4.1 Talking to the API
+
+- Same site: in development Vite proxies `/api/*` to the API; in production `/api/*` on the web origin is routed to the API. The web sets `API_URL` accordingly so Better Auth issues cookies for the web's site.
+- Auth: Better Auth React client with the email-OTP and passkey plugins; session cookie (`httpOnly`).
+- Typed client generated from `/openapi.json` (`openapi-typescript` + `openapi-fetch`) with a script; CI fails if the generated types are stale.
+- Server state with TanStack Query. Creating, editing, deleting, restoring and marking paid are **optimistic**: the summary, bars and lists update immediately and roll back with an error toast if the request fails. `POST /v1/transactions` sends an `Idempotency-Key`.
+
+### 4.2 Backend additions
+
+1. **`GET /v1/transactions/suggestions?q=&limit=`** — recent distinct transaction names (case-insensitive, most recent first, default limit 8), each with the category it was most often used with. With `q`, names that start with or contain `q`. Excludes soft-deleted rows and archived categories.
+2. **`GET /v1/reports/cost-of-living?months=6`** — for the last `months` complete months (1–24, default 6) in the user's time zone: per expense category, the average monthly spending and whether it is `fixed` (has an active recurrence) or `variable`; plus `total`, `fixed` and `variable` averages. The web asks for `months=n`, where n is the number of complete months the person has (at most 6), so a new user's total isn't divided by months they weren't using Lukitas; the copy states the window ("el promedio de tus últimos N meses completos"). (Ruling 2026-10-22.)
+3. **Onboarding flag** — `user.onboarding_completed_at` (nullable timestamp); `GET /v1/me` returns `onboardingCompletedAt`; `PATCH /v1/me` accepts `{ onboardingCompleted: true }`.
+4. **Rule-based messages** — a pure function in `packages/core`:
+   `lukasMessage(input: { summary: MonthSummary; today: IsoDate; event?: { kind: "saved" | "paid"; categoryId: string; amount: number } }): { key: LukasMessageKey; params: Record<string, string | number> }`.
+   Keys for v1: `first_of_day`, `on_track`, `near_limit`, `over_budget`, `income_received`, `pending_paid`, `month_last_day`, `month_closed_green`. The web owns the copy: several variants per key per language, chosen at random. The same function serves Android and MCP later.
+5. **Currency choice** (added 2026-10-21). Today every account is created in EUR. This addition replaces that:
+   - `PATCH /v1/me` accepts `{ currency }`, an ISO 4217 code from a supported list, and sets the default account's currency.
+   - The change is allowed only while the account has no transactions; otherwise it returns 409 `currency_locked`.
+   - `GET /v1/me` returns `currency`.
+6. ~~Money style~~ — deferred: v1 shows only the lukas hint (§2.6c), and no preference is stored.
+
+### 4.3 Errors
+
+- Every API `code` maps to a friendly message in both languages; unknown codes fall back to a generic message.
+- 401 → `/sign-in?next=<current route>`.
+- Network failure → toast "No hay conexión, inténtalo de nuevo" and the optimistic change is rolled back.
+
+## 5. Architecture
+
+### 5.1 Stack
+
+- `apps/web`: React 19, **React Router 7** in framework mode with `ssr: false` and `prerender: ["/", "/en"]` — the landing pages are static HTML at build time; the app is a client-rendered SPA. Deployed as static files.
+- TypeScript, Vite, Tailwind CSS (tokens from §3.1 as CSS variables), Motion, TanStack Query, Recharts, i18n with ICU messages (`es` default, `en`), React Three Fiber + drei for the experimental `Lukas3D` (not used by the landing).
+
+### 5.2 Layout
+
+```
+apps/web/
+├── app/
+│   ├── routes/          # landing (/ and /en), sign-in, auth/verify, welcome/*, app/*
+│   ├── ui/              # design-system components (§3.2)
+│   ├── features/        # home, add-transaction, insights, onboarding, settings…
+│   ├── lukas/           # Lukas (2D sprites), the landing's TravelingLukas, experimental/ (3D)
+│   ├── feedback/        # semantic feedback events (§3.3)
+│   ├── i18n/            # es.json, en.json, formatting helpers
+│   └── api/             # generated types, client, query hooks
+├── .storybook/
+└── e2e/                 # Playwright
+```
+
+### 5.3 Lukas (mascot)
+
+- Concept: `docs/brand/lukas-mascot-concept.webp` — a chubby 3D gold coin with a thick ridged edge, big eyes, rosy cheeks, dark purple arms and legs, pink sneakers.
+- **`TravelingLukas` (landing, 2.5D; revised 2026-10-21):** the founder rejected the 3D model ("doesn't feel tender"), so the landing draws Lukas from the founder's sprite sheets (`public/lukas/wave.webp`, `worried.webp`, `celebrate.webp`: 4×2 frames each) with CSS depth on top: a soft ground shadow that shrinks as he rises, an idle bob, a `perspective` tilt of up to ±12° toward the pointer (fine pointers only), and a hop with squash and stretch on hover or tap. One sprite in an `aria-hidden` overlay (no layout shift; only his body takes the pointer) stands on the page's Lukas spots (`data-lukas-spot`), each with a pose and a mood (`data-lukas-mood`): hero → happy (waving), ways → happy, how it works → **worried** (he reacts to the budget), FAQ → happy, closing → **celebrating**; moods cross-fade. Between spots he turns edge-on like a coin and fades out, then turns back in on the next spot, so he never passes over text. Once per session (with the hero in view) he rolls in from the side away from the text, tucked into his coin, settles with a bounce, unfolds and waves. Mounted after the page has loaded and is idle, with no WebGL and no extra chunk; under `prefers-reduced-motion` and without JavaScript the prerendered sprites stay.
+- **3D Lukas (experiment):** the procedural three.js coin (and GLB loader) from the first iteration is kept in `app/lukas/experimental/` with its Storybook story ("Experimental/Lukas 3D"). Nothing in the app's features or routes imports it (a unit test checks), so three.js never reaches the landing build.
+- **`Lukas` (app):** a lightweight 2D rendering of the same character with `mood` = `happy` | `worried` | `celebrating`, each mood playing its own sprite sheet (a still frame under reduced motion).
+- Art is replaceable: a mood's sheet is data (`LUKAS_ART`), and a future mood without a sheet can reuse a frame with a CSS treatment (`shiver`, `hop`), so new artwork drops in without code changes elsewhere.
+
+## 6. Testing and quality
+
+- **Vitest:** `lukasMessage` rules, formatting helpers, query-hook logic.
+- **Storybook (with the Vitest addon):** a story per component in every state, in night and day themes and both languages; stories run as browser tests, including interactions (add-transaction sheet: type amount, pick a shortcut that fills name and category, save, undo; marking a pending transaction paid). Accessibility checked with the a11y addon.
+- **Playwright (against the real API via Docker Compose):** sign-up with the code read from Mailpit → onboarding with the sample Budge CSV → add an expense and see "remaining" drop → switch month → switch language and theme. Each flow runs at phone and desktop viewports; axe checks on every page.
+- **API:** integration and cross-user isolation tests for the suggestions and cost-of-living endpoints, and for the onboarding flag.
+- **Performance:** landing text visible without JavaScript; initial JavaScript under 300 KB gzipped; the landing ships no three.js (the 3D Lukas is an experiment, never built into the site).
+- **CI:** web lint, typecheck, Vitest, Storybook tests and Playwright (Docker on the runner) are added to the existing workflow.

@@ -1,0 +1,183 @@
+/*
+ * The landing's traveling Lukas (TravelingLukas.tsx): an overlay positioned by script in the
+ * coordinates of its offset parent (the landing), so it scrolls with the page and never takes
+ * part in the layout. It never takes clicks; only his body (`.lk-traveler-hit`) does, for the hop,
+ * and only while he stands on a spot. Every color and duration is a token.
+ *
+ *   .lk-traveler          where he stands: translate + scale to the spot (script)
+ *     .lk-traveler-turn   the coin-like turn and fade between spots (script)
+ *       .lk-traveler-roller   the entrance's roll in from the side (script)
+ *         .lk-traveler-shadow   the ground shadow: bobs and hops with him
+ *         .lk-traveler-tilt     the turn toward the pointer, in perspective (script)
+ *           .lk-traveler-bob    idle bob
+ *             .lk-traveler-hop  hover/tap hop, squash and stretch
+ *               .lk-traveler-body   the entrance's spin, drop and tuck (script), the mood layers
+ */
+@layer components {
+  .lk-traveler {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    width: 0;
+    height: 0;
+    transform-origin: 50% 50%;
+    pointer-events: none;
+    will-change: transform;
+    perspective: 900px;
+  }
+  .lk-traveler-turn,
+  .lk-traveler-roller,
+  .lk-traveler-tilt,
+  .lk-traveler-bob,
+  .lk-traveler-hop,
+  .lk-traveler-body,
+  .lk-traveler-mood {
+    position: absolute;
+    inset: 0;
+  }
+  .lk-traveler-roller {
+    perspective: 700px;
+  }
+  /* Eases toward the pointer instead of snapping to every move. */
+  .lk-traveler-tilt {
+    transition: transform var(--sheet) ease-out;
+    /* The pivot near his middle: he leans, his feet stay on the ground. */
+    transform-origin: 50% 60%;
+  }
+  .lk-traveler-bob {
+    animation: lk-traveler-bob var(--bob) ease-in-out infinite;
+  }
+  /* Soles at about 94% of the frame: squash and stretch pivot there. */
+  .lk-traveler-hop {
+    transform-origin: 50% 94%;
+  }
+  .lk-traveler-hop.is-hopping {
+    animation: lk-traveler-hop var(--hop) ease-out;
+  }
+  /* The coin's center in the sheets (`COIN` in traveling.ts): the entrance spins around it. */
+  .lk-traveler-body {
+    transform-origin: 52% 42%;
+  }
+  .lk-traveler-mood {
+    opacity: 0;
+    transition: opacity var(--sheet) ease;
+  }
+  .lk-traveler-mood.is-active {
+    opacity: 1;
+  }
+  /* Sheets that aren't showing hold still. */
+  .lk-traveler-mood:not(.is-active) .lk-lukas-sprite {
+    animation-play-state: paused;
+  }
+
+  /* A soft ellipse under his soles; it shrinks and fades as he rises. */
+  .lk-traveler-shadow {
+    position: absolute;
+    left: 22%;
+    top: 88.5%;
+    width: 56%;
+    height: 10%;
+    border-radius: 50%;
+    background: radial-gradient(closest-side, var(--lukas-shadow), transparent);
+    animation: lk-traveler-shadow-bob var(--bob) ease-in-out infinite;
+  }
+  .lk-traveler-shadow.is-hopping {
+    animation:
+      lk-traveler-shadow-bob var(--bob) ease-in-out infinite,
+      lk-traveler-shadow-hop var(--hop) ease-out;
+  }
+
+  .lk-traveler-hit {
+    position: absolute;
+    left: 22%;
+    top: 12%;
+    width: 56%;
+    height: 80%;
+    border-radius: 45%;
+    pointer-events: auto;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Between spots and while he rolls in: no hops, and the page under him takes the pointer. */
+  .lk-traveler[data-moving] .lk-traveler-hit,
+  .lk-traveler[data-entrance="playing"] .lk-traveler-hit {
+    pointer-events: none;
+  }
+  /* No bob while he rolls in: the entrance moves him. */
+  .lk-traveler[data-entrance="playing"] .lk-traveler-bob,
+  .lk-traveler[data-entrance="playing"] .lk-traveler-shadow {
+    animation: none;
+  }
+}
+
+/* Up a little and back. `translate`, so it adds to the hop's `transform`. */
+@keyframes lk-traveler-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -3%;
+  }
+}
+
+@keyframes lk-traveler-shadow-bob {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 0.9;
+  }
+}
+
+/* Crouch (squash), spring up (stretch), land (squash), settle. */
+@keyframes lk-traveler-hop {
+  0%,
+  100% {
+    transform: none;
+  }
+  18% {
+    transform: translateY(0) scale(1.1, 0.88);
+  }
+  45% {
+    transform: translateY(-14%) scale(0.93, 1.08);
+  }
+  72% {
+    transform: translateY(0) scale(1.08, 0.92);
+  }
+  86% {
+    transform: translateY(0) scale(0.98, 1.02);
+  }
+}
+
+@keyframes lk-traveler-shadow-hop {
+  0%,
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+  18% {
+    transform: scale(1.08, 1);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(0.62);
+    opacity: 0.55;
+  }
+  72% {
+    transform: scale(1.06, 1);
+    opacity: 1;
+  }
+}
+
+/* The traveler is never mounted under reduced motion; this covers a late switch. */
+@media (prefers-reduced-motion: reduce) {
+  .lk-traveler,
+  .lk-traveler * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

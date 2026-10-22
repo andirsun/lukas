@@ -1,3 +1,5 @@
+> Brand renamed to **Lukitas** on 2026-10-21 (an unrelated app already uses "Lukas"); code identifiers keep `lukas`.
+
 # Lukas — Overall Design and Stage 1 (Core & Accounts)
 
 - **Date:** 2026-10-20
@@ -124,9 +126,108 @@ Each stage gets its own spec → plan → implementation.
 
 1. **Core & accounts** (detailed in this document, §4–§10).
 2. **Web v1:** onboarding, home, transactions, budget, analysis, import, "Connect your assistant".
-3. **Mobile + widget:** onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget.
+3. **Mobile + widget:** guest mode first (see Guest mode below), onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget **with a microphone button** that opens voice quick capture (founder decision, 2026-10-21; see Quick capture below).
 4. **MCP:** remote server with OAuth; tools to read, create and edit transactions, generate reports and adjust budgets.
 5. **Advanced gamification:** streaks, achievements, rewards.
+6. **Automatic capture:** bank alerts and wallet payments become transactions without typing. It comes after Stage 4; its order relative to Stage 5 will be decided later. See Automatic capture below.
+
+The public roadmap page (`/roadmap`) and the landing's "Lo que viene" section show these stages to visitors, with statuses and no dates (Stage 2 web spec §2.8).
+
+#### Quick capture (founder request, 2026-10-21)
+
+Log several transactions from one sentence, such as "gasté 15.000 en el almuerzo y 3.000 en Uber". The flow:
+
+1. The sentence is parsed into an **editable preview**: one card per transaction with amount, category, name and date. Each card can be fixed or removed.
+2. One **SAVE N** button stores the whole batch.
+3. A single celebration and rule-based message follows, with the total. Undo reverts the whole batch.
+
+It is inspired by the "smart assistant" of an unrelated app. Capture design is not covered by a separate spec yet; each phase gets its own spec → plan.
+
+- **Phase 1, text and voice, no AI (with Stage 3; web too):** a deterministic parser that runs on the device.
+  - Amounts: "15.000", "15 mil", "15k", "15 lukas", "4,3 palos" (millions).
+  - Separators: "y" and commas.
+  - Relative dates: "hoy", "ayer".
+  - Categories come from the user's own history through the name → category suggestions that already exist in the API (`GET /v1/transactions/suggestions`).
+  - Free, private (the text never leaves the device) and works offline.
+  - Needs a batch-create endpoint, or a client loop over `POST /v1/transactions` with one idempotency key per item, plus a batch undo.
+  - **Voice:** speech-to-text runs on the device, so it costs nothing. Android uses `SpeechRecognizer`, preferring the on-device recognizer (es-CO); the web uses the Web Speech API. The transcript goes through the same parser. Privacy copy names the platform's speech service when the device sends audio to it.
+  - **Widget microphone (Stage 3 v1):**
+    - The Android widget has a 🎤 button that opens the app already listening, with "¿En qué gastaste?". It shows the editable preview, and SAVE N stores the batch.
+    - Target: under 1 s from tap to listening, with no splash screen and no navigation.
+    - Also a Quick Settings tile with the same action.
+    - Expense or income comes from the sentence ("gasté…" or "me pagaron…"). If the sentence doesn't say, it defaults to expense.
+- **Phase 2, AI fallback (with Stage 4):**
+  - For messy sentences ("pagué el almuerzo con Juan, yo puse la mitad").
+  - **Requirements:**
+    - Opt-in.
+    - Honest privacy copy: the sentence is sent to an AI provider.
+    - A cheap model with a per-user monthly quota and a project-wide spend cap. Over the cap the app keeps working with the parser alone, so "free forever" holds.
+  - Users who connect their own assistant through MCP get the same capability at no cost to the project. The in-app version is for people who don't.
+
+#### Guest mode (founder decision, 2026-10-21)
+
+People can start without an email: no login wall after installing the app or on the web.
+
+- **Built on anonymous accounts:** Better Auth's anonymous plugin creates a real server-side user with no email, and the device keeps the session. The API stays the single source of truth, with no local-only data path and no merge step.
+- **Upgrading:** "Guarda tu progreso" links an email (code or magic link) or a passkey to the same user. Nothing is copied, and nothing is lost.
+- **Passkey-only start** (founder decision 2026-10-21): for new users, "Entrar con huella" creates the anonymous account and registers a passkey in one step, with no email and no code. The passkey syncs through the user's provider (Google, iCloud, Samsung Pass, Proton Pass).
+  - The screen explains honestly that without an email (or, later, a phone number via WhatsApp), losing the passkey means losing the account, and that sync, AI and MCP need an email.
+  - "Guarda tu progreso" then offers adding one.
+  - The email (or future phone) stays the recoverable identity.
+  - Installs with a sign-in allowlist (the founder's personal install) keep email-only sign-up.
+- **Works without an email:** categories, budgets, transactions, recurring payments, the widget and microphone quick capture (no AI), Budge import, and export.
+- **Requires an email:**
+  - **Sync to a second device:** web and phone, or a new phone. The other device needs a way to sign in.
+  - **AI features:** every call costs money, and per-user quotas and abuse control need an identity.
+  - **Connecting an assistant through MCP:** the OAuth flow needs a real, recoverable identity.
+- **Honest nudges, no nagging:**
+  - The nudge comes after about the 10th transaction or the 3rd day, and from settings any time.
+  - It says plainly that without an email, losing the phone or deleting the app loses the data.
+  - One dismissible reminder per week at most.
+- **Cleanup:**
+  - Anonymous users inactive for 60 days are deleted together with their data.
+  - Beforehand, the app shows an in-app warning on the next open after 45 days ("Tus datos se borrarán en 15 días si no agregas tu correo").
+  - Users with an email are never auto-deleted.
+- **Abuse limits:** a per-IP rate limit on anonymous sign-up, plus the existing per-user limits.
+- **The web demo stays separate:** `/demo` is invented data that resets on reload. Guest mode is your own data without an email.
+- **Schedule:**
+  - The backend (anonymous plugin, account linking, cleanup job, `isAnonymous` on `GET /v1/me`) can ship before Stage 3.
+  - The client flows (mobile first run, web "Empieza ahora" without email, upgrade sheet, gating of sync/AI/MCP) land at the start of Stage 3, for both mobile and web.
+
+#### WhatsApp (founder request, 2026-10-21; after the first working version)
+
+Both pieces use the **official WhatsApp Business Platform (Cloud API)**. Unofficial WhatsApp Web bridges, such as Evolution API with Baileys, break WhatsApp's terms and get the sending number banned. If that number is banned, nobody can sign in.
+
+- **Sign-in code by WhatsApp**, next to email.
+  - It uses Better Auth's phone-number plugin. The code goes out as an authentication template. It is also offered by guest mode's "Guarda tu progreso".
+  - Each message is billed per message by Meta. It needs a Meta Business account, a dedicated phone number and an approved template.
+  - Unverified accounts start capped at about 250 business-initiated conversations per 24 h. Business verification is free but needs legal-entity documents.
+  - Rate limits apply per number and per IP, plus a monthly spend cap, to stop OTP-pumping abuse.
+- **Chat with Lukitas on WhatsApp.** Log by message ("gasté 15 mil en almuerzo y 3 mil en uber" → the same quick-capture preview, confirmed with a reply) and ask about the budget ("¿cuánto me queda en mercado?").
+  - It reuses the quick-capture parser, the AI fallback under its quota, and the MCP tool layer, so it comes after Stage 4.
+  - It needs an account with a verified number.
+  - Voice notes need server-side transcription, which costs money, so they come later.
+  - The privacy copy says that messages pass through Meta.
+
+#### Automatic capture (founder request, 2026-10-21; Stage 6)
+
+Most people don't keep the habit of logging by hand, so the hard part is getting transactions in without typing. In Colombia, digital wallets are rarely used, while bank alerts from Bancolombia, Nequi, Davivienda and others are common.
+
+Every source produces text. That text goes through the same pipeline as quick capture: per-bank templates first, then the phrase parser, then the optional AI fallback.
+
+- **Review inbox.** Captured transactions are not saved blindly. They land as *to review*, with a nudge such as "Anoté −$370.000 en Transferencias, ¿bien?". One tap confirms it or changes the category. The merchant → category mapping is learned over time.
+- **De-duplication.** The same purchase can arrive from two sources, for example Apple Pay and the bank's SMS. Two captures are the same purchase when they have the same amount within a short time window.
+- **Open-source bank templates.** One parser per bank and message format, contributed by the community with invented fixtures. Real alerts are never committed. Bank formats change, so templates are versioned and tested.
+- **Android: notification listener.** A `NotificationListenerService` that the user enables in system settings reads bank-app and Google Wallet notifications and parses them on the device.
+  - Google Play treats notification access as sensitive: it must be core functionality, declared and disclosed. Verify against the current policy before release.
+  - Reading SMS is **not** allowed on Google Play for apps that aren't the default SMS handler, and expense tracking isn't an exception. Don't derive SMS content another way either.
+- **iPhone: Shortcuts.**
+  - Apple Pay payments come from the Wallet *Transaction* automation, which provides amount, merchant and card.
+  - Bank SMS and emails come from the Message and Email automations, filtered by sender.
+  - All of them call an "Add transaction" App Intent. One shareable shortcut per bank.
+  - iOS doesn't let apps read other apps' notifications.
+- **Email forwarding (any phone):** a per-user inbound address. The user forwards bank alert emails to it and the server parses them. The email passes through the server, which the privacy copy must say.
+- **Later, not free:** Colombia's open-finance regime and aggregators allow direct bank connections, but they charge per connection.
 
 ## 4. Data model (Stage 1)
 

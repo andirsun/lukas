@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SUPPORTED_CURRENCIES } from "./currencies.ts";
 import { isIsoDate, isMonth, isValidTimeZone } from "./dates.ts";
 
 export const monthSchema = z.string().refine(isMonth, "Expected a month as YYYY-MM");
@@ -57,8 +58,9 @@ export const createCategorySchema = z.object({
 });
 export type CreateCategory = z.infer<typeof createCategorySchema>;
 
+/** `kind` can change only while the category has no live transactions (the API checks). */
 export const updateCategorySchema = z
-  .object({ ...categoryFields, archived: z.boolean() })
+  .object({ ...categoryFields, kind: kindSchema, archived: z.boolean() })
   .partial()
   .refine(atLeastOne, AT_LEAST_ONE);
 export type UpdateCategory = z.infer<typeof updateCategorySchema>;
@@ -111,6 +113,8 @@ export const updateProfileSchema = z
   .object({
     timezone: z.string().refine(isValidTimeZone, "Unknown time zone"),
     locale: z.enum(["es", "en"]),
+    currency: z.enum(SUPPORTED_CURRENCIES),
+    onboardingCompleted: z.literal(true),
   })
   .partial()
   .refine(atLeastOne, AT_LEAST_ONE);

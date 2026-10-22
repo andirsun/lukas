@@ -1,8 +1,8 @@
 # Privacy policy (draft)
 
-> Draft for Stage 1. Review before Lukas opens to the public.
+> Draft for Stage 1. Review before Lukitas opens to the public.
 
-Lukas stores the data you give it so it can show you your budget: your email address, your
+Lukitas stores the data you give it so it can show you your budget: your email address, your
 categories, budgets, transactions and recurring transactions, and the files you import.
 
 - **What we collect:** your email (to sign you in), the financial data you enter or import, and
@@ -13,5 +13,6 @@ categories, budgets, transactions and recurring transactions, and the files you 
   user id and account balances are discarded.
 - **Assistants:** an AI assistant you connect through MCP can read and change your data only with
   the permissions you approve, and you can revoke it at any time.
-- **Your rights:** you can export all your data (JSON or CSV) and permanently delete your account
-  from the app at any time. Deletion removes all your data immediately.
+- **Your rights:** you can export all your data (JSON or CSV) and delete your account from the
+  app at any time. We delete your account and all your entries right away. Backups that include
+  them delete themselves within 14 days.

@@ -12,6 +12,7 @@ import type { AppDeps } from "../deps.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { dropPendingOccurrences } from "../services/recurrence-stop.ts";
 import { currentMonth } from "../services/time.ts";
 import { defaultAccount, requireActiveCategory } from "../services/transactions.ts";
 
@@ -65,7 +66,9 @@ export function recurrenceRoutes(deps: AppDeps) {
       const userId = c.get("userId");
       const row = await withUser(deps.db, userId, async (tx) => {
         await requireActiveCategory(tx, input.categoryId);
-        const account = await defaultAccount(tx);
+        // Locked like a new transaction: a currency switch in flight (PATCH /v1/me, an import that
+        // adopts the file's currency) finishes first, and one after this finds the account locked.
+        const account = await defaultAccount(tx, { lock: true });
         const [created] = await tx
           .insert(recurrences)
           .values({
@@ -93,6 +96,9 @@ export function recurrenceRoutes(deps: AppDeps) {
       const { id } = c.req.valid("param");
       const input = c.req.valid("json");
       const row = await withUser(deps.db, c.get("userId"), async (tx) => {
+        // Locked like any recurrence write: a read materializing this rule finishes first (and
+        // its pending rows are then dropped below), and one after this sees the new rule.
+        await defaultAccount(tx, { lock: true });
         const existing = await findRecurrence(tx, id);
         if (input.categoryId) await requireActiveCategory(tx, input.categoryId);
         const merged = { ...existing, ...input };
@@ -112,16 +118,7 @@ export function recurrenceRoutes(deps: AppDeps) {
           .returning();
         // Pending occurrences from this month on follow the new rule: drop them so the next read
         // regenerates them. Paid and soft-deleted (dismissed) occurrences are kept.
-        await tx
-          .delete(transactions)
-          .where(
-            and(
-              eq(transactions.recurrenceId, id),
-              eq(transactions.status, "pending"),
-              isNull(transactions.deletedAt),
-              gte(transactions.occurrenceMonth, firstDay(currentMonth(c.get("user")))),
-            ),
-          );
+        await dropPendingOccurrences(tx, [id], { fromMonth: currentMonth(deps, c.get("user")) });
         return updated as RecurrenceRow;
       });
       return c.json(toDto(row), 200);
@@ -134,15 +131,24 @@ export function recurrenceRoutes(deps: AppDeps) {
       path: "/v1/recurrences/{id}",
       request: { params: idParam },
       responses: {
-        204: { description: "Deleted; generated transactions are kept" },
+        204: {
+          description:
+            "Deleted; its unpaid pending transactions from this month on go, the rest are kept",
+        },
         ...problems(404),
       },
     }),
     async (c) => {
       const { id } = c.req.valid("param");
       await withUser(deps.db, c.get("userId"), async (tx) => {
+        // Locked like any recurrence write: a read materializing this rule finishes first (its
+        // pending rows are then dropped below), and one after this no longer sees the rule.
+        await defaultAccount(tx, { lock: true });
         await findRecurrence(tx, id);
-        // The FK is ON DELETE SET NULL, so generated transactions stay with recurrence_id = null.
+        // Like an edit: its unpaid pending rows from this month on go (they would look like bills
+        // still due). The FK is ON DELETE SET NULL, so paid, past and dismissed ones stay, with
+        // recurrence_id = null.
+        await dropPendingOccurrences(tx, [id], { fromMonth: currentMonth(deps, c.get("user")) });
         await tx.delete(recurrences).where(eq(recurrences.id, id));
       });
       return c.body(null, 204);

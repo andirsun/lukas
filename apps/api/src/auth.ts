@@ -6,6 +6,7 @@ import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createAuthMiddleware } from "better-auth/api";
 import { bearer, emailOTP, jwt } from "better-auth/plugins";
+import { apiPathPrefix, type Config } from "./config.ts";
 import type { AppDeps } from "./deps.ts";
 import { signInEmail } from "./emails/sign-in.ts";
 
@@ -13,6 +14,24 @@ export const OAUTH_SCOPES = ["finance:read", "finance:write", "offline_access"] 
 export const CODE_TTL_SECONDS = 600;
 const EMAIL_WINDOW_MS = 15 * 60 * 1000;
 const EMAILS_PER_WINDOW = 5;
+/** ES256 then RS256 (COSE ids), offered when a passkey is created. */
+const PASSKEY_ALGORITHMS = [
+  { alg: -7, type: "public-key" },
+  { alg: -257, type: "public-key" },
+] as const;
+
+/** Whether `email` may ask for a sign-in code: always, unless an allowlist is configured. */
+export function isSignInAllowed(config: Pick<Config, "SIGN_IN_ALLOWLIST">, email: string): boolean {
+  const list = config.SIGN_IN_ALLOWLIST;
+  return !list || list.includes(email.trim().toLowerCase());
+}
+
+/** The refusal: the web shows `errors.sign_in_not_allowed` for this code. */
+const signInNotAllowed = () =>
+  new APIError("FORBIDDEN", {
+    code: "sign_in_not_allowed",
+    message: "Sign-in is not open to this address",
+  });
 
 /** Counts sign-in emails per address in a 15-minute window; returns the count including this one. */
 export async function bumpEmailThrottle(deps: AppDeps, email: string): Promise<number> {
@@ -34,20 +53,65 @@ export async function bumpEmailThrottle(deps: AppDeps, email: string): Promise<n
   return row?.count ?? 1;
 }
 
-async function localeFor(deps: AppDeps, email: string): Promise<"es" | "en"> {
+type Locale = "es" | "en";
+
+/** Headers the web app sends with a code request: the page's language and where to go after. */
+export const LOCALE_HINT_HEADER = "x-lukas-locale";
+export const NEXT_HINT_HEADER = "x-lukas-next";
+
+const asLocale = (value: string | null | undefined): Locale | null =>
+  value === "es" || value === "en" ? value : null;
+
+/** The first of es/en in an Accept-Language header, by quality; null if it names neither. */
+export function localeFromAcceptLanguage(header: string | null | undefined): Locale | null {
+  const ranked = (header ?? "")
+    .split(",")
+    .map((part, index) => {
+      const [tag = "", ...params] = part.trim().toLowerCase().split(";");
+      const q = Number(params.find((p) => p.trim().startsWith("q="))?.split("=")[1] ?? 1);
+      return { primary: tag.split("-")[0], q: Number.isFinite(q) ? q : 0, index };
+    })
+    .filter((entry) => entry.primary && entry.q > 0)
+    .sort((a, b) => b.q - a.q || a.index - b.index);
+  return asLocale(ranked[0]?.primary);
+}
+
+/**
+ * The language of a sign-in email: the profile's for an existing user; for a new address, the
+ * page's (the web sends it in `x-lukas-locale`), else the browser's Accept-Language, else Spanish.
+ */
+async function localeFor(deps: AppDeps, email: string, headers: Headers | undefined) {
   const [row] = await deps.db
     .select({ locale: userTable.locale })
     .from(userTable)
     .where(eq(userTable.email, email));
-  return row?.locale === "en" ? "en" : "es";
+  if (row) return asLocale(row.locale) ?? "es";
+  return (
+    asLocale(headers?.get(LOCALE_HINT_HEADER)) ??
+    localeFromAcceptLanguage(headers?.get("accept-language")) ??
+    "es"
+  );
+}
+
+/**
+ * `next` for the magic link: a same-origin path only (one leading slash, no backslash, no
+ * whitespace, no encoded slash in the path). The web screens it again with `safeNext` on arrival.
+ */
+export function linkNext(value: string | null | undefined): string | null {
+  if (!value || value.length > 512) return null;
+  if (!/^\/(?![/\\])/.test(value) || /[\\\s]/.test(value)) return null;
+  if (/%(?:2f|5c)/i.test(value.split(/[?#]/, 1)[0] ?? "")) return null;
+  return value;
 }
 
 export function createAuth(deps: AppDeps) {
   const { config } = deps;
   return betterAuth({
-    appName: "Lukas",
-    basePath: "/auth",
-    baseURL: config.API_URL,
+    appName: "Lukitas",
+    // Better Auth ignores basePath when baseURL has a path, so it gets the origin and the full
+    // path separately; its endpoints then resolve to `${API_URL}/auth/...`.
+    basePath: `${apiPathPrefix(config)}/auth`,
+    baseURL: new URL(config.API_URL).origin,
     secret: config.BETTER_AUTH_SECRET,
     trustedOrigins: [config.WEB_URL],
     database: drizzleAdapter(deps.db, { provider: "pg", schema }),
@@ -56,6 +120,7 @@ export function createAuth(deps: AppDeps) {
       additionalFields: {
         timezone: { type: "string", required: false, defaultValue: "UTC", input: false },
         locale: { type: "string", required: false, defaultValue: "es", input: false },
+        onboardingCompletedAt: { type: "date", required: false, input: false },
       },
     },
     advanced: {
@@ -76,12 +141,25 @@ export function createAuth(deps: AppDeps) {
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
         if (ctx.path !== "/email-otp/send-verification-otp") return;
-        const email = String(ctx.body?.email ?? "").toLowerCase();
+        const email = String(ctx.body?.email ?? "")
+          .trim()
+          .toLowerCase();
+        // Before anything is stored or sent: a refused address leaves no trace.
+        if (!isSignInAllowed(config, email)) throw signInNotAllowed();
         if (email && (await bumpEmailThrottle(deps, email)) > EMAILS_PER_WINDOW) {
           throw new APIError("TOO_MANY_REQUESTS", {
             message: "Too many codes requested for this email",
           });
         }
+      }),
+      after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/passkey/generate-register-options") return;
+        const returned = ctx.context.returned;
+        if (!returned || typeof returned !== "object" || !("pubKeyCredParams" in returned)) return;
+        // The passkey plugin offers SimpleWebAuthn's default, Ed25519 first. Proton Pass then
+        // creates Ed25519 keys it cannot sign with (CTAP2_ERR_UNSUPPORTED_ALGORITHM), so only
+        // ES256 and RS256 are offered: every authenticator signs with one of those.
+        return ctx.json({ ...returned, pubKeyCredParams: PASSKEY_ALGORITHMS });
       }),
     },
     databaseHooks: {
@@ -107,16 +185,30 @@ export function createAuth(deps: AppDeps) {
         allowedAttempts: 3,
         storeOTP: "hashed",
         disableSignUp: false,
-        async sendVerificationOTP({ email, otp, type }) {
+        async sendVerificationOTP({ email, otp, type }, ctx) {
           if (type !== "sign-in") return;
-          const link = `${config.WEB_URL}/auth/verify?${new URLSearchParams({ email, code: otp })}`;
-          const locale = await localeFor(deps, email);
-          await deps.mailer.send({ to: email, ...signInEmail({ code: otp, link, locale }) });
+          // The hook above refuses first; this keeps the rule even if another route reaches here.
+          if (!isSignInAllowed(config, email)) throw signInNotAllowed();
+          const headers = ctx?.headers ?? ctx?.request?.headers;
+          const locale = await localeFor(deps, email, headers);
+          // The link opens the web in the email's language and goes on to `next` after sign-in.
+          const params = new URLSearchParams({ email, code: otp, lang: locale });
+          const next = linkNext(headers?.get(NEXT_HINT_HEADER));
+          if (next) params.set("next", next);
+          const link = `${config.WEB_URL}/auth/verify?${params}`;
+          const mail = signInEmail({
+            code: otp,
+            link,
+            locale,
+            webUrl: config.WEB_URL,
+            expiresInMinutes: Math.ceil(CODE_TTL_SECONDS / 60),
+          });
+          await deps.mailer.send({ to: email, ...mail });
         },
       }),
       passkey({
         rpID: new URL(config.WEB_URL).hostname,
-        rpName: "Lukas",
+        rpName: "Lukitas",
         origin: config.WEB_URL,
       }),
       bearer(),

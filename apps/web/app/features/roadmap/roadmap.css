@@ -1,0 +1,82 @@
+/*
+ * Roadmap page (/roadmap, /en/roadmap), on the landing's look (landing.css): a title and one line
+ * of intro, then a column per status that has items. One column on a phone, side by side from
+ * 900px (the number of columns is `--lk-columns`, set by the page).
+ */
+@layer components {
+  .lk-roadmap {
+    padding-bottom: var(--space-6);
+  }
+  .lk-roadmap-intro {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 40rem;
+    padding-block: var(--space-4) var(--space-5);
+  }
+  .lk-landing .lk-roadmap-intro h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 36px;
+    line-height: 1.05;
+    margin: 0;
+    color: var(--good);
+    text-shadow: 0 0 18px color-mix(in srgb, var(--good) 28%, transparent);
+  }
+  .lk-roadmap-board {
+    display: grid;
+    gap: var(--space-5);
+  }
+  .lk-roadmap-column {
+    display: grid;
+    align-content: start;
+    gap: var(--space-3);
+  }
+  /* The status: a dot in its color and the label in ink (the dot carries no meaning alone). */
+  .lk-landing .lk-roadmap-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: 22px;
+  }
+  .lk-roadmap-dot {
+    width: 14px;
+    height: 14px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--dot);
+  }
+  .lk-roadmap-column.is-done {
+    --dot: var(--good);
+  }
+  .lk-roadmap-column.is-building {
+    --dot: var(--gold);
+  }
+  .lk-roadmap-column.is-next {
+    --dot: var(--candy);
+  }
+  .lk-roadmap-column.is-later {
+    --dot: var(--ink-muted);
+  }
+  .lk-roadmap-list {
+    display: grid;
+    gap: var(--space-3);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (min-width: 900px) {
+    .lk-landing .lk-roadmap-intro h1 {
+      font-size: 56px;
+    }
+    .lk-roadmap-intro {
+      padding-block: var(--space-5) var(--space-6);
+    }
+    .lk-roadmap-board {
+      grid-template-columns: repeat(var(--lk-columns, 3), minmax(0, 1fr));
+      align-items: start;
+      gap: var(--space-5);
+    }
+  }
+}

@@ -153,3 +153,11 @@ vite.config.ts.timestamp-*
 .env
 coverage/
 .superpowers/
+
+# Web
+apps/web/build/
+apps/web/build-personal/
+apps/web/.react-router/
+apps/web/storybook-static/
+apps/web/test-results/
+apps/web/playwright-report/

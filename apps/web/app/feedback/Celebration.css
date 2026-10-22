@@ -1,0 +1,111 @@
+/*
+ * The celebration overlay: confetti bursting from where Lukitas pops up (his landing spot, free
+ * space such as the ＋; see Celebration.tsx). It covers the screen but never takes a tap (`pointer-events: none`), sits above the toast, and lasts one `--celebrate`.
+ * Colors are the brand tokens; each piece is placed by custom properties set in Celebration.tsx.
+ */
+.lk-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Placed (inline) at the landing spot's center and top: Lukitas stands there, the burst starts. */
+.lk-celebration-burst {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.lk-celebration-lukas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  animation: lk-celebration-pop var(--celebrate) ease-out both;
+}
+
+/* Reduced motion: the same stay, but Lukitas only fades (his sprite shows its still frame). */
+.lk-celebration.is-reduced .lk-celebration-lukas {
+  animation-name: lk-celebration-fade;
+}
+
+.lk-confetti {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation: lk-confetti-burst var(--celebrate) cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+.lk-confetti.is-round {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+}
+.lk-confetti.is-gold {
+  background: var(--gold);
+}
+.lk-confetti.is-candy {
+  background: var(--candy);
+}
+.lk-confetti.is-good {
+  background: var(--good);
+}
+
+/*
+ * Grows up from his feet, bounces once, and shrinks back down: scaled from the bottom, so he never
+ * reaches below his spot (the ＋ under him stays clear).
+ */
+@keyframes lk-celebration-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  35%,
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+/* Out and up fast, then gravity takes the piece down while it spins and fades. */
+@keyframes lk-confetti-burst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  45% {
+    opacity: 1;
+    transform: translate(calc(var(--lk-dx) * 0.8), var(--lk-rise))
+      rotate(calc(var(--lk-spin) * 0.5));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--lk-dx), var(--lk-fall)) rotate(var(--lk-spin));
+  }
+}
+
+@keyframes lk-celebration-fade {
+  0% {
+    opacity: 0;
+  }
+  15%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

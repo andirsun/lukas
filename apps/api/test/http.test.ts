@@ -4,7 +4,7 @@ import { createTestApp, type TestApp } from "./harness.ts";
 let t: TestApp;
 beforeAll(async () => {
   t = await createTestApp();
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 test("GET /health", async () => {
@@ -24,6 +24,12 @@ test("GET /openapi.json describes the API", async () => {
   const res = await t.request("GET", "/openapi.json");
   expect(res.status).toBe(200);
   expect(((await res.json()) as { openapi: string }).openapi).toMatch(/^3\./);
+});
+
+test("the OpenAPI document is titled Lukitas API", async () => {
+  const res = await t.request("GET", "/openapi.json");
+  const doc = (await res.json()) as { info: { title: string } };
+  expect(doc.info.title).toBe("Lukitas API");
 });
 
 test("unknown routes return a problem+json 404", async () => {

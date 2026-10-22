@@ -6,3 +6,8 @@ allowBuilds:
   esbuild: true
   protobufjs: false
   ssh2: false
+# Recharts pulls immer in; its newest releases (11.2.x, from 2026-10-20/21) were days old, so it
+# is held at 11.1.21 (2026-10-02). Remove this override on or after 2026-11-05, once 11.2.x is
+# two weeks old.
+overrides:
+  immer: 11.1.21

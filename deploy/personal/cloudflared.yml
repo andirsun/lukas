@@ -1,0 +1,9 @@
+# Ingress for the named tunnel `lukitas-personal`. The tunnel id and its credentials file
+# (~/.cloudflared/<TUNNEL_ID>.json on the host) come from docker-compose.yml, which mounts the file
+# read-only and starts `cloudflared tunnel run <TUNNEL_ID>`.
+# The hostname here must be the PUBLIC_HOSTNAME of .env and the DNS route you created.
+ingress:
+  - hostname: app-lukas.andersonlaverde.com
+    service: http://web:80
+  # Anything else that reaches the tunnel is refused.
+  - service: http_status:404

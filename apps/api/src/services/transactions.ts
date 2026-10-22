@@ -23,8 +23,21 @@ export function toTransactionDto(row: TransactionRow): TransactionDto {
   };
 }
 
-export async function defaultAccount(tx: Tx) {
-  const [row] = await tx.select().from(accounts).where(eq(accounts.isDefault, true));
+/**
+ * The user's default account. With `lock`, its row stays locked (`FOR UPDATE`) until the
+ * transaction ends. Everything that writes transactions in the account's currency, and the
+ * currency change itself, takes that lock, so they run one after the other: a change cannot slip
+ * between an import's currency check and its inserts. So do the writes that change or remove
+ * recurrences (create, edit, delete, archiving their category).
+ *
+ * `lock: "share"` (`FOR SHARE`) is for materializing recurrences on a read: reads do not wait for
+ * each other, but each waits for a writer in flight and a writer waits for it. Take it (or the
+ * full lock) before any other row lock in the transaction, as every writer does, so two never
+ * wait on each other.
+ */
+export async function defaultAccount(tx: Tx, { lock = false }: { lock?: boolean | "share" } = {}) {
+  const query = tx.select().from(accounts).where(eq(accounts.isDefault, true));
+  const [row] = await (lock === "share" ? query.for("share") : lock ? query.for("update") : query);
   if (!row) throw new Error("User has no default account");
   return row;
 }

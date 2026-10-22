@@ -1,0 +1,1567 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/*
+ * Tailwind utilities read the design tokens (tokens.css, generated from the design system), so
+ * `bg-surface`, `text-ink-muted`, `rounded-xl`, `shadow-edge-sm` and `font-display` follow the
+ * active theme. Spacing and durations are used directly: `p-(--space-4)`, `duration-(--press)`.
+ * `inline` makes utilities read the token (`.rounded-xl { border-radius: var(--radius-xl) }`).
+ * Same-named entries (radius, fonts) also land in Tailwind's `@layer theme` as `var(--x)`; the
+ * unlayered tokens.css declarations win the cascade, so the token values apply.
+ * Tailwind's default palette is cleared first, so `bg-red-500` or `text-white` don't exist and
+ * every color goes through a token.
+ */
+@theme inline {
+  --color-*: initial;
+  --color-bg: var(--bg);
+  --color-bg-glow: var(--bg-glow);
+  --color-surface: var(--surface);
+  --color-surface-row: var(--surface-row);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-edge: var(--surface-edge);
+  --color-stroke: var(--stroke);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-brand: var(--brand);
+  --color-brand-glow: var(--brand-glow);
+  --color-brand-edge: var(--brand-edge);
+  --color-on-brand: var(--on-brand);
+  --color-focus: var(--focus);
+  --color-good: var(--good);
+  --color-near: var(--near);
+  --color-over: var(--over);
+  --color-gold: var(--gold);
+  --color-candy: var(--candy);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-edge-sm: var(--edge-sm);
+  --shadow-edge-md: var(--edge-md);
+  --shadow-edge-brand: var(--edge-brand);
+
+  --font-display: var(--font-display);
+  --font-text: var(--font-text);
+}
+
+@layer base {
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-text);
+    font-weight: 700;
+  }
+}
+
+/* Lukas components, copied from docs/design/system/project/components/bundle.css. Prefix: lk- */
+@layer components {
+  .lk-screen {
+    background: radial-gradient(120% 60% at 50% 0%, var(--bg-glow) 0%, var(--bg) 55%);
+    color: var(--ink);
+    font-family: var(--font-text);
+  }
+  .lk-pad {
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .lk-row-flex {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+  .lk-num {
+    font-variant-numeric: tabular-nums;
+  }
+  :where(.lk-press, .lk-btn, .lk-key, .lk-chip-tile, .lk-seg button):focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Wordmark */
+  .lk-logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    line-height: 1;
+    background: linear-gradient(90deg, var(--gold), var(--candy));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Pressable surfaces */
+  .lk-press {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+    cursor: pointer;
+  }
+  .lk-press:active,
+  .lk-press.is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+
+  /* Buttons */
+  .lk-btn {
+    border: 0;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: var(--radius-xl);
+    padding: 15px 24px;
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-btn-primary {
+    background: var(--brand);
+    color: var(--on-brand);
+    box-shadow: var(--edge-brand);
+  }
+  .lk-btn-primary:active,
+  .lk-btn-primary.is-pressed {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 var(--brand-edge);
+  }
+  .lk-btn-secondary {
+    background: var(--surface-row);
+    color: var(--ink);
+    border: 2px solid var(--control-edge);
+    box-shadow: var(--edge-sm);
+  }
+  .lk-btn-secondary:active,
+  .lk-btn-secondary.is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 12px 8px;
+  }
+  .lk-btn-sm {
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  /* Month pill and avatar */
+  .lk-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-row);
+    box-shadow: var(--edge-sm);
+  }
+
+  /* Hero */
+  .lk-hero {
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    box-shadow: var(--edge-md);
+  }
+  .lk-hero-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--ink-muted);
+  }
+  .lk-hero-amount {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 38px;
+    line-height: 1.05;
+    color: var(--good);
+    font-variant-numeric: tabular-nums;
+  }
+  .lk-hero-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ink-muted);
+    margin-top: 6px;
+  }
+
+  /* Bars */
+  .lk-bar {
+    height: 12px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-sunken);
+    overflow: hidden;
+  }
+  .lk-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: var(--good);
+  }
+  .lk-bar-sm {
+    height: 7px;
+  }
+  .lk-bar.is-near > span {
+    background: var(--near);
+  }
+  .lk-bar.is-over > span {
+    background: var(--over);
+  }
+
+  /* Rows */
+  .lk-rowcard {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-lg);
+    background: var(--surface-row);
+    border: 2px solid var(--stroke);
+    box-shadow: var(--edge-sm);
+  }
+  .lk-tile {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-sm);
+    display: grid;
+    place-items: center;
+    font-size: 17px;
+    flex: none;
+    background: var(--surface-sunken);
+  }
+  .lk-rowmain {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .lk-rowtop {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .lk-status {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ink-muted);
+  }
+  .lk-status.is-near {
+    color: var(--near);
+  }
+  .lk-status.is-over {
+    color: var(--over);
+  }
+  .lk-amount {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Pending badge */
+  .lk-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--near);
+    border: 1.5px solid var(--near);
+    border-radius: var(--radius-pill);
+    padding: 2px 7px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .lk-badge.is-paid {
+    color: var(--good);
+    border-color: var(--good);
+  }
+
+  /* Day header */
+  .lk-overline {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  /* Segmented control */
+  .lk-seg {
+    display: flex;
+    gap: 3px;
+    padding: 3px;
+    border-radius: var(--radius-md);
+    background: var(--surface-sunken);
+  }
+  .lk-seg button {
+    flex: 1;
+    border: 0;
+    background: transparent;
+    color: var(--ink-muted);
+    font-family: var(--font-text);
+    font-weight: 900;
+    font-size: 12px;
+    padding: 8px 0;
+    border-radius: 11px;
+    cursor: pointer;
+  }
+  .lk-seg button[aria-selected="true"] {
+    background: var(--surface-row);
+    color: var(--ink);
+    box-shadow: var(--edge-sm);
+  }
+
+  /* Chips (category picker) */
+  .lk-chips {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-2);
+  }
+  .lk-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ink-muted);
+  }
+  .lk-chip-tile {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    background: var(--surface-row);
+    border: 2px solid var(--stroke);
+    box-shadow: var(--edge-sm);
+    cursor: pointer;
+  }
+  .lk-chip.is-selected .lk-chip-tile {
+    outline: 3px solid var(--gold);
+    outline-offset: 1px;
+  }
+  .lk-chip.is-selected {
+    color: var(--ink);
+  }
+
+  /* Name shortcuts */
+  .lk-shortcuts {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .lk-shortcut {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 5px 10px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-row);
+    border: 2px solid var(--stroke);
+    box-shadow: var(--edge-sm);
+  }
+  .lk-shortcut.is-hit {
+    border-color: var(--brand);
+  }
+
+  /* Input */
+  .lk-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 12px;
+    border-radius: var(--radius-md);
+    background: var(--surface-sunken);
+    border: 2px solid var(--stroke);
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .lk-input .lk-placeholder {
+    color: var(--ink-muted);
+    font-style: italic;
+  }
+
+  /* Keypad */
+  .lk-amount-display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .lk-amount-display.is-expense {
+    color: var(--over);
+  }
+  .lk-amount-display.is-income {
+    color: var(--good);
+  }
+  .lk-keys {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  /*
+   * Keys: a face, a 2px outline and a solid edge, each a token. By day the outline is 3:1 against
+   * the white sheet (WCAG 1.4.11); at night it is the face's own color and the dark edge does it.
+   */
+  .lk-key {
+    border: 2px solid var(--key-border);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 18px;
+    color: var(--ink);
+    background: var(--key);
+    border-radius: var(--radius-sm);
+    padding: 8px 0;
+    box-shadow: 0 3px 0 var(--key-edge);
+    cursor: pointer;
+  }
+  .lk-key:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--key-edge);
+    background: var(--key-pressed);
+  }
+
+  /* Sheet */
+  .lk-sheet {
+    background: var(--surface);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    padding: 10px var(--space-3) var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .lk-grab {
+    width: 36px;
+    height: 4px;
+    border-radius: var(--radius-pill);
+    background: var(--stroke);
+    margin: 0 auto 4px;
+  }
+
+  /* Toast */
+  .lk-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--edge-md);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .lk-toast-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 12px;
+  }
+  .lk-toast-actions button {
+    border: 0;
+    background: none;
+    color: var(--brand);
+    font: inherit;
+    font-weight: 900;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+
+  /* Bottom bar */
+  .lk-tabbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    padding: 8px 6px 12px;
+    background: var(--surface-sunken);
+    border-top: 2px solid var(--stroke);
+  }
+  .lk-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--ink-muted);
+    width: 76px;
+    background: none;
+    border: 0;
+    font-family: var(--font-text);
+  }
+  .lk-tab[aria-current="page"] {
+    color: var(--ink);
+  }
+  .lk-tab .lk-tab-ico {
+    font-size: 18px;
+  }
+  .lk-plus {
+    width: 58px;
+    height: 58px;
+    border-radius: var(--radius-lg);
+    border: 0;
+    background: var(--brand);
+    color: var(--on-brand);
+    font-size: 30px;
+    font-weight: 700;
+    margin-top: -28px;
+    box-shadow: var(--edge-brand);
+    cursor: pointer;
+  }
+
+  /* Lukas speech bubble */
+  .lk-bubble {
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.35;
+    padding: 8px 11px;
+    border-radius: 14px;
+    background: var(--surface-row);
+    border: 2px solid var(--stroke);
+  }
+
+  /* Phone frame used by screen previews */
+  .lk-phone {
+    width: 300px;
+    border-radius: 36px;
+    padding: 10px;
+    background: #0c0a1d;
+  }
+  .lk-phone > .lk-screen {
+    border-radius: 28px;
+    overflow: hidden;
+    position: relative;
+  }
+}
+
+/*
+ * App additions on top of the copied design-system layer: states the bundle leaves out
+ * (disabled, ghost press, focus on toast actions) and two fixes measured against AA.
+ */
+:root,
+[data-theme="night"] {
+  /* Sheet backdrop: derived from tokens, dark in both themes. */
+  --scrim: color-mix(in srgb, var(--surface-edge) 72%, transparent);
+  /*
+   * Edge of a field that has no other cue (the sign-in code boxes): at least 3:1 against its own
+   * fill and the background behind it (WCAG 1.4.11). Night ≈ 4:1, day ≈ 3.8:1.
+   */
+  --field-edge: color-mix(in srgb, var(--ink-muted) 60%, var(--surface-sunken));
+}
+
+[data-theme="day"] {
+  --scrim: color-mix(in srgb, var(--ink) 40%, transparent);
+  --field-edge: color-mix(in srgb, var(--ink-muted) 80%, var(--surface-sunken));
+}
+
+@layer components {
+  .lk-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  .lk-btn-primary:disabled:active {
+    transform: none;
+    box-shadow: var(--edge-brand);
+  }
+  .lk-btn-secondary:disabled:active {
+    transform: none;
+    box-shadow: var(--edge-sm);
+  }
+  /* Ghost buttons have no edge to collapse; they still sink a little under the finger. */
+  .lk-btn-ghost:active,
+  .lk-btn-ghost.is-pressed {
+    transform: translateY(2px);
+  }
+  .lk-btn-ghost:disabled:active {
+    transform: none;
+  }
+
+  /*
+   * The bundle colors toast actions with `brand`, which is 3.2:1 on the night `surface` (AA needs
+   * 4.5:1). `focus` is the chosen mockup's gold at night and a deep purple by day, AA in both.
+   */
+  .lk-toast-actions button {
+    color: var(--focus);
+    transition: transform var(--press) ease;
+  }
+  .lk-toast-actions button:active {
+    transform: translateY(2px);
+  }
+  :where(.lk-toast-actions button):focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+/*
+ * Reduced motion: pressing still moves things down (the feedback stays), but instantly. Unlayered,
+ * so it also beats the `transition-*` utilities on the same elements. Motion-driven animations
+ * (sheet, toast, count-up) handle reduced motion in their components.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .lk-trend-band,
+  .lk-press,
+  .lk-btn,
+  .lk-key,
+  .lk-seg button,
+  .lk-badge,
+  .lk-toast-actions button,
+  .lk-bar > span {
+    transition-duration: 0s;
+  }
+}
+
+/*
+ * Domain components (Task 7b): pressable rows with a separate hit area (so a row can hold its own
+ * buttons, like the pending badge), chips, shortcuts, the bottom bar and Lukas. Every pressable
+ * sinks into its edge on `:active` and on `.is-pressed`.
+ */
+@layer components {
+  /* A row card whose whole surface opens it, through a transparent button laid over it. */
+  .lk-row {
+    position: relative;
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-row:has(> .lk-row-hit:active),
+  .lk-row.is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-row-hit {
+    position: absolute;
+    inset: -2px;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: transparent;
+    cursor: pointer;
+  }
+  .lk-row-hit:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  /* Controls inside a row sit above its hit area. */
+  .lk-row-control {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Category chip: the whole chip is the button; the tile carries the edge and sinks. */
+  .lk-chip-button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    font-family: var(--font-text);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+  }
+  .lk-chip-button:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-chip-tile {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-chip-button:active .lk-chip-tile,
+  .lk-chip-button.is-pressed .lk-chip-tile {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+
+  /* Name shortcuts: a 44px button around the visual pill. */
+  .lk-shortcut-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--ink);
+    font-family: var(--font-text);
+    cursor: pointer;
+  }
+  .lk-shortcut {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-shortcut-button:active .lk-shortcut,
+  .lk-shortcut-button.is-pressed .lk-shortcut {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-shortcut-button:focus-visible .lk-shortcut {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Text field: the ring goes on the field box while its input has focus. */
+  .lk-input:focus-within {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Sign-in code: six sunken boxes, one digit each, at least 44px wide even on a 320px phone. */
+  .lk-code-box {
+    flex: 1 1 0;
+    min-width: 44px;
+    max-width: 56px;
+    height: 56px;
+    padding: 0;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    caret-color: var(--focus);
+    background: var(--surface-sunken);
+    border: 2px solid var(--field-edge);
+    border-radius: var(--radius-md);
+  }
+  .lk-code-box:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-code-box.is-invalid {
+    border-color: var(--over);
+  }
+
+  /* Keypad keys */
+  .lk-key {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease,
+      background-color var(--press) ease;
+  }
+  .lk-key.is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--key-edge);
+    background: var(--key-pressed);
+  }
+
+  /* Bottom bar: tabs have no edge (as drawn); they dip slightly. The ＋ sinks into its edge. */
+  .lk-tab {
+    min-height: 44px;
+    justify-content: flex-end;
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    transition: transform var(--press) ease;
+  }
+  .lk-tab:active,
+  .lk-tab.is-pressed {
+    transform: translateY(2px);
+  }
+  .lk-tab:focus-visible,
+  .lk-plus:focus-visible,
+  .lk-side-link:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-plus {
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-plus:active,
+  .lk-plus.is-pressed {
+    transform: translateY(5px);
+    box-shadow: 0 1px 0 var(--brand-edge);
+  }
+
+  /* Sidebar links: the current one is a raised row; the others dip like ghost buttons. */
+  .lk-side-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-md);
+    border: 2px solid transparent;
+    color: var(--ink-muted);
+    font-weight: 800;
+    font-size: 14px;
+    text-decoration: none;
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-side-link:active,
+  .lk-side-link.is-pressed {
+    transform: translateY(2px);
+  }
+  .lk-side-link[aria-current="page"] {
+    color: var(--ink);
+    background: var(--surface-row);
+    border-color: var(--stroke);
+    box-shadow: var(--edge-sm);
+  }
+  .lk-side-link[aria-current="page"]:active,
+  .lk-side-link[aria-current="page"].is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+
+  /* Month picker arrows */
+  .lk-step {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-pill);
+    border: 2px solid var(--stroke);
+    background: var(--surface-row);
+    color: var(--ink);
+    box-shadow: var(--edge-sm);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    cursor: pointer;
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-step:active:not(:disabled),
+  .lk-step.is-pressed {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-step:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-step:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Lukas speech bubble: a tail pointing at Lukas on its left. */
+  .lk-bubble-tail {
+    position: relative;
+  }
+  .lk-bubble-tail::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    background: var(--surface-row);
+    border-left: 2px solid var(--stroke);
+    border-bottom: 2px solid var(--stroke);
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  /* Lukas 2D: a sprite sheet stepped frame by frame, plus a CSS treatment per mood. */
+  .lk-lukas {
+    position: relative;
+    display: inline-block;
+    flex: none;
+  }
+  .lk-lukas-body {
+    position: absolute;
+    inset: 0;
+    transform-origin: 50% 92%;
+  }
+  .lk-lukas-sprite {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+  }
+  /*
+   * A deferred Lukas (`deferUntilNear`) keeps his sheet unfetched while far from the viewport.
+   * Only with scripting: without JavaScript nothing would ever mark him near, so he loads as usual.
+   */
+  @media (scripting: enabled) {
+    .lk-lukas[data-lukas-defer="far"] .lk-lukas-sprite {
+      background-image: none !important;
+    }
+  }
+  .lk-lukas-sprite.is-playing {
+    animation:
+      lk-sprite-x var(--lk-sprite-row-ms) steps(var(--lk-sprite-cols)) infinite,
+      lk-sprite-y var(--lk-sprite-loop-ms) steps(var(--lk-sprite-rows)) infinite;
+  }
+  .lk-lukas.is-shiver .lk-lukas-body {
+    animation: lk-lukas-shiver var(--shiver) ease-in-out infinite;
+  }
+  .lk-lukas.is-hop .lk-lukas-body {
+    animation: lk-lukas-hop var(--celebrate) ease-in-out infinite;
+  }
+  .lk-lukas-sweat {
+    position: absolute;
+    left: 66%;
+    top: 14%;
+    width: 13%;
+    height: auto;
+    fill: color-mix(in srgb, var(--brand-glow) 30%, var(--on-brand));
+    stroke: var(--brand-edge);
+    stroke-width: 1.5;
+  }
+  .lk-lukas-sparkle {
+    position: absolute;
+    width: 14%;
+    height: auto;
+  }
+  /* Sparkles twinkle in turn: sparkle i starts i quarters of a celebration loop late. */
+  .lk-lukas.is-hop .lk-lukas-sparkle {
+    animation: lk-lukas-twinkle var(--celebrate) ease-in-out infinite;
+    animation-delay: calc(var(--celebrate) * var(--lk-sparkle-index, 0) / 4);
+  }
+  .lk-lukas-sparkle.is-gold {
+    fill: var(--gold);
+  }
+  .lk-lukas-sparkle.is-candy {
+    fill: var(--candy);
+  }
+}
+
+@keyframes lk-sprite-x {
+  from {
+    background-position-x: 0%;
+  }
+  to {
+    background-position-x: var(--lk-sprite-x-end);
+  }
+}
+
+@keyframes lk-sprite-y {
+  from {
+    background-position-y: 0%;
+  }
+  to {
+    background-position-y: var(--lk-sprite-y-end);
+  }
+}
+
+/* Short bursts of a small side-to-side shake, then a pause. */
+@keyframes lk-lukas-shiver {
+  0%,
+  40%,
+  100% {
+    transform: translateX(0);
+  }
+  5%,
+  15%,
+  25% {
+    transform: translateX(-2%);
+  }
+  10%,
+  20%,
+  30% {
+    transform: translateX(2%);
+  }
+}
+
+/* Crouch (squash), spring up (stretch), float, land (squash), settle. */
+@keyframes lk-lukas-hop {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  15% {
+    transform: translateY(0) scale(1.12, 0.86);
+  }
+  35% {
+    transform: translateY(-16%) scale(0.92, 1.1);
+  }
+  50% {
+    transform: translateY(-20%) scale(1, 1);
+  }
+  70% {
+    transform: translateY(0) scale(1.1, 0.9);
+  }
+  82% {
+    transform: translateY(0) scale(0.97, 1.03);
+  }
+}
+
+@keyframes lk-lukas-twinkle {
+  0%,
+  100% {
+    transform: scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  30%,
+  60% {
+    transform: scale(1) rotate(20deg);
+    opacity: 1;
+  }
+}
+
+/*
+ * Reduced motion for the domain components: presses stay but are instant, and Lukas never
+ * animates (the component already shows a still frame; this also covers the prerendered HTML).
+ */
+@media (prefers-reduced-motion: reduce) {
+  .lk-row,
+  .lk-chip-tile,
+  .lk-shortcut,
+  .lk-tab,
+  .lk-plus,
+  .lk-side-link,
+  .lk-step {
+    transition-duration: 0s;
+  }
+  .lk-lukas,
+  .lk-lukas * {
+    animation: none !important;
+  }
+}
+
+/*
+ * Home and the add sheet (Task 12): the avatar button and its menu, the "pronto" marker for
+ * sections still to come, the nudge cards, the list panels and the sheet's "Más opciones" row.
+ */
+@layer components {
+  .lk-avatar {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border: 2px solid var(--stroke);
+    border-radius: var(--radius-pill);
+    background: var(--surface-row);
+    box-shadow: var(--edge-sm);
+    font-size: 20px;
+    cursor: pointer;
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-avatar:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-avatar:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .lk-menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    border: 2px solid var(--stroke);
+    box-shadow: var(--edge-md);
+  }
+
+  /* "Pronto": a section or action that is coming. */
+  .lk-soon {
+    display: inline-flex;
+    align-items: center;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    border: 1.5px solid var(--stroke);
+    border-radius: var(--radius-pill);
+    padding: 1px 7px;
+  }
+  .lk-tab.is-soon,
+  .lk-side-link.is-soon {
+    cursor: default;
+    gap: var(--space-2);
+  }
+  .lk-tab.is-soon:active,
+  .lk-side-link.is-soon:active {
+    transform: none;
+  }
+  /* On a tab the marker floats by the icon, so the labels stay on one line with "Inicio". */
+  .lk-tab.is-soon {
+    position: relative;
+  }
+  .lk-tab.is-soon .lk-soon {
+    position: absolute;
+    top: -2px;
+    left: calc(50% + 10px);
+    font-size: 8px;
+    padding: 0 5px;
+    background: var(--surface-sunken);
+  }
+
+  .lk-nudge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    background: var(--surface-row);
+    border: 2px dashed var(--stroke);
+  }
+
+  .lk-panel {
+    flex-direction: column;
+    gap: var(--space-2);
+    touch-action: pan-y;
+  }
+  .lk-panel-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  @media (width < 64rem) {
+    .lk-panel-title {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  .lk-more-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: 0 var(--space-3);
+    border: 2px solid var(--control-edge);
+    border-radius: var(--radius-md);
+    background: var(--surface-row);
+    color: var(--ink);
+    font-family: var(--font-text);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    text-align: left;
+  }
+  /*
+   * A sheet with the pinned amount and footer: focusing a control scrolls it clear of both
+   * (WCAG 2.4.11), not behind them.
+   */
+  .lk-sheet:has(.lk-sheet-footer) {
+    scroll-padding-block: 72px 96px;
+  }
+  /*
+   * The amount in a sheet that scrolls as a whole (a budget, a fixed cost) stays in view at the
+   * top while the keypad is scrolled to. The add sheet pins it above its scrolling middle instead.
+   */
+  .lk-sheet:not(.has-footer) .lk-sheet-amount {
+    position: sticky;
+    top: calc(-1 * 10px);
+    z-index: 1;
+    margin: 0 calc(-1 * var(--space-3));
+    padding: var(--space-1) var(--space-3);
+    background: var(--surface);
+  }
+  .lk-sheet.has-footer .lk-sheet-amount {
+    line-height: 1.15;
+  }
+  /* The sheet's save row: stuck to the bottom of the sheet, the content scrolls above it. */
+  .lk-sheet-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin: 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
+    padding: var(--space-2) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
+    background: var(--surface);
+    border-top: 2px solid var(--stroke);
+  }
+  .lk-more-row:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+}
+
+/* On phones the toasts sit above the app's bottom bar. */
+@media (width < 64rem) {
+  :root:has(.lk-app-shell) {
+    --toast-lift: 92px;
+  }
+}
+
+/*
+ * Insights charts (Task 14). Recharts draws with SVG attributes; these rules give its marks the
+ * theme's tokens instead (a CSS property beats an attribute), so the charts follow night and day.
+ * Category tints come in as data; status colors and lines come from here.
+ */
+@layer components {
+  /* The donut's ring while the chart's code loads. */
+  .lk-donut-placeholder {
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    border: 30px solid var(--surface-sunken);
+  }
+  .lk-trend .recharts-cartesian-grid line {
+    stroke: var(--stroke);
+  }
+  .lk-trend .recharts-cartesian-axis-tick-value {
+    fill: var(--ink-muted);
+    font-family: var(--font-text);
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .lk-trend-income .recharts-rectangle {
+    fill: var(--chart-income);
+  }
+  .lk-trend-expenses .recharts-rectangle {
+    fill: var(--chart-expense);
+  }
+  .lk-trend-budget .recharts-curve {
+    stroke: var(--ink-muted);
+  }
+  .lk-trend .lk-trend-budget-dot {
+    fill: var(--ink-muted);
+    stroke: none;
+  }
+  /* The selected month's band, behind the transparent chart. */
+  .lk-trend-band {
+    position: absolute;
+    border-radius: var(--radius-sm);
+    background: var(--surface-sunken);
+    transition: left var(--sheet) ease-out;
+  }
+  /* A month's tap target over the trend: invisible, a faint band under a hovering pointer. */
+  .lk-trend-hit {
+    flex: 1;
+    border: 0;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+  }
+  .lk-trend-hit:hover {
+    background: color-mix(in srgb, var(--ink-muted) 8%, transparent);
+  }
+  .lk-swatch-income {
+    background: var(--chart-income);
+  }
+  .lk-swatch-expense {
+    background: var(--chart-expense);
+  }
+  /*
+   * A section showing older figures while new ones load: the figures dim (the toggles do not), so
+   * nobody reads them as the answer to what was just picked.
+   */
+  .lk-insight-body {
+    transition: opacity var(--sheet) ease-out;
+  }
+  [aria-busy="true"] > .lk-insight-body,
+  .lk-insight-body[aria-busy="true"] {
+    opacity: 0.45;
+  }
+  /* Legend keys: a color square, or the budget's dashed line. */
+  .lk-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex: none;
+  }
+  .lk-swatch-line {
+    width: 16px;
+    border-top: 2px dashed var(--ink-muted);
+    flex: none;
+  }
+
+  /* Settings: an on/off switch (the whole row is the button), and the delete-account card. */
+  .lk-switch-row {
+    cursor: pointer;
+    font: inherit;
+  }
+  .lk-switch-row:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+  }
+  .lk-switch {
+    position: relative;
+    flex: none;
+    width: 52px;
+    height: 30px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-sunken);
+    border: 2px solid var(--ink-muted);
+    transition:
+      background-color var(--press) ease,
+      border-color var(--press) ease;
+  }
+  .lk-switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--ink-muted);
+    transition:
+      transform var(--press) ease,
+      background-color var(--press) ease;
+  }
+  [aria-checked="true"] > .lk-switch {
+    background: var(--brand);
+    border-color: var(--brand);
+  }
+  [aria-checked="true"] > .lk-switch .lk-switch-thumb {
+    transform: translateX(22px);
+    background: var(--on-brand);
+  }
+  .lk-danger-zone {
+    border: 2px solid color-mix(in srgb, var(--over) 55%, var(--stroke));
+  }
+}
+
+/*
+ * Feel pass (Task 12c): rows that swipe, the home pager, the tabs' sliding thumb, the toast's time
+ * bar, and the add sheet's pinned keypad. Timings are the duration tokens; springs, distances and
+ * speeds are in motion-tokens.ts (GESTURE, SPRINGS).
+ */
+@layer components {
+  /* A swipeable row: the face moves, the actions wait behind it on either side. */
+  .lk-swipe {
+    position: relative;
+    touch-action: pan-y pinch-zoom;
+  }
+  .lk-swipe-face {
+    position: relative;
+    z-index: 1;
+  }
+  .lk-swipe-side {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: stretch;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  /* Swiping left reveals Borrar at the right edge; swiping right, Editar or Pagado at the left. */
+  .lk-swipe-side.is-left {
+    justify-content: flex-end;
+    background: var(--over);
+    color: var(--bg);
+  }
+  .lk-swipe-side.is-right {
+    justify-content: flex-start;
+    background: var(--brand);
+    color: var(--on-brand);
+  }
+  .lk-swipe-side.is-right.is-paid {
+    background: var(--good);
+    color: var(--bg);
+  }
+  .lk-swipe-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    /* GESTURE.rowActionWidth, set on the row. */
+    min-width: var(--lk-swipe-action);
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-family: var(--font-text);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .lk-swipe-action:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: -5px;
+    border-radius: var(--radius-lg);
+  }
+  .lk-swipe-glyph {
+    font-size: 18px;
+    line-height: 1;
+    transition: transform var(--press) ease;
+  }
+  /* Past the threshold the action pops: letting go now runs it. */
+  .lk-swipe-side.is-armed .lk-swipe-glyph {
+    transform: scale(1.35);
+  }
+
+  /* The home pager: the active page is in the flow (it sets the height), the other waits beside. */
+  .lk-pager {
+    position: relative;
+    overflow: hidden;
+    overflow: clip;
+    /*
+     * Full bleed: the pages (and a swiped row) slide out at the screen's edge, not at the content's.
+     * The padding keeps the content where it was, with room below for the cards' edges.
+     */
+    margin: 0 calc(-1 * var(--space-4));
+    padding: 0 var(--space-4) var(--space-2);
+  }
+  .lk-pager-track {
+    position: relative;
+  }
+  .lk-pager-page {
+    width: 100%;
+    top: 0;
+  }
+
+  /* The tabs' thumb: the raised selected look, sliding with the pager. */
+  .lk-seg.has-thumb {
+    position: relative;
+  }
+  .lk-seg.has-thumb button {
+    position: relative;
+    z-index: 1;
+  }
+  .lk-seg.has-thumb button[aria-selected="true"] {
+    background: transparent;
+    box-shadow: none;
+  }
+  .lk-seg-thumb {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    border-radius: 11px;
+    background: var(--surface-row);
+    box-shadow: var(--edge-sm);
+  }
+
+  /* The toast's time left: a thin bar that empties, stopped while the toast is held. */
+  .lk-toast {
+    position: relative;
+    overflow: hidden;
+  }
+  .lk-toast-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--brand);
+    transform-origin: left center;
+    animation: lk-toast-countdown linear forwards;
+  }
+  .lk-toast.border-over .lk-toast-progress {
+    background: var(--over);
+  }
+
+  /*
+   * A sheet with a pinned footer: the header, what is pinned under it, a scrolling middle, then the
+   * footer, always in view. It may take all but a strip of the screen. Nothing is laid over the
+   * middle: scrolled away from its top, it shows a divider and its content fades in under it.
+   */
+  .lk-sheet.has-footer {
+    overflow: hidden;
+    max-height: calc(100dvh - var(--space-5));
+  }
+  .lk-sheet-pinned {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .lk-sheet-body {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 calc(-1 * var(--space-3));
+    padding: 0 var(--space-3) var(--space-1);
+    display: flex;
+    flex-direction: column;
+    border-top: 2px solid transparent;
+    scroll-padding-block: var(--space-2);
+  }
+  .lk-sheet-body[data-scrolled] {
+    border-top-color: var(--stroke);
+    mask-image: linear-gradient(to bottom, transparent, var(--ink) var(--space-4));
+    mask-origin: padding-box;
+  }
+  .lk-sheet.has-footer .lk-sheet-footer {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  /* Two buttons side by side (Eliminar, Guardar cambios) stay on one line on narrow phones. */
+  .lk-sheet-footer .lk-btn {
+    padding-inline: var(--space-4);
+  }
+  /* Phones up to 844 px tall: tighter keys (still 44 px targets), so the whole sheet fits. */
+  @media (max-height: 859.98px) {
+    .lk-sheet.has-footer .lk-keys {
+      gap: 4px;
+    }
+    .lk-sheet.has-footer .lk-key {
+      padding: 4px 0;
+    }
+    .lk-sheet.has-footer .lk-sheet-footer {
+      gap: var(--space-1);
+      padding-top: var(--space-1);
+    }
+  }
+  /*
+   * Short phones (an Android phone under Chrome's bars is about 760 px): a smaller amount too, and
+   * one row of categories (SHORT_QUERY in ui/use-wide-screen.ts).
+   */
+  @media (max-height: 799.98px) {
+    .lk-sheet.has-footer .lk-sheet-amount {
+      font-size: 28px;
+    }
+  }
+}
+
+@keyframes lk-toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@layer components {
+  /* A row swiped right (Editar) slides past the screen's edge: never a sideways scroll for it. */
+  .lk-app-shell {
+    overflow-x: clip;
+  }
+}
+
+@layer components {
+  /*
+   * Home's tabs on phones: stuck under the header (the demo's banner sets --lk-sticky-top) once the
+   * summary scrolls away. The negative margins keep the layout as it was; the background hides the
+   * list scrolling under it.
+   */
+  .lk-tabs-sticky {
+    position: sticky;
+    top: var(--lk-sticky-top, 0px);
+    z-index: 20;
+    margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-4)) calc(-1 * var(--space-1));
+    padding: var(--space-2) var(--space-4) var(--space-1);
+    background: var(--bg);
+  }
+}

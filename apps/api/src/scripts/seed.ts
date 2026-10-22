@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { monthOf, todayIn } from "@lukas/core";
 import { createDb } from "@lukas/db";
 import { createApp } from "../app.ts";
-import { loadConfig } from "../config.ts";
+import { apiPathPrefix, loadConfig } from "../config.ts";
 import { MemoryMailer } from "../mailer.ts";
 
 const EMAIL = "dev@lukas.test";
@@ -18,6 +18,7 @@ const config = loadConfig(process.env);
 const { db, close } = createDb(config.DATABASE_URL);
 const mailer = new MemoryMailer();
 const app = createApp({ config, db, mailer });
+const prefix = apiPathPrefix(config);
 
 async function call<T>(
   method: string,
@@ -25,7 +26,7 @@ async function call<T>(
   init: { headers?: Record<string, string>; body?: unknown } = {},
 ) {
   const isForm = init.body instanceof FormData;
-  const res = await app.request(path, {
+  const res = await app.request(`${prefix}${path}`, {
     method,
     headers: {
       ...(init.body && !isForm ? { "content-type": "application/json" } : {}),

@@ -31,6 +31,18 @@ services:
       DATABASE_URL: postgres://lukas_app:lukas_app@postgres:5432/lukas
       DATABASE_ADMIN_URL: postgres://lukas:lukas@postgres:5432/lukas
       SMTP_URL: smtp://mailpit:1025
+      # The browser reaches the API through the web's dev server (Vite proxies /api), so both URLs
+      # are the web origin: the same values as .env.example, set here so the stack runs without
+      # an edited .env (CI copies .env.example as it is).
+      API_URL: http://localhost:5173/api
+      WEB_URL: http://localhost:5173
+      # Development only: the proxy in front of this API is Vite's, on this machine, so the client
+      # address it forwards is the one rate limits count (the e2e suite gives each browser its own).
+      # Never copy this to production: see docs/deploy/api.md.
+      TRUSTED_PROXIES: "127.0.0.1,::1"
+      # End-to-end runs pin the API's clock (`E2E_NOW=2026-10-21T15:00:00Z docker compose up -d`),
+      # so tests that read seeded months do not depend on the real date. Unset: the real clock.
+      E2E_NOW: ${E2E_NOW:-}
     ports:
       - "3000:3000"
     depends_on:

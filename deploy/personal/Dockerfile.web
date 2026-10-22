@@ -1,0 +1,6 @@
+# Caddy with the personal install's web build inside. Build from the repository root (compose does):
+#   docker build -f deploy/personal/Dockerfile.web .
+# Run deploy/personal/up.sh instead of building by hand: it makes apps/web/build-personal first.
+FROM caddy:2.11-alpine
+COPY deploy/personal/Caddyfile /etc/caddy/Caddyfile
+COPY apps/web/build-personal/client /srv

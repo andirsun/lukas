@@ -1,0 +1,198 @@
+import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { useTranslations } from "use-intl";
+import { cx } from "../ui/cx.ts";
+import { useReducedMotionPreference } from "../ui/motion-tokens.ts";
+import type { LukasMood } from "./mood.ts";
+
+export type { LukasMood } from "./mood.ts";
+
+/** A sprite sheet: a full grid of square frames in reading order, played as a seamless loop. */
+export interface LukasSprite {
+  /** Public URL of the transparent sheet. */
+  src: string;
+  columns: number;
+  rows: number;
+  /** Duration of one loop through every frame. */
+  loopMs: number;
+}
+
+/** How one mood is drawn. Frames are 0-based indices in reading order. */
+export interface LukasMoodArt {
+  sprite: LukasSprite;
+  /** Play the sheet's loop; otherwise show `frame`. */
+  play: boolean;
+  /** The frame shown when the sheet is not played. */
+  frame: number;
+  /** The frame shown under reduced motion. */
+  stillFrame: number;
+  /**
+   * CSS treatment for moods without their own sheet: `shiver` adds a small side-to-side shake and
+   * a sweat drop, `hop` a jump with squash and stretch plus sparkles.
+   */
+  treatment: "none" | "shiver" | "hop";
+}
+
+/** The founder's sheets: 4×2 frames each, 500px cells. Each loop is timed by eye for its mood. */
+const WAVE: LukasSprite = { src: "/lukas/wave.webp", columns: 4, rows: 2, loopMs: 1200 };
+/** Worried wrings his hands and sweats: slower, so it reads as fretting, not panic. */
+const WORRIED: LukasSprite = { src: "/lukas/worried.webp", columns: 4, rows: 2, loopMs: 2000 };
+/** Celebrating jumps with fists up among sparkles: quicker and bouncier. */
+const CELEBRATE: LukasSprite = { src: "/lukas/celebrate.webp", columns: 4, rows: 2, loopMs: 1000 };
+
+/**
+ * The art per mood: every mood plays its own sheet. Under reduced motion each shows one still
+ * frame: happy the first (a soft smile), worried frame 3 (hands clasped, a sweat drop), celebrating
+ * frame 4 (fists up among sparkles). The `treatment` stays the seam for a future mood that has no
+ * sheet yet: point it at a sheet's frame with `play: false` and a treatment; callers don't change.
+ */
+export const LUKAS_ART: Record<LukasMood, LukasMoodArt> = {
+  happy: { sprite: WAVE, play: true, frame: 0, stillFrame: 0, treatment: "none" },
+  worried: { sprite: WORRIED, play: true, frame: 0, stillFrame: 3, treatment: "none" },
+  celebrating: { sprite: CELEBRATE, play: true, frame: 0, stillFrame: 4, treatment: "none" },
+};
+
+export interface LukasProps {
+  mood: LukasMood;
+  /** Width and height: px, or any CSS length (`"100%"` fills a sized box, e.g. the landing hero). */
+  size?: number | string;
+  /** Hide from assistive technology when something next to Lukas already says the same. */
+  decorative?: boolean;
+  /** Overrides the art for this mood (final art, the landing page, stories). */
+  art?: LukasMoodArt;
+  /**
+   * For a Lukas far down a page: with JavaScript, his sheet is only fetched once he is within
+   * about a screen of the viewport (`data-lukas-defer`, see app.css), so it doesn't weigh on the
+   * first load. Without JavaScript (or `scripting` media support) he loads as usual.
+   */
+  deferUntilNear?: boolean;
+}
+
+/** False until the element comes within `margin` of the viewport (true without IntersectionObserver). */
+function useNearViewport(enabled: boolean, margin = "400px") {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const element = ref.current;
+    if (!enabled || !element) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setNear(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: margin },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [enabled, margin]);
+  return { ref, near };
+}
+
+/** `background-position` of a frame: with `background-size: cols·100% rows·100%`, a cell's
+ * percentage is its column over (cols − 1), and its row over (rows − 1). */
+function framePosition(sprite: LukasSprite, frame: number): string {
+  const column = frame % sprite.columns;
+  const row = Math.floor(frame / sprite.columns) % sprite.rows;
+  const x = sprite.columns > 1 ? (column / (sprite.columns - 1)) * 100 : 0;
+  const y = sprite.rows > 1 ? (row / (sprite.rows - 1)) * 100 : 0;
+  return `${round(x)}% ${round(y)}%`;
+}
+
+function round(value: number): number {
+  return Math.round(value * 1000) / 1000;
+}
+
+/**
+ * Stepping the sheet: `lk-sprite-x` walks the columns of a row (steps(columns) over one row's
+ * time) while `lk-sprite-y` moves down a row each time (steps(rows) over the whole loop), so the
+ * frames play in reading order; for the 4×2 wave that's 8 steps over 1.2s. The end values reach
+ * one cell past the last one, which `steps()` never shows.
+ */
+function playingVars(sprite: LukasSprite): Record<string, string | number> {
+  const end = (n: number) => (n > 1 ? `${round((n / (n - 1)) * 100)}%` : "0%");
+  return {
+    "--lk-sprite-cols": sprite.columns,
+    "--lk-sprite-rows": sprite.rows,
+    "--lk-sprite-row-ms": `${round(sprite.loopMs / sprite.rows)}ms`,
+    "--lk-sprite-loop-ms": `${sprite.loopMs}ms`,
+    "--lk-sprite-x-end": end(sprite.columns),
+    "--lk-sprite-y-end": end(sprite.rows),
+  };
+}
+
+/** Where the sparkles sit around Lukas; each one's twinkle is staggered by a quarter of
+ * `--celebrate` (see `.lk-lukas-sparkle` in app.css). */
+const SPARKLES = [
+  { left: "4%", top: "10%", tone: "is-gold" },
+  { left: "82%", top: "4%", tone: "is-candy" },
+  { left: "88%", top: "52%", tone: "is-gold" },
+  { left: "0%", top: "58%", tone: "is-candy" },
+] as const;
+
+/**
+ * Lukas, the gold coin, in 2D, drawn from the founder's sprite sheets: happy waves, worried wrings
+ * his hands, celebrating jumps among sparkles. Under reduced motion every mood is a still frame.
+ * Art with a CSS `treatment` (shiver, hop) adds it on top. Named by its mood unless `decorative`.
+ */
+export function Lukas({
+  mood,
+  size = 96,
+  decorative = false,
+  art,
+  deferUntilNear = false,
+}: LukasProps) {
+  const t = useTranslations("mascot");
+  const { ref, near } = useNearViewport(deferUntilNear);
+  const reduceMotion = useReducedMotionPreference();
+  const { sprite, play, frame, stillFrame, treatment } = art ?? LUKAS_ART[mood];
+  const moving = !reduceMotion;
+  const playing = moving && play;
+
+  const spriteStyle = {
+    backgroundImage: `url("${sprite.src}")`,
+    backgroundSize: `${sprite.columns * 100}% ${sprite.rows * 100}%`,
+    backgroundPosition: framePosition(sprite, reduceMotion ? stillFrame : frame),
+    ...(playing ? playingVars(sprite) : {}),
+  } as CSSProperties;
+
+  return (
+    <span
+      className={cx(
+        "lk-lukas",
+        `is-${mood}`,
+        moving && treatment === "shiver" && "is-shiver",
+        moving && treatment === "hop" && "is-hop",
+      )}
+      style={{ width: size, height: size }}
+      ref={ref}
+      data-lukas-defer={deferUntilNear ? (near ? "near" : "far") : undefined}
+      {...(decorative ? { "aria-hidden": true } : { role: "img", "aria-label": t(mood) })}
+    >
+      <span className="lk-lukas-body">
+        <span className={cx("lk-lukas-sprite", playing && "is-playing")} style={spriteStyle} />
+        {treatment === "shiver" && (
+          <svg className="lk-lukas-sweat" viewBox="0 0 20 28" aria-hidden="true">
+            <path d="M10 2 C10 2 2 13 2 19 a8 8 0 0 0 16 0 C18 13 10 2 10 2 Z" />
+          </svg>
+        )}
+      </span>
+      {treatment === "hop" &&
+        SPARKLES.map((s, index) => (
+          <svg
+            key={`${s.left}-${s.top}`}
+            className={cx("lk-lukas-sparkle", s.tone)}
+            style={{ left: s.left, top: s.top, "--lk-sparkle-index": index } as CSSProperties}
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path d="M12 0 C13 8 16 11 24 12 C16 13 13 16 12 24 C11 16 8 13 0 12 C8 11 11 8 12 0 Z" />
+          </svg>
+        ))}
+    </span>
+  );
+}

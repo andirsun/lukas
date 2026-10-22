@@ -1,0 +1,797 @@
+/*
+ * Landing page (/ and /en). Every color is a token; pressables sit on a solid edge, sink on press,
+ * show the 3px focus ring and are at least 44px. Phone first; the desktop layout starts at 900px.
+ */
+@layer components {
+  .lk-landing {
+    /* The traveling Lukas' layer is positioned in this box's coordinates. */
+    position: relative;
+    min-height: 100dvh;
+    overflow-x: clip;
+  }
+  .lk-landing-wrap {
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+    padding-inline: var(--space-4);
+  }
+  .lk-landing h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1.15;
+    margin: 0 0 var(--space-4);
+  }
+  .lk-landing h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    line-height: 1.2;
+    margin: 0;
+  }
+  .lk-landing p {
+    margin: 0;
+  }
+  .lk-landing-section {
+    padding-block: var(--space-6);
+    scroll-margin-top: var(--space-4);
+  }
+
+  /*
+   * Lukas spots: where the traveling Lukas stands per section (empty boxes without him). Section
+   * spots sit at the end of the heading row, his feet on the content's top edge; the heading keeps
+   * clear of them. Once he is live, the prerendered Lukas in a spot (hero, closing) steps aside.
+   */
+  .lk-landing-section-head {
+    --lk-spot: 92px;
+    --lk-head-gap: var(--space-4);
+    position: relative;
+    margin-bottom: var(--lk-head-gap);
+    padding-inline-end: calc(var(--lk-spot) + var(--space-2));
+  }
+  .lk-landing .lk-landing-section-head h2 {
+    margin: 0;
+  }
+  .lk-landing-spot {
+    display: block;
+    pointer-events: none;
+  }
+  .lk-landing-section-head .lk-landing-spot {
+    position: absolute;
+    right: 0;
+    /* A little lower than the content's top edge: his soles sit near the bottom of the box. */
+    bottom: calc(-1 * var(--lk-head-gap) - var(--lk-spot) * 0.07);
+    width: var(--lk-spot);
+    height: var(--lk-spot);
+  }
+  /* A section head without a spot for Lukas (what's next): the text may use the full width. */
+  .lk-landing-section-head.is-plain {
+    padding-inline-end: 0;
+  }
+  .lk-landing-lede {
+    margin-top: var(--space-2);
+    max-width: 40rem;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+  }
+  /* The button under a section's cards. */
+  .lk-landing-more {
+    margin-top: var(--space-4);
+  }
+  .lk-landing-spot.is-closing {
+    width: 128px;
+    height: 128px;
+  }
+  [data-lukas-spot] > .lk-lukas {
+    transition:
+      opacity var(--sheet) ease,
+      visibility 0s linear var(--sheet);
+  }
+  html[data-lukas-live="live"] [data-lukas-spot] > .lk-lukas {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  /* Text links (header nav, footer): no edge, they dip like ghost buttons. */
+  .lk-landing-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding-inline: var(--space-2);
+    border-radius: var(--radius-md);
+    color: var(--ink-muted);
+    font-weight: 800;
+    font-size: 14px;
+    text-decoration: none;
+    transition: transform var(--press) ease;
+  }
+  .lk-landing-link:hover,
+  .lk-landing-link[aria-current] {
+    color: var(--ink);
+  }
+  /* The active language (footer switch): a filled pill, not the page link's gold underline. */
+  .lk-landing-link[aria-current="true"] {
+    background: var(--surface-sunken);
+  }
+  .lk-landing-link[aria-current="page"] {
+    text-decoration: underline;
+    text-decoration-color: var(--gold);
+    text-decoration-thickness: 3px;
+    text-underline-offset: 6px;
+  }
+  .lk-landing-link:active {
+    transform: translateY(2px);
+  }
+  .lk-landing-link:focus-visible,
+  .lk-landing-logo:focus-visible,
+  .lk-landing-faq summary:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Header */
+  .lk-landing-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+  }
+  .lk-landing-logo {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+  }
+  .lk-landing-logo .lk-logo {
+    font-size: 28px;
+  }
+  .lk-landing-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .lk-landing-nav-section {
+    display: none;
+  }
+
+  /* Hero */
+  .lk-landing-hero {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: var(--space-4);
+    padding-block: var(--space-2) var(--space-6);
+  }
+  .lk-landing-hero-text {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+  }
+  /* Above the text on phones, beside it on desktop. */
+  .lk-landing-mascot {
+    order: -1;
+    position: relative;
+    width: clamp(190px, 58vw, 250px);
+    aspect-ratio: 1;
+  }
+  /* A soft gold halo behind Lukas, so the coin glows against the night sky. */
+  .lk-landing-mascot::before {
+    content: "";
+    position: absolute;
+    inset: 4%;
+    border-radius: 50%;
+    background: radial-gradient(
+      closest-side,
+      color-mix(in srgb, var(--gold) 34%, transparent),
+      color-mix(in srgb, var(--brand-glow) 14%, transparent) 62%,
+      transparent
+    );
+  }
+  .lk-landing-mascot > * {
+    position: relative;
+  }
+  /*
+   * A handwritten note above the headline (`hand`, landing only), tilted like a scribble, on a
+   * translucent candy highlighter stroke. The text is `ink`: at least 6:1 on the stroke in both
+   * themes. It opens the hero text; the tilt drops its left end by about a third of its height,
+   * so the headline keeps an extra gap below it.
+   */
+  .lk-landing-annotation {
+    justify-self: center;
+    margin-top: var(--space-2);
+    padding: 0.04em 0.45em 0.1em;
+    border-radius: 0.25em 0.7em 0.3em 0.8em / 0.7em 0.3em 0.8em 0.35em;
+    background: color-mix(in srgb, var(--candy) 32%, transparent);
+    font-family: var(--font-hand);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1.1;
+    color: var(--ink);
+    transform: rotate(-4deg);
+  }
+  .lk-landing-headline {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 36px;
+    line-height: 1.05;
+    margin: var(--space-2) 0 0;
+    color: var(--good);
+    text-shadow: 0 0 18px color-mix(in srgb, var(--good) 28%, transparent);
+  }
+  /*
+   * The headline's key word ("lukas" / "money") on a gold marker blob: an irregular rounded
+   * shape, slightly tilted, with a second offset pass like a real highlighter. Dark ink on solid
+   * gold (`on-gold`: 14.6:1 night, 11.1:1 day). The fill sits on the word itself, so contrast
+   * checkers measure it. A landing-only treatment, like the hand face.
+   */
+  .lk-landing-marker {
+    display: inline-block;
+    margin-inline: -0.04em;
+    padding: 0 0.16em 0.06em;
+    border-radius: 0.5em 0.28em 0.6em 0.22em / 0.38em 0.6em 0.3em 0.55em;
+    background: var(--gold);
+    box-shadow: 0.05em 0.07em 0 color-mix(in srgb, var(--gold) 45%, transparent);
+    color: var(--on-gold);
+    text-shadow: none;
+    transform: rotate(-2deg);
+  }
+  .lk-landing-description {
+    max-width: 34rem;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-muted);
+  }
+  /* The first sentence of the description: what Lukas is. */
+  .lk-landing-lead {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 21px;
+    line-height: 1.25;
+    color: var(--ink);
+  }
+  .lk-landing-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+  .lk-landing-cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+  }
+  .lk-landing-cta .lk-btn {
+    padding-inline: 34px;
+    font-size: 17px;
+    white-space: nowrap;
+  }
+  /* "Try it without an account" is long: a little less padding, and on the narrowest phones it
+     breaks into two balanced lines rather than pushing the page sideways. */
+  .lk-landing-cta .lk-btn-secondary {
+    max-width: 100%;
+    padding-inline: 24px;
+    white-space: normal;
+    text-wrap: balance;
+    text-align: center;
+  }
+  .lk-landing-perks {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    column-gap: 0.35em;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink-muted);
+  }
+  /* Links inside running text (the perks, an FAQ answer): underlined, in `ink`. */
+  .lk-landing-perks a,
+  .lk-landing-answer a {
+    border-radius: 4px;
+    color: var(--ink);
+    font-weight: 800;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+  }
+  .lk-landing-perks a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .lk-landing-perks a:focus-visible,
+  .lk-landing-answer a:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Cards: static surfaces on a solid edge, like the app's hero card. */
+  .lk-landing-cards {
+    display: grid;
+    gap: var(--space-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .lk-landing-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    border-radius: var(--radius-xl);
+    background: var(--surface-row);
+    border: 2px solid var(--stroke);
+    box-shadow: var(--edge-md);
+  }
+  .lk-landing-card.is-live {
+    border-color: var(--brand);
+  }
+  .lk-landing-card p {
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--ink-muted);
+  }
+  .lk-landing-card-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .lk-landing-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    flex: none;
+    border-radius: var(--radius-md);
+    background: var(--surface-sunken);
+  }
+  .lk-landing-icon svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  /* A planned feature's emoji in the icon box (the roadmap cards): decorative. */
+  .lk-landing-icon.is-glyph {
+    font-size: 26px;
+    line-height: 1;
+  }
+  .lk-landing-icon.is-gold {
+    color: var(--gold);
+  }
+  .lk-landing-icon.is-candy {
+    color: var(--candy);
+  }
+  .lk-landing-icon.is-good {
+    color: var(--good);
+  }
+  .lk-landing-with {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--ink-muted);
+  }
+  .lk-landing-card-foot {
+    margin-top: auto;
+    padding-top: var(--space-2);
+  }
+  .lk-landing-soon {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--near);
+    border: 2px solid var(--near);
+    border-radius: var(--radius-pill);
+    padding: 3px 10px;
+  }
+
+  /* "How it works" illustrations: decorative, drawn with the app's own pieces. */
+  .lk-landing-demo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-3);
+    min-height: 132px;
+    padding: var(--space-4);
+    margin-bottom: var(--space-2);
+    border-radius: var(--radius-lg);
+    /* The page color, not surface-sunken: status text (good, near) keeps AA on it by day. */
+    background: var(--bg);
+  }
+  .lk-landing-demo-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .lk-landing-demo-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .lk-landing-demo-expense {
+    color: var(--over);
+  }
+  .lk-landing-saved {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    align-self: flex-start;
+    padding: 4px 14px 4px 4px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--good);
+  }
+  .lk-landing-donut {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    flex: none;
+    border-radius: 50%;
+    background: conic-gradient(
+      var(--candy) 0 38%,
+      var(--brand-glow) 0 62%,
+      var(--near) 0 80%,
+      var(--good) 0 100%
+    );
+  }
+  .lk-landing-donut::after {
+    content: "";
+    position: absolute;
+    inset: 22px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .lk-landing-legend {
+    display: grid;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .lk-landing-legend li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .lk-landing-legend li::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--dot);
+  }
+  .lk-landing-budget {
+    display: grid;
+    gap: 6px;
+  }
+  .lk-landing-budget .lk-rowtop {
+    font-size: 14px;
+  }
+  .lk-landing-file {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    background: var(--surface-row);
+    border: 2px solid var(--stroke);
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .lk-landing-arrow {
+    width: 28px;
+    height: 28px;
+    flex: none;
+    fill: none;
+    stroke: var(--ink-muted);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .lk-landing-imported {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--good);
+  }
+
+  /* FAQ: each question is a pressable card that opens in place (no JavaScript needed). */
+  .lk-landing-faq {
+    display: grid;
+    gap: var(--space-3);
+    max-width: 760px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .lk-landing-faq details {
+    border-radius: var(--radius-lg);
+    background: var(--surface-row);
+    border: 2px solid var(--stroke);
+    box-shadow: var(--edge-sm);
+    transition:
+      transform var(--press) ease,
+      box-shadow var(--press) ease;
+  }
+  .lk-landing-faq details:has(> summary:active) {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--surface-edge);
+  }
+  .lk-landing-faq summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .lk-landing-faq summary::-webkit-details-marker {
+    display: none;
+  }
+  /* A plus that turns into a cross when the answer is open. */
+  .lk-landing-faq summary::after {
+    content: "+";
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--surface-sunken);
+    /* Gold at night, deep purple by day (gold has no contrast on lavender). */
+    color: var(--focus);
+    font-size: 22px;
+    line-height: 1;
+    transition: transform var(--sheet) ease;
+  }
+  .lk-landing-faq details[open] > summary::after {
+    transform: rotate(45deg);
+  }
+  .lk-landing-answer {
+    padding: 0 var(--space-4) var(--space-4);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink-muted);
+  }
+
+  /* Open source: one card with the code icon, a short paragraph and the link to the repository. */
+  .lk-landing-open {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+  }
+  .lk-landing-open h2 {
+    margin: 0 0 var(--space-2);
+  }
+  .lk-landing-open p {
+    max-width: 40rem;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  /* Closing call to action */
+  .lk-landing-closing {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    text-align: center;
+    padding: var(--space-5) var(--space-4) var(--space-6);
+    border-radius: var(--radius-xl);
+    background: var(--surface);
+    box-shadow: var(--edge-md);
+  }
+  .lk-landing-closing h2 {
+    margin: 0;
+  }
+  .lk-landing-closing p {
+    max-width: 30rem;
+    color: var(--ink-muted);
+    line-height: 1.5;
+  }
+
+  /* Landing-only release: the coming-soon labels are long, so they wrap (down to 320px). */
+  .lk-landing .lk-btn.is-soon {
+    white-space: normal;
+    text-align: center;
+    max-width: 100%;
+    padding-inline: var(--space-4);
+  }
+
+  /* The 404 page: Lukas looking for the page, then the message in each language. */
+  .lk-landing-notfound {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-4);
+    text-align: center;
+    padding-block: var(--space-4) var(--space-6);
+  }
+  .lk-landing-notfound-lukas {
+    width: 160px;
+    height: 160px;
+  }
+  .lk-landing-notfound-message {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    max-width: 30rem;
+  }
+  .lk-landing .lk-landing-notfound-message :is(h1, h2) {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1.15;
+    margin: 0;
+  }
+  .lk-landing-notfound-message p {
+    color: var(--ink-muted);
+    line-height: 1.5;
+  }
+  .lk-landing-notfound-message + .lk-landing-notfound-message {
+    margin-top: var(--space-4);
+    padding-top: var(--space-5);
+    border-top: 2px solid var(--stroke);
+    width: 100%;
+  }
+
+  /* Footer */
+  .lk-landing-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-block: var(--space-5) var(--space-6);
+    border-top: 2px solid var(--stroke);
+    font-size: 14px;
+  }
+  .lk-landing-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .lk-landing-langs {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .lk-landing-copyright {
+    color: var(--ink-muted);
+    font-weight: 800;
+  }
+
+  @media (min-width: 640px) {
+    .lk-landing-cards.is-ways,
+    .lk-landing-cards.is-next {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .lk-landing-cards.is-how {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 900px) {
+    .lk-landing-wrap {
+      padding-inline: var(--space-6);
+    }
+    .lk-landing h2 {
+      font-size: 32px;
+      margin-bottom: var(--space-5);
+    }
+    .lk-landing-section-head {
+      --lk-spot: 180px;
+      --lk-head-gap: var(--space-5);
+    }
+    .lk-landing-spot.is-closing {
+      width: 180px;
+      height: 180px;
+    }
+    .lk-landing-nav-section {
+      display: inline-flex;
+    }
+    .lk-landing-nav {
+      gap: var(--space-3);
+    }
+    .lk-landing-hero {
+      grid-template-columns: 1.15fr 1fr;
+      align-items: center;
+      justify-items: start;
+      text-align: start;
+      gap: var(--space-6);
+      padding-block: var(--space-5) var(--space-6);
+    }
+    .lk-landing-hero-text {
+      justify-items: start;
+    }
+    .lk-landing-mascot {
+      order: 0;
+      width: min(400px, 100%);
+      justify-self: center;
+    }
+    /* A scribble over the headline's first words, not a centered label. */
+    .lk-landing-annotation {
+      justify-self: start;
+      margin-inline-start: 0.6em;
+      font-size: 32px;
+    }
+    .lk-landing-headline {
+      margin-top: var(--space-3);
+      font-size: 56px;
+    }
+    .lk-landing-description {
+      font-size: 18px;
+    }
+    .lk-landing-lead {
+      font-size: 25px;
+    }
+    /* The perks under the action, so neither has to wrap beside the other. */
+    .lk-landing-cta {
+      align-items: flex-start;
+    }
+    .lk-landing-cta-actions {
+      justify-content: flex-start;
+    }
+    .lk-landing-perks {
+      justify-content: flex-start;
+    }
+    .lk-landing-open {
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: var(--space-5);
+    }
+    .lk-landing-section {
+      padding-block: var(--space-6) calc(var(--space-6) * 1.5);
+    }
+  }
+}
+
+/* Wide enough for a free column beside the FAQ list (max 760px): Lukas stands there, next to the
+ * first questions. */
+@media (min-width: 1100px) {
+  @layer components {
+    .lk-landing-section-head .lk-landing-spot.is-faq {
+      --lk-faq-spot: 220px;
+      top: calc(100% + var(--lk-head-gap));
+      bottom: auto;
+      right: calc((100% - 760px) / 2 - var(--lk-faq-spot) / 2);
+      width: var(--lk-faq-spot);
+      height: var(--lk-faq-spot);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lk-landing-link,
+  .lk-landing-faq details,
+  .lk-landing-faq summary::after {
+    transition-duration: 0s;
+  }
+}

@@ -1,0 +1,114 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+  .phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 28px; margin-top: 18px; }
+  .phone { width: 280px; margin: 0 auto; border-radius: 38px; padding: 14px; box-shadow: 0 18px 40px rgba(0,0,0,.18); }
+  .screen { border-radius: 28px; padding: 18px 16px 20px; min-height: 560px; display: flex; flex-direction: column; gap: 12px; font-family: "Nunito", sans-serif; }
+  .row { display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 22px; -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .month { font-weight: 800; font-size: 12px; border-radius: 99px; padding: 4px 10px; }
+  .hero { border-radius: 24px; padding: 14px; }
+  .hero small { font-weight: 800; font-size: 12px; opacity: .7; }
+  .big { font-family: "Fredoka", sans-serif; font-weight: 700; font-size: 38px; line-height: 1.05; }
+  .bar { height: 14px; border-radius: 999px; overflow: hidden; margin-top: 10px; }
+  .bar > span { display: block; height: 100%; width: 80%; border-radius: 999px; }
+  .cat { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 18px; }
+  .ico { width: 34px; height: 34px; border-radius: 12px; display: grid; place-items: center; font-size: 18px; flex: none; }
+  .meta { flex: 1; }
+  .name { font-size: 13px; font-weight: 800; }
+  .sub { font-size: 11px; opacity: .75; }
+  .mini { height: 7px; border-radius: 99px; margin-top: 5px; overflow: hidden; }
+  .mini > span { display: block; height: 100%; border-radius: 99px; }
+  .add { margin-top: auto; border: 0; border-radius: 22px; padding: 16px; font-size: 17px; font-family: "Fredoka"; font-weight: 700; color: #fff; }
+  .mascot { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; flex: none; }
+  .bubble { font-size: 12px; padding: 8px 10px; border-radius: 14px; font-weight: 700; line-height: 1.3; }
+  .label { text-align: center; margin-top: 14px; }
+  .tokens { display: flex; gap: 6px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+  .tokens span { width: 22px; height: 22px; border-radius: 7px; border: 1px solid rgba(0,0,0,.12); }
+
+  /* Night */
+  .night.phone { background: #0c0a1d; }
+  .night .screen { background: radial-gradient(120% 70% at 50% 0%, #3a1f6e 0%, #15122b 55%); color: #f3f0ff; }
+  .night .logo { background-image: linear-gradient(90deg,#ffe66d,#ff8fd8); }
+  .night .month { background: #2a2450; box-shadow: 0 3px 0 #120f26; }
+  .night .hero { background: #241f48; box-shadow: 0 6px 0 #0f0c22, inset 0 1px 0 rgba(255,255,255,.08); }
+  .night .big { color: #7cffb2; text-shadow: 0 0 18px rgba(124,255,178,.35); }
+  .night .bar { background: #120f26; }
+  .night .bar > span { background: linear-gradient(90deg,#7cffb2,#ffe66d); }
+  .night .cat { background: #1f1a3e; box-shadow: 0 4px 0 #0f0c22; }
+  .night .mini { background: #120f26; }
+  .night .add { background: linear-gradient(180deg,#8b5cff,#6a3df0); box-shadow: 0 6px 0 #3f22a3, 0 10px 24px rgba(139,92,255,.45); }
+  .night .mascot { background: #ffe66d; box-shadow: 0 4px 0 #c9a92a; }
+  .night .bubble { background: #2a2450; }
+
+  /* Day: same identity, the neon turns into saturated "candy" colors on a lavender sky */
+  .day.phone { background: #d9d2f5; }
+  .day .screen { background: radial-gradient(120% 70% at 50% 0%, #e9ddff 0%, #f7f4ff 60%); color: #221a47; }
+  .day .logo { background-image: linear-gradient(90deg,#7b3df0,#ff4fb3); }
+  .day .month { background: #fff; color: #4b2fb8; box-shadow: 0 3px 0 #d6ccf5; }
+  .day .hero { background: #ffffff; box-shadow: 0 6px 0 #d6ccf5, 0 12px 28px rgba(123,61,240,.12); }
+  .day .big { color: #0faa62; }
+  .day .bar { background: #ece6ff; }
+  .day .bar > span { background: linear-gradient(90deg,#16c172,#ffb800); }
+  .day .cat { background: #fff; box-shadow: 0 4px 0 #e2dafa; }
+  .day .mini { background: #ece6ff; }
+  .day .add { background: linear-gradient(180deg,#8b5cff,#6a3df0); box-shadow: 0 6px 0 #4a2bbf, 0 10px 24px rgba(139,92,255,.30); }
+  .day .mascot { background: #ffd23f; box-shadow: 0 4px 0 #d9a900; }
+  .day .bubble { background: #fff; box-shadow: 0 2px 0 #e2dafa; }
+
+  /* Pressable "3D" buttons borrowed from B: a solid bottom edge that collapses when pressed. */
+  .press { cursor: pointer; transition: transform .08s ease, box-shadow .08s ease; user-select: none; }
+  .press:active { transform: translateY(5px); }
+  .night .add.press:active { box-shadow: 0 1px 0 #3f22a3, 0 4px 10px rgba(139,92,255,.35); }
+  .day .add.press:active { box-shadow: 0 1px 0 #4a2bbf, 0 4px 10px rgba(139,92,255,.25); }
+  .night .cat.press { border: 2px solid #2d2660; border-bottom-width: 2px; }
+  .night .cat.press:active { transform: translateY(3px); box-shadow: 0 1px 0 #0f0c22; }
+  .day .cat.press { border: 2px solid #ece6ff; }
+  .day .cat.press:active { transform: translateY(3px); box-shadow: 0 1px 0 #e2dafa; }
+  .night .month.press:active, .day .month.press:active { transform: translateY(2px); box-shadow: none; }
+  .add { text-transform: uppercase; letter-spacing: .8px; font-size: 16px; }
+</style>
+
+<h2>Arcade + botones que se hunden, de noche y de día</h2>
+<p class="subtitle"><b>Presiona los botones y las categorías</b>: tienen el borde sólido de la B y se hunden al tocarlos (en el teléfono irá con vibración). Mismos colores de marca, misma forma. De día el neón se vuelve color "caramelo" saturado sobre un cielo lavanda, y las sombras sólidas se mantienen para que todo se siga sintiendo como botones de juego. La app seguiría el modo del teléfono automáticamente, con opción de forzarlo.</p>
+
+<div class="phones">
+  <div>
+    <div class="phone night">
+      <div class="screen">
+        <div class="row"><span class="logo">Lukas</span><span class="month press">Octubre ▾</span></div>
+        <div class="row" style="gap:10px;justify-content:flex-start"><div class="mascot">🪙</div><div class="bubble">Nivel 4 · ¡a 3 días de cerrar el mes en verde!</div></div>
+        <div class="hero"><small>Te quedan este mes</small><div class="big">562,92 €</div><div class="bar"><span></span></div>
+          <div class="row" style="font-size:11px;font-weight:800;margin-top:6px;opacity:.7"><span>Gastado 2.237 €</span><span>de 2.800 €</span></div></div>
+        <div class="cat press"><div class="ico" style="background:#4a2140">🛒</div><div class="meta"><div class="name">Supermercado</div><div class="sub">Te pasaste 14,12 €</div><div class="mini"><span style="width:100%;background:#ff5c7a"></span></div></div></div>
+        <div class="cat press"><div class="ico" style="background:#2b2a5a">🏠</div><div class="meta"><div class="name">Casa</div><div class="sub">Quedan 20,22 €</div><div class="mini"><span style="width:98%;background:#ffb547"></span></div></div></div>
+        <div class="cat press"><div class="ico" style="background:#3b2560">⭐</div><div class="meta"><div class="name">Ocio</div><div class="sub">Quedan 387,20 €</div><div class="mini"><span style="width:40%;background:#7cffb2"></span></div></div></div>
+        <button class="add press">＋ Agregar gasto</button>
+      </div>
+    </div>
+    <div class="label"><h3>Noche</h3></div>
+  </div>
+
+  <div>
+    <div class="phone day">
+      <div class="screen">
+        <div class="row"><span class="logo">Lukas</span><span class="month press">Octubre ▾</span></div>
+        <div class="row" style="gap:10px;justify-content:flex-start"><div class="mascot">🪙</div><div class="bubble">Nivel 4 · ¡a 3 días de cerrar el mes en verde!</div></div>
+        <div class="hero"><small>Te quedan este mes</small><div class="big">562,92 €</div><div class="bar"><span></span></div>
+          <div class="row" style="font-size:11px;font-weight:800;margin-top:6px;opacity:.7"><span>Gastado 2.237 €</span><span>de 2.800 €</span></div></div>
+        <div class="cat press"><div class="ico" style="background:#ffe1e8">🛒</div><div class="meta"><div class="name">Supermercado</div><div class="sub">Te pasaste 14,12 €</div><div class="mini"><span style="width:100%;background:#f0386b"></span></div></div></div>
+        <div class="cat press"><div class="ico" style="background:#e6e3ff">🏠</div><div class="meta"><div class="name">Casa</div><div class="sub">Quedan 20,22 €</div><div class="mini"><span style="width:98%;background:#ff9f1c"></span></div></div></div>
+        <div class="cat press"><div class="ico" style="background:#f1e3ff">⭐</div><div class="meta"><div class="name">Ocio</div><div class="sub">Quedan 387,20 €</div><div class="mini"><span style="width:40%;background:#16c172"></span></div></div></div>
+        <button class="add press">＋ Agregar gasto</button>
+      </div>
+    </div>
+    <div class="label"><h3>Día</h3></div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:26px">
+  <div class="option" data-choice="works" onclick="toggleSelect(this)"><div class="letter">✓</div><div class="content"><h3>Me convence el modo día</h3><p>Seguimos con Arcade en ambos modos.</p></div></div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)"><div class="letter">~</div><div class="content"><h3>Casi, pero ajustemos</h3><p>Cuéntame qué cambiarías en el chat.</p></div></div>
+  <div class="option" data-choice="dark-only" onclick="toggleSelect(this)"><div class="letter">☾</div><div class="content"><h3>Solo modo noche</h3><p>Lukas es oscuro siempre, como identidad.</p></div></div>
+</div>

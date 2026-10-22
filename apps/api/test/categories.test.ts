@@ -11,7 +11,7 @@ beforeAll(async () => {
   t = await createTestApp();
   a = (await t.signIn("a@lukas.test")).headers;
   b = (await t.signIn("b@lukas.test")).headers;
-}, 120_000);
+});
 afterAll(() => t?.stop());
 
 const create = (headers: typeof a, body: object) =>
@@ -100,5 +100,56 @@ describe("categories", () => {
     const res = await create(a, { name: "", kind: "nope" });
     expect(res.status).toBe(422);
     expect(await res.json()).toMatchObject({ code: "validation_failed" });
+  });
+});
+
+describe("changing a category's kind", () => {
+  let c: { authorization: string };
+  beforeAll(async () => {
+    c = (await t.signIn("kind@lukas.test")).headers;
+  });
+  const patch = (id: string, body: object) =>
+    t.request("PATCH", `/v1/categories/${id}`, { headers: c, body });
+
+  test("works without transactions, keeping the category (same id, same name)", async () => {
+    const created = (await (
+      await create(c, { name: "Salario", kind: "income", icon: "💰", color: "#2fd388" })
+    ).json()) as { id: string };
+    const res = await patch(created.id, { kind: "expense" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ id: created.id, name: "Salario", kind: "expense" });
+    expect(
+      (await list(c, "?includeArchived=true")).filter((x) => x.name === "Salario"),
+    ).toHaveLength(1);
+  });
+
+  test("is refused while the category has transactions, soft-deleted ones included", async () => {
+    const created = (await (
+      await create(c, { name: "Casa", kind: "expense", icon: "🏠", color: "#6d6bff" })
+    ).json()) as { id: string };
+    const tx = (await (
+      await t.request("POST", "/v1/transactions", {
+        headers: c,
+        body: { name: "rent", amount: -50_000, categoryId: created.id, date: `${thisMonth}-01` },
+      })
+    ).json()) as { id: string };
+    const refused = await patch(created.id, { kind: "income" });
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toMatchObject({ code: "category_has_transactions" });
+    // Renaming is still fine.
+    expect((await patch(created.id, { name: "Hogar" })).status).toBe(200);
+    // A soft-deleted transaction still counts: restoring it would leave a mis-signed row under
+    // the other kind.
+    await t.request("DELETE", `/v1/transactions/${tx.id}`, { headers: c });
+    const stillRefused = await patch(created.id, { kind: "income" });
+    expect(stillRefused.status).toBe(409);
+    expect(await stillRefused.json()).toMatchObject({ code: "category_has_transactions" });
+    expect(
+      (await t.request("POST", `/v1/transactions/${tx.id}/restore`, { headers: c })).status,
+    ).toBe(200);
+    const restored = (await list(c)).find((x) => x.id === created.id) as unknown as {
+      kind: string;
+    };
+    expect(restored.kind).toBe("expense");
   });
 });

@@ -4,3 +4,8 @@
 .superpowers
 .env
 coverage
+**/dist
+# Secrets never go into a build context (deploy/personal/.env, apps/*/.env.local, ...).
+**/.env
+**/.env.*
+!**/.env.example

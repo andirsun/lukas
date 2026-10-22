@@ -1,0 +1,89 @@
+# Caddy for the personal install. It listens on plain HTTP inside the stack: TLS ends at Cloudflare,
+# and cloudflared reaches it over the private network.
+{
+	auto_https off
+	admin off
+}
+
+:80 {
+	encode zstd gzip
+
+	# A minimal access log on stdout (docker compose logs web): when, who (the visitor's address from
+	# Cloudflare), what path, what status. Query strings are cut, so a sign-in code in a link never
+	# lands in a log, and no request or response headers are kept (cookies, tokens).
+	log {
+		output stdout
+		format filter {
+			wrap json
+			request>uri regexp \?.* ""
+			request>headers delete
+			request>tls delete
+			resp_headers delete
+		}
+	}
+	log_append visitor_ip {http.request.header.Cf-Connecting-Ip}
+
+	# Same set as apps/web/public/_headers (which Cloudflare Pages reads and Caddy cannot), plus
+	# noindex: this is one person's install, not the public site.
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=()"
+		X-Robots-Tag "noindex, nofollow"
+		# Never shown inside another site's frame.
+		Content-Security-Policy "frame-ancestors 'none'"
+		-Server
+	}
+
+	# --- API: the path is forwarded as is (the API serves everything under /api). ---------------
+	handle /api/* {
+		# Not served on the internet. OAuth (dynamic client registration and the flows after it) is for
+		# MCP clients, which this install does not use yet; re-enable it with the MCP stage. The API
+		# schema is for developers. Both answer 404 here, before the API sees the request.
+		@notPublic path /api/auth/oauth2 /api/auth/oauth2/* /api/openapi.json
+		respond @notPublic 404
+
+		# Never cached, unless the API says otherwise.
+		header ?Cache-Control "no-store"
+
+		# Cloudflare sets CF-Connecting-IP to the real visitor and overwrites any value the visitor
+		# sent. Pass that on as the only X-Forwarded-For entry; the API trusts just this hop.
+		@viaCloudflare header Cf-Connecting-Ip *
+		reverse_proxy @viaCloudflare api:3000 {
+			header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
+		}
+		# Someone on this machine (curl to the published port): Caddy's own view of the client.
+		reverse_proxy api:3000
+	}
+
+	root * /srv
+
+	# --- Built files are named after their content: cache them for good. -----------------------
+	handle /assets/* {
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# --- The landing and roadmap live on their own site: send visitors there (same path and query).
+	# A temporary redirect, so the landing can move without browsers remembering the old answer.
+	@pages path / /en /en/ /roadmap /roadmap/ /en/roadmap /en/roadmap/
+	handle @pages {
+		header Cache-Control "no-cache"
+		redir {$LANDING_URL}{uri} 302
+	}
+
+	# --- A path with a file extension is a file: a missing one is a 404, not the app. ----------
+	@file path_regexp \.[A-Za-z0-9]{1,8}$
+	handle @file {
+		header Cache-Control "no-cache"
+		file_server
+	}
+
+	# --- Every other path is a screen of the app (/app, /sign-in, /welcome/..., /auth/verify). --
+	# The SPA shell, always revalidated: after an update its script names change.
+	handle {
+		header Cache-Control "no-cache"
+		try_files {path} /__spa-fallback.html
+		file_server
+	}
+}

@@ -1,12 +1,13 @@
 import { accounts, verification, withUser } from "@lukas/db";
 import { eq, like } from "@lukas/db/orm";
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from "vitest";
+import { CODE_TTL_SECONDS } from "../src/auth.ts";
 import { codeFrom, createTestApp, type TestApp } from "./harness.ts";
 
 let t: TestApp;
 beforeAll(async () => {
   t = await createTestApp();
-}, 120_000);
+});
 afterAll(() => t?.stop());
 afterEach(() => {
   vi.useRealTimers();
@@ -29,7 +30,49 @@ describe("email code + magic link", () => {
     expect(mail?.text).toContain(
       `http://localhost:5173/auth/verify?email=a%40lukas.test&code=${code}`,
     );
-    expect(mail?.subject).toBe(`Tu código de Lukas: ${code}`);
+    expect(mail?.subject).toBe(`Tu código de Lukitas: ${code}`);
+  });
+
+  test("the email names the product Lukitas, in the text and in the html", async () => {
+    await sendCode("name@lukas.test");
+    const mail = t.mailer.lastTo("name@lukas.test");
+    expect(mail?.text).toContain("¡Hola! Este es tu código para entrar");
+    expect(mail?.html).toContain("¡Hola! Este es tu código para entrar");
+    expect(`${mail?.subject}\n${mail?.text}\n${mail?.html}`).not.toMatch(/\bLukas\b/);
+  });
+
+  test("the email states the real expiry and loads Lukitas from the web host", async () => {
+    await sendCode("expiry@lukas.test");
+    const mail = t.mailer.lastTo("expiry@lukas.test");
+    expect(mail?.text).toContain(`vencen en ${CODE_TTL_SECONDS / 60} minutos.`);
+    expect(mail?.html).toContain('src="http://localhost:5173/email/lukitas-wave.png"');
+  });
+
+  test("the passkey relying party is named Lukitas, and its id stays the web host", async () => {
+    const { headers } = await t.signIn("rp@lukas.test");
+    const res = await t.request("GET", "/auth/passkey/generate-register-options", { headers });
+    expect(res.status).toBe(200);
+    const options = (await res.json()) as { rp: { name: string; id: string } };
+    expect(options.rp).toEqual({ name: "Lukitas", id: "localhost" });
+  });
+
+  test("a new passkey is offered ES256 first and never Ed25519", async () => {
+    // Proton Pass creates Ed25519 keys when offered them first, then cannot sign with them
+    // (AuthenticatorError 38, CTAP2_ERR_UNSUPPORTED_ALGORITHM).
+    const { headers } = await t.signIn("alg@lukas.test");
+    const res = await t.request("GET", "/auth/passkey/generate-register-options", { headers });
+    expect(res.status).toBe(200);
+    // The challenge cookie still comes along: verify-registration needs it.
+    expect(res.headers.get("set-cookie")).toContain("better-auth-passkey");
+    const options = (await res.json()) as {
+      challenge: string;
+      pubKeyCredParams: { alg: number; type: string }[];
+    };
+    expect(options.challenge).toBeTruthy();
+    expect(options.pubKeyCredParams).toEqual([
+      { alg: -7, type: "public-key" },
+      { alg: -257, type: "public-key" },
+    ]);
   });
 
   test("signing in returns a bearer token that opens protected routes", async () => {
@@ -100,6 +143,42 @@ describe("email code + magic link", () => {
       statuses.push((await sendCode(`spoof${i}@lukas.test`, xff)).status);
     }
     expect(statuses[5]).toBe(429);
+  });
+
+  test("a new address gets the email in the language of the page that asked for it", async () => {
+    await sendCode("lang-en@lukas.test", { "x-lukas-locale": "en" });
+    const mail = t.mailer.lastTo("lang-en@lukas.test");
+    expect(mail?.subject).toMatch(/^Your Lukitas code: \d{6}$/);
+    expect(mail?.text).toContain("&lang=en");
+  });
+
+  test("with no hint, a new address gets the browser's language (Accept-Language)", async () => {
+    await sendCode("accept-en@lukas.test", { "accept-language": "en-GB,en;q=0.9,es;q=0.5" });
+    expect(t.mailer.lastTo("accept-en@lukas.test")?.subject).toMatch(/^Your Lukitas code/);
+    await sendCode("accept-es@lukas.test", { "accept-language": "es-CO,es;q=0.9,en;q=0.8" });
+    expect(t.mailer.lastTo("accept-es@lukas.test")?.subject).toMatch(/^Tu código de Lukitas/);
+    await sendCode("accept-fr@lukas.test", { "accept-language": "fr-FR,fr;q=0.9" });
+    expect(t.mailer.lastTo("accept-fr@lukas.test")?.subject).toMatch(/^Tu código de Lukitas/);
+  });
+
+  test("an existing user's profile language wins over the hint", async () => {
+    const { headers } = await t.signIn("profile-es@lukas.test");
+    await t.request("PATCH", "/v1/me", { headers, body: { locale: "es" } });
+    await sendCode("profile-es@lukas.test", { "x-lukas-locale": "en", "accept-language": "en" });
+    const mail = t.mailer.lastTo("profile-es@lukas.test");
+    expect(mail?.subject).toMatch(/^Tu código de Lukitas/);
+    expect(mail?.text).toContain("&lang=es");
+  });
+
+  test("the magic link carries a same-origin next, and never an off-site one", async () => {
+    await sendCode("next@lukas.test", { "x-lukas-next": "/app/insights?month=2026-10" });
+    const link = /http\S+/.exec(t.mailer.lastTo("next@lukas.test")?.text ?? "")?.[0] ?? "";
+    expect(new URL(link).searchParams.get("next")).toBe("/app/insights?month=2026-10");
+    for (const next of ["https://evil.example", "//evil.example", "/\\evil.example", "app"]) {
+      await sendCode("next-bad@lukas.test", { "x-lukas-next": next });
+      const bad = /http\S+/.exec(t.mailer.lastTo("next-bad@lukas.test")?.text ?? "")?.[0] ?? "";
+      expect(new URL(bad).searchParams.has("next"), next).toBe(false);
+    }
   });
 
   test("a new user gets one default account", async () => {

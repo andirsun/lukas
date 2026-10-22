@@ -10,7 +10,7 @@ export const TEST_CONFIG = {
   BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-0000",
   API_URL: "http://localhost:3000",
   WEB_URL: "http://localhost:5173",
-  MAIL_FROM: "Lukas <test@lukas.test>",
+  MAIL_FROM: "Lukitas <test@lukas.test>",
   PORT: 3000,
   NODE_ENV: "test" as const,
   CLIENT_IP_HEADER: "x-forwarded-for",
@@ -24,7 +24,10 @@ export function codeFrom(subject: string): string {
 }
 
 /** A fresh database + app per test file. Requests go through `app.request` (no network). */
-export async function createTestApp() {
+export async function createTestApp(
+  overrides: Partial<Config> = {},
+  { now }: { now?: () => Date } = {},
+) {
   const database = await startTestDatabase();
   const app$ = createDb(database.appUrl);
   const admin = createDb(database.adminUrl);
@@ -33,8 +36,9 @@ export async function createTestApp() {
     ...TEST_CONFIG,
     DATABASE_URL: database.appUrl,
     DATABASE_ADMIN_URL: database.adminUrl,
+    ...overrides,
   };
-  const app = createApp({ config, db: app$.db, mailer });
+  const app = createApp({ config, db: app$.db, mailer, now });
 
   // Distinct fake client IPs (behind a trusted 10.x proxy) keep the per-IP auth rate limit out of
   // unrelated tests.

@@ -1,0 +1,39 @@
+# Production image for the API and its one-shot database step. Build from the repository root:
+#   docker build -f apps/api/Dockerfile.prod -t lukitas-api .
+#
+# The same image runs two commands:
+#   node dist/server.js     the API (the default)
+#   node dist/bootstrap.js  creates the lukas_app role and applies the migrations, then exits
+#
+# `apps/api/Dockerfile` is the development image (tsx, source files, no health check).
+
+FROM node:22-alpine AS build
+WORKDIR /repo
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.cjs ./
+COPY packages/core/package.json packages/core/
+COPY packages/db/package.json packages/db/
+COPY packages/importers/package.json packages/importers/
+COPY apps/api/package.json apps/api/
+RUN pnpm install --frozen-lockfile --filter "@lukas/api..."
+
+COPY tsconfig.base.json ./
+COPY packages packages
+COPY apps/api apps/api
+# One bundle per entry point, with every dependency inside: no node_modules in the final image.
+RUN pnpm --filter @lukas/api build
+
+
+FROM node:22-alpine AS runtime
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=build /repo/apps/api/dist ./dist
+# bootstrap.js reads the migrations from ../drizzle, next to dist.
+COPY --from=build /repo/packages/db/drizzle ./drizzle
+USER node
+EXPOSE 3000
+# The API serves /health under API_URL's path; /api is the path this install uses.
+HEALTHCHECK --interval=15s --timeout=3s --start-period=20s --retries=3 \
+  CMD wget -q -O /dev/null "http://127.0.0.1:${PORT:-3000}${HEALTH_PATH:-/api/health}" || exit 1
+CMD ["node", "dist/server.js"]

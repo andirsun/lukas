@@ -9,14 +9,16 @@ import {
   setBudgetSchema,
   updateCategorySchema,
 } from "@lukas/core";
-import { categories, categoryBudgets, type Tx, withUser } from "@lukas/db";
+import { categories, categoryBudgets, type Tx, transactions, withUser } from "@lukas/db";
 import { asc, eq, isNull } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { isUniqueViolation } from "../http/db-errors.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
-import { currentMonth } from "../services/time.ts";
+import { stopCategoryRecurrences } from "../services/recurrence-stop.ts";
+import { currentMonth, userToday } from "../services/time.ts";
+import { defaultAccount } from "../services/transactions.ts";
 
 type CategoryRow = typeof categories.$inferSelect;
 const idParam = z.object({ id: z.uuid() });
@@ -72,7 +74,7 @@ export function categoryRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const includeArchived = c.req.valid("query").includeArchived === "true";
-      const month = currentMonth(c.get("user"));
+      const month = currentMonth(deps, c.get("user"));
       const result = await withUser(deps.db, c.get("userId"), async (tx) => {
         const rows = await tx
           .select()
@@ -103,7 +105,7 @@ export function categoryRoutes(deps: AppDeps) {
           .returning();
         return created as CategoryRow;
       }).catch(nameTaken);
-      return c.json(toDto(row, [], currentMonth(c.get("user"))), 201);
+      return c.json(toDto(row, [], currentMonth(deps, c.get("user"))), 201);
     },
   );
 
@@ -117,9 +119,31 @@ export function categoryRoutes(deps: AppDeps) {
     async (c) => {
       const { id } = c.req.valid("param");
       const { archived, ...fields } = c.req.valid("json");
-      const month = currentMonth(c.get("user"));
+      const user = c.get("user");
+      const month = currentMonth(deps, user);
       const dto = await withUser(deps.db, c.get("userId"), async (tx) => {
+        const archiving = archived === true;
+        // Archiving ends the category's recurrences: locked like any recurrence write, so a
+        // currency change or a new recurrence never interleaves with it.
+        if (archiving) await defaultAccount(tx, { lock: true });
         const existing = await findCategory(tx, id);
+        // Spending ↔ income only while nothing was ever booked under it: its transactions' signs
+        // would no longer mean what they meant. Soft-deleted ones count, as for the currency lock:
+        // they can be restored.
+        if (fields.kind && fields.kind !== existing.kind) {
+          const [booked] = await tx
+            .select({ id: transactions.id })
+            .from(transactions)
+            .where(eq(transactions.categoryId, id))
+            .limit(1);
+          if (booked) {
+            throw new ApiError(
+              409,
+              "category_has_transactions",
+              "A category with transactions cannot change its kind",
+            );
+          }
+        }
         const archivedAt =
           archived === undefined
             ? existing.archivedAt
@@ -131,6 +155,11 @@ export function categoryRoutes(deps: AppDeps) {
           .set({ ...fields, archivedAt })
           .where(eq(categories.id, id))
           .returning();
+        // Its active recurrences end today, and their unpaid pending rows from today on go, so
+        // nothing keeps arriving in a category that is out of sight. Paid rows stay.
+        if (archiving && existing.archivedAt === null) {
+          await stopCategoryRecurrences(tx, id, userToday(deps, user));
+        }
         return toDto(row as CategoryRow, await budgetsFor(tx), month);
       }).catch(nameTaken);
       return c.json(dto, 200);
@@ -148,7 +177,7 @@ export function categoryRoutes(deps: AppDeps) {
       const { id } = c.req.valid("param");
       const { amount, effectiveFrom } = c.req.valid("json");
       const userId = c.get("userId");
-      const month = currentMonth(c.get("user"));
+      const month = currentMonth(deps, c.get("user"));
       const dto = await withUser(deps.db, userId, async (tx) => {
         const category = await findCategory(tx, id);
         if (category.kind !== "expense") {

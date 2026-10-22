@@ -20,7 +20,7 @@ export function summaryRoutes(deps: AppDeps) {
     }),
     async (c) => {
       const user = c.get("user");
-      const current = currentMonth(user);
+      const current = currentMonth(deps, user);
       const month = c.req.valid("query").month ?? current;
       const summary = await withUser(deps.db, user.id, async (tx) => {
         await materializeRecurrences(tx, user.id, month, current);
