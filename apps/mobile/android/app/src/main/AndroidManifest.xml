@@ -7,7 +7,9 @@
          Manager, and the person's passkey provider checks the fingerprint in its own process. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove"/>
     <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove"/>
+    <!-- No backup: the session token is encrypted with a Keystore key, which never leaves this phone, so it cannot be restored on another device. -->
     <application
+        android:allowBackup="false"
         android:label="Lukitas"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
