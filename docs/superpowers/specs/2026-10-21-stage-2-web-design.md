@@ -223,7 +223,7 @@ One `feedback` module maps semantic events to animation, sound and vibration:
 ### 4.2 Backend additions
 
 1. **`GET /v1/transactions/suggestions?q=&limit=`** — recent distinct transaction names (case-insensitive, most recent first, default limit 8), each with the category it was most often used with. With `q`, names that start with or contain `q`. Excludes soft-deleted rows and archived categories.
-2. **`GET /v1/reports/cost-of-living?months=6`** — for the last `months` complete months (1–24, default 6) in the user's time zone: per expense category, the average monthly spending and whether it is `fixed` (has an active recurrence) or `variable`; plus `total`, `fixed` and `variable` averages.
+2. **`GET /v1/reports/cost-of-living?months=6`** — for the last `months` complete months (1–24, default 6) in the user's time zone: per expense category, the average monthly spending and whether it is `fixed` (has an active recurrence) or `variable`; plus `total`, `fixed` and `variable` averages. The web asks for `months=n`, where n is the number of complete months the person has (at most 6), so a new user's total isn't divided by months they weren't using Lukitas; the copy states the window ("el promedio de tus últimos N meses completos"). (Ruling 2026-10-22.)
 3. **Onboarding flag** — `user.onboarding_completed_at` (nullable timestamp); `GET /v1/me` returns `onboardingCompletedAt`; `PATCH /v1/me` accepts `{ onboardingCompleted: true }`.
 4. **Rule-based messages** — a pure function in `packages/core`:
    `lukasMessage(input: { summary: MonthSummary; today: IsoDate; event?: { kind: "saved" | "paid"; categoryId: string; amount: number } }): { key: LukasMessageKey; params: Record<string, string | number> }`.
