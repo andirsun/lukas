@@ -62,6 +62,14 @@ The API is documented at http://localhost:3000/api/openapi.json. Its routes live
 
 To run the API outside Docker, start only the services with `docker compose up -d postgres mailpit` and run `pnpm --filter @lukas/api dev`. On the host, Postgres listens on port 5433 and Mailpit SMTP on 1026, so they do not clash with a local Postgres or mail bridge.
 
+**When you stop developing, stop the dev containers** to save the machine's resources:
+
+```bash
+docker compose stop
+```
+
+Run it from the repository root. It stops only this dev stack (`lukas-api`, `lukas-postgres`, `lukas-mailpit`) and keeps its data; `docker compose up -d` brings it back. The personal install (`lukitas-personal-*`, see [deploy/personal](deploy/personal/README.md)) is a separate stack and keeps running. Never use `docker compose down -v` here: `-v` deletes the dev database volume.
+
 ### Web app
 
 With the stack up (`docker compose up -d`), start the web app:
