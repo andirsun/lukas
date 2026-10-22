@@ -33,6 +33,12 @@ describe("problemMessage", () => {
     expect(problemMessage(closed, tEn)).not.toBe(en.errors.generic);
   });
 
+  it("explains that guest accounts are turned off, in both languages", () => {
+    const off = problem("guest_signup_disabled", 403);
+    expect(problemMessage(off, tEs)).toBe("Por ahora no se pueden crear cuentas de invitado.");
+    expect(problemMessage(off, tEn)).toBe("Guest accounts are turned off for now.");
+  });
+
   it("falls back to errors.generic for unknown codes", () => {
     expect(problemMessage(problem("totally_new_code"), tEs)).toBe(es.errors.generic);
     expect(problemMessage(problem("totally_new_code"), tEn)).toBe(en.errors.generic);

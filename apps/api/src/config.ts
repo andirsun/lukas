@@ -65,6 +65,16 @@ const configSchema = z
       )
       .transform((list) => (list.length > 0 ? list : undefined))
       .optional(),
+    /**
+     * Guest sign-up (`POST /auth/sign-in/anonymous`): an account without an email, for the Android
+     * app. On by default, allowlist or not; `false` turns it off (spec §4.1).
+     */
+    GUEST_SIGNUP: z
+      .preprocess(
+        (v) => (v === "" || v === undefined ? "true" : v),
+        z.enum(["true", "false"]).transform((v) => v === "true"),
+      )
+      .default(true),
     PORT: z.coerce.number().int().default(3000),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     /** Header carrying the client IP, e.g. a platform header like `fly-client-ip`. */

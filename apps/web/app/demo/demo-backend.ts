@@ -50,6 +50,7 @@ interface Profile {
   locale: string;
   onboardingCompletedAt: string | null;
   currency: string;
+  isAnonymous: boolean;
 }
 
 interface CategoryRow {
@@ -265,6 +266,7 @@ function build(seed: DemoSeed, now: Date): State {
       locale: profile.locale,
       onboardingCompletedAt: since,
       currency: profile.currency,
+      isAnonymous: false,
     },
     categories,
     budgets,

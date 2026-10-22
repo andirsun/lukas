@@ -33,6 +33,7 @@ export interface paths {
                             locale: string;
                             onboardingCompletedAt: string | null;
                             currency: string;
+                            isAnonymous: boolean;
                         };
                     };
                 };
@@ -94,6 +95,7 @@ export interface paths {
                             locale: string;
                             onboardingCompletedAt: string | null;
                             currency: string;
+                            isAnonymous: boolean;
                         };
                     };
                 };

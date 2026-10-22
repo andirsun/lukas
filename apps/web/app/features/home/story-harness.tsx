@@ -411,6 +411,7 @@ function homeFetch({
     locale: locale as string,
     onboardingCompletedAt: "2026-10-01T10:00:00.000Z",
     currency: currency as string,
+    isAnonymous: false,
   };
   const newestFirst = (a: TransactionDto, b: TransactionDto) =>
     a.date === b.date ? (a.id < b.id ? 1 : -1) : a.date < b.date ? 1 : -1;

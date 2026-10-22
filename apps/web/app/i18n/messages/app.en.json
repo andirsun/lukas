@@ -183,6 +183,7 @@
     "too_many_attempts": "Too many tries with this code. Ask for a new one.",
     "too_many_requests": "You asked for a lot of codes in a row. Wait a few minutes and try again.",
     "sign_in_not_allowed": "Lukitas isn't open to the public yet. If you'd like to try it, message the person who invited you.",
+    "guest_signup_disabled": "Guest accounts are turned off for now.",
     "passkey_failed": "We couldn't sign you in with your fingerprint. Try again or use your email.",
     "too_many_sign_in_attempts": "Too many tries in a row. Wait a few seconds and try again.",
     "import_currency_changed": "Your account's currency changed after the file was read. Upload it again."

@@ -1,11 +1,12 @@
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { passkey } from "@better-auth/passkey";
+import { defaultCurrencyFor, isIanaTimeZone } from "@lukas/core";
 import { accounts, emailThrottle, schema, user as userTable, withUser } from "@lukas/db";
 import { eq, sql } from "@lukas/db/orm";
 import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { createAuthMiddleware } from "better-auth/api";
-import { bearer, emailOTP, jwt } from "better-auth/plugins";
+import { anonymous, bearer, emailOTP, jwt } from "better-auth/plugins";
 import { apiPathPrefix, type Config } from "./config.ts";
 import type { AppDeps } from "./deps.ts";
 import { signInEmail } from "./emails/sign-in.ts";
@@ -20,10 +21,18 @@ const PASSKEY_ALGORITHMS = [
   { alg: -257, type: "public-key" },
 ] as const;
 
-/** Whether `email` may ask for a sign-in code: always, unless an allowlist is configured. */
+/** Where guests' placeholder emails live: the `.invalid` TLD never resolves, and nothing is mailed there. */
+export const GUEST_EMAIL_DOMAIN = "guest.lukitas.invalid";
+
+/**
+ * Whether `email` may ask for a sign-in code: always, unless an allowlist is configured; never for
+ * an address under `.invalid` (a guest's placeholder, which can't receive the code anyway).
+ */
 export function isSignInAllowed(config: Pick<Config, "SIGN_IN_ALLOWLIST">, email: string): boolean {
+  const address = email.trim().toLowerCase();
+  if (address.replace(/\.+$/, "").endsWith(".invalid")) return false;
   const list = config.SIGN_IN_ALLOWLIST;
-  return !list || list.includes(email.trim().toLowerCase());
+  return !list || list.includes(address);
 }
 
 /** The refusal: the web shows `errors.sign_in_not_allowed` for this code. */
@@ -31,6 +40,13 @@ const signInNotAllowed = () =>
   new APIError("FORBIDDEN", {
     code: "sign_in_not_allowed",
     message: "Sign-in is not open to this address",
+  });
+
+/** The refusal when GUEST_SIGNUP is off: the web and the app show `errors.guest_signup_disabled`. */
+const guestSignupDisabled = () =>
+  new APIError("FORBIDDEN", {
+    code: "guest_signup_disabled",
+    message: "Guest sign-up is turned off on this install",
   });
 
 /** Counts sign-in emails per address in a 15-minute window; returns the count including this one. */
@@ -58,6 +74,8 @@ type Locale = "es" | "en";
 /** Headers the web app sends with a code request: the page's language and where to go after. */
 export const LOCALE_HINT_HEADER = "x-lukas-locale";
 export const NEXT_HINT_HEADER = "x-lukas-next";
+/** The device's IANA time zone, which the app sends with guest sign-up (and every request). */
+export const TIMEZONE_HINT_HEADER = "x-lukas-timezone";
 
 const asLocale = (value: string | null | undefined): Locale | null =>
   value === "es" || value === "en" ? value : null;
@@ -74,6 +92,35 @@ export function localeFromAcceptLanguage(header: string | null | undefined): Loc
     .filter((entry) => entry.primary && entry.q > 0)
     .sort((a, b) => b.q - a.q || a.index - b.index);
   return asLocale(ranked[0]?.primary);
+}
+
+/**
+ * A new guest's profile defaults, from the device's headers: the time zone from `x-lukas-timezone`
+ * (a named IANA zone, else UTC); the language from `x-lukas-locale` (es or en, as a bare language
+ * or a tag like `es-CO`), else Accept-Language, else Spanish; and the region that tag names, which
+ * the currency rule reads as the web reads the browser's languages.
+ */
+export function guestDefaults(headers: Headers | undefined): {
+  timezone: string;
+  locale: Locale;
+  region: string | undefined;
+} {
+  const zone = headers?.get(TIMEZONE_HINT_HEADER)?.trim() ?? "";
+  const tag = headers?.get(LOCALE_HINT_HEADER)?.trim() ?? "";
+  let language: string | undefined;
+  let region: string | undefined;
+  try {
+    const parsed = new Intl.Locale(tag);
+    language = parsed.language;
+    region = parsed.region;
+  } catch {
+    // Not a language tag: no hint.
+  }
+  return {
+    timezone: isIanaTimeZone(zone) ? zone : "UTC",
+    locale: asLocale(language) ?? localeFromAcceptLanguage(headers?.get("accept-language")) ?? "es",
+    region,
+  };
 }
 
 /**
@@ -140,6 +187,11 @@ export function createAuth(deps: AppDeps) {
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        // Guest sign-up is open whatever the allowlist says (spec §4.1); only GUEST_SIGNUP closes it.
+        if (ctx.path === "/sign-in/anonymous") {
+          if (config.GUEST_SIGNUP === false) throw guestSignupDisabled();
+          return;
+        }
         if (ctx.path !== "/email-otp/send-verification-otp") return;
         const email = String(ctx.body?.email ?? "")
           .trim()
@@ -165,12 +217,27 @@ export function createAuth(deps: AppDeps) {
     databaseHooks: {
       user: {
         create: {
-          after: async (created) => {
+          // A guest's time zone and language come from the device; an email user's stay at the
+          // defaults until the web's onboarding sets them.
+          before: async (data, ctx) => {
+            if (!data.isAnonymous) return;
+            const { timezone, locale } = guestDefaults(ctx?.headers ?? ctx?.request?.headers);
+            return { data: { ...data, timezone, locale } };
+          },
+          after: async (created, ctx) => {
+            // A guest skips the web's currency step, so the device picks it (the web's rule);
+            // an email user starts in EUR and chooses during onboarding.
+            const currency = created.isAnonymous
+              ? defaultCurrencyFor(
+                  String(created.timezone ?? "UTC"),
+                  guestDefaults(ctx?.headers ?? ctx?.request?.headers).region,
+                )
+              : "EUR";
             await withUser(deps.db, created.id, (tx) =>
               tx.insert(accounts).values({
                 userId: created.id,
                 name: "Main",
-                currency: "EUR",
+                currency,
                 isDefault: true,
               }),
             );
@@ -210,6 +277,13 @@ export function createAuth(deps: AppDeps) {
         rpID: new URL(config.WEB_URL).hostname,
         rpName: "Lukitas",
         origin: config.WEB_URL,
+      }),
+      anonymous({
+        emailDomainName: GUEST_EMAIL_DOMAIN,
+        // The plugin would delete the guest user when its session signs in with an email, data
+        // and all. Guests keep their user instead: an email is claimed in place (spec §4.2), and
+        // abandoned guests are cleaned up by a job (§4.4).
+        disableDeleteAnonymousUser: true,
       }),
       bearer(),
       jwt(),

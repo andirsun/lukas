@@ -55,6 +55,7 @@ async function documentFromApp(): Promise<OpenAPI3> {
       PORT: 3000,
       NODE_ENV: "test",
       CLIENT_IP_HEADER: "x-forwarded-for",
+      GUEST_SIGNUP: true,
       TRUSTED_PROXIES: [],
     },
     db: new Proxy({}, { get: refuse }),

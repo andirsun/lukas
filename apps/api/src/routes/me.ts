@@ -25,6 +25,8 @@ const profileDto = z.object({
   locale: z.string(),
   onboardingCompletedAt: z.string().nullable(),
   currency: z.string(),
+  /** A guest: signed up on the app without an email (its `email` is a placeholder until claimed). */
+  isAnonymous: z.boolean(),
 });
 
 const csvField = (value: string) =>
@@ -38,6 +40,7 @@ async function profile(deps: AppDeps, userId: string) {
       timezone: user.timezone,
       locale: user.locale,
       onboardingCompletedAt: user.onboardingCompletedAt,
+      isAnonymous: user.isAnonymous,
     })
     .from(user)
     .where(eq(user.id, userId));
