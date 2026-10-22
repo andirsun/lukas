@@ -18,6 +18,11 @@ import { type Locale, localeFromPathname } from "./format.ts";
 import en from "./messages/en.json" with { type: "json" };
 import es from "./messages/es.json" with { type: "json" };
 
+/**
+ * The public pages' messages (the landing, the roadmap, the switches in their header and footer).
+ * The app's screens add the rest with `AppMessages` (catalog.ts), so visitors of the landing do
+ * not download them.
+ */
 const MESSAGES: Record<Locale, AbstractIntlMessages> = { es, en };
 
 interface LocaleContextValue {
@@ -33,7 +38,7 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
  * is no visitor time zone, and the public pages format no dates, so its server-only "no timeZone
  * configured" fallback warning is noise in the build output.
  */
-function reportIntlError(error: IntlError) {
+export function reportIntlError(error: IntlError) {
   if (error.code === IntlErrorCode.ENVIRONMENT_FALLBACK && typeof window === "undefined") return;
   console.error(error);
 }

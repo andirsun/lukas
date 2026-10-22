@@ -15,6 +15,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { OCTOBER_2026 } from "../../../../../packages/core/test/fixtures/october-2026.ts";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import type { PasskeyOutcome } from "../../auth/passkey.ts";
+import { AppMessages } from "../../i18n/AppMessages.tsx";
 import type { Locale } from "../../i18n/format.ts";
 import { IntlProvider, useLocale } from "../../i18n/IntlProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
@@ -759,44 +760,46 @@ export function HomeStage({
   const shell = (screen: ReactNode) => <AppShell>{screen}</AppShell>;
   return (
     <IntlProvider locale={locale} onLocaleChange={setLocale}>
-      <MemoryRouter initialEntries={[path]}>
-        <button
-          type="button"
-          className="sr-only focus:not-sr-only"
-          onClick={() => setReloads((n) => n + 1)}
-        >
-          Recargar (stand-in)
-        </button>
-        <ApiProvider key={reloads} fetch={fetchImpl}>
-          <ToastProvider>
-            <Routes>
-              <Route path="/app" element={shell(<Home signOut={signOut} />)} />
-              <Route path="/app/categories" element={shell(<CategoriesPage />)} />
-              <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
-              <Route path="/app/recurring" element={shell(<RecurringPage />)} />
-              <Route path="/app/insights" element={shell(<Insights />)} />
-              <Route
-                path="/app/settings"
-                element={shell(
-                  <Settings
-                    passkeys={passkeys}
-                    signOut={signOut}
-                    save={(blob, filename) => onSave(filename, blob)}
-                  />,
-                )}
-              />
-              <Route
-                path="/sign-in"
-                element={<p className="p-(--space-4) text-ink">Sign-in (stand-in)</p>}
-              />
-              <Route
-                path="/"
-                element={<p className="p-(--space-4) text-ink">Landing (stand-in)</p>}
-              />
-            </Routes>
-          </ToastProvider>
-        </ApiProvider>
-      </MemoryRouter>
+      <AppMessages>
+        <MemoryRouter initialEntries={[path]}>
+          <button
+            type="button"
+            className="sr-only focus:not-sr-only"
+            onClick={() => setReloads((n) => n + 1)}
+          >
+            Recargar (stand-in)
+          </button>
+          <ApiProvider key={reloads} fetch={fetchImpl}>
+            <ToastProvider>
+              <Routes>
+                <Route path="/app" element={shell(<Home signOut={signOut} />)} />
+                <Route path="/app/categories" element={shell(<CategoriesPage />)} />
+                <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
+                <Route path="/app/recurring" element={shell(<RecurringPage />)} />
+                <Route path="/app/insights" element={shell(<Insights />)} />
+                <Route
+                  path="/app/settings"
+                  element={shell(
+                    <Settings
+                      passkeys={passkeys}
+                      signOut={signOut}
+                      save={(blob, filename) => onSave(filename, blob)}
+                    />,
+                  )}
+                />
+                <Route
+                  path="/sign-in"
+                  element={<p className="p-(--space-4) text-ink">Sign-in (stand-in)</p>}
+                />
+                <Route
+                  path="/"
+                  element={<p className="p-(--space-4) text-ink">Landing (stand-in)</p>}
+                />
+              </Routes>
+            </ToastProvider>
+          </ApiProvider>
+        </MemoryRouter>
+      </AppMessages>
     </IntlProvider>
   );
 }

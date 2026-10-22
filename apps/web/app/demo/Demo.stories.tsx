@@ -10,6 +10,7 @@ import { Home } from "../features/home/Home.tsx";
 import { Insights } from "../features/insights/Insights.tsx";
 import { RecurringPage } from "../features/recurring/RecurringPage.tsx";
 import { Settings } from "../features/settings/Settings.tsx";
+import { AppMessages } from "../i18n/AppMessages.tsx";
 import { type Locale } from "../i18n/format.ts";
 import { IntlProvider, useLocale } from "../i18n/IntlProvider.tsx";
 import { ToastProvider } from "../ui/Toast.tsx";
@@ -42,29 +43,31 @@ function DemoStage({ path }: { path: string }) {
   const [backend] = useState(() => createDemoBackend(DEMO_SEED[storyLocale]));
   return (
     <IntlProvider locale={locale} onLocaleChange={setLocale}>
-      <MemoryRouter initialEntries={[path]}>
-        <ApiProvider mode="demo" fetch={backend.fetch}>
-          <ToastProvider>
-            <Routes>
-              <Route
-                path="/demo"
-                element={
-                  <AppShell banner={<DemoBanner />}>
-                    <Outlet />
-                  </AppShell>
-                }
-              >
-                <Route index element={<Home />} />
-                <Route path="categories" element={<CategoriesPage />} />
-                <Route path="categories/:id" element={<CategoryDetail />} />
-                <Route path="recurring" element={<RecurringPage />} />
-                <Route path="insights" element={<Insights />} />
-                <Route path="settings" element={<Settings />} />
-              </Route>
-            </Routes>
-          </ToastProvider>
-        </ApiProvider>
-      </MemoryRouter>
+      <AppMessages>
+        <MemoryRouter initialEntries={[path]}>
+          <ApiProvider mode="demo" fetch={backend.fetch}>
+            <ToastProvider>
+              <Routes>
+                <Route
+                  path="/demo"
+                  element={
+                    <AppShell banner={<DemoBanner />}>
+                      <Outlet />
+                    </AppShell>
+                  }
+                >
+                  <Route index element={<Home />} />
+                  <Route path="categories" element={<CategoriesPage />} />
+                  <Route path="categories/:id" element={<CategoryDetail />} />
+                  <Route path="recurring" element={<RecurringPage />} />
+                  <Route path="insights" element={<Insights />} />
+                  <Route path="settings" element={<Settings />} />
+                </Route>
+              </Routes>
+            </ToastProvider>
+          </ApiProvider>
+        </MemoryRouter>
+      </AppMessages>
     </IntlProvider>
   );
 }

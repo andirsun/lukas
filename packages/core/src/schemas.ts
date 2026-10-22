@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SUPPORTED_CURRENCIES } from "./currencies.ts";
 import { isIsoDate, isMonth, isValidTimeZone } from "./dates.ts";
 
 export const monthSchema = z.string().refine(isMonth, "Expected a month as YYYY-MM");
@@ -107,13 +108,6 @@ export type CreateRecurrence = z.infer<typeof createRecurrenceSchema>;
 // stored values (e.g. switching back to yearly with the monthOfYear already saved).
 export const updateRecurrenceSchema = recurrenceFields.partial().refine(atLeastOne, AT_LEAST_ONE);
 export type UpdateRecurrence = z.infer<typeof updateRecurrenceSchema>;
-
-/**
- * ISO 4217 codes an account can use: COP, USD and EUR at launch (spec §2.4). COP is first: it is
- * the launch market.
- */
-export const SUPPORTED_CURRENCIES = ["COP", "USD", "EUR"] as const;
-export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export const updateProfileSchema = z
   .object({

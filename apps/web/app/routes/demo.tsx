@@ -8,6 +8,7 @@ import { AppShell } from "../features/home/AppShell.tsx";
 import { ScreenError } from "../features/home/ScreenError.tsx";
 import { Celebration } from "../feedback/Celebration.tsx";
 import { useFeedbackWarmup } from "../feedback/warmup.ts";
+import { AppMessages } from "../i18n/AppMessages.tsx";
 import { demoMeta } from "../i18n/screen-meta.ts";
 import { ToastProvider } from "../ui/Toast.tsx";
 import type { Route } from "./+types/demo";
@@ -40,7 +41,11 @@ export function HydrateFallback() {
 
 /** As in the app: what went wrong and a retry. */
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  return <ScreenError error={error} />;
+  return (
+    <AppMessages>
+      <ScreenError error={error} />
+    </AppMessages>
+  );
 }
 
 /**
@@ -62,13 +67,15 @@ export default function DemoRoute({ loaderData }: Route.ComponentProps) {
   });
   useFeedbackWarmup();
   return (
-    <ApiProvider mode="demo" fetch={backend.fetch}>
-      <ToastProvider>
-        <AppShell banner={<DemoBanner />}>
-          <Outlet />
-        </AppShell>
-        <Celebration />
-      </ToastProvider>
-    </ApiProvider>
+    <AppMessages>
+      <ApiProvider mode="demo" fetch={backend.fetch}>
+        <ToastProvider>
+          <AppShell banner={<DemoBanner />}>
+            <Outlet />
+          </AppShell>
+          <Celebration />
+        </ToastProvider>
+      </ApiProvider>
+    </AppMessages>
   );
 }

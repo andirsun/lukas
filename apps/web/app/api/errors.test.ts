@@ -1,7 +1,9 @@
 import { createTranslator } from "use-intl/core";
 import { describe, expect, it } from "vitest";
-import en from "../i18n/messages/en.json" with { type: "json" };
-import es from "../i18n/messages/es.json" with { type: "json" };
+import { CATALOGS } from "../i18n/catalog.ts";
+
+const { es, en } = CATALOGS;
+
 import { ApiProblem, problemFromResponse, problemMessage } from "./errors.ts";
 
 const tEs = createTranslator({ locale: "es", messages: es, onError: () => {} });

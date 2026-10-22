@@ -1,5 +1,7 @@
 import type { Decorator, Preview } from "@storybook/react-vite";
 import { MotionConfig } from "motion/react";
+import { configure } from "storybook/test";
+import { AppMessages } from "../app/i18n/AppMessages.tsx";
 import type { Locale } from "../app/i18n/format.ts";
 import { IntlProvider } from "../app/i18n/IntlProvider.tsx";
 import { ThemeProvider } from "../app/theme/ThemeProvider.tsx";
@@ -13,6 +15,10 @@ import "../app/styles/app.css";
  * (contrast included) run in both themes. `parameters: { reducedMotion: true }` renders a story as
  * if the person asked for reduced motion (Motion's `MotionConfig reducedMotion="always"`).
  */
+// `waitFor` and `findBy…` wait for a state, not for a time: allow 5 s (not 1) for it to come, so
+// animations on a busy machine still pass while a missing state still fails.
+configure({ asyncUtilTimeout: 5000 });
+
 const withThemeAndLocale: Decorator = (Story, context) => {
   const theme: Theme = context.globals.theme === "day" ? "day" : "night";
   const locale: Locale = context.globals.locale === "en" ? "en" : "es";
@@ -27,11 +33,13 @@ const withThemeAndLocale: Decorator = (Story, context) => {
   }
   const story = (
     <IntlProvider locale={locale}>
-      <ThemeProvider key={theme}>
-        <div className="p-(--space-4)">
-          <Story />
-        </div>
-      </ThemeProvider>
+      <AppMessages>
+        <ThemeProvider key={theme}>
+          <div className="p-(--space-4)">
+            <Story />
+          </div>
+        </ThemeProvider>
+      </AppMessages>
     </IntlProvider>
   );
   return context.parameters.reducedMotion ? (

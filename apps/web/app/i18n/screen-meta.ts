@@ -1,10 +1,7 @@
 import { createTranslator } from "use-intl/core";
 import { demoLocale } from "../demo/demo-locale.ts";
+import { CATALOGS } from "./catalog.ts";
 import type { Locale } from "./format.ts";
-import en from "./messages/en.json" with { type: "json" };
-import es from "./messages/es.json" with { type: "json" };
-
-const CATALOGS = { es, en } as const;
 
 /** Whether a path is one of the demo's screens. */
 export const isDemoPath = (pathname: string) =>

@@ -2,11 +2,11 @@ import { redirect, type ShouldRevalidateFunctionArgs } from "react-router";
 import { createTranslator } from "use-intl/core";
 import { requireSession } from "../auth/session.ts";
 import { Welcome } from "../features/onboarding/Welcome.tsx";
-import es from "../i18n/messages/es.json" with { type: "json" };
+import { CATALOGS } from "../i18n/catalog.ts";
 import type { Route } from "./+types/welcome";
 
 export const meta = () => {
-  const t = createTranslator({ locale: "es", messages: es, namespace: "onboarding" });
+  const t = createTranslator({ locale: "es", messages: CATALOGS.es, namespace: "onboarding" });
   return [{ title: t("meta_title") }, { name: "robots", content: "noindex" }];
 };
 

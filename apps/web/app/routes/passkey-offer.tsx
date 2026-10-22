@@ -2,11 +2,11 @@ import { createTranslator } from "use-intl/core";
 import { DEFAULT_NEXT } from "../auth/next.ts";
 import { requireSession } from "../auth/session.ts";
 import { livePasskeyOffer, PasskeyOffer } from "../features/sign-in/PasskeyOffer.tsx";
-import es from "../i18n/messages/es.json" with { type: "json" };
+import { CATALOGS } from "../i18n/catalog.ts";
 import type { Route } from "./+types/passkey-offer";
 
 export const meta = () => {
-  const t = createTranslator({ locale: "es", messages: es, namespace: "passkey_offer" });
+  const t = createTranslator({ locale: "es", messages: CATALOGS.es, namespace: "passkey_offer" });
   return [{ title: t("meta_title") }, { name: "robots", content: "noindex" }];
 };
 

@@ -4,8 +4,13 @@ import { fileURLToPath } from "node:url";
 import type { LukasMessageKey } from "@lukas/core";
 import { createTranslator } from "use-intl/core";
 import { describe, expect, it } from "vitest";
-import en from "./messages/en.json" with { type: "json" };
-import es from "./messages/es.json" with { type: "json" };
+import { CATALOGS } from "./catalog.ts";
+import appEn from "./messages/app.en.json" with { type: "json" };
+import appEs from "./messages/app.es.json" with { type: "json" };
+import siteEn from "./messages/en.json" with { type: "json" };
+import siteEs from "./messages/es.json" with { type: "json" };
+
+const { es, en } = CATALOGS;
 
 type Tree = { [key: string]: string | Tree };
 
@@ -66,6 +71,17 @@ function apiErrorCodes(): string[] {
 }
 
 describe("message catalogs", () => {
+  it("come in two parts, the public pages' and the app's, each namespace in one part only", () => {
+    // What the landing and roadmap render (Landing, Roadmap, SiteHeader, Footer, ThemeToggle,
+    // HeroMascot): the root's IntlProvider holds only these, so the landing ships nothing else.
+    const site = ["app", "landing", "language", "mascot", "roadmap", "theme"];
+    expect(Object.keys(siteEs).sort()).toEqual(site);
+    expect(Object.keys(siteEn).sort()).toEqual(site);
+    expect(Object.keys(appEn).sort()).toEqual(Object.keys(appEs).sort());
+    expect(Object.keys(appEs).filter((namespace) => site.includes(namespace))).toEqual([]);
+    expect(Object.keys(es).sort()).toEqual([...site, ...Object.keys(appEs)].sort());
+  });
+
   it("es and en have identical key sets", () => {
     expect(Object.keys(catalogs.es).sort()).toEqual(Object.keys(catalogs.en).sort());
   });

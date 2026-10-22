@@ -1,11 +1,15 @@
 import { createTranslator } from "use-intl/core";
 import { requireOnboarded } from "../auth/session.ts";
 import { ImportPage } from "../features/onboarding/ImportPage.tsx";
-import es from "../i18n/messages/es.json" with { type: "json" };
+import { CATALOGS } from "../i18n/catalog.ts";
 import type { Route } from "./+types/app.import";
 
 export const meta = () => {
-  const t = createTranslator({ locale: "es", messages: es, namespace: "onboarding.import" });
+  const t = createTranslator({
+    locale: "es",
+    messages: CATALOGS.es,
+    namespace: "onboarding.import",
+  });
   return [{ title: `${t("page_title")} · Lukitas` }, { name: "robots", content: "noindex" }];
 };
 
