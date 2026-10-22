@@ -4,18 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
 
+import 'fakes.dart';
 import 'fixtures.dart';
-
-class FakeWidgetStore implements WidgetStore {
-  final saved = <String, String>{};
-  Object? failure;
-
-  @override
-  Future<void> save(String key, String value) async {
-    if (failure != null) throw failure!;
-    saved[key] = value;
-  }
-}
 
 Map<String, Object?> written(FakeWidgetStore store) =>
     jsonDecode(store.saved[widgetSnapshotKey]!) as Map<String, Object?>;
@@ -92,4 +82,19 @@ void main() {
     store.failure = PlatformException(code: 'x');
     await writeWidgetSnapshot(summary(), currency: 'COP', locale: 'es', store: store, now: now);
   });
+
+  test(
+    'clearing forgets it, and a store that cannot be reached never breaks that either',
+    () async {
+      final store = FakeWidgetStore();
+      await writeWidgetSnapshot(summary(), currency: 'COP', locale: 'es', store: store, now: now);
+      await clearWidgetSnapshot(store: store);
+      expect(store.saved, isEmpty);
+
+      store.failure = MissingPluginException();
+      await clearWidgetSnapshot(store: store);
+      store.failure = PlatformException(code: 'x');
+      await clearWidgetSnapshot(store: store);
+    },
+  );
 }

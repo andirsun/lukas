@@ -1,0 +1,6 @@
+tags:
+  golden:
+    # Golden images are pixels rendered by the machine that made them (this repo's: macOS). The CI
+    # job runs on Linux, where text and shadows rasterize a little differently, so it skips them
+    # with `flutter test --exclude-tags golden`. Update them locally with
+    # `flutter test --update-goldens --tags golden`.

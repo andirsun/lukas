@@ -56,3 +56,5 @@ flutter:
   assets:
     # Lukitas' sprite sheets, the web's own (apps/web/public/lukas): 4x2 frames of 500 px.
     - assets/lukas/wave.webp
+    - assets/lukas/celebrate.webp
+    - assets/lukas/worried.webp

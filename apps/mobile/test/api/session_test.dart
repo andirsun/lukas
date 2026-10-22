@@ -4,8 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/auth_api.dart';
 import 'package:lukitas/api/passkeys.dart';
 import 'package:lukitas/api/session.dart';
+import 'package:lukitas/home/widget_snapshot.dart';
 
 import '../entry/fakes.dart';
+import '../home/fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -38,12 +40,14 @@ void main() {
   group('SessionController', () {
     late FakeAuthApi auth;
     late FakePasskeys passkeys;
+    late FakeWidgetStore widget;
 
     ProviderContainer containerWith() {
       final container = ProviderContainer(
         overrides: [
           authApiProvider.overrideWithValue(auth),
           passkeysProvider.overrideWithValue(passkeys),
+          widgetStoreProvider.overrideWithValue(widget),
         ],
       );
       addTearDown(container.dispose);
@@ -59,6 +63,7 @@ void main() {
     setUp(() {
       auth = FakeAuthApi();
       passkeys = FakePasskeys();
+      widget = FakeWidgetStore();
       mockStorage();
     });
 
@@ -201,6 +206,28 @@ void main() {
       expect(container.read(sessionProvider).status, SessionStatus.signedOut);
       expect(await SessionStore().read(), isNull);
       expect(auth.calls.last, 'signOut email-token-0');
+    });
+
+    test("signOut also wipes the widget's figures: they are the person's", () async {
+      mockStorage(token: 'email-token-0');
+      widget.saved[widgetSnapshotKey] = '{"v":1}';
+      final container = containerWith();
+      final controller = await ready(container);
+      await controller.signOut();
+
+      expect(widget.saved, isEmpty);
+    });
+
+    test("a session the server no longer knows wipes the widget's figures too", () async {
+      mockStorage(token: 'stale-token');
+      widget.saved[widgetSnapshotKey] = '{"v":1}';
+      auth.failures['isGuest'] = const AuthFailure(status: 401);
+      final container = containerWith();
+      final controller = await ready(container);
+      await controller.refreshed;
+
+      expect(container.read(sessionProvider).status, SessionStatus.signedOut);
+      expect(widget.saved, isEmpty);
     });
   });
 

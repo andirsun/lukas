@@ -7,6 +7,15 @@
          Manager, and the person's passkey provider checks the fingerprint in its own process. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove"/>
     <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove"/>
+    <!-- home_widget, which hands the month's figures to the home-screen widget (Task 10), brings
+         WorkManager, whose manifest asks for these four. Nothing in the app schedules work yet, so
+         nobody chose them. The widget's refresh job and the local notices (spec sections 7.1 and
+         7.2, WorkManager) will need some: whoever adds them deletes the matching line here and
+         allows the permission in scripts/check-permissions.sh, on purpose. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" tools:node="remove"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove"/>
     <!-- No backup: the session token is encrypted with a Keystore key, which never leaves this phone, so it cannot be restored on another device. -->
     <application
         android:allowBackup="false"

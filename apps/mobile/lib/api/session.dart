@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../home/widget_snapshot.dart';
 import 'auth_api.dart';
 import 'client.dart';
 import 'device.dart';
@@ -121,6 +124,7 @@ class SessionController extends Notifier<SessionState> {
     } on AuthFailure catch (failure) {
       if (failure.status == 401 && state.stored?.token == stored.token) {
         await _store.clear();
+        _forgetWidget();
         state = SessionState.signedOut;
       }
     }
@@ -210,8 +214,13 @@ class SessionController extends Notifier<SessionState> {
       }
     }
     await _store.clear();
+    _forgetWidget();
     state = SessionState.signedOut;
   }
+
+  /// The widget on the home screen shows the signed-in person's figures: signed out, it must not.
+  /// Not waited for: signing out never hangs on the widget's storage.
+  void _forgetWidget() => unawaited(clearWidgetSnapshot(store: ref.read(widgetStoreProvider)));
 }
 
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore());

@@ -50,5 +50,448 @@
   "errorEmailTaken": "That email already has an account. Sign in with it.",
   "errorPasskeyFailed": "We couldn't sign you in with your fingerprint. Try again or use your email.",
   "errorTooManySignInAttempts": "Too many tries in a row. Wait a few seconds and try again.",
-  "retry": "Try again"
+  "retry": "Try again",
+  "homeRemainingLabel": "Left this month",
+  "@homeRemainingLabel": {
+    "description": "Home: label of the big amount when budgets exist and there is money left."
+  },
+  "homeOverLabel": "Over this month",
+  "@homeOverLabel": {
+    "description": "Home: label of the big amount when the month is over its total budget."
+  },
+  "homeSpentLabel": "Spent this month",
+  "@homeSpentLabel": {
+    "description": "Home: label of the big amount when there are no budgets: what was spent."
+  },
+  "homeSpent": "Spent {amount}",
+  "@homeSpent": {
+    "description": "Home: what was spent this month, under the big amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOfBudget": "of {amount}",
+  "@homeOfBudget": {
+    "description": "Home: the total budget, next to what was spent.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSpentMeter": "Spent {spent} of {budget}",
+  "@homeSpentMeter": {
+    "description": "Home: screen-reader description of the budget bar.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNoBudgetMeta": "No budgets yet",
+  "@homeNoBudgetMeta": {
+    "description": "Home: under the big amount when no category has a budget."
+  },
+  "homeMovements": "Transactions",
+  "@homeMovements": {
+    "description": "Home: the sticky heading of the movements list."
+  },
+  "homeDayToday": "Today · {day}",
+  "@homeDayToday": {
+    "description": "Home: a day's heading for today. {day} is like 'mié 21'.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeDayYesterday": "Yesterday · {day}",
+  "@homeDayYesterday": {
+    "description": "Home: a day's heading for yesterday.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeDayUpcoming": "{day} · upcoming",
+  "@homeDayUpcoming": {
+    "description": "Home: a day's heading for a day still to come.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeEmptyTransactions": "No transactions in {month} yet. Tap ＋ and log the first one.",
+  "@homeEmptyTransactions": {
+    "description": "Home: the month has no movements yet. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMoreTransactions": "Show more",
+  "@homeMoreTransactions": {
+    "description": "Home: loads the next page of the movements list."
+  },
+  "homeLoading": "Loading…",
+  "@homeLoading": {
+    "description": "Home: while the first figures load."
+  },
+  "homeOffline": "No connection. Showing what loaded last.",
+  "@homeOffline": {
+    "description": "Home: the last refresh failed; what is on screen is from the last time it loaded."
+  },
+  "pending": "Pending",
+  "@pending": {
+    "description": "A scheduled transaction that is not paid yet."
+  },
+  "paid": "Paid",
+  "@paid": {
+    "description": "A transaction that is paid."
+  },
+  "pendingPayLabel": "Pending, mark as paid",
+  "@pendingPayLabel": {
+    "description": "Screen-reader label of the Pendiente badge, which marks the transaction paid."
+  },
+  "undo": "Undo",
+  "@undo": {
+    "description": "Brings back what was just deleted."
+  },
+  "swipeDelete": "Delete",
+  "@swipeDelete": {
+    "description": "Row swipe left: delete."
+  },
+  "swipeEdit": "Edit",
+  "@swipeEdit": {
+    "description": "Row swipe right: edit."
+  },
+  "swipePaid": "Paid",
+  "@swipePaid": {
+    "description": "Row swipe right on a pending row: mark it paid."
+  },
+  "transactionDeleted": "Deleted: {name}",
+  "@transactionDeleted": {
+    "description": "Toast after deleting a transaction (it has Deshacer).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionRestored": "Back: {name}",
+  "@transactionRestored": {
+    "description": "Toast after bringing a deleted transaction back.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionPaid": "Paid: {name} · {amount}",
+  "@transactionPaid": {
+    "description": "Toast after marking a transaction paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukitasMood": "Lukitas",
+  "@lukitasMood": {
+    "description": "Screen-reader label of Lukitas beside his line on home."
+  },
+  "lukasFirstOfDay1": "“{name}” is your first entry of the day! Nice start.",
+  "@lukasFirstOfDay1": {
+    "description": "Lukitas' line on home, variant 1: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasFirstOfDay2": "“{name}” logged. Great way to start the day!",
+  "@lukasFirstOfDay2": {
+    "description": "Lukitas' line on home, variant 2: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasFirstOfDay3": "First move of the day: “{name}”. Keeping count is half the win.",
+  "@lukasFirstOfDay3": {
+    "description": "Lukitas' line on home, variant 3: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOnTrack1": "You're doing great: {remaining} left for {daysLeft} {daysLeft, plural, one{day} other{days}}.",
+  "@lukasOnTrack1": {
+    "description": "Lukitas' line on home, variant 1: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasOnTrack2": "All good here. {remaining} left and {daysLeft} {daysLeft, plural, one{day} other{days}} to go.",
+  "@lukasOnTrack2": {
+    "description": "Lukitas' line on home, variant 2: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasOnTrack3": "Nice pace: {remaining} free, {daysLeft} {daysLeft, plural, one{day} other{days}} ahead.",
+  "@lukasOnTrack3": {
+    "description": "Lukitas' line on home, variant 3: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasNearLimit1": "Careful, {category} only has {remaining} left.",
+  "@lukasNearLimit1": {
+    "description": "Lukitas' line on home, variant 1: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasNearLimit2": "{category} is almost at its limit: {remaining} and that's it.",
+  "@lukasNearLimit2": {
+    "description": "Lukitas' line on home, variant 2: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasNearLimit3": "Easy on {category}: you have {remaining} left.",
+  "@lukasNearLimit3": {
+    "description": "Lukitas' line on home, variant 3: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget1": "{category} is {over} over budget. No big deal: now you know.",
+  "@lukasOverBudget1": {
+    "description": "Lukitas' line on home, variant 1: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget2": "{category} went {over} past its budget. Seeing it is already a step.",
+  "@lukasOverBudget2": {
+    "description": "Lukitas' line on home, variant 2: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget3": "We went {over} over in {category}. No drama: it's all here to see.",
+  "@lukasOverBudget3": {
+    "description": "Lukitas' line on home, variant 3: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived1": "Money in! “{name}”: {amount} more in your account.",
+  "@lukasIncomeReceived1": {
+    "description": "Lukitas' line on home, variant 1: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived2": "Income logged: “{name}”, {amount}. Good news!",
+  "@lukasIncomeReceived2": {
+    "description": "Lukitas' line on home, variant 2: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived3": "{amount} from “{name}” just landed. Nice!",
+  "@lukasIncomeReceived3": {
+    "description": "Lukitas' line on home, variant 3: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid1": "You paid “{name}”: {amount}. What a relief!",
+  "@lukasPendingPaid1": {
+    "description": "Lukitas' line on home, variant 1: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid2": "Done, “{name}” is paid: {amount}. One less thing on your mind.",
+  "@lukasPendingPaid2": {
+    "description": "Lukitas' line on home, variant 2: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid3": "You paid “{name}”: {amount}. Keeping up.",
+  "@lukasPendingPaid3": {
+    "description": "Lukitas' line on home, variant 3: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay1": "Last day of the month! You have {remaining} to spare.",
+  "@lukasMonthLastDay1": {
+    "description": "Lukitas' line on home, variant 1: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay2": "The month ends today with {remaining} on your side. Almost there!",
+  "@lukasMonthLastDay2": {
+    "description": "Lukitas' line on home, variant 2: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay3": "Final stretch of the month: {remaining} of cushion.",
+  "@lukasMonthLastDay3": {
+    "description": "Lukitas' line on home, variant 3: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen1": "Month closed in the green! You saved {remaining}.",
+  "@lukasMonthClosedGreen1": {
+    "description": "Lukitas' line on home, variant 1: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen2": "You finished with {remaining} left over. That deserves a celebration!",
+  "@lukasMonthClosedGreen2": {
+    "description": "Lukitas' line on home, variant 2: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen3": "Month wrapped up in the black: {remaining} on your side. Well done!",
+  "@lukasMonthClosedGreen3": {
+    "description": "Lukitas' line on home, variant 3: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasEmpty": "Hi! Log your first expense with ＋ and I'll keep count.",
+  "@lukasEmpty": {
+    "description": "Lukitas' line on an empty month without budgets."
+  },
+  "lukasNoBudget": "You've spent {spent} this month. Every entry counts.",
+  "@lukasNoBudget": {
+    "description": "Lukitas' line when there are no budgets: what was spent.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverTotal": "This month you're {over} above your budgets. It's all right here to see.",
+  "@lukasOverTotal": {
+    "description": "Lukitas' line when the month is over its total budget.",
+    "placeholders": {
+      "over": {
+        "type": "String"
+      }
+    }
+  }
 }

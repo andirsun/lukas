@@ -6,6 +6,11 @@ import 'package:lukitas/api/auth_api.dart';
 import 'package:lukitas/api/passkeys.dart';
 import 'package:lukitas/api/session.dart';
 import 'package:lukitas/app.dart';
+import 'package:lukitas/home/home_controller.dart';
+import 'package:lukitas/home/home_repository.dart';
+import 'package:lukitas/home/widget_snapshot.dart';
+
+import '../home/fakes.dart';
 
 /// An auth server in memory: records every call, answers with made-up tokens, and fails a call
 /// when told to.
@@ -165,6 +170,12 @@ Future<ProviderContainer> pumpApp(
     overrides: [
       authApiProvider.overrideWithValue(auth),
       passkeysProvider.overrideWithValue(passkeys ?? FakePasskeys(isSupported: false)),
+      // Home, once reached, reads an empty month from memory instead of the network.
+      homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
+      widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
+      widgetSnapshotWriterProvider.overrideWithValue(
+        (summary, {required currency, required locale}) async {},
+      ),
     ],
   );
   addTearDown(container.dispose);

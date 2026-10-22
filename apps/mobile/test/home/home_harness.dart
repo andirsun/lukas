@@ -1,0 +1,101 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/api/gen/lukitas_api.dart';
+import 'package:lukitas/home/home_controller.dart';
+import 'package:lukitas/home/home_repository.dart';
+import 'package:lukitas/home/home_screen.dart';
+import 'package:lukitas/l10n/app_localizations.dart';
+import 'package:lukitas/theme/theme.dart';
+
+import 'fakes.dart';
+import 'fixtures.dart';
+
+/// 2026-10-22 10:00 in Bogota (UTC-5).
+final testNow = DateTime.utc(2026, 10, 22, 15);
+
+/// What the widget was told, one entry per load of the summary.
+class WrittenSnapshot {
+  WrittenSnapshot(this.summary, this.currency, this.locale);
+  final Summary summary;
+  final String currency;
+  final String locale;
+}
+
+class HomeHarness {
+  HomeHarness(this.repo, this.container, this.snapshots, this.edited);
+
+  final FakeHomeRepository repo;
+  final ProviderContainer container;
+  final List<WrittenSnapshot> snapshots;
+  final List<Transaction> edited;
+}
+
+/// Home in front of [repo], on a phone-sized screen, in Spanish unless told otherwise.
+Future<HomeHarness> pumpHome(
+  WidgetTester tester,
+  FakeHomeRepository repo, {
+  Locale locale = const Locale('es'),
+  ThemeMode themeMode = ThemeMode.dark,
+  Size size = const Size(390, 844),
+  bool withEdit = false,
+  bool settle = true,
+}) async {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  final snapshots = <WrittenSnapshot>[];
+  final edited = <Transaction>[];
+  final container = ProviderContainer(
+    overrides: [
+      homeRepositoryProvider.overrideWithValue(repo),
+      clockProvider.overrideWithValue(() => testNow),
+      lukasVariantProvider.overrideWithValue(() => 1),
+      widgetSnapshotWriterProvider.overrideWithValue(
+        (summary, {required currency, required locale}) async =>
+            snapshots.add(WrittenSnapshot(summary, currency, locale)),
+      ),
+    ],
+  );
+  addTearDown(container.dispose);
+  await tester.pumpWidget(
+    UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp(
+        theme: dayTheme,
+        darkTheme: nightTheme,
+        themeMode: themeMode,
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        debugShowCheckedModeBanner: false,
+        home: HomeScreen(onEdit: withEdit ? edited.add : null),
+      ),
+    ),
+  );
+  if (settle) await tester.pumpAndSettle();
+  return HomeHarness(repo, container, snapshots, edited);
+}
+
+/// A month in progress: budgets, some paid movements and one pending rent due later.
+FakeHomeRepository monthWithBudgets() => FakeHomeRepository(
+  budgetTotal: 200000000,
+  categoryList: [
+    category('cat-groceries', 'Supermercado', icon: '🛒'),
+    category('cat-home', 'Hogar', icon: '🏠', color: 'orange'),
+  ],
+  items: [
+    tx(
+      'rent',
+      '2026-10-25',
+      -50000000,
+      name: 'Arriendo',
+      status: 'pending',
+      categoryId: 'cat-home',
+    ),
+    tx('coffee', '2026-10-22', -450000, name: 'Café'),
+    tx('lunch', '2026-10-22', -2800000, name: 'Almuerzo'),
+    tx('market', '2026-10-21', -18000000, name: 'Mercado'),
+    tx('salary', '2026-10-01', 300000000, name: 'Nómina', categoryId: 'cat-home'),
+  ],
+);

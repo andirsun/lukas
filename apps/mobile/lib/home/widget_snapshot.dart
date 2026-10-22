@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:home_widget/home_widget.dart';
 
 import '../api/gen/lukitas_api.dart';
@@ -13,7 +14,13 @@ const widgetSnapshotKey = 'lukitas.widget.snapshot';
 /// SharedPreferences; tests replace it.
 abstract interface class WidgetStore {
   Future<void> save(String key, String value);
+
+  /// Forgets [key].
+  Future<void> clear(String key);
 }
+
+/// Where the snapshot is kept (replaced in tests).
+final widgetStoreProvider = Provider<WidgetStore>((ref) => const HomeWidgetStore());
 
 /// [WidgetStore] over `home_widget` (BSD-3, AndroidX only: no Google Play Services).
 ///
@@ -26,6 +33,11 @@ class HomeWidgetStore implements WidgetStore {
   @override
   Future<void> save(String key, String value) async {
     await HomeWidget.saveWidgetData<String>(key, value);
+  }
+
+  @override
+  Future<void> clear(String key) async {
+    await HomeWidget.saveWidgetData<String>(key, null);
   }
 }
 
@@ -92,5 +104,18 @@ Future<void> writeWidgetSnapshot(
     // No plugin (tests, a desktop run): nothing to update.
   } on PlatformException {
     // The widget keeps its last figure.
+  }
+}
+
+/// Forgets the snapshot, when the session ends: the widget must not keep showing a person's
+/// figures after they sign out (a missing snapshot reads as "Abre Lukitas para empezar"). Like the
+/// write, it is ignored when it cannot happen.
+Future<void> clearWidgetSnapshot({WidgetStore store = const HomeWidgetStore()}) async {
+  try {
+    await store.clear(widgetSnapshotKey);
+  } on MissingPluginException {
+    // No plugin (tests, a desktop run): nothing to clear.
+  } on PlatformException {
+    // Nothing more to do.
   }
 }
