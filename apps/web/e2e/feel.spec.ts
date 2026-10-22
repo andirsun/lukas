@@ -553,6 +553,188 @@ test.describe("the keypad on short phones", () => {
   }
 });
 
+test.describe("the whole sheet on a phone", () => {
+  type Which = "add" | "paid" | "pending";
+
+  /** Waits for the sheet to finish sliding in: its bottom edge is the screen's. */
+  async function slidIn(page: Page, sheet: Locator) {
+    const height = page.viewportSize()?.height ?? 0;
+    await expect
+      .poll(async () => {
+        const box = await sheet.boundingBox();
+        return box ? Math.round(box.y + box.height) : -1;
+      })
+      .toBe(height);
+  }
+
+  /**
+   * Saves a pending expense named "gym" today (the demo's own pending row is the salary: one
+   * category, no recent names), so its edit sheet is the full one: recent names, two rows of
+   * categories, "Más opciones … · Pendiente", Eliminar and Guardar cambios.
+   */
+  async function addPendingGym(page: Page) {
+    await tap(page, plus(page));
+    const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
+    await slidIn(page, sheet);
+    for (const key of ["3", "2"])
+      await tap(page, sheet.getByRole("button", { name: key, exact: true }));
+    await sheet.getByRole("textbox", { name: "Nombre (opcional)" }).fill("gym");
+    await tap(page, sheet.getByRole("button", { name: /^Más opciones/ }));
+    await sheet.getByRole("checkbox", { name: /^Pendiente/ }).check();
+    await tap(page, sheet.getByRole("button", { name: "Guardar", exact: true }));
+    await expect(sheet).toBeHidden();
+    await expect(movimientos(page).locator("[data-swipe-row]", { hasText: "gym" })).toBeVisible();
+    // Its undo toast is swiped away, as the founder had none up.
+    const toast = page.getByRole("status").locator(".lk-toast");
+    await swipe(page, await centerOf(toast), { dy: 90, steps: 8 });
+    await expect(toast).toHaveCount(0);
+  }
+
+  /** Opens the add sheet, or the edit sheet on a paid or a pending row, done sliding in. */
+  async function openSheet(page: Page, which: Which) {
+    if (which === "pending") {
+      await addPendingGym(page);
+      await tap(
+        page,
+        movimientos(page)
+          .locator("[data-swipe-row]", { hasText: "gym" })
+          .locator(".lk-rowtop > span")
+          .first(),
+      );
+    } else if (which === "add") {
+      await tap(page, plus(page));
+    } else {
+      const rows = movimientos(page).locator("[data-swipe-row]");
+      const row =
+        which === "paid"
+          ? rows.filter({ hasNot: page.locator(".lk-badge") }).first()
+          : rows.filter({ has: page.locator(".lk-badge") }).first();
+      await tap(page, row.locator(".lk-rowtop > span").first());
+    }
+    const sheet = page.getByRole("dialog", {
+      name: which === "add" ? "Nuevo gasto" : "Editar movimiento",
+    });
+    await expect(sheet).toBeVisible();
+    await slidIn(page, sheet);
+    if (which === "pending") {
+      await expect(sheet.getByRole("button", { name: /^Más opciones/ })).toContainText("Pendiente");
+    }
+    return sheet;
+  }
+
+  /**
+   * `part` shows whole: inside the screen, not clipped by the scrolling middle, and what a finger
+   * finds at its center is it (nothing laid over it).
+   */
+  async function expectWhole(part: Locator, where: string) {
+    const seen = await part.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const clip = element.closest(".lk-sheet-body")?.getBoundingClientRect() ?? {
+        top: 0,
+        bottom: window.innerHeight,
+      };
+      const at = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+      return {
+        onScreen:
+          box.top >= 0 &&
+          box.left >= 0 &&
+          box.bottom <= window.innerHeight &&
+          box.right <= window.innerWidth,
+        unclipped: box.top >= clip.top - 0.5 && box.bottom <= clip.bottom + 0.5,
+        uncovered: at !== null && (at === element || element.contains(at)),
+      };
+    });
+    expect(seen, where).toEqual({ onScreen: true, unclipped: true, uncovered: true });
+  }
+
+  for (const size of [
+    { width: 412, height: 760 },
+    { width: 390, height: 844 },
+  ]) {
+    for (const which of ["add", "paid", "pending"] as const) {
+      test(`at ${size.width}×${size.height}, ${which}: every part shows whole, nothing scrolls`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(size);
+        await openDemo(page);
+        const sheet = await openSheet(page, which);
+        const where = `${which} at ${size.width}×${size.height}`;
+        const body = sheet.locator(".lk-sheet-body");
+        expect(
+          await body.evaluate((element) => element.scrollHeight - element.clientHeight),
+          where,
+        ).toBeLessThanOrEqual(1);
+        const parts = [
+          sheet.getByTestId("amount"),
+          sheet.getByRole("textbox", { name: "Nombre (opcional)" }),
+          sheet.getByRole("group", { name: "Categoría" }),
+          sheet.getByRole("button", { name: /^Más opciones/ }),
+          ...(await sheet
+            .getByRole("group", { name: "Teclado numérico" })
+            .getByRole("button")
+            .all()),
+          sheet.getByRole("button", { name: which === "add" ? "Guardar" : "Guardar cambios" }),
+          ...(which === "add" ? [] : [sheet.getByRole("button", { name: "Eliminar" })]),
+        ];
+        const shortcuts = sheet.getByRole("group", { name: "Nombres recientes" });
+        if (await shortcuts.count()) parts.push(shortcuts);
+        for (const part of parts) await expectWhole(part, where);
+      });
+    }
+  }
+
+  for (const size of [
+    { width: 412, height: 760 },
+    { width: 360, height: 640 },
+  ]) {
+    test(`at ${size.width}×${size.height}, editing a pending one, the name field shows whole, focused too`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size);
+      await openDemo(page);
+      const sheet = await openSheet(page, "pending");
+      const name = sheet.getByRole("textbox", { name: "Nombre (opcional)" });
+      const where = `at ${size.width}×${size.height}`;
+      await expectWhole(name, where);
+      // Scrolled down first, then focused: it comes back fully into view.
+      await sheet.locator(".lk-sheet-body").evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await name.focus();
+      await page.waitForTimeout(300);
+      await expectWhole(name, `${where}, focused`);
+    });
+  }
+
+  test("at 360×640, a scrolled middle shows its top edge, and nothing is laid over it", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await openDemo(page);
+    const sheet = await openSheet(page, "add");
+    const body = sheet.locator(".lk-sheet-body");
+    const edge = () =>
+      body.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return Number.parseFloat(style.borderTopWidth) > 0 && !/, 0\)$/.test(style.borderTopColor)
+          ? style.borderTopColor
+          : "none";
+      });
+    expect(await edge()).toBe("none");
+    await body.evaluate((element) => {
+      element.scrollTop = 40;
+    });
+    await expect.poll(edge).not.toBe("none");
+    // Just under the edge is the scrolled content itself, not a block pinned over it.
+    const covered = await body.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      const at = document.elementFromPoint(box.left + box.width / 2, box.top + 6);
+      return at !== null && element.contains(at);
+    });
+    expect(covered).toBe(true);
+  });
+});
+
 type Box = { x: number; y: number; width: number; height: number };
 const intersects = (a: Box, b: Box) =>
   a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;

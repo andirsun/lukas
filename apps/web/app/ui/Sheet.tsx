@@ -21,6 +21,16 @@ export interface SheetProps {
    * scrolls between the header and it. Without it the whole sheet scrolls.
    */
   footer?: ReactNode;
+  /**
+   * With a footer: pinned under the header, above the scrolling middle (the add sheet's kind and
+   * amount), so nothing ever slides under it. Once the middle is scrolled, its top edge shows.
+   */
+  pinned?: ReactNode;
+}
+
+/** Marks a scrolling middle that is scrolled away from its top, so its top edge shows. */
+function markScrolled(element: HTMLElement) {
+  element.toggleAttribute("data-scrolled", element.scrollTop > 0);
 }
 
 const FOCUSABLE =
@@ -72,7 +82,7 @@ function focusables(root: HTMLElement): HTMLElement[] {
  * scrolled away from its top scrolls back first, and a key a drag starts on never types. Focus returns to whatever had it before. Slides over
  * `--sheet`; under reduced motion it only fades. While open it hosts the toasts (`useToastHost`).
  */
-export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
+export function Sheet({ open, onClose, title, children, footer, pinned }: SheetProps) {
   const t = useTranslations("common");
   const reduceMotion = useReducedMotionPreference();
   const titleId = useId();
@@ -262,8 +272,9 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
               tabIndex={-1}
               onKeyDown={trapTab}
               className={cx(
-                "lk-sheet relative max-h-[90dvh] w-full max-w-[480px] pb-[max(var(--space-4),env(safe-area-inset-bottom))] outline-none",
-                footer ? "has-footer" : "overflow-y-auto",
+                "lk-sheet relative w-full max-w-[480px] pb-[max(var(--space-4),env(safe-area-inset-bottom))] outline-none",
+                // With its keypad pinned, the sheet may take all but a strip of the screen.
+                footer ? "has-footer" : "max-h-[90dvh] overflow-y-auto",
               )}
               initial={hidden}
               animate={shown}
@@ -292,7 +303,11 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
               </div>
               {footer ? (
                 <>
-                  <div className="lk-sheet-body">
+                  {pinned && <div className="lk-sheet-pinned">{pinned}</div>}
+                  <div
+                    className="lk-sheet-body"
+                    onScroll={(event) => markScrolled(event.currentTarget)}
+                  >
                     {children}
                     <div ref={setToastSlot} className="sticky bottom-0 z-10" />
                   </div>

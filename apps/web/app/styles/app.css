@@ -1167,14 +1167,20 @@
   .lk-sheet:has(.lk-sheet-footer) {
     scroll-padding-block: 72px 96px;
   }
-  /* The amount in the sheet stays in view at the top while the keypad is scrolled to. */
-  .lk-sheet-amount {
+  /*
+   * The amount in a sheet that scrolls as a whole (a budget, a fixed cost) stays in view at the
+   * top while the keypad is scrolled to. The add sheet pins it above its scrolling middle instead.
+   */
+  .lk-sheet:not(.has-footer) .lk-sheet-amount {
     position: sticky;
     top: calc(-1 * 10px);
     z-index: 1;
     margin: 0 calc(-1 * var(--space-3));
     padding: var(--space-1) var(--space-3);
     background: var(--surface);
+  }
+  .lk-sheet.has-footer .lk-sheet-amount {
+    line-height: 1.15;
   }
   /* The sheet's save row: stuck to the bottom of the sheet, the content scrolls above it. */
   .lk-sheet-footer {
@@ -1462,9 +1468,20 @@
     background: var(--over);
   }
 
-  /* A sheet with a pinned footer: header, a scrolling middle, then the footer always in view. */
+  /*
+   * A sheet with a pinned footer: the header, what is pinned under it, a scrolling middle, then the
+   * footer, always in view. It may take all but a strip of the screen. Nothing is laid over the
+   * middle: scrolled away from its top, it shows a divider and its content fades in under it.
+   */
   .lk-sheet.has-footer {
     overflow: hidden;
+    max-height: calc(100dvh - var(--space-5));
+  }
+  .lk-sheet-pinned {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
   }
   .lk-sheet-body {
     min-height: 0;
@@ -1475,10 +1492,13 @@
     padding: 0 var(--space-3) var(--space-1);
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    border-top: 2px solid transparent;
+    scroll-padding-block: var(--space-2);
   }
-  .lk-sheet-body .lk-sheet-amount {
-    top: 0;
+  .lk-sheet-body[data-scrolled] {
+    border-top-color: var(--stroke);
+    mask-image: linear-gradient(to bottom, transparent, var(--ink) var(--space-4));
+    mask-origin: padding-box;
   }
   .lk-sheet.has-footer .lk-sheet-footer {
     position: static;
@@ -1486,8 +1506,12 @@
     flex-direction: column;
     gap: var(--space-2);
   }
-  /* Short phones: tighter keys (still 44 px targets) so the whole keypad and Guardar fit. */
-  @media (max-height: 739.98px) {
+  /* Two buttons side by side (Eliminar, Guardar cambios) stay on one line on narrow phones. */
+  .lk-sheet-footer .lk-btn {
+    padding-inline: var(--space-4);
+  }
+  /* Phones up to 844 px tall: tighter keys (still 44 px targets), so the whole sheet fits. */
+  @media (max-height: 859.98px) {
     .lk-sheet.has-footer .lk-keys {
       gap: 4px;
     }
@@ -1499,6 +1523,15 @@
       padding-top: var(--space-1);
     }
   }
+  /*
+   * Short phones (an Android phone under Chrome's bars is about 760 px): a smaller amount too, and
+   * one row of categories (SHORT_QUERY in ui/use-wide-screen.ts).
+   */
+  @media (max-height: 799.98px) {
+    .lk-sheet.has-footer .lk-sheet-amount {
+      font-size: 28px;
+    }
+  }
 }
 
 @keyframes lk-toast-countdown {
@@ -1507,13 +1540,6 @@
   }
   to {
     transform: scaleX(0);
-  }
-}
-
-@layer components {
-  /* Focus scrolls a control clear of the sticky amount, inside the add sheet's scrolling middle. */
-  .lk-sheet-body:has(.lk-sheet-amount) {
-    scroll-padding-block: 64px 8px;
   }
 }
 

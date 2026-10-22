@@ -239,8 +239,11 @@ export type TransactionActions = ReturnType<typeof useTransactionActions>;
 
 // -- The form --------------------------------------------------------------------------------------
 
-/** How many category chips show before "Más" (two rows of four, "Más" being the eighth). */
-const VISIBLE_CHIPS = 7;
+/**
+ * How many category chips show before "Más": two rows of four ("Más" being the eighth), or one
+ * row on a short screen.
+ */
+export const VISIBLE_CHIPS = { rows2: 7, rows1: 3 } as const;
 
 /** A recent name with the category it usually goes in. */
 export interface NameChoice {
@@ -256,6 +259,8 @@ export interface FormOptions {
   categoryId?: string | undefined;
   timezone: string;
   currency: string;
+  /** How many category chips show before "Más" (the selected one always among them). */
+  visibleChips?: number;
 }
 
 /** The add/edit sheet's state, its choices (categories, shortcuts) and what saving would send. */
@@ -264,6 +269,7 @@ export function useTransactionForm({
   categoryId: initialCategory,
   timezone,
   currency,
+  visibleChips = VISIBLE_CHIPS.rows2,
 }: FormOptions) {
   const { locale } = useLocale();
   // Archived ones too: the transaction being edited may be in one (it is never moved silently).
@@ -318,9 +324,9 @@ export function useTransactionForm({
     editing && editingCategory && name === editingCategory.name && !picked ? "" : name;
 
   let chips = ofKind;
-  const overflow = ofKind.length > VISIBLE_CHIPS + 1;
+  const overflow = ofKind.length > visibleChips + 1;
   if (overflow && !allChips) {
-    chips = ofKind.slice(0, VISIBLE_CHIPS);
+    chips = ofKind.slice(0, visibleChips);
     if (selected && !chips.includes(selected)) chips = [...chips.slice(0, -1), selected];
   }
 

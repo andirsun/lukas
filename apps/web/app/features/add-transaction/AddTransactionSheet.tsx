@@ -13,8 +13,14 @@ import { NameField } from "../../ui/NameField.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
 import { Sheet } from "../../ui/Sheet.tsx";
+import { SHORT_QUERY, useMediaQuery } from "../../ui/use-wide-screen.ts";
 import { useTransactionSheet } from "./TransactionSheetProvider.tsx";
-import { type Kind, type NameChoice, useTransactionForm } from "./use-add-transaction.ts";
+import {
+  type Kind,
+  type NameChoice,
+  useTransactionForm,
+  VISIBLE_CHIPS,
+} from "./use-add-transaction.ts";
 
 /** How long typing must pause before the amount is announced. */
 const ANNOUNCE_AFTER_MS = 500;
@@ -66,7 +72,15 @@ export function AddTransactionSheet({
   const tRoot = useTranslations();
   const { locale } = useLocale();
   const { actions } = useTransactionSheet();
-  const form = useTransactionForm({ editing, categoryId, timezone, currency });
+  // On a short screen one row of categories, so the whole sheet fits.
+  const short = useMediaQuery(SHORT_QUERY);
+  const form = useTransactionForm({
+    editing,
+    categoryId,
+    timezone,
+    currency,
+    visibleChips: short ? VISIBLE_CHIPS.rows1 : VISIBLE_CHIPS.rows2,
+  });
   const [moreOpen, setMoreOpen] = useState(false);
   const [nameInput, setNameInput] = useState<HTMLInputElement | null>(null);
   const saving = useRef(false);
@@ -141,38 +155,41 @@ export function AddTransactionSheet({
           </div>
         </div>
       }
+      pinned={
+        // The kind and the amount stay in view; what follows scrolls (if it must) under them.
+        <>
+          <SegmentedControl<Kind>
+            label={t("kind_label")}
+            value={form.kind}
+            options={[
+              { value: "expense", label: t("expense") },
+              { value: "income", label: t("income") },
+            ]}
+            onChange={form.setKind}
+          />
+          <p
+            data-testid="amount"
+            aria-hidden="true"
+            className={cx(
+              "lk-amount-display lk-sheet-amount",
+              form.kind === "expense" ? "is-expense" : "is-income",
+            )}
+          >
+            {amountText}
+            {hint && " "}
+            {hint && (
+              <span className="align-middle font-text text-[14px] font-bold text-ink-muted">
+                ({hint})
+              </span>
+            )}
+          </p>
+          <p className="sr-only" aria-live="polite">
+            {announced}
+          </p>
+        </>
+      }
     >
       <div className="flex flex-col gap-(--space-2)">
-        <SegmentedControl<Kind>
-          label={t("kind_label")}
-          value={form.kind}
-          options={[
-            { value: "expense", label: t("expense") },
-            { value: "income", label: t("income") },
-          ]}
-          onChange={form.setKind}
-        />
-
-        <p
-          data-testid="amount"
-          aria-hidden="true"
-          className={cx(
-            "lk-amount-display lk-sheet-amount",
-            form.kind === "expense" ? "is-expense" : "is-income",
-          )}
-        >
-          {amountText}
-          {hint && " "}
-          {hint && (
-            <span className="align-middle font-text text-[14px] font-bold text-ink-muted">
-              ({hint})
-            </span>
-          )}
-        </p>
-        <p className="sr-only" aria-live="polite">
-          {announced}
-        </p>
-
         <NameField<NameChoice>
           value={form.name}
           placeholder={form.selected?.name ?? tRoot("name_field.label")}
