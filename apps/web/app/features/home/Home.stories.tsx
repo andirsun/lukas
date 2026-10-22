@@ -478,7 +478,10 @@ export const NoCategories: Story = {
         calls(args.onRequest).filter(([line]) => line.startsWith("POST /api/v1/categories")),
       ).toHaveLength(8),
     );
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
+    // The tabs come back once the new categories are read again: wait for them, not a moment.
+    await userEvent.click(
+      await canvas.findByRole("tab", { name: "Presupuestos" }, { timeout: 5000 }),
+    );
     await expect(await canvas.findByRole("button", { name: /^Supermercado/ })).toBeVisible();
   },
 };
