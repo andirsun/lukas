@@ -12,6 +12,8 @@ export interface MoneyProps {
   currency: string;
   /** Count from the previous value to the new one over `--count-up` whenever `cents` changes. */
   animate?: boolean;
+  /** With `animate`: count up from this value when it first shows (0, say), not only on changes. */
+  countFrom?: number;
   className?: string;
 }
 
@@ -20,12 +22,19 @@ export interface MoneyProps {
  * changes count up over `--count-up`; the counting figure is hidden from assistive technology,
  * which reads the final amount right away. Under reduced motion the value just changes.
  */
-export function Money({ cents, currency, animate: countUp = false, className }: MoneyProps) {
+export function Money({
+  cents,
+  currency,
+  animate: countUp = false,
+  countFrom,
+  className,
+}: MoneyProps) {
   const { locale } = useLocale();
   const reduceMotion = useReducedMotionPreference();
   const counting = countUp && !reduceMotion;
-  const [shown, setShown] = useState(cents);
-  const shownRef = useRef(cents);
+  const start = counting ? (countFrom ?? cents) : cents;
+  const [shown, setShown] = useState(start);
+  const shownRef = useRef(start);
 
   useEffect(() => {
     const from = shownRef.current;

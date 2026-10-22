@@ -1,18 +1,23 @@
 import {
   addMonths,
+  costOfLiving,
+  firstDay,
   lastDay,
   type MonthSummary,
   monthOf,
   monthSummary,
+  monthsBetween,
   type TransactionDto,
   todayIn,
 } from "@lukas/core";
 import { type ReactNode, useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
+import { OCTOBER_2026 } from "../../../../../packages/core/test/fixtures/october-2026.ts";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
 import { CategoriesPage } from "../categories/CategoriesPage.tsx";
 import { CategoryDetail } from "../categories/CategoryDetail.tsx";
+import { Insights } from "../insights/Insights.tsx";
 import { RecurringPage } from "../recurring/RecurringPage.tsx";
 import { AppShell } from "./AppShell.tsx";
 import { Home } from "./Home.tsx";
@@ -179,6 +184,80 @@ function sampleRecurrences(): FakeRecurrence[] {
   ];
 }
 
+/** How the October 2026 fixture's categories look in the app. */
+const OCTOBER_LOOKS: Record<string, { icon: string; color: string }> = {
+  supermercado: { icon: "🛒", color: "#ff9f1c" },
+  restaurante: { icon: "🍽️", color: "#ff5c7a" },
+  ocio: { icon: "⭐", color: "#a66bff" },
+  casa: { icon: "🏠", color: "#3fa7ff" },
+  transporte: { icon: "🚗", color: "#5ac8fa" },
+  suscripciones: { icon: "📱", color: "#ff8fd8" },
+  vida: { icon: "❤️", color: "#2fd388" },
+  taxes: { icon: "🧾", color: "#8e87b8" },
+  salario: { icon: "💰", color: "#2fd388" },
+};
+
+/** The October 2026 fixture's categories (packages/core), with their budgets. */
+function octoberCategories(): FakeCategory[] {
+  const look = (key: string) => OCTOBER_LOOKS[key] as { icon: string; color: string };
+  return [
+    ...OCTOBER_2026.expense.map((c, i) =>
+      category(`cat-${c.key}`, c.name, look(c.key).icon, look(c.key).color, i, c.budget),
+    ),
+    ...OCTOBER_2026.income.map((c, i) =>
+      category(`cat-${c.key}`, c.name, look(c.key).icon, look(c.key).color, 20 + i, null, "income"),
+    ),
+  ];
+}
+
+/**
+ * The October 2026 fixture's spending (2.237,08 € in all, Casa 1.329,78 € of it) and salary in
+ * this month and each of the six before it. Casa is the rent (a recurrence) plus the
+ * electricity; this month's subscriptions are still pending.
+ */
+function octoberTransactions(): TransactionDto[] {
+  const all: TransactionDto[] = [];
+  for (let back = 6; back >= 0; back--) {
+    const month = addMonths(MONTH, -back);
+    const status = (key: string) => (back === 0 && key === "suscripciones" ? "pending" : "paid");
+    for (const c of OCTOBER_2026.expense) {
+      if (c.spent === 0) continue;
+      if (c.key === "casa") {
+        all.push(transaction("arriendo", "cat-casa", -120000, `${month}-01`));
+        all.push(transaction("luz", "cat-casa", -(c.spent - 120000), `${month}-03`));
+        continue;
+      }
+      all.push(
+        transaction(c.name.toLowerCase(), `cat-${c.key}`, -c.spent, `${month}-02`, status(c.key)),
+      );
+    }
+    for (const c of OCTOBER_2026.income) {
+      all.push(transaction(c.name, `cat-${c.key}`, c.received, `${month}-01`));
+    }
+  }
+  return all;
+}
+
+/** The fixture's fixed costs: the rent (Casa), Spotify (suscripciones) and the salary. */
+function octoberRecurrences(): FakeRecurrence[] {
+  const monthly = (id: string, name: string, amount: number, categoryId: string, day: number) => ({
+    id,
+    name,
+    amount,
+    categoryId,
+    frequency: "monthly" as const,
+    dayOfMonth: day,
+    monthOfYear: null,
+    startDate: `${addMonths(MONTH, -12)}-01`,
+    endDate: null,
+  });
+  return [
+    monthly("rec-rent", "arriendo", -120000, "cat-casa", 1),
+    monthly("rec-spotify", "suscripciones", -3689, "cat-suscripciones", 2),
+    monthly("rec-salary", "Salário", 620000, "cat-salario", 1),
+  ];
+}
+
 const SUGGESTIONS = [
   { name: "continente", categoryId: "cat-groceries" },
   { name: "pingo doce", categoryId: "cat-groceries" },
@@ -190,8 +269,11 @@ export interface HomeApiOptions {
   /** Every write, as `METHOD /path {json body}`, with its headers. */
   onRequest(line: string, headers: Record<string, string>): void;
   currency?: "EUR" | "COP";
-  /** "sample": this month as above; "empty": categories without budgets and no transactions. */
-  data?: "sample" | "empty" | "no-categories";
+  /**
+   * "sample": this month as above; "empty": categories without budgets and no transactions;
+   * "october": the October 2026 fixture (packages/core) in this month and the six before it.
+   */
+  data?: "sample" | "empty" | "no-categories" | "october";
   /** Creating a transaction answers 503 (after `createDelayMs`). */
   failCreate?: boolean;
   /** How long a create takes, in ms. */
@@ -253,12 +335,18 @@ function homeFetch({
   let categories: FakeCategory[] =
     data === "no-categories"
       ? []
-      : currency === "COP"
-        ? structuredClone(PESO_CATEGORIES)
-        : structuredClone(CATEGORIES);
+      : data === "october"
+        ? octoberCategories()
+        : currency === "COP"
+          ? structuredClone(PESO_CATEGORIES)
+          : structuredClone(CATEGORIES);
   if (data === "empty") categories = categories.map((c) => ({ ...c, currentBudget: null }));
   let transactions: TransactionDto[] =
-    data === "sample" && currency === "EUR" ? sampleTransactions() : [];
+    data === "october"
+      ? octoberTransactions()
+      : data === "sample" && currency === "EUR"
+        ? sampleTransactions()
+        : [];
   if (archivedCategory) {
     categories = categories.map((c) =>
       c.id === "cat-transport" ? { ...c, archived: true, currentBudget: null } : c,
@@ -274,8 +362,13 @@ function homeFetch({
     ...c,
     currentBudget: budgetIn(budgets, c.id, MONTH),
   });
-  let recurrences: FakeRecurrence[] =
-    data === "sample" && currency === "EUR" && !noRecurrences ? sampleRecurrences() : [];
+  let recurrences: FakeRecurrence[] = noRecurrences
+    ? []
+    : data === "october"
+      ? octoberRecurrences()
+      : data === "sample" && currency === "EUR"
+        ? sampleRecurrences()
+        : [];
   let recurrenceIds = 0;
   const deleted = new Map<string, TransactionDto>();
   const profile = {
@@ -395,6 +488,80 @@ function homeFetch({
         summaryOf(categories, budgets, transactions, url.searchParams.get("month") ?? MONTH),
       );
     }
+    // Reports, computed like the API (apps/api/src/routes/reports.ts).
+    if (path === "/api/v1/reports/by-category") {
+      const from = url.searchParams.get("from") ?? MONTH;
+      const to = url.searchParams.get("to") ?? MONTH;
+      const kind = url.searchParams.get("kind") ?? "expense";
+      const status = url.searchParams.get("status");
+      const sign = kind === "expense" ? -1 : 1;
+      const items = categories
+        .filter((c) => c.kind === kind)
+        .map((c) => ({
+          categoryId: c.id,
+          name: c.name,
+          icon: c.icon,
+          color: c.color,
+          total:
+            sign *
+            transactions
+              .filter((t) => t.categoryId === c.id && (!status || t.status === status))
+              .filter((t) => monthOf(t.date) >= from && monthOf(t.date) <= to)
+              .reduce((sum, t) => sum + t.amount, 0),
+        }))
+        .filter((i) => i.total !== 0)
+        .sort((x, y) => y.total - x.total);
+      const total = items.reduce((sum, i) => sum + i.total, 0);
+      return Response.json({
+        total,
+        items: items.map((i) => ({
+          ...i,
+          share: total === 0 ? 0 : Math.round((i.total / total) * 10_000) / 10_000,
+        })),
+      });
+    }
+    if (path === "/api/v1/reports/trend") {
+      const months = monthsBetween(
+        url.searchParams.get("from") ?? MONTH,
+        url.searchParams.get("to") ?? MONTH,
+      );
+      const kindOf = new Map(categories.map((c) => [c.id, c.kind]));
+      return Response.json({
+        months: months.map((month) => {
+          const summary = summaryOf(categories, budgets, transactions, month);
+          const inMonth = transactions.filter((t) => monthOf(t.date) === month);
+          const sum = (kind: "expense" | "income") =>
+            inMonth
+              .filter((t) => kindOf.get(t.categoryId) === kind)
+              .reduce((acc, t) => acc + t.amount, 0);
+          return {
+            month,
+            income: sum("income"),
+            expenses: -sum("expense"),
+            budget: summary.budgetTotal,
+          };
+        }),
+      });
+    }
+    if (path === "/api/v1/reports/cost-of-living") {
+      const count = Number(url.searchParams.get("months") ?? 6);
+      const to = addMonths(MONTH, -1);
+      const from = addMonths(to, 1 - count);
+      return Response.json(
+        costOfLiving({
+          months: monthsBetween(from, to),
+          categories: categories.map((c) => ({ id: c.id, kind: c.kind })),
+          fixedCategoryIds: recurrences
+            .filter((r) => r.endDate === null || r.endDate >= firstDay(from))
+            .map((r) => r.categoryId),
+          transactions: transactions.map((t) => ({
+            categoryId: t.categoryId,
+            amount: t.amount,
+            date: t.date,
+          })),
+        }),
+      );
+    }
     if (path === "/api/v1/transactions/suggestions") {
       const q = (url.searchParams.get("q") ?? "").toLowerCase();
       return Response.json({ items: SUGGESTIONS.filter((s) => s.name.includes(q)) });
@@ -457,7 +624,7 @@ export interface HomeStageProps extends HomeApiOptions {
 
 /**
  * The signed-in app (the shell with its bottom bar or sidebar and the add sheet; home, the
- * categories, a category's detail and the recurring ones) in a memory router, against the fake
+ * categories, a category's detail, the recurring ones and insights) in a memory router, against the fake
  * API above, with the toasts. Each story starts with no remembered choices; "Recargar" remounts
  * everything as a reload would, keeping what the browser stored.
  */
@@ -488,6 +655,7 @@ export function HomeStage({
             <Route path="/app/categories" element={shell(<CategoriesPage />)} />
             <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
             <Route path="/app/recurring" element={shell(<RecurringPage />)} />
+            <Route path="/app/insights" element={shell(<Insights />)} />
             <Route
               path="/sign-in"
               element={<p className="p-(--space-4) text-ink">Sign-in (stand-in)</p>}

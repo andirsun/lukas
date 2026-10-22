@@ -1,7 +1,13 @@
 import { MotionConfigContext } from "motion/react";
 import { useContext, useSyncExternalStore } from "react";
 
-export type DurationToken = "--press" | "--sheet" | "--count-up" | "--celebrate" | "--shiver";
+export type DurationToken =
+  | "--press"
+  | "--sheet"
+  | "--count-up"
+  | "--celebrate"
+  | "--shiver"
+  | "--hop";
 
 /**
  * Reads a duration token (`--sheet: 260ms`) from the stylesheet, in seconds, for Motion. The

@@ -582,9 +582,13 @@ export const Desktop: Story = {
       "href",
       "/app/recurring",
     );
+    await expect(nav.getByRole("link", { name: "Análisis" })).toHaveAttribute(
+      "href",
+      "/app/insights",
+    );
     // Sections still to come are listed, not links.
-    await expect(nav.queryByRole("link", { name: /Análisis/ })).toBeNull();
-    await expect(nav.getByText("Análisis")).toBeVisible();
+    await expect(nav.queryByRole("link", { name: /Ajustes/ })).toBeNull();
+    await expect(nav.getByText("Ajustes")).toBeVisible();
     await userEvent.click(nav.getByRole("button", { name: "Agregar" }));
     await expect(await screen.findByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
   },

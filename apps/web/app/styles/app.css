@@ -1190,3 +1190,64 @@
     --toast-lift: 92px;
   }
 }
+
+/*
+ * Insights charts (Task 14). Recharts draws with SVG attributes; these rules give its marks the
+ * theme's tokens instead (a CSS property beats an attribute), so the charts follow night and day.
+ * Category tints come in as data; status colors and lines come from here.
+ */
+@layer components {
+  /* The donut's ring while the chart's code loads. */
+  .lk-donut-placeholder {
+    position: absolute;
+    inset: 4px;
+    border-radius: 50%;
+    border: 30px solid var(--surface-sunken);
+  }
+  .lk-trend .recharts-cartesian-grid line {
+    stroke: var(--stroke);
+  }
+  .lk-trend .recharts-cartesian-axis-tick-value {
+    fill: var(--ink-muted);
+    font-family: var(--font-text);
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .lk-trend-income .recharts-rectangle {
+    fill: var(--good);
+  }
+  .lk-trend-expenses .recharts-rectangle {
+    fill: var(--over);
+  }
+  .lk-trend-budget .recharts-curve {
+    stroke: var(--ink-muted);
+  }
+  .lk-trend .recharts-tooltip-cursor {
+    fill: var(--surface-sunken);
+    stroke: none;
+  }
+  .lk-chart-tip {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--surface-row);
+    border: 2px solid var(--stroke);
+    color: var(--ink-muted);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  /* Legend keys: a color square, or the budget's dashed line. */
+  .lk-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex: none;
+  }
+  .lk-swatch-line {
+    width: 16px;
+    border-top: 2px dashed var(--ink-muted);
+    flex: none;
+  }
+}

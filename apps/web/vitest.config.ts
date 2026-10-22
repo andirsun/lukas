@@ -18,6 +18,7 @@ export default defineConfig({
       "@react-three/fiber",
       "three/examples/jsm/environments/RoomEnvironment.js",
       "@tanstack/react-query",
+      "recharts",
       "openapi-fetch",
       "better-auth/react",
       "better-auth/client/plugins",

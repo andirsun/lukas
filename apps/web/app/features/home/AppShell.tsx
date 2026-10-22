@@ -9,9 +9,8 @@ import {
   useTransactionSheet,
 } from "../add-transaction/TransactionSheetProvider.tsx";
 
-/** Sections linked from the navigation that do not exist yet (Tasks 14–15 add them). */
-const SOON_SIDEBAR = ["insights", "settings"] as const;
-const SOON_TABS = ["insights"] as const;
+/** Sections linked from the navigation that do not exist yet (Task 15 adds them). */
+const SOON_SIDEBAR = ["settings"] as const;
 
 const SECTIONS = new Set(["insights", "recurring", "categories", "settings"]);
 
@@ -33,7 +32,7 @@ function Frame({ children }: { children: ReactNode }) {
         {children}
       </div>
       <div className="fixed inset-x-0 bottom-0 z-30 pb-[env(safe-area-inset-bottom)] lg:hidden">
-        <BottomBar current={current} onAdd={() => openAdd()} soon={SOON_TABS} />
+        <BottomBar current={current} onAdd={() => openAdd()} />
       </div>
     </div>
   );

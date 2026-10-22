@@ -6,3 +6,7 @@ allowBuilds:
   esbuild: true
   protobufjs: false
   ssh2: false
+# Recharts pulls immer in; its newest releases are days old, so it is held at a version older
+# than two weeks until a newer one has aged.
+overrides:
+  immer: 11.1.21

@@ -145,10 +145,12 @@ export function useRecurrences() {
   });
 }
 
-export function useCostOfLiving(months: number) {
+/** Average monthly spending over the last `months` complete months; `enabled: false` waits. */
+export function useCostOfLiving(months: number, { enabled = true }: { enabled?: boolean } = {}) {
   const api = useApi();
   return useQuery({
     queryKey: queryKeys.costOfLiving(months),
+    enabled,
     queryFn: async ({ signal }) =>
       dataOf(
         await api.GET("/v1/reports/cost-of-living", { params: { query: { months } }, signal }),
@@ -156,10 +158,15 @@ export function useCostOfLiving(months: number) {
   });
 }
 
+/**
+ * Totals per category over a range. While another range, kind or status loads, the previous
+ * answer stays (`isPlaceholderData`), so a chart moves from one to the other instead of blinking.
+ */
 export function useReportByCategory(range: ByCategoryRange) {
   const api = useApi();
   return useQuery({
     queryKey: queryKeys.byCategory(range),
+    placeholderData: keepPreviousData,
     queryFn: async ({ signal }) =>
       dataOf(
         await api.GET("/v1/reports/by-category", {
@@ -177,10 +184,12 @@ export function useReportByCategory(range: ByCategoryRange) {
   });
 }
 
+/** Income, expenses and budget per month over a range; keeps the previous range while one loads. */
 export function useTrend(range: ReportRange) {
   const api = useApi();
   return useQuery({
     queryKey: queryKeys.trend(range),
+    placeholderData: keepPreviousData,
     queryFn: async ({ signal }) =>
       dataOf(
         await api.GET("/v1/reports/trend", {

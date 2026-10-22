@@ -33,6 +33,7 @@ export default [
             route("categories", "routes/app.categories.tsx"),
             route("categories/:id", "routes/app.categories.$id.tsx"),
             route("recurring", "routes/app.recurring.tsx"),
+            route("insights", "routes/app.insights.tsx"),
           ]),
         ]),
       ]),
