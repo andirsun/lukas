@@ -356,7 +356,12 @@ There are no other notices: no summaries, no "¿ya anotaste hoy?", no promotions
 
 ## 9. Decisions for the founder at spec review
 
-- **Android package name:** `com.andersonlaverde.lukitas`. It is permanent once the app is installed by others or listed anywhere; a project domain bought later would not change it.
+- **Android package name:** `com.andersonlaverde.lukitas` (founder, 2026-10-22: no project domain and no store listing yet).
+  - Changing it later makes Android treat the result as a new app. Friends install the new one and sign in again; their data is on the server, so nothing is lost.
+  - **Guests:** they must add an email first. A guest's only key is the session on that phone. A passkey still works, because it belongs to the domain, not the package.
+  - **Lost locally:** settings, the hidden-amount choice and a downloaded voice model, which downloads again.
+  - **Widget:** it has to be placed again.
+  - **Asset links:** `assetlinks.json` lists both packages during the switch.
 - **The `GUEST_SIGNUP` flag** defaults to on for the personal install.
 
 ## 10. Risks
