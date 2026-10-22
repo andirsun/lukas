@@ -3846,5 +3846,718 @@
       "drafts": [],
       "unread": ["I bought some bread"]
     }
+  },
+  {
+    "id": "amount-over-cap-digits",
+    "input": "gasté 99999999999999999999 en pan",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["gasté 99999999999999999999 en pan"] }
+  },
+  {
+    "id": "amount-over-cap-billion",
+    "input": "gasté 1.000.000.000 en casa",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["gasté 1.000.000.000 en casa"] }
+  },
+  {
+    "id": "amount-over-cap-mil-millones",
+    "input": "gasté mil millones en casa",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["gasté mil millones en casa"] }
+  },
+  {
+    "id": "amount-cap-max",
+    "input": "pagué 999.999.999 de casa",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 99999999900,
+          "kind": "expense",
+          "name": "casa",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-zero-unread",
+    "input": "gasté 0 en taxi",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["gasté 0 en taxi"] }
+  },
+  {
+    "id": "category-store-d1",
+    "input": "gasté 20 mil en el D1",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [{ "id": "cat-mercado", "name": "Mercado", "kind": "expense" }],
+    "usual": [{ "name": "d1", "categoryId": "cat-mercado" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000000,
+          "kind": "expense",
+          "name": "d1",
+          "categoryId": "cat-mercado",
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-store-d1-first",
+    "input": "D1 20 mil",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000000,
+          "kind": "expense",
+          "name": "d1",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "category-store-alphanumeric",
+    "input": "compré 35 mil en MiTienda24",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 3500000,
+          "kind": "expense",
+          "name": "mitienda24",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-comma-thousands-cop",
+    "input": "gasté 15,000 en almuerzo",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500000,
+          "kind": "expense",
+          "name": "almuerzo",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-dollar-comma-thousands-cop",
+    "input": "gasté $25,000 en almuerzo, $8,000 en taxi",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2500000,
+          "kind": "expense",
+          "name": "almuerzo",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 800000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-comma-thousands-small",
+    "input": "gasté 2,500 en el bus",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 250000,
+          "kind": "expense",
+          "name": "bus",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-eur-comma-thousands",
+    "input": "pagué 1,500 € de alquiler",
+    "locale": "es",
+    "currency": "EUR",
+    "today": "2026-10-22",
+    "timeZone": "Europe/Madrid",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 150000,
+          "kind": "expense",
+          "name": "alquiler",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-eur-comma-three-digits",
+    "input": "gasté 9,999 en pan",
+    "locale": "es",
+    "currency": "EUR",
+    "today": "2026-10-22",
+    "timeZone": "Europe/Madrid",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 999900,
+          "kind": "expense",
+          "name": "pan",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-eur-thousands-and-decimal",
+    "input": "pagué 1.234,56 de alquiler",
+    "locale": "es",
+    "currency": "EUR",
+    "today": "2026-10-22",
+    "timeZone": "Europe/Madrid",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 123456,
+          "kind": "expense",
+          "name": "alquiler",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-en-dot-thousands",
+    "input": "spent 15.000 on rent",
+    "locale": "en",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500000,
+          "kind": "expense",
+          "name": "rent",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-thousands-before-scale-unread",
+    "input": "me pagaron 4,300 palos",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["me pagaron 4,300 palos"] }
+  },
+  {
+    "id": "kind-carries-over",
+    "input": "recibí 2 millones de prima y 200 mil de bono",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [
+      { "id": "cat-salario", "name": "Salario", "kind": "income" },
+      { "id": "cat-bono", "name": "Bono", "kind": "income" }
+    ],
+    "usual": [{ "name": "prima", "categoryId": "cat-salario" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000000,
+          "kind": "income",
+          "name": "prima",
+          "categoryId": "cat-salario",
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 20000000,
+          "kind": "income",
+          "name": "bono",
+          "categoryId": "cat-bono",
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-carries-over-comma",
+    "input": "me pagaron 2 millones, 300 mil de bono",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 30000000,
+          "kind": "income",
+          "name": "bono",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-mixed-carry",
+    "input": "me pagaron 2 millones y gasté 50 mil en mercado",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [
+      { "id": "cat-salario", "name": "Salario", "kind": "income" },
+      { "id": "cat-mercado", "name": "Mercado", "kind": "expense" }
+    ],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 5000000,
+          "kind": "expense",
+          "name": "mercado",
+          "categoryId": "cat-mercado",
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-new-verb-carries",
+    "input": "me pagaron 2 millones, gasté 50 mil en mercado y 20 mil en taxi",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 5000000,
+          "kind": "expense",
+          "name": "mercado",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 2000000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-carries-over",
+    "input": "gasté ayer 5 mil en pan y 3 mil en café",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 500000,
+          "kind": "expense",
+          "name": "pan",
+          "categoryId": null,
+          "date": "2026-10-21"
+        },
+        {
+          "amount": 300000,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": null,
+          "date": "2026-10-21"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-carries-forward-only",
+    "input": "gasté 5 mil en pan y ayer 3 mil en café",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 500000,
+          "kind": "expense",
+          "name": "pan",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 300000,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": null,
+          "date": "2026-10-21"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-carries-until-next",
+    "input": "ayer gasté 5 mil en pan, hoy 3 mil en café y 2 mil en taxi",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 500000,
+          "kind": "expense",
+          "name": "pan",
+          "categoryId": null,
+          "date": "2026-10-21"
+        },
+        {
+          "amount": 300000,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 200000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "category-kind-filter-usual",
+    "input": "recibí 800 mil de arriendo",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [{ "id": "cat-hogar", "name": "Hogar", "kind": "expense" }],
+    "usual": [{ "name": "arriendo", "categoryId": "cat-hogar" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 80000000,
+          "kind": "income",
+          "name": "arriendo",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "category-kind-filter-name",
+    "input": "gasté 100 mil en freelance",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [{ "id": "cat-freelance", "name": "Freelance", "kind": "income" }],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 10000000,
+          "kind": "expense",
+          "name": "freelance",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "category-kind-filter-falls-through",
+    "input": "recibí 200 mil de bono",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [
+      { "id": "cat-regalos", "name": "Regalos", "kind": "expense" },
+      { "id": "cat-bono", "name": "Bono", "kind": "income" }
+    ],
+    "usual": [{ "name": "bono", "categoryId": "cat-regalos" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 20000000,
+          "kind": "income",
+          "name": "bono",
+          "categoryId": "cat-bono",
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-en-twelve-hundred",
+    "input": "paid twelve hundred for rent",
+    "locale": "en",
+    "currency": "USD",
+    "today": "2026-10-22",
+    "timeZone": "America/New_York",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 120000,
+          "kind": "expense",
+          "name": "rent",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-coma-leading-zero",
+    "input": "gasté 10 coma 05 en pan",
+    "locale": "es",
+    "currency": "EUR",
+    "today": "2026-10-22",
+    "timeZone": "Europe/Madrid",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1005,
+          "kind": "expense",
+          "name": "pan",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-palo-y-medio",
+    "input": "me pagaron un palo y medio",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 150000000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-mil-y-medio",
+    "input": "gasté mil y medio en dulces",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 150000,
+          "kind": "expense",
+          "name": "dulces",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-connector-scope",
+    "input": "gasté 8 mil en pan y leche, 3 mil en huevos",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 800000,
+          "kind": "expense",
+          "name": "pan y leche",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 300000,
+          "kind": "expense",
+          "name": "huevos",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
   }
 ]

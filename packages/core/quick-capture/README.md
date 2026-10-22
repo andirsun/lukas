@@ -33,6 +33,7 @@ A parser passes a case when, for the given inputs, it returns exactly `expected.
 - **`today`** is already the date in `timeZone`. The parser never reads the clock and never shifts the date by the time zone; `timeZone` says where `today` was computed.
 - **`usual`** is the `GET /v1/transactions/suggestions` shape: name to usual category.
 - **`unread`** holds the fragments as heard (original case and spelling, without the connector that separated them).
+- A parser **never throws**: any text, however long or odd (digit runs, emoji, punctuation), gives drafts and unread fragments.
 
 ## Conventions the cases pin
 
@@ -43,31 +44,45 @@ The spec leaves these open, and the expected values rely on them. If the parser 
   - Dropped: the verb, the amount (with its currency word, like "euros" or "dollars"), the date word, and the function words `en de para por on for` plus the articles `el la los las un una the a an`.
   - Everything else stays, in order, so a misheard word stays in the name (`este almuerzo`, `rapid`).
   - What remains can be empty: `""`.
+  - **Words keep their digits:** a word starts with a letter and runs through the letters and digits glued to it, so `D1` and `MiTienda24` are names (`d1`, `mitienda24`), never an amount. A number starts only with a digit (`15k`, `15mil` is `15` then `mil`).
   - **"A name"** (in the rules below) is any word that is not an amount word, a date word, a function word or the verb. A misheard verb is therefore a name: `gastos` in `gastos de mil` is one, and so is `spend` (the verb is `spent`).
 - **Where a name sits:** before the amount (`uber siete mil`), after it (`gasté 8 mil en taxi`) or around it (`pagué el arriendo, un millón`).
 - **Splitting**
   - A connector (`y`, `and`, `,`, `también`, `also`) starts a new movement only when the movement so far has an amount and the text after the connector has an amount. So `pan y leche 8 mil`, `gasté 8 mil en pan y leche` and `spent 12 on bread and milk` are one movement.
+  - "The text after the connector" ends at the next connector. So `gasté 8 mil en pan y leche, 3 mil en huevos` splits at the comma, not at the `y` (`split-connector-scope`).
   - A decimal comma (`9,50`) or a thousands comma (`1,200`) is not a connector.
   - `y` inside a number word (`treinta y cinco mil`) is not a connector. In `siete mil quinientos y cinco mil`, `quinientos y cinco` is not a number, so the `y` splits.
-  - **No connector:** an amount that follows a movement already holding an amount and a name starts a new movement, even with no connector. The words between the two amounts (the middle) go to the earlier movement if it has no name before its amount (`gasté doce mil en taxi cuarenta mil en mercado`: `en taxi` is the first movement's). They go to the later movement if the earlier one already has a name before its amount (`taxi doce mil mercado cuarenta mil`: `mercado` is the second movement's). Words after the last amount stay with the last movement.
+  - **No connector:** an amount that follows a movement already holding an amount and a name starts a new movement, even with no connector. The words between the two amounts (the middle) go to the earlier movement if it has no name before its amount (`gasté doce mil en taxi cuarenta mil en mercado`: `en taxi` is the first movement's). They go to the later movement if the earlier one already has a name before its amount (`taxi doce mil mercado cuarenta mil`: `mercado` is the second movement's). A verb or a date word in the middle starts the later movement, with what follows it (`ayer gasté 5 mil en taxi hoy 3 mil en café`). Words after the last amount stay with the last movement.
   - **Same amount:** number words with no name between them are one amount when they form a valid number (`mil quinientos` is 1.500, `veintidós mil novecientos` is 22.900). They are not two movements.
   - **No name at all:** two amounts with no name anywhere in the movement and that do not form one valid number (`gasté 12 mil 40 mil`) are not split, because the first movement holds no name, and not merged. The whole movement is unread (`unread: ["gasté 12 mil 40 mil"]`).
 - **Number forms:**
-  - es: a dot followed by exactly three digits is thousands (`15.000`, `1.500.000`), a comma is the decimal (`9,50`, `4,3 palos`). A space before exactly three digits is thousands too (`120 000`; Whisper writes that).
-  - en: a comma is thousands, a dot is the decimal.
+  - **Digits read the same in every locale and currency.**
+    - A dot or comma followed by **exactly three digits** is a thousands separator, because cents have two digits: `15.000`, `1.500.000`, `15,000`, `$25,000` and `2,500` in COP are 15.000, 25.000 and 2.500, and `1,500 €` and `9,999` in EUR are 1.500 € and 9.999 €.
+    - A last dot or comma followed by **one or two digits** is the decimal: `9,50` (950 cents), `12.50`, `4,3 palos`, `1.234,56`, `1,200.50`.
+    - In es, a space before exactly three digits is thousands too (`120 000`; Whisper writes that).
+  - **Thousands before a scale word is ambiguous, so unread:** `4,300 palos` could be 4,3 palos or 4.300 palos, and `1,500k` is the same.
   - `k` after digits is x1.000, in any currency. `mil`, `millón` and `millones` work with digits and with words.
   - Bare `mil` is 1.000 (`gasté mil en chicle`, and the `mil` left by a misheard `doce` in `gastos de mil`).
   - **Scale words** are `mil`, `millón`/`millones`, `thousand`, `million`, and the COP slang units `palo(s)` and `luca(s)`/`lukas`.
-  - `con` joins units and cents (`nueve con cincuenta`, `9 euros con 50`).
+  - `con` joins units and cents (`nueve con cincuenta`, `9 euros con 50`). In en, `and … cents` does (`twelve dollars and fifty cents`).
+  - `coma` (es) and `point` (en) are the decimal in words. The decimals keep their written length: `10 coma 05` is 10,05 and `cuatro coma tres` is 4,3.
+  - A larger scale right after a scale multiplies everything before it: `mil millones` is 1.000.000.000 (then over the cap, so unread).
+  - `y medio`/`y media` after a scale adds half of it: `un palo y medio` is 1.500.000, `mil y medio` is 1.500. `medio` before a scale is half of it (`medio palo`).
+  - en: a number from 1 to 99 before `hundred` multiplies it (`two hundred fifty`, `twelve hundred` is 1.200). Two number words where the second is 10 to 99, with no scale, are units and cents (`twelve fifty` is 12,50).
+  - **The cap:** an amount above 999.999.999 (in currency units), or of 0, is unread, whatever the digits or words. It is never cut, rounded or wrapped.
   - Number words may come without accents (`veintidos`, `dieciseis`).
   - `un` and `una` are numbers only before a scale word (see above: `un millón`, `un palo`, `una luca`). Before another number they are an article and are dropped (`un cuatro coma tres palos`).
-- **Verbs** may come without accents (`gaste`, `pague`, `compre`, `recibi`, `me llego`). Case is ignored. The default kind is expense.
+- **Verbs** may come without accents (`gaste`, `pague`, `compre`, `recibi`, `me llego`). Case is ignored.
+- **The context carries over.** The sentence is read left to right:
+  - **Kind:** a verb sets the kind of its movement and of every later one, until another verb sets another. Before any verb, the kind is expense. `recibí 2 millones de prima y 200 mil de bono` is two incomes, and `me pagaron 2 millones y gasté 50 mil en mercado` is an income, then an expense.
+  - **Date:** a date word sets the date of its movement and of every later one, until another date word. Before any date word, the date is today. `gasté ayer 5 mil en pan y 3 mil en café` dates both yesterday, and `gasté 5 mil en pan y ayer 3 mil en café` dates only the second.
+  - Verbs and date words in an unread movement carry over too.
 - **Dates**
   - `hoy/today`, `ayer/yesterday`, `antier/anteayer`, and a weekday with or without `el`/`on` and with or without accent.
   - A weekday is the most recent past one, and today's own weekday means a week ago (`el jueves` on a Thursday is -7). The spec says "the most recent past one"; this reads "past" as strictly before today.
-  - The date word may be anywhere in its movement.
-  - A date at the very start of the sentence covers every movement that has no date of its own (`antier gasté ... y ...`, both -2). A movement with its own date keeps it (`ayer ... y hoy ...`).
+  - The date word may be anywhere in its movement, and it carries over (above): `antier gasté ... y ...` dates both -2, and `ayer ... y hoy ...` keeps each its own.
 - **Category:** tried in the order of spec 5.2, and the name is compared ignoring accents and case on both sides: (1) the usual category of that name, (2) a category with that name, (3) none. There are no partial matches: `cafetería` does not match `Café`, `transportes` does not match `Transporte`.
+  - **Only categories of the draft's kind count**, in both steps. A transaction takes its sign from its category, so an income draft must never get an expense category. A usual pair counts only when its category is among `categories` and of the draft's kind; otherwise matching goes on to step 2. With no match of the same kind, `categoryId` is null (`category-kind-filter-usual`, `category-kind-filter-name`, `category-kind-filter-falls-through`).
 - **Unread:** a movement with no readable amount is unread as a whole (`compré pan`, `ayer fui al cine`, `me de ópalo en el éxito`). Text with no amount that sits next to a movement is part of its name, never unread.
 
 ## Review Focus decisions

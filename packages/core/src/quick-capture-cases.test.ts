@@ -164,11 +164,14 @@ describe("quick-capture cases file", () => {
     }
   });
 
-  test("categoryId follows the order in spec 5.2: usual name, then category name ignoring accents, then none", () => {
+  test("categoryId follows the order in spec 5.2 among categories of the draft's kind: usual name, then category name ignoring accents, then none", () => {
     for (const c of cases) {
       for (const d of c.expected.drafts) {
-        const usual = c.usual.find((u) => plain(u.name) === plain(d.name));
-        const named = c.categories.find((x) => plain(x.name) === plain(d.name));
+        const sameKind = c.categories.filter((x) => x.kind === d.kind);
+        const usual = c.usual.find(
+          (u) => plain(u.name) === plain(d.name) && sameKind.some((x) => x.id === u.categoryId),
+        );
+        const named = sameKind.find((x) => plain(x.name) === plain(d.name));
         const expected = d.name === "" ? null : (usual?.categoryId ?? named?.id ?? null);
         expect(d.categoryId, `${c.id}: ${d.name}`).toBe(expected);
         if (d.categoryId !== null) {
@@ -192,7 +195,54 @@ describe("quick-capture cases file", () => {
         const back = (dow(c.today) - (WEEKDAYS[wd[0]] as number) + 7) % 7 || 7;
         want = addDays(c.today, -back);
       }
-      for (const d of c.expected.drafts) expect(d.date, c.id).toBe(want);
+      // The date word carries over to later movements only: the drafts are dated today until
+      // the movement that holds it, then `want`.
+      const dates = c.expected.drafts.map((d) => d.date);
+      const from = dates.indexOf(want);
+      const expected = dates.map((_, i) => (from !== -1 && i >= from ? want : c.today));
+      expect(dates, c.id).toEqual(expected);
+      if (rel.length + wd.length === 1 && want !== c.today && c.expected.drafts.length > 0) {
+        // Unless the date word sits in an unread fragment, some draft carries it.
+        const inUnread = wordsOf(c.expected.unread.join(" ")).some(
+          (w) => w in RELATIVE || w in WEEKDAYS,
+        );
+        if (!inUnread) expect(from, c.id).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  test("context carries over: kind and date", () => {
+    const kinds = (id: string) => get(id).expected.drafts.map((d) => d.kind);
+    const dates = (id: string) => get(id).expected.drafts.map((d) => d.date);
+    expect(kinds("kind-carries-over")).toEqual(["income", "income"]);
+    expect(kinds("kind-mixed-carry")).toEqual(["income", "expense"]);
+    expect(kinds("kind-new-verb-carries")).toEqual(["income", "expense", "expense"]);
+    expect(dates("date-carries-over")).toEqual(["2026-10-21", "2026-10-21"]);
+    expect(dates("date-carries-forward-only")).toEqual(["2026-10-22", "2026-10-21"]);
+    expect(dates("date-carries-until-next")).toEqual(["2026-10-21", "2026-10-22", "2026-10-22"]);
+  });
+
+  test("three digits after a separator are thousands; a scale after them is unread", () => {
+    const amountOf = (id: string) => get(id).expected.drafts.map((d) => d.amount);
+    expect(amountOf("amount-comma-thousands-cop")).toEqual([1_500_000]);
+    expect(amountOf("amount-dollar-comma-thousands-cop")).toEqual([2_500_000, 800_000]);
+    expect(amountOf("amount-eur-comma-thousands")).toEqual([150_000]);
+    expect(amountOf("amount-eur-decimal-comma")).toEqual([950]);
+    expect(get("amount-thousands-before-scale-unread").expected.drafts).toEqual([]);
+  });
+
+  test("amounts above 999 999 999 are unread", () => {
+    for (const id of [
+      "amount-over-cap-digits",
+      "amount-over-cap-billion",
+      "amount-over-cap-mil-millones",
+    ]) {
+      expect(get(id).expected.drafts, id).toEqual([]);
+      expect(get(id).expected.unread, id).toEqual([get(id).input]);
+    }
+    expect(get("amount-cap-max").expected.drafts[0]?.amount).toBe(99_999_999_900);
+    for (const c of cases) {
+      for (const d of c.expected.drafts) expect(d.amount, c.id).toBeLessThanOrEqual(99_999_999_900);
     }
   });
 
