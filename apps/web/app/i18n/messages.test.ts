@@ -181,3 +181,22 @@ describe("deleting an account promises what is true (backups keep it up to 14 da
     });
   }
 });
+
+describe("the privacy answer claims only what open code shows", () => {
+  const site = { es: flatten(siteEs as Tree), en: flatten(siteEn as Tree) } as const;
+  const ANSWER = {
+    es: "El código es abierto: cualquiera puede leer el código que los maneja.",
+    en: "The code is open source: anyone can read the code that handles it.",
+  } as const;
+
+  for (const locale of ["es", "en"] as const) {
+    it(`${locale}: open code shows what the code does, not what a server does`, () => {
+      expect(site[locale]["landing.faq.privacy.a"]).toContain(ANSWER[locale]);
+      for (const [key, line] of Object.entries(site[locale])) {
+        expect(line, key).not.toMatch(
+          /comprobar qué hacemos|qué hacemos con ellos|check what we do|what we do with it/i,
+        );
+      }
+    });
+  }
+});

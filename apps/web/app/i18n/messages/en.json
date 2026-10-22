@@ -172,7 +172,7 @@
       },
       "privacy": {
         "q": "What do you do with my data?",
-        "a": "Your data travels encrypted, and we never sell it or share it with advertisers. You can export it or delete your account whenever you want. And since the code is open source, anyone can check what we do with it."
+        "a": "Your data travels encrypted, and we never sell it or share it with advertisers. You can export it or delete your account whenever you want. The code is open source: anyone can read the code that handles it."
       },
       "free": {
         "q": "Is it free?",
