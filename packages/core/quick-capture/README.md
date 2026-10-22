@@ -40,9 +40,10 @@ The spec leaves these open, and the expected values rely on them. If the parser 
 
 - **Names**
   - Lowercase, in the spoken spelling (accents kept: `éxito`, `café`).
-  - Dropped: the verb, the amount (with its currency word, like "euros" or "dollars"), the date word, and the function words `en de para por on for` plus articles `el la los las un una the`.
+  - Dropped: the verb, the amount (with its currency word, like "euros" or "dollars"), the date word, and the function words `en de para por on for` plus the articles `el la los las un una the a an`.
   - Everything else stays, in order, so a misheard word stays in the name (`este almuerzo`, `rapid`).
   - What remains can be empty: `""`.
+  - **"A name"** (in the rules below) is any word that is not an amount word, a date word, a function word or the verb. A misheard verb is therefore a name: `gastos` in `gastos de mil` is one, and so is `spend` (the verb is `spent`).
 - **Where a name sits:** before the amount (`uber siete mil`), after it (`gasté 8 mil en taxi`) or around it (`pagué el arriendo, un millón`).
 - **Splitting**
   - A connector (`y`, `and`, `,`, `también`, `also`) starts a new movement only when the movement so far has an amount and the text after the connector has an amount. So `pan y leche 8 mil`, `gasté 8 mil en pan y leche` and `spent 12 on bread and milk` are one movement.
@@ -50,13 +51,16 @@ The spec leaves these open, and the expected values rely on them. If the parser 
   - `y` inside a number word (`treinta y cinco mil`) is not a connector. In `siete mil quinientos y cinco mil`, `quinientos y cinco` is not a number, so the `y` splits.
   - **No connector:** an amount that follows a movement already holding an amount and a name starts a new movement, even with no connector. The words between the two amounts (the middle) go to the earlier movement if it has no name before its amount (`gasté doce mil en taxi cuarenta mil en mercado`: `en taxi` is the first movement's). They go to the later movement if the earlier one already has a name before its amount (`taxi doce mil mercado cuarenta mil`: `mercado` is the second movement's). Words after the last amount stay with the last movement.
   - **Same amount:** number words with no name between them are one amount when they form a valid number (`mil quinientos` is 1.500, `veintidós mil novecientos` is 22.900). They are not two movements.
+  - **No name at all:** two amounts with no name anywhere in the movement and that do not form one valid number (`gasté 12 mil 40 mil`) are not split, because the first movement holds no name, and not merged. The whole movement is unread (`unread: ["gasté 12 mil 40 mil"]`).
 - **Number forms:**
   - es: a dot followed by exactly three digits is thousands (`15.000`, `1.500.000`), a comma is the decimal (`9,50`, `4,3 palos`). A space before exactly three digits is thousands too (`120 000`; Whisper writes that).
   - en: a comma is thousands, a dot is the decimal.
   - `k` after digits is x1.000, in any currency. `mil`, `millón` and `millones` work with digits and with words.
+  - Bare `mil` is 1.000 (`gasté mil en chicle`, and the `mil` left by a misheard `doce` in `gastos de mil`).
+  - **Scale words** are `mil`, `millón`/`millones`, `thousand`, `million`, and the COP slang units `palo(s)` and `luca(s)`/`lukas`.
   - `con` joins units and cents (`nueve con cincuenta`, `9 euros con 50`).
   - Number words may come without accents (`veintidos`, `dieciseis`).
-  - `un` and `una` are numbers only before a scale word (`un millón`, `un palo`, `una luca`). Before another number they are an article and are dropped (`un cuatro coma tres palos`).
+  - `un` and `una` are numbers only before a scale word (see above: `un millón`, `un palo`, `una luca`). Before another number they are an article and are dropped (`un cuatro coma tres palos`).
 - **Verbs** may come without accents (`gaste`, `pague`, `compre`, `recibi`, `me llego`). Case is ignored. The default kind is expense.
 - **Dates**
   - `hoy/today`, `ayer/yesterday`, `antier/anteayer`, and a weekday with or without `el`/`on` and with or without accent.

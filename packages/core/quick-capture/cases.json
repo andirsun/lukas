@@ -3458,6 +3458,20 @@
     }
   },
   {
+    "id": "split-two-amounts-no-name-unread",
+    "input": "gasté 12 mil 40 mil",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [],
+      "unread": ["gasté 12 mil 40 mil"]
+    }
+  },
+  {
     "id": "split-one-amount-mil-quinientos",
     "input": "gasté mil quinientos",
     "locale": "es",
