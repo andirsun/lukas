@@ -117,7 +117,7 @@ describe("quick-capture cases file", () => {
     expect([...prefixes].sort()).toEqual(
       ["amount", "category", "date", "focus", "kind", "real", "spike", "split", "unread"].sort(),
     );
-    expect(cases.filter((c) => c.id.startsWith("real-")).length).toBeGreaterThanOrEqual(10);
+    expect(cases.filter((c) => c.id.startsWith("real-vosk-")).length).toBeGreaterThanOrEqual(10);
   });
 
   test("ids are unique and no case repeats the same situation", () => {

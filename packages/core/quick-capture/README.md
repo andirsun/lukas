@@ -48,12 +48,15 @@ The spec leaves these open, and the expected values rely on them. If the parser 
   - A connector (`y`, `and`, `,`, `también`, `also`) starts a new movement only when the movement so far has an amount and the text after the connector has an amount. So `pan y leche 8 mil`, `gasté 8 mil en pan y leche` and `spent 12 on bread and milk` are one movement.
   - A decimal comma (`9,50`) or a thousands comma (`1,200`) is not a connector.
   - `y` inside a number word (`treinta y cinco mil`) is not a connector. In `siete mil quinientos y cinco mil`, `quinientos y cinco` is not a number, so the `y` splits.
+  - **No connector:** an amount that follows a movement already holding an amount and a name starts a new movement, even with no connector. The words between the two amounts (the middle) go to the earlier movement if it has no name before its amount (`gasté doce mil en taxi cuarenta mil en mercado`: `en taxi` is the first movement's). They go to the later movement if the earlier one already has a name before its amount (`taxi doce mil mercado cuarenta mil`: `mercado` is the second movement's). Words after the last amount stay with the last movement.
+  - **Same amount:** number words with no name between them are one amount when they form a valid number (`mil quinientos` is 1.500, `veintidós mil novecientos` is 22.900). They are not two movements.
 - **Number forms:**
   - es: a dot followed by exactly three digits is thousands (`15.000`, `1.500.000`), a comma is the decimal (`9,50`, `4,3 palos`). A space before exactly three digits is thousands too (`120 000`; Whisper writes that).
   - en: a comma is thousands, a dot is the decimal.
   - `k` after digits is x1.000, in any currency. `mil`, `millón` and `millones` work with digits and with words.
   - `con` joins units and cents (`nueve con cincuenta`, `9 euros con 50`).
   - Number words may come without accents (`veintidos`, `dieciseis`).
+  - `un` and `una` are numbers only before a scale word (`un millón`, `un palo`, `una luca`). Before another number they are an article and are dropped (`un cuatro coma tres palos`).
 - **Verbs** may come without accents (`gaste`, `pague`, `compre`, `recibi`, `me llego`). Case is ignored. The default kind is expense.
 - **Dates**
   - `hoy/today`, `ayer/yesterday`, `antier/anteayer`, and a weekday with or without `el`/`on` and with or without accent.
@@ -100,6 +103,7 @@ Ids start with their group:
 
 Notes on the `real-` cases:
 
-- Eight transcripts are the same as the spike sentence (s04, s09, s11, s12, s13, s15, s16, s19 in Vosk), so the `spike-` case already covers them.
-- Left out because their expected draft would only be an accident of the misheard words: s03 ("para que la riendo ..."), s05 ("me pagar un ..."), s08 ("gastos de mil ...") and s10 ("a spend twelve dollars so learnt lunch ...") in Vosk, and the Whisper outputs that mangle the sentence.
-- Where a misheard word is left over, the case expects it in the name (`este almuerzo`, `rapid`, `nuevo`). The parser does not correct mishearings; the person fixes the name in the preview. The amount, kind and date are what these cases protect.
+- `real-vosk-*` are the Vosk free-pass transcripts, verbatim from the spike report (phone run). The report does not print the merged two-pass (v2) text, so there are no merged cases; the merged form of s08 is covered by `split-no-connector-leading-date`.
+- Seven Vosk transcripts equal the spike sentence (s04, s09, s11, s12, s13, s15, s16), so the `spike-` case already covers them. The others are in: s01, s02, s03, s05, s06, s07, s08, s10, s14, s17, s18, s19, s20. s19 differs from the spike sentence (no comma).
+- Misheard words stay in the name and a destroyed amount is `unread`, with no correction. For example s03 is `que riendo`, s05 is `me pagar` (not an income verb, so an expense), s08 is `gastos` and `taxi mercado` (the lost `doce` makes a bare `mil`, which is 1.000), s10 is `spend so learnt lunch and tree coffee`, and s07 is unread. The person fixes the name in the preview. The amount, kind and date are what these cases protect.
+- The `real-whisper-*` cases are extra; Whisper is not the chosen engine.

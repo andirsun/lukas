@@ -571,6 +571,129 @@
     }
   },
   {
+    "id": "real-vosk-s03",
+    "input": "para que la riendo un millón ochocientos mil",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [{ "id": "cat-hogar", "name": "Hogar", "kind": "expense" }],
+    "usual": [{ "name": "arriendo", "categoryId": "cat-hogar" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 180000000,
+          "kind": "expense",
+          "name": "que riendo",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "real-vosk-s05",
+    "input": "me pagar un cuatro coma tres palos",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [{ "id": "cat-salario", "name": "Salario", "kind": "income" }],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 430000000,
+          "kind": "expense",
+          "name": "me pagar",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "real-vosk-s08",
+    "input": "antier gastos de mil en taxi cuarenta mil el mercado",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [
+      { "id": "cat-transporte", "name": "Transporte", "kind": "expense" },
+      { "id": "cat-mercado", "name": "Mercado", "kind": "expense" }
+    ],
+    "usual": [{ "name": "taxi", "categoryId": "cat-transporte" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 100000,
+          "kind": "expense",
+          "name": "gastos",
+          "categoryId": null,
+          "date": "2026-10-20"
+        },
+        {
+          "amount": 4000000,
+          "kind": "expense",
+          "name": "taxi mercado",
+          "categoryId": null,
+          "date": "2026-10-20"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "real-vosk-s10",
+    "input": "a spend twelve dollars so learnt lunch and tree on coffee",
+    "locale": "en",
+    "currency": "USD",
+    "today": "2026-10-22",
+    "timeZone": "America/New_York",
+    "categories": [
+      { "id": "cat-food", "name": "Food", "kind": "expense" },
+      { "id": "cat-coffee", "name": "Coffee", "kind": "expense" }
+    ],
+    "usual": [{ "name": "lunch", "categoryId": "cat-food" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200,
+          "kind": "expense",
+          "name": "spend so learnt lunch and tree coffee",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "real-vosk-s19",
+    "input": "me llegó la prima dos millones",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [{ "id": "cat-salario", "name": "Salario", "kind": "income" }],
+    "usual": [{ "name": "prima", "categoryId": "cat-salario" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000000,
+          "kind": "income",
+          "name": "prima",
+          "categoryId": "cat-salario",
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
     "id": "real-vosk-s06",
     "input": "rapid veintidós mil novecientos",
     "locale": "es",
@@ -3179,6 +3302,198 @@
           "amount": 1200,
           "kind": "expense",
           "name": "bread and milk",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-no-connector-prepositions",
+    "input": "gasté doce mil en taxi cuarenta mil en mercado",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 4000000,
+          "kind": "expense",
+          "name": "mercado",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-no-connector-leading-date",
+    "input": "antier gasté doce mil en taxi cuarenta mil en mercado",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-20"
+        },
+        {
+          "amount": 4000000,
+          "kind": "expense",
+          "name": "mercado",
+          "categoryId": null,
+          "date": "2026-10-20"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-no-connector-names-first",
+    "input": "antier taxi doce mil mercado cuarenta mil",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [
+      { "id": "cat-transporte", "name": "Transporte", "kind": "expense" },
+      { "id": "cat-mercado", "name": "Mercado", "kind": "expense" }
+    ],
+    "usual": [{ "name": "taxi", "categoryId": "cat-transporte" }],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": "cat-transporte",
+          "date": "2026-10-20"
+        },
+        {
+          "amount": 4000000,
+          "kind": "expense",
+          "name": "mercado",
+          "categoryId": "cat-mercado",
+          "date": "2026-10-20"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-no-connector-short",
+    "input": "taxi 8 mil almuerzo 12 mil",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 800000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 1200000,
+          "kind": "expense",
+          "name": "almuerzo",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-no-connector-en",
+    "input": "spent 12 on lunch 8 on taxi",
+    "locale": "en",
+    "currency": "USD",
+    "today": "2026-10-22",
+    "timeZone": "America/New_York",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200,
+          "kind": "expense",
+          "name": "lunch",
+          "categoryId": null,
+          "date": "2026-10-22"
+        },
+        {
+          "amount": 800,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-one-amount-mil-quinientos",
+    "input": "gasté mil quinientos",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 150000,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-one-amount-veintidos-mil-novecientos",
+    "input": "veintidós mil novecientos",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2290000,
+          "kind": "expense",
+          "name": "",
           "categoryId": null,
           "date": "2026-10-22"
         }
