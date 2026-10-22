@@ -26,6 +26,10 @@ dependencies:
   # path_provider and jni into the APK. No Play Services.
   flutter_secure_storage: 11.2.0
   go_router: 18.0.2
+  # Hands the home snapshot to the Android widget (Kotlin, Jetpack Glance) through
+  # SharedPreferences, with no Flutter engine running (spec section 7.1). BSD-3-Clause; on Android
+  # it brings AndroidX Glance, WorkManager and kotlinx-coroutines only. No Play Services.
+  home_widget: 0.10.0
   # The version flutter_localizations pins.
   intl: 0.20.3
   one_of: 1.5.0
