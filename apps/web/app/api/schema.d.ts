@@ -1096,7 +1096,7 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description Deleted; generated transactions are kept */
+                /** @description Deleted; its unpaid pending transactions from this month on go, the rest are kept */
                 204: {
                     headers: {
                         [name: string]: unknown;
