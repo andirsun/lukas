@@ -1,6 +1,6 @@
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { passkey } from "@better-auth/passkey";
-import { defaultCurrencyFor, isIanaTimeZone } from "@lukas/core";
+import { defaultCurrencyFor, isValidTimeZone } from "@lukas/core";
 import { accounts, emailThrottle, schema, user as userTable, withUser } from "@lukas/db";
 import { eq, sql } from "@lukas/db/orm";
 import { APIError, betterAuth } from "better-auth";
@@ -95,10 +95,17 @@ export function localeFromAcceptLanguage(header: string | null | undefined): Loc
 }
 
 /**
+ * The runtime's own spelling of a valid zone: `america/bogota` → `America/Bogota`, `US/Eastern` →
+ * `America/New_York`. Stored as typed, a zone in another case would miss the currency rule.
+ */
+const canonicalTimeZone = (zone: string) =>
+  new Intl.DateTimeFormat(undefined, { timeZone: zone }).resolvedOptions().timeZone;
+
+/**
  * A new guest's profile defaults, from the device's headers: the time zone from `x-lukas-timezone`
- * (a named IANA zone, else UTC); the language from `x-lukas-locale` (es or en, as a bare language
- * or a tag like `es-CO`), else Accept-Language, else Spanish; and the region that tag names, which
- * the currency rule reads as the web reads the browser's languages.
+ * (a named IANA zone in its canonical spelling, else UTC); the language from `x-lukas-locale` (es
+ * or en, as a bare language or a tag like `es-CO`), else Accept-Language, else Spanish; and the
+ * region that tag names, which the currency rule reads as the web reads the browser's languages.
  */
 export function guestDefaults(headers: Headers | undefined): {
   timezone: string;
@@ -117,7 +124,7 @@ export function guestDefaults(headers: Headers | undefined): {
     // Not a language tag: no hint.
   }
   return {
-    timezone: isIanaTimeZone(zone) ? zone : "UTC",
+    timezone: isValidTimeZone(zone) ? canonicalTimeZone(zone) : "UTC",
     locale: asLocale(language) ?? localeFromAcceptLanguage(headers?.get("accept-language")) ?? "es",
     region,
   };

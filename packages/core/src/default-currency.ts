@@ -63,20 +63,3 @@ export function defaultCurrencyFor(timezone: string, region?: string): Supported
   if ((country && EUROPE.has(country)) || timezone.startsWith("Europe/")) return "EUR";
   return "USD";
 }
-
-/**
- * Whether `zone` is a named IANA time zone the runtime knows (`America/Bogota`, `UTC`, legacy
- * aliases such as `Asia/Calcutta`). Offsets like `+05:00` are refused: Intl accepts them, but they
- * are not zones (no daylight saving rules) and the profile stores names only.
- */
-export function isIanaTimeZone(zone: string): boolean {
-  if (zone.length > 64 || !/^[A-Za-z][A-Za-z0-9_+-]*(?:\/[A-Za-z0-9_+-]+)*$/.test(zone)) {
-    return false;
-  }
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: zone });
-    return true;
-  } catch {
-    return false;
-  }
-}

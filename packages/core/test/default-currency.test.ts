@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { defaultCurrencyFor, isIanaTimeZone } from "../src/index.ts";
+import { defaultCurrencyFor } from "../src/index.ts";
 
 describe("defaultCurrencyFor", () => {
   // The rule (founder, 2026-10-21): Colombia → COP; Europe → EUR; anywhere else → USD.
@@ -30,27 +30,5 @@ describe("defaultCurrencyFor", () => {
   test("a region is read case-insensitively", () => {
     expect(defaultCurrencyFor("America/New_York", "co")).toBe("COP");
     expect(defaultCurrencyFor("America/New_York", "pt")).toBe("EUR");
-  });
-});
-
-describe("isIanaTimeZone", () => {
-  test("named zones the runtime knows, aliases included", () => {
-    for (const zone of ["America/Bogota", "Europe/Lisbon", "UTC", "Asia/Calcutta"]) {
-      expect(isIanaTimeZone(zone)).toBe(true);
-    }
-  });
-
-  test("offsets, unknown names, junk and over-long input are refused", () => {
-    for (const zone of [
-      "+05:00",
-      "-03",
-      "Not/AZone",
-      "",
-      " ",
-      "Europe/Lisbon; x",
-      "a".repeat(200),
-    ]) {
-      expect(isIanaTimeZone(zone)).toBe(false);
-    }
   });
 });

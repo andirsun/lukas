@@ -127,6 +127,18 @@ describe("guests", () => {
     }
   });
 
+  test("a zone is stored in its canonical spelling, and the currency follows it", async () => {
+    const cases: [sent: string, stored: string, currency: string][] = [
+      ["america/bogota", "America/Bogota", "COP"],
+      ["EUROPE/LISBON", "Europe/Lisbon", "EUR"],
+      ["US/Eastern", "America/New_York", "USD"],
+    ];
+    for (const [sent, timezone, currency] of cases) {
+      const g = await guest(t, { "x-lukas-timezone": sent });
+      expect(await me(t, g.headers)).toMatchObject({ timezone, currency });
+    }
+  });
+
   test("RLS: a guest never sees another guest's rows", async () => {
     const a = await guest(t, { "x-lukas-timezone": "America/Bogota" });
     const b = await guest(t, { "x-lukas-timezone": "America/Bogota" });
@@ -179,10 +191,21 @@ describe("guests", () => {
       body: { email: "owner@lukas.test", otp: code },
     });
     expect(signedIn.status).toBe(200);
+    // The email user is a second user, not the guest.
+    const { user: emailUser } = (await signedIn.json()) as { user: { id: string } };
+    expect(emailUser.id).not.toBe(g.userId);
 
     const [still] = await t.admin.select().from(user).where(eq(user.id, g.userId));
     expect(still).toBeDefined();
     expect((await me(t, g.headers)).isAnonymous).toBe(true);
+    // The guest's rows survive: its default account and its category.
+    const guestAccounts = await t.admin
+      .select()
+      .from(accounts)
+      .where(eq(accounts.userId, g.userId));
+    expect(guestAccounts).toHaveLength(1);
+    const cats = await t.request("GET", "/v1/categories", { headers: g.headers });
+    expect(((await cats.json()) as { name: string }[]).map((c) => c.name)).toContain("Mercado");
   });
 
   test("a placeholder address can't ask for a sign-in code", async () => {
