@@ -484,6 +484,28 @@ void main() {
       await leave(tester);
     });
 
+    testWidgets('the month changing while the app is open: a failed refresh names October', (
+      tester,
+    ) async {
+      var clock = DateTime.utc(2026, 10, 31, 20); // 15:00 in Bogota
+      final repo = monthWithBudgets();
+      await pumpHome(tester, repo, clock: () => clock);
+      expect(find.text('Te quedan este mes'), findsOneWidget);
+
+      // The app waits in the background past midnight (Bogota: 1 November) and comes back with no
+      // signal.
+      clock = DateTime.utc(2026, 11, 1, 12);
+      repo.failures['summary'] = const HomeFailure(0);
+      await tester.fling(find.byType(CustomScrollView), const Offset(0, 400), 1000);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sin conexión · mostrando octubre'), findsOneWidget);
+      expect(find.text('Te quedaron en octubre'), findsOneWidget);
+      expect(find.textContaining('este mes'), findsNothing);
+      expect(find.textContaining('Estos son tus números de octubre'), findsOneWidget);
+      expect(find.textContaining('HOY'), findsNothing);
+    });
+
     testWidgets('a server error with the network up does not say there is no connection', (
       tester,
     ) async {

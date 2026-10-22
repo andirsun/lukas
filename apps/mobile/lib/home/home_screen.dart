@@ -197,6 +197,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     AppLocalizations l10n,
     HomeData data,
     HomeEvent? fresh,
+    String today,
   ) {
     final locale = l10n.localeName;
     String money(int cents) => formatMoney(cents, data.currency, locale);
@@ -205,7 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
     // Figures of an earlier month (a cache opened after the month changed): Lukitas says so, and
     // never talks about "this month" or a month that just closed as if it were live.
-    if (data.month != data.today.substring(0, 7)) {
+    if (data.month != today.substring(0, 7)) {
       return (
         message: l10n.lukasOtherMonth(monthInSentence(data.month, locale)),
         mood: worriedMood ? LukitasMood.worried : LukitasMood.happy,
@@ -215,8 +216,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final event = fresh != null && fresh.event.categoryId.isNotEmpty ? fresh : null;
     final line = lukasLine(
       summary: data.summary,
-      today: data.today,
-      todayCount: data.items.where((t) => t.date == data.today).length,
+      today: today,
+      todayCount: data.items.where((t) => t.date == today).length,
       event: event?.event,
       categoryName: (id) => data.categories[id]?.name ?? '',
     );
@@ -284,9 +285,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     LukitasColors colors,
   ) {
     final locale = l10n.localeName;
-    final lukitas = _lukitas(l10n, data, home.event);
+    // Asked of the clock on every build: after a night in the background, what was this month is
+    // last month, whether or not the refresh worked.
+    final today = data.todayAt(ref.read(clockProvider)());
+    final lukitas = _lukitas(l10n, data, home.event, today);
     final monthName = formatMonthName(data.month, locale);
-    final entries = _entries(home, data, l10n);
+    final entries = _entries(home, data, l10n, today);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -316,7 +320,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                             child: Semantics(
                               liveRegion: true,
                               child: Text(
-                                _staleNote(l10n, home, data),
+                                _staleNote(l10n, home, data, today),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w800,
@@ -336,7 +340,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           summary: data.summary,
                           currency: data.currency,
                           locale: locale,
-                          pastMonth: data.month == data.today.substring(0, 7)
+                          pastMonth: data.month == today.substring(0, 7)
                               ? null
                               : monthInSentence(data.month, locale),
                         ),
@@ -383,8 +387,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   /// Why what is on screen may be old: no answer at all, or a failed refresh with the network up;
   /// naming the month when it is not this one.
-  String _staleNote(AppLocalizations l10n, HomeState home, HomeData data) {
-    final other = data.month != data.today.substring(0, 7);
+  String _staleNote(AppLocalizations l10n, HomeState home, HomeData data, String today) {
+    final other = data.month != today.substring(0, 7);
     final month = monthInSentence(data.month, l10n.localeName);
     if (home.staleOffline) return other ? l10n.homeOfflineMonth(month) : l10n.homeOffline;
     return other ? l10n.homeRefreshFailedMonth(month) : l10n.homeRefreshFailed;
@@ -392,7 +396,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   /// The movements list as widgets in order: each day's heading and rows, then "Ver más
   /// movimientos" (or the empty state).
-  List<_Entry> _entries(HomeState home, HomeData data, AppLocalizations l10n) {
+  List<_Entry> _entries(HomeState home, HomeData data, AppLocalizations l10n, String today) {
     final locale = l10n.localeName;
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     if (data.items.isEmpty) {
@@ -410,7 +414,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       ];
     }
     final entries = <_Entry>[];
-    for (final group in groupByDay(data.items, data.today)) {
+    for (final group in groupByDay(data.items, today)) {
       final day = formatDay(group.date, locale);
       final label = switch (group.when) {
         DayWhen.today => l10n.homeDayToday(day),

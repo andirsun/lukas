@@ -44,6 +44,7 @@ Future<HomeHarness> pumpHome(
   FakeCacheStore? cacheStore,
   String? token = 't1',
   DateTime? now,
+  DateTime Function()? clock,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -54,7 +55,7 @@ Future<HomeHarness> pumpHome(
     overrides: [
       homeRepositoryProvider.overrideWithValue(repo),
       homeCacheProvider.overrideWithValue(HomeCache(cacheStore ?? FakeCacheStore(), token: token)),
-      clockProvider.overrideWithValue(() => now ?? testNow),
+      clockProvider.overrideWithValue(clock ?? () => now ?? testNow),
       lukasVariantProvider.overrideWithValue(() => 1),
       widgetSnapshotWriterProvider.overrideWithValue(
         (summary, {required currency, required locale}) async =>

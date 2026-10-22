@@ -41,7 +41,7 @@ String languageOfTag(String tag) => tag.toLowerCase().startsWith('en') ? 'en' : 
 class HomeData {
   const HomeData({
     required this.month,
-    required this.today,
+    required this.timezone,
     required this.currency,
     required this.summary,
     required this.categories,
@@ -52,8 +52,8 @@ class HomeData {
   /// `YYYY-MM`.
   final String month;
 
-  /// `YYYY-MM-DD`, in the profile's time zone.
-  final String today;
+  /// The profile's time zone (an IANA name): "today" is read in it.
+  final String timezone;
   final String currency;
   final Summary summary;
 
@@ -66,6 +66,11 @@ class HomeData {
   /// Where the next page starts; null when everything is loaded.
   final String? nextCursor;
 
+  /// Today (`YYYY-MM-DD`) in the profile's time zone at [now]. Always asked of the clock, never
+  /// kept: the app can sit in the background past midnight, and what is "this month" changes with
+  /// it.
+  String todayAt(DateTime now) => todayIn(timezone, now.toUtc());
+
   HomeData copyWith({
     Summary? summary,
     Map<String, Category>? categories,
@@ -73,7 +78,7 @@ class HomeData {
     String? Function()? nextCursor,
   }) => HomeData(
     month: month,
-    today: today,
+    timezone: timezone,
     currency: currency,
     summary: summary ?? this.summary,
     categories: categories ?? this.categories,
@@ -238,7 +243,7 @@ class HomeController extends Notifier<HomeState> {
       _summarySeq++;
       final data = HomeData(
         month: month,
-        today: today,
+        timezone: profile.timezone,
         currency: profile.currency,
         summary: summary,
         categories: {for (final c in categories) c.id: c},
@@ -295,7 +300,6 @@ class HomeController extends Notifier<HomeState> {
       _set(HomeState(loading: false, failure: failure));
       return;
     }
-    final today = todayIn(cached.timezone, ref.read(clockProvider)().toUtc());
     _set(
       HomeState(
         loading: false,
@@ -303,7 +307,7 @@ class HomeController extends Notifier<HomeState> {
         staleOffline: failure.offline,
         data: HomeData(
           month: cached.month,
-          today: today,
+          timezone: cached.timezone,
           currency: cached.currency,
           summary: cached.summary,
           categories: {for (final c in cached.categories) c.id: c},
@@ -385,9 +389,12 @@ class HomeController extends Notifier<HomeState> {
       unawaited(_writeSnapshot(summary, current.currency));
       unawaited(_persist());
     } on Object catch (error) {
-      if (!_alive || request != _summarySeq) return;
-      _checkSession(error);
-      _set(state.copyWith(stale: true, staleOffline: error is HomeFailure && error.offline));
+      if (!_alive) return;
+      // One mapping of an error to what it means, as in a load; and a refused session ends the
+      // session even when the request was an older one whose answer is dropped.
+      final failure = _failure(error);
+      if (request != _summarySeq) return;
+      _set(state.copyWith(stale: true, staleOffline: failure.offline));
     }
   }
 

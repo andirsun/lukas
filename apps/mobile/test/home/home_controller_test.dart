@@ -78,7 +78,7 @@ void main() {
       final state = container.read(homeProvider);
       expect(state.loading, isFalse);
       expect(state.data!.month, '2026-10');
-      expect(state.data!.today, '2026-10-22');
+      expect(state.data!.todayAt(_now), '2026-10-22');
       expect(state.data!.items.map((t) => t.id), ['a', 'b']);
       expect(state.data!.categories.keys, ['cat-groceries']);
       expect(
@@ -109,7 +109,7 @@ void main() {
     container.listen(homeProvider, (_, _) {});
     await settle();
     await settle();
-    expect(container.read(homeProvider).data!.today, '2026-10-22');
+    expect(container.read(homeProvider).data!.todayAt(DateTime.utc(2026, 10, 23, 2)), '2026-10-22');
   });
 
   test('pages: loadMore appends the next page and clears the cursor on the last one', () async {
@@ -392,7 +392,8 @@ void main() {
       expect(state.failure, isNull);
       expect(state.data!.items.map((t) => t.id), ['a']);
       expect(state.data!.summary.budgetTotal, 100000);
-      expect((state.data!.currency, state.data!.today), ('COP', '2026-10-22'));
+      expect(state.data!.currency, 'COP');
+      expect(state.data!.todayAt(_now), '2026-10-22');
     });
 
     test('a delete and its undo reach the cache even when the summary fails', () async {
@@ -476,6 +477,67 @@ void main() {
         expect((await HomeCache(store, token: 't1').read())!.summary.spent, 3000);
         expect(snapshots.map((s) => s.summary.spent), everyElement(3000));
         expect(snapshots, isNotEmpty);
+      },
+    );
+  });
+
+  group('errors', () {
+    test('a 401 on an older summary that is dropped still signs the person out', () async {
+      final session = _FakeSession();
+      final repo = FakeHomeRepository(
+        items: [tx('a', '2026-10-22', -1000), tx('b', '2026-10-21', -2000)],
+      );
+      final container = ProviderContainer(
+        overrides: [
+          homeRepositoryProvider.overrideWithValue(repo),
+          homeCacheProvider.overrideWithValue(HomeCache(FakeCacheStore(), token: 't1')),
+          sessionProvider.overrideWith(() => session),
+          clockProvider.overrideWithValue(() => _now),
+          widgetSnapshotWriterProvider.overrideWithValue(
+            (s, {required currency, required locale}) async {},
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.listen(homeProvider, (_, _) {});
+      await settleAll();
+      final controller = container.read(homeProvider.notifier);
+      final a = container.read(homeProvider).data!.items.first;
+
+      final slow = Completer<void>();
+      repo.summaryGates.add(slow);
+      await controller.remove(a);
+      await controller.restore(a); // its fast summary makes the first one stale
+      await settleAll();
+      expect(session.signOuts, 0);
+
+      slow.completeError(const HomeFailure(401));
+      await settleAll();
+      expect(session.signOuts, 1);
+    });
+
+    test(
+      'the same unexpected error gives the same note in a load and in a delete refresh',
+      () async {
+        final (container, repo, _) = setup(
+          FakeHomeRepository(items: [tx('a', '2026-10-22', -1000), tx('b', '2026-10-21', -2000)]),
+        );
+        container.listen(homeProvider, (_, _) {});
+        await settleAll();
+        final controller = container.read(homeProvider.notifier);
+
+        repo.failures['summary'] = StateError('not an HTTP error');
+        await controller.refresh();
+        final fromLoad = container.read(homeProvider).staleOffline;
+
+        await controller.refresh(); // good again
+        expect(container.read(homeProvider).stale, isFalse);
+        repo.failures['summary'] = StateError('not an HTTP error');
+        await controller.remove(container.read(homeProvider).data!.items.first);
+        await settleAll();
+        final state = container.read(homeProvider);
+        expect(state.stale, isTrue);
+        expect(state.staleOffline, fromLoad);
       },
     );
   });
