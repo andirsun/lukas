@@ -120,6 +120,7 @@ Reference: `docs/design/stage-2-mockups/add-transaction.html`.
 - Category chips (most used first, "more" for the rest); date defaults to today in the user's time zone; optional note; paid/pending.
 - **Save** → sheet closes → celebration (Lukas, confetti, sound, vibration) → toast with the rule-based message, **Undo** and **Name it** (when saved without a name).
 - Edit mode adds delete (soft, with undo).
+- **Row swipes** (founder request 2026-10-22): swipe left on a movement to delete (undo for 8 s), swipe right to edit, or on a pending row to mark it paid. They are shortcuts; every action is also reachable by tapping. The Movimientos ⇄ Presupuestos pager follows the finger with a spring and a light vibration on change.
 
 ### 2.6c Lukas hint for COP amounts (added 2026-10-21, revised the same day)
 
