@@ -39,6 +39,8 @@ export interface TransactionEvent {
   categoryId: string;
   /** Signed cents, as stored. */
   amount: number;
+  /** The movement's name, so Lukitas can say which one it was. */
+  name: string;
   month: string;
 }
 
@@ -142,7 +144,13 @@ export function useTransactionActions({
       const month = monthOf(created.date);
       const after = qc.getQueryData<MonthSummary>(queryKeys.summary(month));
       feedback(feedbackForSave(after, created.categoryId, details.kind));
-      report({ kind: "saved", categoryId: created.categoryId, amount: created.amount, month });
+      report({
+        kind: "saved",
+        categoryId: created.categoryId,
+        amount: created.amount,
+        name: created.name,
+        month,
+      });
       const { amount, hint } = moneyWithHint(created.amount, currency, locale);
       const line = t(details.kind === "income" ? "saved_income" : "saved_expense", {
         category: details.categoryName,
@@ -224,7 +232,7 @@ export function useTransactionActions({
         throw problem;
       }
       feedback("paid");
-      report({ kind: "paid", categoryId: tx.categoryId, amount: tx.amount, month });
+      report({ kind: "paid", categoryId: tx.categoryId, amount: tx.amount, name: tx.name, month });
       toast.show({
         message: t("paid", {
           name: tx.name,

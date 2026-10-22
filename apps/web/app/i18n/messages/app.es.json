@@ -85,9 +85,9 @@
   },
   "lukas": {
     "first_of_day": {
-      "1": "¡Primer apunte del día! Así se empieza.",
-      "2": "Ya quedó anotado. ¡Buen comienzo de día!",
-      "3": "Primer movimiento de hoy. Llevar la cuenta es media victoria."
+      "1": "¡«{name}» es tu primer apunte del día! Así se empieza.",
+      "2": "«{name}» quedó anotado. ¡Buen comienzo de día!",
+      "3": "Primer movimiento de hoy: «{name}». Llevar la cuenta es media victoria."
     },
     "on_track": {
       "1": "Vas muy bien: te quedan {remaining} para {daysLeft, plural, one {# día} other {# días}}.",
@@ -105,14 +105,14 @@
       "3": "Nos pasamos {over} en {category}. Sin drama: aquí lo tienes a la vista."
     },
     "income_received": {
-      "1": "¡Entró dinero! {amount} más en tu cuenta.",
-      "2": "Ingreso anotado: {amount}. ¡Buena noticia!",
-      "3": "Llegaron {amount} a tu cuenta. ¡Bien!"
+      "1": "¡Entró dinero! «{name}»: {amount} más en tu cuenta.",
+      "2": "Ingreso anotado: «{name}», {amount}. ¡Buena noticia!",
+      "3": "Llegaron {amount} de «{name}». ¡Bien!"
     },
     "pending_paid": {
-      "1": "Pagado: {amount} menos de pendientes. ¡Qué alivio!",
-      "2": "Listo, ya pagaste {amount}. Una cosa menos en la cabeza.",
-      "3": "Pago de {amount} hecho. Vas cumpliendo."
+      "1": "Pagaste «{name}»: {amount}. ¡Qué alivio!",
+      "2": "Listo, «{name}» pagado: {amount}. Una cosa menos en la cabeza.",
+      "3": "Pagaste «{name}»: {amount}. Vas cumpliendo."
     },
     "month_last_day": {
       "1": "¡Último día del mes! Te sobran {remaining}.",

@@ -43,15 +43,51 @@ const ALL_OK = {
 };
 
 describe("lukasMessage", () => {
-  test("1: a paid pending transaction → pending_paid with the absolute amount", () => {
+  test("1: a paid pending transaction → pending_paid with the absolute amount and its name", () => {
+    expect(
+      lukasMessage({
+        summary: october(),
+        today: "2026-10-21",
+        todayCount: 3,
+        event: { kind: "paid", categoryId: "casa", amount: -3200, name: "gym" },
+      }),
+    ).toEqual({
+      key: "pending_paid",
+      params: { amount: 3200, name: "gym", categoryId: "casa" },
+    });
+  });
+
+  test("1: an unnamed movement gets an empty name (the client says its category instead)", () => {
+    expect(
+      lukasMessage({
+        summary: october(),
+        today: "2026-10-21",
+        todayCount: 3,
+        event: { kind: "paid", categoryId: "casa", amount: -120000, name: "  " },
+      }).params,
+    ).toEqual({ amount: 120000, name: "", categoryId: "casa" });
     expect(
       lukasMessage({
         summary: october(),
         today: "2026-10-21",
         todayCount: 3,
         event: { kind: "paid", categoryId: "casa", amount: -120000 },
+      }).params,
+    ).toEqual({ amount: 120000, name: "", categoryId: "casa" });
+  });
+
+  test("1: a pending income marked paid is income received, not a payment", () => {
+    expect(
+      lukasMessage({
+        summary: october(),
+        today: "2026-10-21",
+        todayCount: 3,
+        event: { kind: "paid", categoryId: "salario", amount: 620000, name: "Nómina" },
       }),
-    ).toEqual({ key: "pending_paid", params: { amount: 120000 } });
+    ).toEqual({
+      key: "income_received",
+      params: { amount: 620000, name: "Nómina", categoryId: "salario" },
+    });
   });
 
   test("1: pending_paid wins even when the category is over budget", () => {
@@ -71,9 +107,12 @@ describe("lukasMessage", () => {
         summary: october(),
         today: "2026-10-21",
         todayCount: 1,
-        event: { kind: "saved", categoryId: "salario", amount: 620000 },
+        event: { kind: "saved", categoryId: "salario", amount: 620000, name: "Nómina" },
       }),
-    ).toEqual({ key: "income_received", params: { amount: 620000 } });
+    ).toEqual({
+      key: "income_received",
+      params: { amount: 620000, name: "Nómina", categoryId: "salario" },
+    });
   });
 
   test("3: saving −500 in Supermercado → over_budget with the overspend", () => {
@@ -105,9 +144,9 @@ describe("lukasMessage", () => {
         summary: october(),
         today: "2026-10-21",
         todayCount: 1,
-        event: { kind: "saved", categoryId: "vida", amount: -200 },
+        event: { kind: "saved", categoryId: "vida", amount: -200, name: "café" },
       }),
-    ).toEqual({ key: "first_of_day", params: {} });
+    ).toEqual({ key: "first_of_day", params: { name: "café", categoryId: "vida" } });
   });
 
   test("5: a later save of the day is not first_of_day", () => {

@@ -85,9 +85,9 @@
   },
   "lukas": {
     "first_of_day": {
-      "1": "First entry of the day! Nice start.",
-      "2": "Logged. Great way to start the day!",
-      "3": "First move of the day. Keeping count is half the win."
+      "1": "“{name}” is your first entry of the day! Nice start.",
+      "2": "“{name}” logged. Great way to start the day!",
+      "3": "First move of the day: “{name}”. Keeping count is half the win."
     },
     "on_track": {
       "1": "You're doing great: {remaining} left for {daysLeft, plural, one {# day} other {# days}}.",
@@ -105,14 +105,14 @@
       "3": "We went {over} over in {category}. No drama: it's all here to see."
     },
     "income_received": {
-      "1": "Money in! {amount} more in your account.",
-      "2": "Income logged: {amount}. Good news!",
-      "3": "{amount} just landed in your account. Nice!"
+      "1": "Money in! “{name}”: {amount} more in your account.",
+      "2": "Income logged: “{name}”, {amount}. Good news!",
+      "3": "{amount} from “{name}” just landed. Nice!"
     },
     "pending_paid": {
-      "1": "Paid: {amount} off your pending list. What a relief!",
-      "2": "Done, you paid {amount}. One less thing on your mind.",
-      "3": "{amount} payment made. You're on top of it."
+      "1": "You paid “{name}”: {amount}. What a relief!",
+      "2": "Done, “{name}” is paid: {amount}. One less thing on your mind.",
+      "3": "You paid “{name}”: {amount}. Keeping up."
     },
     "month_last_day": {
       "1": "Last day of the month! You have {remaining} to spare.",

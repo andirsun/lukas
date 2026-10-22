@@ -78,7 +78,8 @@ const MONEY_PARAMS = new Set(["remaining", "over", "amount", "spent"]);
 
 /**
  * The line Lukitas says on home: core's rule-based message with its parameters ready for the
- * catalog (a category's id becomes its name, cents become money). Two cases core cannot know
+ * catalog (a category's id becomes its name, cents become money, an unnamed movement takes its
+ * category's name). Two cases core cannot know
  * about get their own line, so Lukitas never says something false: without any budget there is
  * nothing "left", so he talks about what was spent; and a month over its total budget is never
  * "on track", even if each category alone is fine.
@@ -111,6 +112,8 @@ export function homeLukasLine(input: LukasLineInput): LukasLine {
     else if (MONEY_PARAMS.has(name) && typeof value === "number") params[name] = money(value);
     else params[name] = value;
   }
+  // A movement without a name is called by its category.
+  if (params.name === "") params.name = params.category ?? "";
   return { key: `lukas.${message.key}`, varied: true, params };
 }
 

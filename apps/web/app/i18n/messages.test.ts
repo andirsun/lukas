@@ -28,12 +28,12 @@ const catalogs = { es: flatten(es), en: flatten(en) } as const;
 
 /** Exhaustive by construction: adding or removing a LukasMessageKey fails the type check. */
 const LUKAS_KEYS = {
-  first_of_day: {},
+  first_of_day: { name: "café", category: "Comida" },
   on_track: { remaining: "120,00 €", daysLeft: 9 },
   near_limit: { category: "Comida", remaining: "8,00 €" },
   over_budget: { category: "Comida", over: "6,08 €" },
-  income_received: { amount: "1.200,00 €" },
-  pending_paid: { amount: "45,00 €" },
+  income_received: { amount: "1.200,00 €", name: "Nómina", category: "Salario" },
+  pending_paid: { amount: "45,00 €", name: "gym", category: "Vida" },
   month_last_day: { remaining: "120,00 €" },
   month_closed_green: { remaining: "120,00 €" },
 } satisfies Record<LukasMessageKey, Record<string, string | number>>;
@@ -137,6 +137,18 @@ describe("message catalogs", () => {
             expect(text, variant).not.toBe(variant);
             expect(text, variant).not.toMatch(/[{}]/);
             expect(text.length, variant).toBeGreaterThan(0);
+          }
+        });
+      }
+
+      // After a save or a payment, Lukitas says which movement it was (Task 12d).
+      for (const key of ["first_of_day", "income_received", "pending_paid"] as const) {
+        it(`names the movement in every lukas.${key} variant`, () => {
+          const variants = Object.entries(catalogs[locale]).filter(([k]) =>
+            new RegExp(`^lukas\\.${key}\\.\\d+$`).test(k),
+          );
+          for (const [variant, text] of variants) {
+            expect(icuArguments(text), variant).toContain("name");
           }
         });
       }

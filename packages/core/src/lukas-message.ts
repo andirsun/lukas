@@ -17,7 +17,11 @@ export interface LukasMessageInput {
   today: IsoDate;
   /** Transactions recorded today, including the event's. */
   todayCount: number;
-  event?: { kind: "saved" | "paid"; categoryId: string; amount: number };
+  /**
+   * The save or payment Lukas is reacting to. `name` is the movement's own name: the lines about
+   * it say which one it was (empty or missing: the client says its category's name instead).
+   */
+  event?: { kind: "saved" | "paid"; categoryId: string; amount: number; name?: string };
 }
 
 export interface LukasMessage {
@@ -61,15 +65,21 @@ export function lukasMessage(input: LukasMessageInput): LukasMessage {
     ? summary.categories.find((c) => c.categoryId === event.categoryId)
     : undefined;
 
-  if (event?.kind === "paid") {
-    return { key: "pending_paid", params: { amount: Math.abs(event.amount) } };
+  // Which movement it was: its name, and its category for when it has none.
+  const movement = event
+    ? { name: event.name?.trim() ?? "", categoryId: event.categoryId }
+    : undefined;
+
+  // A pending income marked paid was received, not paid.
+  if (event?.kind === "paid" && event.amount < 0) {
+    return { key: "pending_paid", params: { amount: -event.amount, ...movement } };
   }
-  if (event?.kind === "saved" && event.amount > 0 && !eventCategory) {
-    return { key: "income_received", params: { amount: event.amount } };
+  if (event && event.amount > 0 && (event.kind === "paid" || !eventCategory)) {
+    return { key: "income_received", params: { amount: event.amount, ...movement } };
   }
   if (eventCategory?.state === "over") return overBudget(eventCategory);
   if (eventCategory?.state === "near") return nearLimit(eventCategory);
-  if (event && todayCount === 1) return { key: "first_of_day", params: {} };
+  if (event && todayCount === 1) return { key: "first_of_day", params: { ...movement } };
 
   if (summary.month < monthOf(today) && summary.remaining >= 0) {
     return { key: "month_closed_green", params: { remaining: summary.remaining } };

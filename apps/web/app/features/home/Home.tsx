@@ -37,6 +37,7 @@ import { useToast } from "../../ui/Toast.tsx";
 import { TransactionRow } from "../../ui/TransactionRow.tsx";
 import { useWideScreen } from "../../ui/use-wide-screen.ts";
 import { useTransactionSheet } from "../add-transaction/TransactionSheetProvider.tsx";
+import type { TransactionEvent } from "../add-transaction/use-add-transaction.ts";
 import { createSuggestions, useHasTransactions } from "../onboarding/onboarding-api.ts";
 import { SUGGESTED_CATEGORIES } from "../onboarding/suggested-categories.ts";
 import { useAppPath } from "./app-path.ts";
@@ -47,6 +48,8 @@ import type { SignOutRequest } from "./use-sign-out.ts";
 
 /** How long Lukitas celebrates after a save or a payment. */
 const CELEBRATE_MS = 2500;
+/** How long Lukitas talks about a save or a payment before going back to the month. */
+const EVENT_LINE_MS = 10_000;
 /** The phone's pages, in order: Movimientos first (founder decision 2026-10-22). */
 const VIEWS: readonly HomeView[] = ["transactions", "budgets"];
 
@@ -71,6 +74,7 @@ export function Home({ signOut }: HomeProps = {}) {
   const today = todayIn(me.timezone);
   const current = monthOf(today);
   const [month, setMonth] = useState<Month>(current);
+  const lukasEvent = useFreshEvent();
   return (
     <MonthView
       key={me.id}
@@ -81,8 +85,36 @@ export function Home({ signOut }: HomeProps = {}) {
       month={month}
       onMonth={setMonth}
       signOut={signOut}
+      lukasEvent={lukasEvent}
     />
   );
+}
+
+/** The save or payment Lukitas is talking about, if any, and a key that changes when he stops. */
+interface FreshEvent {
+  event: TransactionEvent | null;
+  /** Changes when an event's line ends, so the month's line comes back without an announcement. */
+  quietKey: number;
+}
+
+/**
+ * The latest save or payment while Lukitas should still talk about it: one made while home is
+ * open, for `EVENT_LINE_MS`. Then, or once home is left and opened again, he is back to the
+ * month's line (founder feedback 2026-10-22: a line that stayed for ages, about who knows what).
+ */
+function useFreshEvent(): FreshEvent {
+  const { lastEvent } = useTransactionSheet();
+  // Events up to this one happened before home opened: they are old news.
+  const [since] = useState(() => lastEvent?.id ?? 0);
+  const [ended, setEnded] = useState(0);
+  const id = lastEvent?.id ?? 0;
+  useEffect(() => {
+    if (id <= since) return;
+    const timer = setTimeout(() => setEnded(id), EVENT_LINE_MS);
+    return () => clearTimeout(timer);
+  }, [id, since]);
+  const fresh = lastEvent !== null && id > since && id > ended;
+  return { event: fresh ? lastEvent : null, quietKey: ended };
 }
 
 interface MonthViewProps {
@@ -93,9 +125,19 @@ interface MonthViewProps {
   month: Month;
   onMonth(month: Month): void;
   signOut?: SignOutRequest | undefined;
+  lukasEvent: FreshEvent;
 }
 
-function MonthView({ userId, currency, today, current, month, onMonth, signOut }: MonthViewProps) {
+function MonthView({
+  userId,
+  currency,
+  today,
+  current,
+  month,
+  onMonth,
+  signOut,
+  lukasEvent,
+}: MonthViewProps) {
   const t = useTranslations("home");
   const { locale } = useLocale();
   const summary = useSummary(month);
@@ -132,6 +174,7 @@ function MonthView({ userId, currency, today, current, month, onMonth, signOut }
               today={today}
               current={current}
               money={money}
+              fresh={lukasEvent}
             />
             <Hero
               summary={summary.data}
@@ -179,6 +222,7 @@ function Lukitas({
   today,
   current,
   money,
+  fresh,
 }: {
   summary: MonthSummary;
   categories: CategoryDto[];
@@ -186,10 +230,10 @@ function Lukitas({
   today: string;
   current: Month;
   money(cents: number): string;
+  fresh: FreshEvent;
 }) {
   const tRoot = useTranslations();
-  const { lastEvent } = useTransactionSheet();
-  const event = lastEvent && lastEvent.month === summary.month ? lastEvent : null;
+  const event = fresh.event && fresh.event.month === summary.month ? fresh.event : null;
   const names = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
   const line = homeLukasLine({
@@ -197,7 +241,7 @@ function Lukitas({
     today,
     todayCount: items.filter((tx) => tx.date === today).length,
     event: event
-      ? { kind: event.kind, categoryId: event.categoryId, amount: event.amount }
+      ? { kind: event.kind, categoryId: event.categoryId, amount: event.amount, name: event.name }
       : undefined,
     categoryName: (id) => names.get(id) ?? "",
     money,
@@ -224,7 +268,13 @@ function Lukitas({
   }, [event?.id]);
   const closedGreen = summary.month < current && summary.budgetTotal > 0 && summary.remaining >= 0;
 
-  return <LukasBubble message={message} mood={moodFor(summary, celebrating || closedGreen)} />;
+  return (
+    <LukasBubble
+      message={message}
+      mood={moodFor(summary, celebrating || closedGreen)}
+      quietKey={fresh.quietKey}
+    />
+  );
 }
 
 // -- What is left ----------------------------------------------------------------------------------

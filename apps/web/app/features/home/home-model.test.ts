@@ -91,7 +91,11 @@ function summary(over: Partial<MonthSummary> = {}): MonthSummary {
   };
 }
 
-const names: Record<string, string> = { "cat-groceries": "Supermercado", "cat-fun": "Ocio" };
+const names: Record<string, string> = {
+  "cat-groceries": "Supermercado",
+  "cat-fun": "Ocio",
+  "cat-salary": "Salario",
+};
 const base = {
   today: "2026-10-21",
   todayCount: 0,
@@ -132,18 +136,34 @@ describe("homeLukasLine", () => {
     });
   });
 
-  it("talks about an income event's amount", () => {
+  it("talks about an income event's amount and names it", () => {
     const line = homeLukasLine({
       ...base,
       summary: summary(),
       todayCount: 2,
-      event: { kind: "saved", categoryId: "cat-salary", amount: 250000 },
+      event: { kind: "saved", categoryId: "cat-salary", amount: 250000, name: "Nómina" },
     });
     expect(line).toEqual({
       key: "lukas.income_received",
       varied: true,
-      params: { amount: "2500.00 €" },
+      params: { amount: "2500.00 €", name: "Nómina", category: "Salario" },
     });
+  });
+
+  it("names a paid movement, or says its category when it has no name", () => {
+    const paid = (name: string) =>
+      homeLukasLine({
+        ...base,
+        summary: summary(),
+        todayCount: 2,
+        event: { kind: "paid", categoryId: "cat-fun", amount: -3200, name },
+      });
+    expect(paid("gym")).toEqual({
+      key: "lukas.pending_paid",
+      varied: true,
+      params: { amount: "32.00 €", name: "gym", category: "Ocio" },
+    });
+    expect(paid("").params).toEqual({ amount: "32.00 €", name: "Ocio", category: "Ocio" });
   });
 
   it("without budgets, never says what is left: it says what was spent", () => {
@@ -187,9 +207,10 @@ describe("homeLukasLine", () => {
       ...base,
       todayCount: 1,
       summary: summary({ budgetTotal: 0, categories: [category("cat-groceries", null, 608)] }),
-      event: { kind: "saved", categoryId: "cat-groceries", amount: -608 },
+      event: { kind: "saved", categoryId: "cat-groceries", amount: -608, name: "pan" },
     });
     expect(line.key).toBe("lukas.first_of_day");
+    expect(line.params).toEqual({ name: "pan", category: "Supermercado" });
   });
 });
 

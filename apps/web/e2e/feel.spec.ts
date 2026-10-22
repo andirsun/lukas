@@ -553,42 +553,42 @@ test.describe("the keypad on short phones", () => {
   }
 });
 
+/** Waits for the sheet to finish sliding in: its bottom edge is the screen's. */
+async function slidIn(page: Page, sheet: Locator) {
+  const height = page.viewportSize()?.height ?? 0;
+  await expect
+    .poll(async () => {
+      const box = await sheet.boundingBox();
+      return box ? Math.round(box.y + box.height) : -1;
+    })
+    .toBe(height);
+}
+
+/**
+ * Saves a pending expense named "gym" today (the demo's own pending row is the salary: one
+ * category, no recent names), so its edit sheet is the full one: recent names, two rows of
+ * categories, "Más opciones … · Pendiente", Eliminar and Guardar cambios.
+ */
+async function addPendingGym(page: Page) {
+  await tap(page, plus(page));
+  const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
+  await slidIn(page, sheet);
+  for (const key of ["3", "2"])
+    await tap(page, sheet.getByRole("button", { name: key, exact: true }));
+  await sheet.getByRole("textbox", { name: "Nombre (opcional)" }).fill("gym");
+  await tap(page, sheet.getByRole("button", { name: /^Más opciones/ }));
+  await sheet.getByRole("checkbox", { name: /^Pendiente/ }).check();
+  await tap(page, sheet.getByRole("button", { name: "Guardar", exact: true }));
+  await expect(sheet).toBeHidden();
+  await expect(movimientos(page).locator("[data-swipe-row]", { hasText: "gym" })).toBeVisible();
+  // Its undo toast is swiped away, as the founder had none up.
+  const toast = page.getByRole("status").locator(".lk-toast");
+  await swipe(page, await centerOf(toast), { dy: 90, steps: 8 });
+  await expect(toast).toHaveCount(0);
+}
+
 test.describe("the whole sheet on a phone", () => {
   type Which = "add" | "paid" | "pending";
-
-  /** Waits for the sheet to finish sliding in: its bottom edge is the screen's. */
-  async function slidIn(page: Page, sheet: Locator) {
-    const height = page.viewportSize()?.height ?? 0;
-    await expect
-      .poll(async () => {
-        const box = await sheet.boundingBox();
-        return box ? Math.round(box.y + box.height) : -1;
-      })
-      .toBe(height);
-  }
-
-  /**
-   * Saves a pending expense named "gym" today (the demo's own pending row is the salary: one
-   * category, no recent names), so its edit sheet is the full one: recent names, two rows of
-   * categories, "Más opciones … · Pendiente", Eliminar and Guardar cambios.
-   */
-  async function addPendingGym(page: Page) {
-    await tap(page, plus(page));
-    const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
-    await slidIn(page, sheet);
-    for (const key of ["3", "2"])
-      await tap(page, sheet.getByRole("button", { name: key, exact: true }));
-    await sheet.getByRole("textbox", { name: "Nombre (opcional)" }).fill("gym");
-    await tap(page, sheet.getByRole("button", { name: /^Más opciones/ }));
-    await sheet.getByRole("checkbox", { name: /^Pendiente/ }).check();
-    await tap(page, sheet.getByRole("button", { name: "Guardar", exact: true }));
-    await expect(sheet).toBeHidden();
-    await expect(movimientos(page).locator("[data-swipe-row]", { hasText: "gym" })).toBeVisible();
-    // Its undo toast is swiped away, as the founder had none up.
-    const toast = page.getByRole("status").locator(".lk-toast");
-    await swipe(page, await centerOf(toast), { dy: 90, steps: 8 });
-    await expect(toast).toHaveCount(0);
-  }
 
   /** Opens the add sheet, or the edit sheet on a paid or a pending row, done sliding in. */
   async function openSheet(page: Page, which: Which) {
@@ -732,6 +732,51 @@ test.describe("the whole sheet on a phone", () => {
       return at !== null && element.contains(at);
     });
     expect(covered).toBe(true);
+  });
+});
+
+test.describe("Lukitas after a payment", () => {
+  /** The demo on a clock that runs from 21 October 2026, and can be fast-forwarded. */
+  async function openDemoOnClock(page: Page) {
+    await page.clock.install({ time: new Date("2026-10-21T18:00:00Z") });
+    await page.goto("/demo?lang=es");
+    await expect(page.getByRole("region", { name: "Te quedan este mes" })).toBeVisible();
+  }
+
+  /** Saves the pending "gym" ($32) and pays it from its badge. */
+  async function payGym(page: Page) {
+    await addPendingGym(page);
+    const row = movimientos(page).locator("[data-swipe-row]", { hasText: "gym" });
+    await tap(page, row.getByRole("button", { name: "Pendiente, marcar como pagado" }));
+    await expect(row.getByText("Pagado")).toBeVisible();
+  }
+
+  test("names what was paid, then goes back to the month, quietly", async ({ page }) => {
+    await openDemoOnClock(page);
+    const bubble = page.locator(".lk-bubble");
+    await payGym(page);
+    await expect(bubble).toContainText("«gym»");
+    await expect(bubble).toContainText("$32");
+    const eventLine = await bubble.elementHandle();
+    await page.clock.fastForward(10_000);
+    await expect(bubble).not.toContainText("«gym»");
+    await expect(bubble).not.toBeEmpty();
+    // The month's line comes in as a new live region, which screen readers do not announce: the
+    // payment was the one announcement.
+    expect(await eventLine?.evaluate((element) => element.isConnected)).toBe(false);
+  });
+
+  test("leaving home and coming back, he talks about the month again", async ({ page }) => {
+    await openDemoOnClock(page);
+    const bubble = page.locator(".lk-bubble");
+    await payGym(page);
+    await expect(bubble).toContainText("«gym»");
+    await tap(page, page.getByRole("link", { name: "Análisis" }));
+    await expect(page).toHaveURL(/\/demo\/insights/);
+    await tap(page, page.getByRole("link", { name: "Inicio" }));
+    await expect(page.getByRole("region", { name: "Te quedan este mes" })).toBeVisible();
+    await expect(bubble).not.toBeEmpty();
+    await expect(bubble).not.toContainText("«gym»");
   });
 });
 
