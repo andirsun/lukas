@@ -254,6 +254,15 @@ void main() {
       });
     });
 
+    test('a passkey answer that is not JSON is an AuthFailure, not a crash', () async {
+      const challenge = PasskeyChallenge(optionsJson: '{}', cookie: 'better-auth-passkey=v');
+      await expectLater(
+        api.passkeySignIn(challenge, 'not json'),
+        throwsA(isA<AuthFailure>().having((f) => f.code, 'code', 'PASSKEY_FAILED')),
+      );
+      expect(adapter.requests, isEmpty);
+    });
+
     test('options without a challenge cookie are a failure', () async {
       await expectLater(api.passkeySignInOptions(), throwsA(isA<AuthFailure>()));
     });

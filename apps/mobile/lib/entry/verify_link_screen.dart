@@ -64,6 +64,14 @@ class _VerifyLinkScreenState extends ConsumerState<VerifyLinkScreen> {
       }
     } on GuestInTheWay {
       if (mounted) setState(() => _phase = _Phase.guestAsks);
+    } catch (error) {
+      // Never a spinner that turns forever: the failure, with a retry when it can help.
+      if (mounted) {
+        setState(() {
+          _phase = _Phase.failed;
+          _error = unexpectedErrorFor(error);
+        });
+      }
     }
   }
 

@@ -81,6 +81,10 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     } on AuthFailure catch (failure) {
       if (mounted) setState(() => _error = onFail(failure));
       return false;
+    } catch (error) {
+      // Never an unhandled error with a busy button: a message, and the screen works again.
+      if (mounted) setState(() => _error = unexpectedErrorFor(error));
+      return false;
     } finally {
       if (mounted) setState(() => _busy = false);
     }

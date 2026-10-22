@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -356,6 +359,107 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(HomeScreen), findsNothing);
+    });
+  });
+
+  group('errors that are not an AuthFailure', () {
+    const network = 'Sin conexión. Revisa tu internet e inténtalo de nuevo.';
+    const generic = 'Algo salió mal. Inténtalo de nuevo en un momento.';
+
+    bool enabled(WidgetTester tester, Finder button) =>
+        tester.widget<ButtonStyleButton>(button).onPressed != null;
+
+    testWidgets('a timeout on Probar sin correo says no connection and the button works again', (
+      tester,
+    ) async {
+      await pumpApp(tester, auth: auth);
+      auth.failures['signInAsGuest'] = TimeoutException('slow network');
+
+      await tester.tap(find.text('Probar sin correo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(network), findsOneWidget);
+      expect(enabled(tester, find.byKey(const Key('entry.guest'))), isTrue);
+      expect(find.text('Probar sin correo'), findsOneWidget);
+
+      await tester.tap(find.text('Probar sin correo'));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets('a network failure sending the code says so and the screen stays usable', (
+      tester,
+    ) async {
+      await pumpApp(tester, auth: auth);
+      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.pumpAndSettle();
+      auth.failures['sendCode'] = const SocketException('Network is unreachable');
+
+      await _enterEmail(tester, 'ana@correo.com');
+
+      expect(find.text(network), findsOneWidget);
+      expect(find.text('Enviando…'), findsNothing);
+      expect(enabled(tester, find.byKey(const Key('entry.send'))), isTrue);
+
+      await _enterEmail(tester, 'ana@correo.com');
+      expect(find.text('Revisa tu correo'), findsOneWidget);
+    });
+
+    testWidgets('anything else while checking the code says something went wrong, and the '
+        'button stops saying Entrando…', (tester) async {
+      await pumpApp(tester, auth: auth);
+      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.pumpAndSettle();
+      await _enterEmail(tester, 'ana@correo.com');
+      auth.failures['verifyCode'] = StateError('storage write failed');
+
+      await _enterCode(tester, '123456');
+
+      expect(find.text(generic), findsOneWidget);
+      expect(find.text('Entrando…'), findsNothing);
+      expect(enabled(tester, find.byKey(const Key('entry.submitCode'))), isTrue);
+    });
+
+    testWidgets('a timeout on a magic link stops the spinner and offers to try again', (
+      tester,
+    ) async {
+      final container = await pumpApp(tester, auth: auth);
+      auth.failures['verifyCode'] = TimeoutException('slow network');
+
+      container.read(routerProvider).go('/auth/verify?email=ana%40correo.com&code=654321');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('No pudimos hacerte entrar'), findsOneWidget);
+      expect(find.text(network), findsOneWidget);
+      await tester.tap(find.text('Reintentar'));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets('a broken answer from the passkey prompt suggests the email', (tester) async {
+      final passkeys = FakePasskeys();
+      await pumpApp(tester, auth: auth, passkeys: passkeys);
+      passkeys.failure = const FormatException('not JSON');
+
+      await tester.tap(find.text('Entrar con huella'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.'),
+        findsOneWidget,
+      );
+      expect(enabled(tester, find.byKey(const Key('entry.passkey'))), isTrue);
+    });
+
+    testWidgets('in English, the same message in English', (tester) async {
+      await pumpApp(tester, auth: auth, locale: const Locale('en'));
+      auth.failures['signInAsGuest'] = TimeoutException('slow network');
+
+      await tester.tap(find.text('Try it without an email'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No connection. Check your internet and try again.'), findsOneWidget);
     });
   });
 

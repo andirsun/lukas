@@ -195,15 +195,31 @@ class HttpAuthApi implements AuthApi {
     return PasskeyChallenge(optionsJson: options, cookie: cookie);
   });
 
-  /// The phone's answer to [challenge], posted to [path] with the challenge cookie.
+  /// The phone's answer to [challenge], posted to [path] with the challenge cookie. An answer that
+  /// is not JSON fails as a passkey failure, before anything is sent.
   Future<Response<Object?>> _passkeyVerify(
     String path,
     PasskeyChallenge challenge,
     String responseJson, {
     String? token,
+  }) {
+    final Object? answer;
+    try {
+      answer = jsonDecode(responseJson);
+    } on FormatException {
+      throw const AuthFailure(code: 'PASSKEY_FAILED', status: 400);
+    }
+    return _postAnswer(path, challenge, answer, token: token);
+  }
+
+  Future<Response<Object?>> _postAnswer(
+    String path,
+    PasskeyChallenge challenge,
+    Object? answer, {
+    String? token,
   }) => dio.post<Object?>(
     path,
-    data: {'response': jsonDecode(responseJson)},
+    data: {'response': answer},
     options: Options(
       headers: {
         'cookie': challenge.cookie,

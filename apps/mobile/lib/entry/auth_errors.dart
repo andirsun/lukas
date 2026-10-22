@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import '../api/auth_api.dart';
 import '../l10n/app_localizations.dart';
 
@@ -51,6 +54,23 @@ AuthError authErrorFor(AuthFailure failure, AuthAction action) {
   }
   if (failure.status >= 500) return AuthError.internalError;
   return _codes[failure.code] ?? AuthError.generic;
+}
+
+/// The message for anything a sign-in can throw besides an [AuthFailure]: a lost connection or a
+/// timeout outside Dio says so; anything else (a storage error, a bug) is "something went wrong".
+/// The screen stays usable either way.
+AuthError unexpectedErrorFor(Object error) => switch (error) {
+  SocketException() ||
+  TimeoutException() ||
+  HttpException() ||
+  TlsException() => AuthError.networkError,
+  _ => AuthError.generic,
+};
+
+/// [unexpectedErrorFor] for the passkey prompt: what is not a lost connection suggests the email.
+AuthError unexpectedPasskeyErrorFor(Object error) {
+  final reason = unexpectedErrorFor(error);
+  return reason == AuthError.networkError ? reason : AuthError.passkeyFailed;
 }
 
 /// The message for a passkey sign-in that did not work, or null when the person just closed the

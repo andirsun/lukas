@@ -38,6 +38,15 @@ class _EntryScreenState extends ConsumerState<EntryScreen> {
       await action();
     } on AuthFailure catch (failure) {
       if (mounted) setState(() => _error = onFail(failure));
+    } catch (error) {
+      // Never an unhandled error with a busy button: a message, and the buttons work again.
+      if (mounted) {
+        setState(() {
+          _error = busy == _Busy.passkey
+              ? unexpectedPasskeyErrorFor(error)
+              : unexpectedErrorFor(error);
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = _Busy.none);
     }

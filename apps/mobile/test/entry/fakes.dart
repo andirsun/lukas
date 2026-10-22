@@ -12,8 +12,9 @@ import 'package:lukitas/app.dart';
 class FakeAuthApi implements AuthApi {
   final calls = <String>[];
 
-  /// The failure the next call of that name throws (then cleared).
-  final failures = <String, AuthFailure>{};
+  /// What the next call of that name throws (then cleared): an [AuthFailure], or anything else a
+  /// call can throw (a timeout, a socket error, a bug).
+  final failures = <String, Object>{};
 
   /// What `GET /v1/me` says about `isAnonymous`, per token.
   final guests = <String, bool>{};
@@ -117,7 +118,7 @@ class FakePasskeys implements Passkeys {
   final calls = <String>[];
 
   /// Thrown by the next `get` or `create` instead of answering (then cleared).
-  AuthFailure? failure;
+  Object? failure;
 
   @override
   Future<bool> supported() async => isSupported;
