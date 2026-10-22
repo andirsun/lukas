@@ -96,6 +96,9 @@ export function recurrenceRoutes(deps: AppDeps) {
       const { id } = c.req.valid("param");
       const input = c.req.valid("json");
       const row = await withUser(deps.db, c.get("userId"), async (tx) => {
+        // Locked like any recurrence write: a read materializing this rule finishes first (and
+        // its pending rows are then dropped below), and one after this sees the new rule.
+        await defaultAccount(tx, { lock: true });
         const existing = await findRecurrence(tx, id);
         if (input.categoryId) await requireActiveCategory(tx, input.categoryId);
         const merged = { ...existing, ...input };
@@ -138,6 +141,9 @@ export function recurrenceRoutes(deps: AppDeps) {
     async (c) => {
       const { id } = c.req.valid("param");
       await withUser(deps.db, c.get("userId"), async (tx) => {
+        // Locked like any recurrence write: a read materializing this rule finishes first (its
+        // pending rows are then dropped below), and one after this no longer sees the rule.
+        await defaultAccount(tx, { lock: true });
         await findRecurrence(tx, id);
         // Like an edit: its unpaid pending rows from this month on go (they would look like bills
         // still due). The FK is ON DELETE SET NULL, so paid, past and dismissed ones stay, with

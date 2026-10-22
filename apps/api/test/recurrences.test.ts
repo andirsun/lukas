@@ -1,7 +1,9 @@
 import { addMonths, monthOf, todayIn } from "@lukas/core";
-import { accounts, recurrences, type Tx, withUser } from "@lukas/db";
-import { eq } from "@lukas/db/orm";
+import { accounts, categories, recurrences, type Tx, transactions, withUser } from "@lukas/db";
+import { and, eq, isNull } from "@lukas/db/orm";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { materializeRecurrences } from "../src/services/materialize.ts";
+import { stopCategoryRecurrences } from "../src/services/recurrence-stop.ts";
 import { createTestApp, type TestApp } from "./harness.ts";
 
 let t: TestApp;
@@ -399,5 +401,137 @@ describe("recurrence and currency change race", () => {
     const res = await (patch as Promise<Response>);
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({ code: "currency_locked" });
+  });
+});
+
+/**
+ * Reads materialize pending occurrences (up to 36 months for a report) while a recurrence DELETE or
+ * a category archive removes them. Each must wait for the other or see its result: never pending
+ * rows left behind with no rule (they count as spent), nor rows back in an archived category.
+ * Each test holds one side in a transaction while the other runs as a request, like the races
+ * above.
+ */
+describe("materializing and removing recurrences race", () => {
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+  const settledFlag = (promise: Promise<unknown>) => {
+    const state = { settled: false };
+    void promise.finally(() => {
+      state.settled = true;
+    });
+    return state;
+  };
+  // Next month: every occurrence there is still to come, so a delete or an archive removes it.
+  const next = addMonths(month, 1);
+
+  async function setUp(email: string) {
+    const { userId, headers } = await t.signIn(email);
+    const categoryId = (
+      (await (
+        await t.request("POST", "/v1/categories", {
+          headers,
+          body: { name: "Casa", kind: "expense", icon: "house", color: "blue" },
+        })
+      ).json()) as { id: string }
+    ).id;
+    const res = await t.request("POST", "/v1/recurrences", {
+      headers,
+      body: {
+        name: "Arriendo",
+        amount: -150_000,
+        categoryId,
+        frequency: "monthly",
+        dayOfMonth: 5,
+        startDate: `${addMonths(month, -2)}-01`,
+      },
+    });
+    expect(res.status).toBe(201);
+    const recurrenceId = ((await res.json()) as { id: string }).id;
+    return { userId, headers, categoryId, recurrenceId };
+  }
+
+  /** Next month's pending rows: with no rule at all, or in this category. */
+  const pending = (userId: string, where: "orphan" | { categoryId: string }) =>
+    withUser(t.db, userId, (tx) =>
+      tx
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.status, "pending"),
+            eq(transactions.date, `${next}-05`),
+            where === "orphan"
+              ? isNull(transactions.recurrenceId)
+              : eq(transactions.categoryId, where.categoryId),
+          ),
+        ),
+    );
+
+  test("a recurrence DELETE waits for a report materializing, then removes what it added", async () => {
+    const { userId, headers, recurrenceId } = await setUp("race-mat-delete@lukas.test");
+    let deleted: Promise<Response> | undefined;
+    await withUser(t.db, userId, async (tx) => {
+      // The report's side: next month's occurrences, not committed yet.
+      expect(await materializeRecurrences(tx, userId, next, month)).toBe(1);
+      deleted = t.request("DELETE", `/v1/recurrences/${recurrenceId}`, { headers });
+      const flag = settledFlag(deleted);
+      await sleep(300);
+      expect(flag.settled).toBe(false);
+    });
+    expect((await (deleted as Promise<Response>)).status).toBe(204);
+    expect(await pending(userId, "orphan")).toEqual([]);
+  });
+
+  test("a category archive waits for a report materializing, then removes what it added", async () => {
+    const { userId, headers, categoryId } = await setUp("race-mat-archive@lukas.test");
+    let archived: Promise<Response> | undefined;
+    await withUser(t.db, userId, async (tx) => {
+      expect(await materializeRecurrences(tx, userId, next, month)).toBe(1);
+      archived = t.request("PATCH", `/v1/categories/${categoryId}`, {
+        headers,
+        body: { archived: true },
+      });
+      const flag = settledFlag(archived);
+      await sleep(300);
+      expect(flag.settled).toBe(false);
+    });
+    expect((await (archived as Promise<Response>)).status).toBe(200);
+    expect(await pending(userId, { categoryId })).toEqual([]);
+  });
+
+  test("a report waits for a recurrence DELETE in flight, then sees the rule gone", async () => {
+    const { userId, headers, recurrenceId } = await setUp("race-delete-mat@lukas.test");
+    let report: Promise<Response> | undefined;
+    await withUser(t.db, userId, async (tx) => {
+      // The DELETE's side: the account lock, then its pending rows and the rule go.
+      await tx.select().from(accounts).where(eq(accounts.isDefault, true)).for("update");
+      await tx.delete(transactions).where(eq(transactions.recurrenceId, recurrenceId));
+      await tx.delete(recurrences).where(eq(recurrences.id, recurrenceId));
+      report = t.request("GET", `/v1/reports/by-category?from=${month}&to=${next}`, { headers });
+      const flag = settledFlag(report);
+      await sleep(300);
+      expect(flag.settled).toBe(false);
+    });
+    expect((await (report as Promise<Response>)).status).toBe(200);
+    expect(await pending(userId, "orphan")).toEqual([]);
+  });
+
+  test("a report waits for a category archive in flight, then skips the archived category", async () => {
+    const { userId, headers, categoryId } = await setUp("race-archive-mat@lukas.test");
+    let list: Promise<Response> | undefined;
+    await withUser(t.db, userId, async (tx) => {
+      // The archive's side, as PATCH /v1/categories/:id does it.
+      await tx.select().from(accounts).where(eq(accounts.isDefault, true)).for("update");
+      await tx
+        .update(categories)
+        .set({ archivedAt: new Date() })
+        .where(eq(categories.id, categoryId));
+      await stopCategoryRecurrences(tx, categoryId, today);
+      list = t.request("GET", `/v1/transactions?month=${next}`, { headers });
+      const flag = settledFlag(list);
+      await sleep(300);
+      expect(flag.settled).toBe(false);
+    });
+    expect((await (list as Promise<Response>)).status).toBe(200);
+    expect(await pending(userId, { categoryId })).toEqual([]);
   });
 });
