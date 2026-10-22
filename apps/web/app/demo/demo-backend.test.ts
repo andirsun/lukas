@@ -246,6 +246,40 @@ async function categoryId(api: ApiClient, name: string): Promise<string> {
 const byName = (items: { name: string; total: number }[]) =>
   Object.fromEntries(items.map((i) => [i.name, i.total]));
 
+describe("GET /api/v1/transactions pages like the API", () => {
+  it("walks a month by cursor: every row once, newest first, the last page says it is the last", async () => {
+    const { api } = demo();
+    const all = await list(api, "2026-10");
+    expect(all.length).toBeGreaterThan(7);
+    const seen: TransactionDto[] = [];
+    let cursor: string | undefined;
+    let pages = 0;
+    do {
+      const { data } = await api.GET("/v1/transactions", {
+        params: { query: { month: "2026-10", limit: 3, ...(cursor ? { cursor } : {}) } },
+      });
+      if (!data) throw new Error("a page");
+      expect(data.items.length).toBeLessThanOrEqual(3);
+      seen.push(...data.items);
+      cursor = data.nextCursor ?? undefined;
+      pages += 1;
+    } while (cursor);
+    expect(pages).toBe(Math.ceil(all.length / 3));
+    expect(seen.map((t) => t.id)).toEqual(all.map((t) => t.id));
+  });
+
+  it("pages one category's rows the same way", async () => {
+    const { api } = demo();
+    const category = await firstExpenseCategory(api);
+    const { data: first } = await api.GET("/v1/transactions", {
+      params: { query: { month: "2026-10", category, limit: 1 } },
+    });
+    expect(first?.items).toHaveLength(1);
+    expect(first?.items[0]?.categoryId).toBe(category);
+    expect(first?.nextCursor).toEqual(expect.any(String));
+  });
+});
+
 describe("recurrences materialize on read, as the API's materializeRecurrences", () => {
   it("adds the month's pending salary once, and paying it moves it to the paid totals", async () => {
     const { api } = demo();

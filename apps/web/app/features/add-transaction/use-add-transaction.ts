@@ -266,7 +266,7 @@ export function useTransactionForm({
 
   const active = orderByUse(
     categories.filter((c) => !c.archived && c.kind === kind),
-    recent.data?.items ?? [],
+    recent.data ?? [],
   );
   // New transactions only go in active categories; an edited one keeps offering its own, even
   // archived (first, so it shows among the visible chips).

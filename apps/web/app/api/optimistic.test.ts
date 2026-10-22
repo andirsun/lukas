@@ -7,6 +7,7 @@ import {
   optimisticUpdate,
   patchSummary,
   type TransactionList,
+  type TransactionPages,
 } from "./optimistic.ts";
 
 const MONTH = "2026-10";
@@ -58,14 +59,23 @@ beforeEach(() => {
   qc = new QueryClient();
   qc.setQueryData(["categories"], [category(FOOD, "expense"), category(SALARY, "income")]);
   qc.setQueryData(["summary", MONTH], summary());
-  qc.setQueryData<TransactionList>(["transactions", MONTH], {
-    items: [tx({ id: "b", date: "2026-10-06" }), tx({ id: "a", date: "2026-10-05" })],
-    nextCursor: null,
-  });
+  qc.setQueryData(
+    ["transactions", MONTH],
+    paged([tx({ id: "b", date: "2026-10-06" }), tx({ id: "a", date: "2026-10-05" })]),
+  );
 });
 
-const items = (month = MONTH) =>
-  qc.getQueryData<TransactionList>(["transactions", month])?.items.map((t) => t.id);
+/** The cached shape of a month's list: pages of the API's answers, as `useInfiniteQuery` keeps them. */
+function paged(...pages: (TransactionDto[] | TransactionList)[]): TransactionPages {
+  return {
+    pages: pages.map((page) => (Array.isArray(page) ? { items: page, nextCursor: null } : page)),
+    pageParams: pages.map((_, i) => (i === 0 ? null : `cursor-${i}`)),
+  };
+}
+
+const pagesOf = (key: readonly unknown[]) =>
+  qc.getQueryData<TransactionPages>(key)?.pages.map((p) => p.items.map((t) => t.id));
+const items = (month = MONTH) => pagesOf(["transactions", month])?.flat();
 const cached = (month = MONTH) => qc.getQueryData<MonthSummary>(["summary", month]);
 
 describe("patchSummary", () => {
@@ -161,8 +171,9 @@ describe("optimisticUpdate", () => {
   it("changes the amount in the list and the summary", () => {
     optimisticUpdate(qc, MONTH, "a", { amount: -3000 });
     const row = qc
-      .getQueryData<TransactionList>(["transactions", MONTH])
-      ?.items.find((t) => t.id === "a");
+      .getQueryData<TransactionPages>(["transactions", MONTH])
+      ?.pages.flatMap((p) => p.items)
+      .find((t) => t.id === "a");
     expect(row?.amount).toBe(-3000);
     expect(cached()?.spent).toBe(9000);
   });
@@ -173,7 +184,7 @@ describe("optimisticUpdate", () => {
   });
 
   it("moves a transaction to another month's cache", () => {
-    qc.setQueryData<TransactionList>(["transactions", "2026-09"], { items: [], nextCursor: null });
+    qc.setQueryData(["transactions", "2026-09"], paged([]));
     qc.setQueryData(
       ["summary", "2026-09"],
       summary({ month: "2026-09", spent: 0, remaining: 10000, categories: [] }),
@@ -187,5 +198,116 @@ describe("optimisticUpdate", () => {
     expect(items()).toEqual(["b", "a"]);
     expect(items("2026-09")).toEqual([]);
     expect(cached("2026-09")?.spent).toBe(0);
+  });
+});
+
+describe("a month listed in several pages", () => {
+  const ROWS = { c: "2026-10-20", b: "2026-10-12", a: "2026-10-06", z: "2026-10-03" } as const;
+  const OTHER = "33333333-3333-4333-8333-333333333333";
+  const row = (id: keyof typeof ROWS) => tx({ id, date: ROWS[id] });
+
+  beforeEach(() => {
+    // Page 1 (c, b) said there was more; page 2 (a, z) is the last.
+    qc.setQueryData(
+      ["transactions", MONTH],
+      paged({ items: [row("c"), row("b")], nextCursor: "cursor-1" }, [row("a"), row("z")]),
+    );
+  });
+
+  it("deletes a row from page 2, and rolls back", () => {
+    const rollback = optimisticRemove(qc, MONTH, "z");
+    expect(pagesOf(["transactions", MONTH])).toEqual([["c", "b"], ["a"]]);
+    expect(cached()?.spent).toBe(6000);
+    rollback();
+    expect(pagesOf(["transactions", MONTH])).toEqual([
+      ["c", "b"],
+      ["a", "z"],
+    ]);
+    expect(cached()?.spent).toBe(7000);
+  });
+
+  it("edits a row on page 2 in place and in the summary", () => {
+    optimisticUpdate(qc, MONTH, "a", { amount: -2500, name: "Lidl" });
+    const pages = qc.getQueryData<TransactionPages>(["transactions", MONTH])?.pages;
+    expect(pages?.[1]?.items[0]).toMatchObject({ id: "a", amount: -2500, name: "Lidl" });
+    expect(cached()?.spent).toBe(8500);
+  });
+
+  it("marks a pending row on page 2 paid", () => {
+    qc.setQueryData(
+      ["transactions", MONTH],
+      paged({ items: [row("c")], nextCursor: "cursor-1" }, [
+        tx({ id: "p", date: "2026-10-02", status: "pending" }),
+      ]),
+    );
+    optimisticUpdate(qc, MONTH, "p", { status: "paid" });
+    expect(
+      qc.getQueryData<TransactionPages>(["transactions", MONTH])?.pages[1]?.items[0]?.status,
+    ).toBe("paid");
+  });
+
+  it("moves an edited row to the page its new date sorts into", () => {
+    optimisticUpdate(qc, MONTH, "z", { date: "2026-10-25" });
+    expect(pagesOf(["transactions", MONTH])).toEqual([["z", "c", "b"], ["a"]]);
+  });
+
+  it("adds a new row to the page it sorts into", () => {
+    optimisticAdd(qc, tx({ id: "new", date: "2026-10-04" }));
+    expect(pagesOf(["transactions", MONTH])).toEqual([
+      ["c", "b"],
+      ["a", "new", "z"],
+    ]);
+  });
+
+  it("leaves a row older than everything loaded to the pages not fetched yet", () => {
+    qc.setQueryData(
+      ["transactions", MONTH],
+      paged({ items: [row("c"), row("b")], nextCursor: "cursor-1" }),
+    );
+    optimisticAdd(qc, tx({ id: "old", date: "2026-10-01", amount: -500 }));
+    expect(items()).toEqual(["c", "b"]);
+    // The month's total still counts it.
+    expect(cached()?.spent).toBe(7500);
+  });
+
+  it("brings a deleted row back (Deshacer) where it was", () => {
+    const deleted = row("a");
+    optimisticRemove(qc, MONTH, "a");
+    optimisticAdd(qc, deleted);
+    expect(pagesOf(["transactions", MONTH])).toEqual([
+      ["c", "b"],
+      ["a", "z"],
+    ]);
+  });
+
+  it("keeps a category's list in step, and only with its own category", () => {
+    const food = ["transactions", MONTH, "category", FOOD];
+    const other = ["transactions", MONTH, "category", OTHER];
+    qc.setQueryData(food, paged({ items: [row("c")], nextCursor: "cursor-1" }, [row("z")]));
+    qc.setQueryData(other, paged([]));
+
+    const removed = optimisticRemove(qc, MONTH, "z");
+    expect(pagesOf(food)).toEqual([["c"], []]);
+    removed();
+    expect(pagesOf(food)).toEqual([["c"], ["z"]]);
+
+    optimisticAdd(qc, tx({ id: "new", date: "2026-10-04" }));
+    expect(pagesOf(food)).toEqual([["c"], ["new", "z"]]);
+    expect(pagesOf(other)).toEqual([[]]);
+
+    optimisticUpdate(qc, MONTH, "new", { categoryId: OTHER });
+    expect(pagesOf(food)).toEqual([["c"], ["z"]]);
+    expect(pagesOf(other)).toEqual([["new"]]);
+  });
+
+  it("finds a row cached only in a category's list (the detail opened first)", () => {
+    qc.removeQueries({ queryKey: ["transactions", MONTH], exact: true });
+    const food = ["transactions", MONTH, "category", FOOD];
+    qc.setQueryData(food, paged({ items: [row("c")], nextCursor: "cursor-1" }, [row("z")]));
+    const rollback = optimisticRemove(qc, MONTH, "z");
+    expect(pagesOf(food)).toEqual([["c"], []]);
+    expect(cached()?.spent).toBe(6000);
+    rollback();
+    expect(pagesOf(food)).toEqual([["c"], ["z"]]);
   });
 });

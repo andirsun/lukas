@@ -2,6 +2,7 @@ import { monthOf, type TransactionDto } from "@lukas/core";
 import {
   keepPreviousData,
   type QueryClient,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -15,6 +16,8 @@ import {
   optimisticUpdate,
   type Rollback,
   summaryKey,
+  type TransactionList,
+  type TransactionPages,
   transactionsKey,
 } from "./optimistic.ts";
 import type { paths } from "./schema";
@@ -87,16 +90,43 @@ export function useSummary(month: string) {
   });
 }
 
-/** The month's transactions, newest first. Up to 200 (the API's page limit) in one page. */
-export function useTransactions(month: string) {
+/** Rows per page of a transaction list: the API's most. */
+export const TRANSACTIONS_PAGE = 200;
+
+/**
+ * A month's transactions (one category's with `category`), newest first, a page at a time: `data`
+ * is every row fetched so far, `hasNextPage` says there are more, and `fetchNextPage` brings them
+ * ("Ver más movimientos"). A refetch fetches again every page already shown.
+ */
+function useTransactionPages(
+  queryKey: readonly unknown[],
+  query: { month: string; category?: string },
+) {
   const api = useApi();
-  return useQuery({
-    queryKey: queryKeys.transactions(month),
-    queryFn: async ({ signal }) =>
+  return useInfiniteQuery({
+    queryKey,
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam, signal }): Promise<TransactionList> =>
       dataOf(
-        await api.GET("/v1/transactions", { params: { query: { month, limit: 200 } }, signal }),
+        await api.GET("/v1/transactions", {
+          params: {
+            query: {
+              ...query,
+              limit: TRANSACTIONS_PAGE,
+              ...(pageParam ? { cursor: pageParam } : {}),
+            },
+          },
+          signal,
+        }),
       ),
+    getNextPageParam: (last) => last.nextCursor,
+    select: (data: TransactionPages) => data.pages.flatMap((page) => page.items),
   });
+}
+
+/** The month's transactions, newest first, a page at a time (see `useTransactionPages`). */
+export function useTransactions(month: string) {
+  return useTransactionPages(queryKeys.transactions(month), { month });
 }
 
 export function useCategories() {
@@ -268,9 +298,8 @@ function mutation<Vars, Result>(
 /** A stand-in for a transaction the API has not confirmed yet. */
 function draftFrom(qc: QueryClient, input: NewTransaction): TransactionDto {
   const now = new Date().toISOString();
-  const sibling = qc.getQueryData<{ items: TransactionDto[] }>(
-    queryKeys.transactions(monthOf(input.date)),
-  )?.items[0];
+  const sibling = qc.getQueryData<TransactionPages>(queryKeys.transactions(monthOf(input.date)))
+    ?.pages[0]?.items[0];
   return {
     id: `pending-${crypto.randomUUID()}`,
     name: input.name,
@@ -415,19 +444,14 @@ export type NewCategoryBody = JsonBody<"/v1/categories", "post">;
 export type NewRecurrence = JsonBody<"/v1/recurrences", "post">;
 export type RecurrencePatch = JsonBody<"/v1/recurrences/{id}", "patch">;
 
-/** One category's transactions in a month, newest first (up to 200). */
+/**
+ * One category's transactions in a month, newest first, a page at a time. Under the month's key,
+ * so every write that refetches the month refetches this too, and the optimistic changes reach it.
+ */
 export function useCategoryTransactions(month: string, categoryId: string) {
-  const api = useApi();
-  return useQuery({
-    // Under the month's key, so every write that refetches the month refetches this too.
-    queryKey: [...queryKeys.transactions(month), "category", categoryId] as const,
-    queryFn: async ({ signal }) =>
-      dataOf(
-        await api.GET("/v1/transactions", {
-          params: { query: { month, category: categoryId, limit: 200 } },
-          signal,
-        }),
-      ),
+  return useTransactionPages([...queryKeys.transactions(month), "category", categoryId], {
+    month,
+    category: categoryId,
   });
 }
 

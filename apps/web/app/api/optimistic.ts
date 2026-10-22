@@ -5,13 +5,19 @@ import {
   monthSummary,
   type TransactionDto,
 } from "@lukas/core";
-import type { QueryClient, QueryKey } from "@tanstack/react-query";
+import type { InfiniteData, QueryClient, QueryKey } from "@tanstack/react-query";
 
-/** The cached shape of `useTransactions(month)`. */
+/** One page of `GET /v1/transactions`: newest first, and where the next page starts. */
 export interface TransactionList {
   items: TransactionDto[];
   nextCursor: string | null;
 }
+
+/**
+ * The cached shape of a month's list (`useTransactions(month)`, and a category's in it under
+ * `[...transactionsKey(month), "category", id]`): the pages fetched so far, in order.
+ */
+export type TransactionPages = InfiniteData<TransactionList, string | null>;
 
 /** Undoes an optimistic change: puts back exactly what the caches held before it. */
 export type Rollback = () => void;
@@ -90,29 +96,74 @@ const together =
     for (const rollback of rollbacks.toReversed()) rollback();
   };
 
+/** Every cached list of `month`: the month's own and each category's (with that category's id). */
+function listsOf(
+  qc: QueryClient,
+  month: string,
+): { key: QueryKey; data: TransactionPages; categoryId: string | undefined }[] {
+  return qc
+    .getQueriesData<TransactionPages>({ queryKey: transactionsKey(month) })
+    .flatMap(([key, data]) =>
+      data && Array.isArray(data.pages)
+        ? [{ key, data, categoryId: key[2] === "category" ? String(key[3]) : undefined }]
+        : [],
+    );
+}
+
+function withoutRow(data: TransactionPages, id: string): TransactionPages {
+  return {
+    ...data,
+    pages: data.pages.map((p) => ({ ...p, items: p.items.filter((t) => t.id !== id) })),
+  };
+}
+
+/**
+ * Puts `tx` in the page it sorts into: the first whose last row is not newer than it. Older than
+ * everything fetched, it goes at the end only when nothing is left to fetch; otherwise it belongs
+ * to a page not loaded yet, which will bring it.
+ */
+function withRow(data: TransactionPages, tx: TransactionDto): TransactionPages {
+  const pages = withoutRow(data, tx.id).pages;
+  let at = pages.findIndex((p) => {
+    const last = p.items.at(-1);
+    return last ? byNewest(tx, last) <= 0 : p.nextCursor === null;
+  });
+  if (at === -1 && pages.at(-1)?.nextCursor === null) at = pages.length - 1;
+  if (at === -1) return { ...data, pages };
+  return {
+    ...data,
+    pages: pages.map((p, i) => (i === at ? { ...p, items: [...p.items, tx].sort(byNewest) } : p)),
+  };
+}
+
 function addToCaches(qc: QueryClient, tx: TransactionDto): Rollback {
   const month = monthOf(tx.date);
   return together([
-    edit<TransactionList>(qc, transactionsKey(month), (list) => ({
-      ...list,
-      items: [...list.items.filter((t) => t.id !== tx.id), tx].sort(byNewest),
-    })),
+    ...listsOf(qc, month)
+      .filter((list) => list.categoryId === undefined || list.categoryId === tx.categoryId)
+      .map((list) => edit<TransactionPages>(qc, list.key, (data) => withRow(data, tx))),
     edit<MonthSummary>(qc, summaryKey(month), (s) => patchSummary(s, tx, kindOf(qc, tx), 1)),
   ]);
 }
 
 function removeFromCaches(qc: QueryClient, month: string, tx: TransactionDto): Rollback {
   return together([
-    edit<TransactionList>(qc, transactionsKey(month), (list) => ({
-      ...list,
-      items: list.items.filter((t) => t.id !== tx.id),
-    })),
+    ...listsOf(qc, month).map((list) =>
+      edit<TransactionPages>(qc, list.key, (data) => withoutRow(data, tx.id)),
+    ),
     edit<MonthSummary>(qc, summaryKey(month), (s) => patchSummary(s, tx, kindOf(qc, tx), -1)),
   ]);
 }
 
+/** The transaction as cached in any of the month's lists (home's, or a category's). */
 function findCached(qc: QueryClient, month: string, id: string): TransactionDto | undefined {
-  return qc.getQueryData<TransactionList>(transactionsKey(month))?.items.find((t) => t.id === id);
+  for (const { data } of listsOf(qc, month)) {
+    for (const page of data.pages) {
+      const found = page.items.find((t) => t.id === id);
+      if (found) return found;
+    }
+  }
+  return undefined;
 }
 
 /** Shows a new transaction right away in its month's list and summary (when they are cached). */

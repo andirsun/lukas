@@ -128,7 +128,7 @@ function MonthView({ userId, currency, today, current, month, onMonth, signOut }
             <Lukitas
               summary={summary.data}
               categories={categories.data}
-              items={transactions.data.items}
+              items={transactions.data}
               today={today}
               current={current}
               money={money}
@@ -156,7 +156,8 @@ function MonthView({ userId, currency, today, current, month, onMonth, signOut }
               pager={wide ? null : pager}
               summary={summary.data}
               categories={categories.data}
-              items={transactions.data?.items}
+              items={transactions.data}
+              pages={transactions}
               today={today}
               currency={currency}
               month={month}
@@ -442,6 +443,8 @@ interface ListsProps {
   summary: MonthSummary | undefined;
   categories: CategoryDto[] | undefined;
   items: TransactionDto[] | undefined;
+  /** The list's pages: "Ver más movimientos" while there are more. */
+  pages: MorePages;
   today: string;
   currency: string;
   month: Month;
@@ -455,6 +458,7 @@ function Lists({
   summary,
   categories,
   items,
+  pages,
   today,
   currency,
   month,
@@ -466,6 +470,7 @@ function Lists({
       <h2 className="lk-panel-title">{t("view.transactions")}</h2>
       <Transactions
         items={items}
+        pages={pages}
         categories={categories}
         today={today}
         currency={currency}
@@ -566,12 +571,14 @@ function Budgets({
 
 function Transactions({
   items,
+  pages,
   categories,
   today,
   currency,
   monthName,
 }: {
   items: TransactionDto[] | undefined;
+  pages: MorePages;
   categories: CategoryDto[] | undefined;
   today: string;
   currency: string;
@@ -598,7 +605,50 @@ function Transactions({
       {groupByDay(items, today).map((group) => (
         <Day key={group.date} group={group} byId={byId} currency={currency} />
       ))}
+      <ShowMore pages={pages} />
     </>
+  );
+}
+
+/** What "Ver más movimientos" needs of a paged list (`useTransactions`, `useCategoryTransactions`). */
+export interface MorePages {
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage(): Promise<{ error: Error | null }>;
+}
+
+/**
+ * "Ver más movimientos" at the end of a list that has more than one page: brings the next page
+ * (older rows) below the ones shown. A failure keeps the list as it is and says so in a toast.
+ * Also used by a category's detail.
+ */
+export function ShowMore({ pages }: { pages: MorePages }) {
+  const t = useTranslations("home");
+  const tRoot = useTranslations() as unknown as Translator;
+  const toast = useToast();
+  if (!pages.hasNextPage) return null;
+  const busy = pages.isFetchingNextPage;
+  const more = async () => {
+    if (busy) return;
+    const { error } = await pages.fetchNextPage();
+    if (error) {
+      toast.show({
+        tone: "error",
+        message:
+          error instanceof ApiProblem ? problemMessage(error, tRoot) : tRoot("errors.generic"),
+      });
+    }
+  };
+  return (
+    <PressButton
+      variant="secondary"
+      className="self-center"
+      onClick={() => void more()}
+      disabled={busy}
+      aria-busy={busy}
+    >
+      {t("more_transactions")}
+    </PressButton>
   );
 }
 

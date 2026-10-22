@@ -32,6 +32,7 @@
     "day_yesterday": "Ayer · {day}",
     "day_upcoming": "{day} · próximo",
     "empty_transactions": "Aún no hay movimientos en {month}. Toca ＋ y anota el primero.",
+    "more_transactions": "Ver más movimientos",
     "no_categories_title": "Aún no tienes categorías",
     "no_categories_lead": "Las necesitas para anotar tus gastos. Empieza con las sugeridas y cámbialas cuando quieras.",
     "use_suggested": "Usar las sugeridas",

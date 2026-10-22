@@ -9,7 +9,13 @@ import {
 import { type ReactNode, useId, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router";
 import { useTranslations } from "use-intl";
-import { useAllCategories, useCategoryTransactions, useMe, useSummary } from "../../api/queries.ts";
+import {
+  useAllCategories,
+  useCategoryTransactions,
+  useMe,
+  useReportByCategory,
+  useSummary,
+} from "../../api/queries.ts";
 import { formatMoney, monthInSentence } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { BudgetBar } from "../../ui/BudgetBar.tsx";
@@ -21,7 +27,7 @@ import { PressButton } from "../../ui/PressButton.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { useTransactionSheet } from "../add-transaction/TransactionSheetProvider.tsx";
 import { useAppPath } from "../home/app-path.ts";
-import { Day } from "../home/Home.tsx";
+import { Day, type MorePages, ShowMore } from "../home/Home.tsx";
 import { groupByDay } from "../home/home-model.ts";
 import { BudgetSheet } from "./BudgetSheet.tsx";
 import { useCategorySheets } from "./use-category-sheets.tsx";
@@ -200,12 +206,13 @@ function DetailView({ category, month, today, currency }: DetailViewProps) {
           onEdit={() => setBudgetSheet((s) => ({ open: true, key: s.key + 1 }))}
         />
       ) : (
-        <IncomeCard items={transactions.data?.items} month={month} currency={currency} />
+        <IncomeCard categoryId={category.id} month={month} currency={currency} />
       )}
 
       <Transactions
         category={category}
-        items={transactions.data?.items}
+        items={transactions.data}
+        pages={transactions}
         month={month}
         today={today}
         currency={currency}
@@ -307,20 +314,28 @@ function BudgetCard({
   );
 }
 
+/**
+ * What came in to an income category that month: from the month's totals per income category
+ * (every row of the month, not only the pages of the list fetched so far).
+ */
 function IncomeCard({
-  items,
+  categoryId,
   month,
   currency,
 }: {
-  items: TransactionDto[] | undefined;
+  categoryId: string;
   month: Month;
   currency: string;
 }) {
   const t = useTranslations("categories.detail");
   const { locale } = useLocale();
-  const total = items?.reduce((sum, tx) => sum + tx.amount, 0) ?? 0;
+  const report = useReportByCategory({ from: month, to: month, kind: "income" });
+  if (report.error && !report.data) throw report.error;
+  // While another month loads, the previous month's figure is not this one's.
+  const answer = report.data?.range.from === month ? report.data : undefined;
+  const total = answer?.items.find((i) => i.categoryId === categoryId)?.total ?? 0;
   return (
-    <section className="lk-hero" aria-busy={!items || undefined}>
+    <section className="lk-hero" aria-busy={!answer || undefined}>
       <p className="m-0 font-display text-[22px] font-bold text-good">
         {t("received", {
           month: monthInSentence(month, locale),
@@ -334,12 +349,14 @@ function IncomeCard({
 function Transactions({
   category,
   items,
+  pages,
   month,
   today,
   currency,
 }: {
   category: CategoryDto;
   items: TransactionDto[] | undefined;
+  pages: MorePages;
   month: Month;
   today: string;
   currency: string;
@@ -370,9 +387,12 @@ function Transactions({
           )}
         </div>
       ) : (
-        groupByDay(items, today).map((group) => (
-          <Day key={group.date} group={group} byId={byId} currency={currency} />
-        ))
+        <>
+          {groupByDay(items, today).map((group) => (
+            <Day key={group.date} group={group} byId={byId} currency={currency} />
+          ))}
+          <ShowMore pages={pages} />
+        </>
       )}
     </section>
   );

@@ -32,6 +32,7 @@
     "day_yesterday": "Yesterday · {day}",
     "day_upcoming": "{day} · upcoming",
     "empty_transactions": "No transactions in {month} yet. Tap ＋ and log the first one.",
+    "more_transactions": "Show more",
     "no_categories_title": "You have no categories yet",
     "no_categories_lead": "You need them to log your spending. Start with the suggested ones and change them whenever you like.",
     "use_suggested": "Use the suggested ones",
