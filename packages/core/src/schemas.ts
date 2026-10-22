@@ -31,6 +31,18 @@ export const createTransactionSchema = z.object({
 });
 export type CreateTransaction = z.infer<typeof createTransactionSchema>;
 
+/** Several movements saved together (one tap in the app); at most 20, all or nothing. */
+export const createTransactionsBatchSchema = z.object({
+  items: z.array(createTransactionSchema).min(1).max(20),
+});
+export type CreateTransactionsBatch = z.infer<typeof createTransactionsBatchSchema>;
+
+/** Undo of a batch: the ids to soft-delete. */
+export const deleteTransactionsBatchSchema = z.object({
+  ids: z.array(z.uuid()).min(1).max(20),
+});
+export type DeleteTransactionsBatch = z.infer<typeof deleteTransactionsBatchSchema>;
+
 export const updateTransactionSchema = z
   .object({
     name: nameSchema,

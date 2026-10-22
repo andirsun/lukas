@@ -982,6 +982,184 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/transactions/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Saves up to 20 transactions in one transaction: all or nothing. `Idempotency-Key` is required; a retry with the same key and body returns the first response. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        items: {
+                            name: string;
+                            amount: number;
+                            /** Format: uuid */
+                            categoryId: string;
+                            date: string;
+                            /**
+                             * @default paid
+                             * @enum {string}
+                             */
+                            status?: "paid" | "pending";
+                            note?: string | null;
+                            /**
+                             * @default app
+                             * @enum {string}
+                             */
+                            source?: "app" | "web" | "widget" | "mcp";
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created, in request order */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            items: {
+                                /** Format: uuid */
+                                id: string;
+                                name: string;
+                                amount: number;
+                                currency: string;
+                                date: string;
+                                /** @enum {string} */
+                                status: "paid" | "pending";
+                                note: string | null;
+                                /** Format: uuid */
+                                categoryId: string;
+                                /** Format: uuid */
+                                recurrenceId: string | null;
+                                /** Format: uuid */
+                                importId: string | null;
+                                /** @enum {string} */
+                                source: "app" | "web" | "widget" | "mcp" | "import" | "recurrence";
+                                createdAt: string;
+                                updatedAt: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Problem */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            errors?: {
+                                path: string;
+                                message: string;
+                            }[];
+                        };
+                    };
+                };
+                /** @description Problem */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            errors?: {
+                                path: string;
+                                message: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/transactions/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Soft-deletes (restorable) the given transactions that are the caller's. Other ids are ignored without a trace. */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        ids: string[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Deleted (restorable) */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Problem */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": {
+                            type: string;
+                            title: string;
+                            status: number;
+                            code: string;
+                            detail?: string;
+                            errors?: {
+                                path: string;
+                                message: string;
+                            }[];
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/transactions/{id}": {
         parameters: {
             query?: never;

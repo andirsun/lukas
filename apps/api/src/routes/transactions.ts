@@ -1,6 +1,9 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import {
+  type CreateTransaction,
   createTransactionSchema,
+  createTransactionsBatchSchema,
+  deleteTransactionsBatchSchema,
   firstDay,
   isIsoDate,
   lastDay,
@@ -9,7 +12,7 @@ import {
   updateTransactionSchema,
 } from "@lukas/core";
 import { type Tx, transactions, withUser } from "@lukas/db";
-import { and, desc, eq, gte, isNotNull, isNull, lte, type SQL, sql } from "@lukas/db/orm";
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, type SQL, sql } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { idempotent } from "../http/idempotency.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
@@ -177,6 +180,24 @@ export function transactionRoutes(deps: AppDeps) {
   app.use("/v1/transactions", async (c, next) =>
     c.req.method === "POST" ? idempotent(deps.db)(c, next) : next(),
   );
+  // A retried batch would save everything twice, so here the key is mandatory.
+  app.use("/v1/transactions/batch", idempotent(deps.db, { required: true }));
+
+  /** The one insert path for single and batch create: category check, account lock, currency. */
+  async function insertTransactions(tx: Tx, userId: string, inputs: CreateTransaction[]) {
+    for (const categoryId of new Set(inputs.map((i) => i.categoryId))) {
+      await requireActiveCategory(tx, categoryId);
+    }
+    // Locked like the import's: the currency cannot change under these inserts.
+    const account = await defaultAccount(tx, { lock: true });
+    return (await tx
+      .insert(transactions)
+      .values(
+        inputs.map((i) => ({ ...i, userId, accountId: account.id, currency: account.currency })),
+      )
+      .returning()) as TransactionRow[];
+  }
+
   app.openapi(
     createRoute({
       method: "post",
@@ -187,17 +208,54 @@ export function transactionRoutes(deps: AppDeps) {
     async (c) => {
       const input = c.req.valid("json");
       const userId = c.get("userId");
-      const row = await withUser(deps.db, userId, async (tx) => {
-        await requireActiveCategory(tx, input.categoryId);
-        // Locked like the import's: the currency cannot change under this insert.
-        const account = await defaultAccount(tx, { lock: true });
-        const [created] = await tx
-          .insert(transactions)
-          .values({ ...input, userId, accountId: account.id, currency: account.currency })
-          .returning();
-        return created as TransactionRow;
-      });
-      return c.json(toTransactionDto(row), 201);
+      const [row] = await withUser(deps.db, userId, (tx) =>
+        insertTransactions(tx, userId, [input]),
+      );
+      return c.json(toTransactionDto(row as TransactionRow), 201);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/v1/transactions/batch",
+      description:
+        "Saves up to 20 transactions in one transaction: all or nothing. `Idempotency-Key` is required; a retry with the same key and body returns the first response.",
+      request: { body: jsonBody(createTransactionsBatchSchema) },
+      responses: {
+        201: jsonResponse(
+          z.object({ items: z.array(transactionDto) }),
+          "Created, in request order",
+        ),
+        ...problems(400, 422),
+      },
+    }),
+    async (c) => {
+      const { items } = c.req.valid("json");
+      const userId = c.get("userId");
+      const rows = await withUser(deps.db, userId, (tx) => insertTransactions(tx, userId, items));
+      return c.json({ items: rows.map(toTransactionDto) }, 201);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/v1/transactions/batch-delete",
+      description:
+        "Soft-deletes (restorable) the given transactions that are the caller's. Other ids are ignored without a trace.",
+      request: { body: jsonBody(deleteTransactionsBatchSchema) },
+      responses: { 204: { description: "Deleted (restorable)" }, ...problems(422) },
+    }),
+    async (c) => {
+      const { ids } = c.req.valid("json");
+      await withUser(deps.db, c.get("userId"), (tx) =>
+        tx
+          .update(transactions)
+          .set({ deletedAt: new Date() })
+          .where(and(inArray(transactions.id, ids), isNull(transactions.deletedAt))),
+      );
+      return c.body(null, 204);
     },
   );
 
