@@ -63,6 +63,9 @@ class AddForm extends ChangeNotifier {
 
   /// The suggestion whose name was picked, while the name is still exactly it.
   String? _picked;
+
+  /// The name was typed in or picked: it is no longer the movement's own, untouched one.
+  bool _nameTouched = false;
   String? _categoryId;
 
   /// Only a category the person picked goes into an edit's patch: never a fallback.
@@ -159,10 +162,14 @@ class AddForm extends ChangeNotifier {
     return shown;
   }
 
-  /// An edited movement whose name is just its category's shows the name as the placeholder.
+  /// An edited movement whose name is just its category's shows the name as the placeholder, until
+  /// the person touches the field: whatever they type after that is kept exactly, even when it
+  /// passes through the category's own name on the way to a longer one.
   String get name {
     final own = _editingCategory;
-    return editing != null && own != null && _name == own.name && _picked == null ? '' : _name;
+    final untouchedDefault =
+        editing != null && !_nameTouched && own != null && _name == own.name && _picked == null;
+    return untouchedDefault ? '' : _name;
   }
 
   /// What the API is asked for while the person types a name. After a pick the full list stays.
@@ -196,12 +203,14 @@ class AddForm extends ChangeNotifier {
 
   void setName(String next) {
     if (next != _picked) _picked = null;
+    _nameTouched = true;
     _name = next;
     _changed();
   }
 
   void pick(TransactionSuggestion suggestion) {
     _name = suggestion.name;
+    _nameTouched = true;
     _picked = suggestion.name;
     final category = _categories.where((c) => c.id == suggestion.categoryId).firstOrNull;
     if (category != null) {

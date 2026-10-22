@@ -418,6 +418,36 @@ void main() {
       await letTimersEnd(tester);
     });
 
+    testWidgets('typing a longer name through the category\'s own keeps every character', (
+      tester,
+    ) async {
+      final env = await pump(
+        tester,
+        items: [tx('unnamed', '2026-10-22', -2800000, name: 'Supermercado')],
+      );
+      await tester.tap(find.text('Supermercado').first);
+      await tester.pumpAndSettle();
+      String shown() =>
+          tester.widget<TextField>(find.byKey(const Key('add.name'))).controller!.text;
+      expect(shown(), '');
+      // The name passes through the category's own on the way to the longer one.
+      await tester.enterText(find.byKey(const Key('add.name')), 'Supermercado');
+      await tester.pump();
+      expect(shown(), 'Supermercado');
+      await tester.enterText(find.byKey(const Key('add.name')), 'Supermercado Éxito');
+      await tester.pump();
+      expect(shown(), 'Supermercado Éxito');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('add.save')));
+      await tester.pumpAndSettle();
+      expect(
+        env.add.calls.singleWhere((c) => c.startsWith('update')),
+        'update unnamed {name: Supermercado Éxito}',
+      );
+      await letTimersEnd(tester);
+    });
+
     testWidgets('closing without changes saves nothing', (tester) async {
       final env = await pump(
         tester,

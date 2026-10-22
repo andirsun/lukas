@@ -245,6 +245,32 @@ void main() {
       expect(f.name, '');
     });
 
+    test('what is typed is kept exactly, even passing through the category\'s own name', () {
+      final f = form(
+        editing: tx('t', '2026-10-01', -500, name: 'Supermercado', categoryId: 'cat-groceries'),
+      );
+      expect(f.name, '');
+      var typed = '';
+      for (final char in 'Supermercado Éxito'.split('')) {
+        typed += char;
+        f.setName(typed);
+        // What the field shows is what was typed, at every step (the sheet writes it back).
+        expect(f.name, typed);
+      }
+      expect(f.input()!.name, 'Supermercado Éxito');
+      expect(f.patch().name, 'Supermercado Éxito');
+    });
+
+    test('a touched name that is cleared falls back to the category again', () {
+      final f = form(
+        editing: tx('t', '2026-10-01', -500, name: 'Supermercado', categoryId: 'cat-groceries'),
+      );
+      f.setName('Mercado');
+      f.setName('');
+      expect(f.name, '');
+      expect(f.input()!.name, 'Supermercado');
+    });
+
     test('the patch has only what changed', () {
       final f = form(editing: original);
       expect(f.patch().isEmpty, isTrue);
