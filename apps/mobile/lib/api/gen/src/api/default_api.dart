@@ -11,32 +11,32 @@ import 'package:dio/dio.dart';
 import 'package:built_collection/built_collection.dart';
 import 'package:built_value/json_object.dart';
 import 'package:lukitas/api/gen/src/api_util.dart';
-import 'package:lukitas/api/gen/src/model/v1_categories_get200_response_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_categories_id_budget_put_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_categories_id_patch_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_categories_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_imports_id_confirm_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_imports_post201_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_claim_email_send_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_claim_email_verify_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_patch409_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_patch_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_recurrences_get200_response_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_recurrences_id_patch_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_recurrences_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_by_category_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_cost_of_living_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_trend_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_summary_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_batch_delete_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_batch_post201_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_batch_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_get200_response_items_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_id_patch_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_suggestions_get200_response.dart';
+import 'package:lukitas/api/gen/src/model/category.dart';
+import 'package:lukitas/api/gen/src/model/category_report.dart';
+import 'package:lukitas/api/gen/src/model/claim_email_send.dart';
+import 'package:lukitas/api/gen/src/model/claim_email_verify.dart';
+import 'package:lukitas/api/gen/src/model/confirm_import.dart';
+import 'package:lukitas/api/gen/src/model/cost_of_living_report.dart';
+import 'package:lukitas/api/gen/src/model/create_category.dart';
+import 'package:lukitas/api/gen/src/model/create_recurrence.dart';
+import 'package:lukitas/api/gen/src/model/create_transaction.dart';
+import 'package:lukitas/api/gen/src/model/create_transactions_batch.dart';
+import 'package:lukitas/api/gen/src/model/delete_transactions_batch.dart';
+import 'package:lukitas/api/gen/src/model/file_import.dart';
+import 'package:lukitas/api/gen/src/model/problem.dart';
+import 'package:lukitas/api/gen/src/model/profile.dart';
+import 'package:lukitas/api/gen/src/model/recurrence.dart';
+import 'package:lukitas/api/gen/src/model/set_budget.dart';
+import 'package:lukitas/api/gen/src/model/summary.dart';
+import 'package:lukitas/api/gen/src/model/transaction.dart';
+import 'package:lukitas/api/gen/src/model/transaction_list.dart';
+import 'package:lukitas/api/gen/src/model/transaction_page.dart';
+import 'package:lukitas/api/gen/src/model/transaction_suggestions.dart';
+import 'package:lukitas/api/gen/src/model/trend_report.dart';
+import 'package:lukitas/api/gen/src/model/update_category.dart';
+import 'package:lukitas/api/gen/src/model/update_profile.dart';
+import 'package:lukitas/api/gen/src/model/update_recurrence.dart';
+import 'package:lukitas/api/gen/src/model/update_transaction.dart';
 
 class DefaultApi {
   final Dio _dio;
@@ -45,11 +45,11 @@ class DefaultApi {
 
   const DefaultApi(this._dio, this._serializers);
 
-  /// v1CategoriesGet
+  /// claimEmailSend
   ///
   ///
   /// Parameters:
-  /// * [includeArchived]
+  /// * [claimEmailSend]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -57,10 +57,10 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [BuiltList<V1CategoriesGet200ResponseInner>] as data
+  /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltList<V1CategoriesGet200ResponseInner>>> v1CategoriesGet({
-    String? includeArchived,
+  Future<Response<void>> claimEmailSend({
+    required ClaimEmailSend claimEmailSend,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -68,276 +68,7 @@ class DefaultApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/v1/categories';
-    final _options = Options(
-      method: r'GET',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      validateStatus: validateStatus,
-    );
-
-    final _queryParameters = <String, dynamic>{
-      if (includeArchived != null)
-        r'includeArchived': encodeQueryParameter(
-          _serializers,
-          includeArchived,
-          const FullType(String),
-        ),
-    };
-
-    final _response = await _dio.request<Object>(
-      _path,
-      options: _options,
-      queryParameters: _queryParameters,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    BuiltList<V1CategoriesGet200ResponseInner>? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(BuiltList, [FullType(V1CategoriesGet200ResponseInner)]),
-            ) as BuiltList<V1CategoriesGet200ResponseInner>;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<BuiltList<V1CategoriesGet200ResponseInner>>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1CategoriesIdBudgetPut
-  ///
-  ///
-  /// Parameters:
-  /// * [id]
-  /// * [v1CategoriesIdBudgetPutRequest]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1CategoriesGet200ResponseInner] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1CategoriesGet200ResponseInner>> v1CategoriesIdBudgetPut({
-    required String id,
-    required V1CategoriesIdBudgetPutRequest v1CategoriesIdBudgetPutRequest,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/categories/{id}/budget'.replaceAll(
-      '{'
-      r'id'
-      '}',
-      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
-    );
-    final _options = Options(
-      method: r'PUT',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(V1CategoriesIdBudgetPutRequest);
-      _bodyData = _serializers.serialize(v1CategoriesIdBudgetPutRequest, specifiedType: _type);
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(_dio.options, _path),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    V1CategoriesGet200ResponseInner? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1CategoriesGet200ResponseInner),
-            ) as V1CategoriesGet200ResponseInner;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<V1CategoriesGet200ResponseInner>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1CategoriesIdPatch
-  ///
-  ///
-  /// Parameters:
-  /// * [id]
-  /// * [v1CategoriesIdPatchRequest]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1CategoriesGet200ResponseInner] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1CategoriesGet200ResponseInner>> v1CategoriesIdPatch({
-    required String id,
-    required V1CategoriesIdPatchRequest v1CategoriesIdPatchRequest,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/categories/{id}'.replaceAll(
-      '{'
-      r'id'
-      '}',
-      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
-    );
-    final _options = Options(
-      method: r'PATCH',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(V1CategoriesIdPatchRequest);
-      _bodyData = _serializers.serialize(v1CategoriesIdPatchRequest, specifiedType: _type);
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(_dio.options, _path),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    V1CategoriesGet200ResponseInner? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1CategoriesGet200ResponseInner),
-            ) as V1CategoriesGet200ResponseInner;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<V1CategoriesGet200ResponseInner>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1CategoriesPost
-  ///
-  ///
-  /// Parameters:
-  /// * [v1CategoriesPostRequest]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1CategoriesGet200ResponseInner] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1CategoriesGet200ResponseInner>> v1CategoriesPost({
-    required V1CategoriesPostRequest v1CategoriesPostRequest,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/categories';
+    final _path = r'/v1/me/claim-email/send';
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{...?headers},
@@ -349,8 +80,8 @@ class DefaultApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(V1CategoriesPostRequest);
-      _bodyData = _serializers.serialize(v1CategoriesPostRequest, specifiedType: _type);
+      const _type = FullType(ClaimEmailSend);
+      _bodyData = _serializers.serialize(claimEmailSend, specifiedType: _type);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _options.compose(_dio.options, _path),
@@ -369,16 +100,72 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1CategoriesGet200ResponseInner? _responseData;
+    return _response;
+  }
+
+  /// claimEmailVerify
+  ///
+  ///
+  /// Parameters:
+  /// * [claimEmailVerify]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Profile] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Profile>> claimEmailVerify({
+    required ClaimEmailVerify claimEmailVerify,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/me/claim-email/verify';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(ClaimEmailVerify);
+      _bodyData = _serializers.serialize(claimEmailVerify, specifiedType: _type);
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _options.compose(_dio.options, _path),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Profile? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1CategoriesGet200ResponseInner),
-            ) as V1CategoriesGet200ResponseInner;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Profile))
+                as Profile;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -389,7 +176,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1CategoriesGet200ResponseInner>(
+    return Response<Profile>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -401,12 +188,12 @@ class DefaultApi {
     );
   }
 
-  /// v1ImportsIdConfirmPost
+  /// confirmImport
   ///
   ///
   /// Parameters:
   /// * [id]
-  /// * [v1ImportsIdConfirmPostRequest]
+  /// * [confirmImport]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -414,11 +201,11 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1ImportsPost201Response] as data
+  /// Returns a [Future] containing a [Response] with a [FileImport] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1ImportsPost201Response>> v1ImportsIdConfirmPost({
+  Future<Response<FileImport>> confirmImport({
     required String id,
-    V1ImportsIdConfirmPostRequest? v1ImportsIdConfirmPostRequest,
+    ConfirmImport? confirmImport,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -443,10 +230,10 @@ class DefaultApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(V1ImportsIdConfirmPostRequest);
-      _bodyData = v1ImportsIdConfirmPostRequest == null
+      const _type = FullType(ConfirmImport);
+      _bodyData = confirmImport == null
           ? null
-          : _serializers.serialize(v1ImportsIdConfirmPostRequest, specifiedType: _type);
+          : _serializers.serialize(confirmImport, specifiedType: _type);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _options.compose(_dio.options, _path),
@@ -465,16 +252,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1ImportsPost201Response? _responseData;
+    FileImport? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1ImportsPost201Response),
-            ) as V1ImportsPost201Response;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(FileImport))
+                as FileImport;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -485,7 +270,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1ImportsPost201Response>(
+    return Response<FileImport>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -497,11 +282,11 @@ class DefaultApi {
     );
   }
 
-  /// v1ImportsIdDelete
+  /// createCategory
   ///
   ///
   /// Parameters:
-  /// * [id]
+  /// * [createCategory]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -509,10 +294,10 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future]
+  /// Returns a [Future] containing a [Response] with a [Category] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> v1ImportsIdDelete({
-    required String id,
+  Future<Response<Category>> createCategory({
+    required CreateCategory createCategory,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -520,31 +305,69 @@ class DefaultApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/v1/imports/{id}'.replaceAll(
-      '{'
-      r'id'
-      '}',
-      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
-    );
+    final _path = r'/v1/categories';
     final _options = Options(
-      method: r'DELETE',
+      method: r'POST',
       headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      contentType: 'application/json',
       validateStatus: validateStatus,
     );
 
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(CreateCategory);
+      _bodyData = _serializers.serialize(createCategory, specifiedType: _type);
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _options.compose(_dio.options, _path),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
     final _response = await _dio.request<Object>(
       _path,
+      data: _bodyData,
       options: _options,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
     );
 
-    return _response;
+    Category? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Category))
+                as Category;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Category>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
   }
 
-  /// v1ImportsPost
+  /// createImport
   ///
   ///
   /// Parameters:
@@ -557,9 +380,9 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1ImportsPost201Response] as data
+  /// Returns a [Future] containing a [Response] with a [FileImport] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1ImportsPost201Response>> v1ImportsPost({
+  Future<Response<FileImport>> createImport({
     required String source_,
     required MultipartFile file,
     CancelToken? cancelToken,
@@ -603,16 +426,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1ImportsPost201Response? _responseData;
+    FileImport? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1ImportsPost201Response),
-            ) as V1ImportsPost201Response;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(FileImport))
+                as FileImport;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -623,7 +444,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1ImportsPost201Response>(
+    return Response<FileImport>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -635,11 +456,11 @@ class DefaultApi {
     );
   }
 
-  /// v1MeClaimEmailSendPost
+  /// createRecurrence
   ///
   ///
   /// Parameters:
-  /// * [v1MeClaimEmailSendPostRequest]
+  /// * [createRecurrence]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -647,10 +468,10 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future]
+  /// Returns a [Future] containing a [Response] with a [Recurrence] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> v1MeClaimEmailSendPost({
-    required V1MeClaimEmailSendPostRequest v1MeClaimEmailSendPostRequest,
+  Future<Response<Recurrence>> createRecurrence({
+    required CreateRecurrence createRecurrence,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -658,7 +479,7 @@ class DefaultApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/v1/me/claim-email/send';
+    final _path = r'/v1/recurrences';
     final _options = Options(
       method: r'POST',
       headers: <String, dynamic>{...?headers},
@@ -670,8 +491,8 @@ class DefaultApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(V1MeClaimEmailSendPostRequest);
-      _bodyData = _serializers.serialize(v1MeClaimEmailSendPostRequest, specifiedType: _type);
+      const _type = FullType(CreateRecurrence);
+      _bodyData = _serializers.serialize(createRecurrence, specifiedType: _type);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _options.compose(_dio.options, _path),
@@ -690,14 +511,42 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    return _response;
+    Recurrence? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Recurrence))
+                as Recurrence;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Recurrence>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
   }
 
-  /// v1MeClaimEmailVerifyPost
+  /// createTransaction
   ///
   ///
   /// Parameters:
-  /// * [v1MeClaimEmailVerifyPostRequest]
+  /// * [createTransaction]
+  /// * [idempotencyKey] - A key that stays the same across retries of the same request (a UUID, say): a retry with the same key and body returns the first response instead of saving twice.
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -705,10 +554,11 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1MeGet200Response] as data
+  /// Returns a [Future] containing a [Response] with a [Transaction] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1MeGet200Response>> v1MeClaimEmailVerifyPost({
-    required V1MeClaimEmailVerifyPostRequest v1MeClaimEmailVerifyPostRequest,
+  Future<Response<Transaction>> createTransaction({
+    required CreateTransaction createTransaction,
+    String? idempotencyKey,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -716,10 +566,13 @@ class DefaultApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/v1/me/claim-email/verify';
+    final _path = r'/v1/transactions';
     final _options = Options(
       method: r'POST',
-      headers: <String, dynamic>{...?headers},
+      headers: <String, dynamic>{
+        if (idempotencyKey != null) r'Idempotency-Key': idempotencyKey,
+        ...?headers,
+      },
       extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
       contentType: 'application/json',
       validateStatus: validateStatus,
@@ -728,8 +581,8 @@ class DefaultApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(V1MeClaimEmailVerifyPostRequest);
-      _bodyData = _serializers.serialize(v1MeClaimEmailVerifyPostRequest, specifiedType: _type);
+      const _type = FullType(CreateTransaction);
+      _bodyData = _serializers.serialize(createTransaction, specifiedType: _type);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _options.compose(_dio.options, _path),
@@ -748,14 +601,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1MeGet200Response? _responseData;
+    Transaction? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(rawResponse, specifiedType: const FullType(V1MeGet200Response))
-                as V1MeGet200Response;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Transaction))
+                as Transaction;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -766,7 +619,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1MeGet200Response>(
+    return Response<Transaction>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -778,7 +631,94 @@ class DefaultApi {
     );
   }
 
-  /// v1MeDelete
+  /// createTransactionsBatch
+  /// Saves up to 20 transactions in one transaction: all or nothing. &#x60;Idempotency-Key&#x60; is required; a retry with the same key and body returns the first response.
+  ///
+  /// Parameters:
+  /// * [idempotencyKey] - A key that stays the same across retries of the same request (a UUID, say): a retry with the same key and body returns the first response instead of saving twice.
+  /// * [createTransactionsBatch]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [TransactionList] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<TransactionList>> createTransactionsBatch({
+    required String idempotencyKey,
+    required CreateTransactionsBatch createTransactionsBatch,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/transactions/batch';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{r'Idempotency-Key': idempotencyKey, ...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(CreateTransactionsBatch);
+      _bodyData = _serializers.serialize(createTransactionsBatch, specifiedType: _type);
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _options.compose(_dio.options, _path),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    TransactionList? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(TransactionList))
+                as TransactionList;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<TransactionList>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// deleteMe
   ///
   ///
   /// Parameters:
@@ -791,7 +731,7 @@ class DefaultApi {
   ///
   /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> v1MeDelete({
+  Future<Response<void>> deleteMe({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -818,7 +758,159 @@ class DefaultApi {
     return _response;
   }
 
-  /// v1MeExportGet
+  /// deleteRecurrence
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future]
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<void>> deleteRecurrence({
+    required String id,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/recurrences/{id}'.replaceAll(
+      '{'
+      r'id'
+      '}',
+      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
+    );
+    final _options = Options(
+      method: r'DELETE',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    return _response;
+  }
+
+  /// deleteTransaction
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future]
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<void>> deleteTransaction({
+    required String id,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/transactions/{id}'.replaceAll(
+      '{'
+      r'id'
+      '}',
+      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
+    );
+    final _options = Options(
+      method: r'DELETE',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    return _response;
+  }
+
+  /// deleteTransactionsBatch
+  /// Soft-deletes (restorable) the given transactions that are the caller&#39;s. Other ids are ignored without a trace.
+  ///
+  /// Parameters:
+  /// * [deleteTransactionsBatch]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future]
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<void>> deleteTransactionsBatch({
+    required DeleteTransactionsBatch deleteTransactionsBatch,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/transactions/batch-delete';
+    final _options = Options(
+      method: r'POST',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(DeleteTransactionsBatch);
+      _bodyData = _serializers.serialize(deleteTransactionsBatch, specifiedType: _type);
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _options.compose(_dio.options, _path),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    return _response;
+  }
+
+  /// exportMe
   ///
   ///
   /// Parameters:
@@ -832,7 +924,7 @@ class DefaultApi {
   ///
   /// Returns a [Future] containing a [Response] with a [JsonObject] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<JsonObject>> v1MeExportGet({
+  Future<Response<JsonObject>> exportMe({
     String? format = 'json',
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -893,458 +985,7 @@ class DefaultApi {
     );
   }
 
-  /// v1MeGet
-  ///
-  ///
-  /// Parameters:
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1MeGet200Response] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1MeGet200Response>> v1MeGet({
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/me';
-    final _options = Options(
-      method: r'GET',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      validateStatus: validateStatus,
-    );
-
-    final _response = await _dio.request<Object>(
-      _path,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    V1MeGet200Response? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(rawResponse, specifiedType: const FullType(V1MeGet200Response))
-                as V1MeGet200Response;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<V1MeGet200Response>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1MePatch
-  ///
-  ///
-  /// Parameters:
-  /// * [v1MePatchRequest]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1MeGet200Response] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1MeGet200Response>> v1MePatch({
-    required V1MePatchRequest v1MePatchRequest,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/me';
-    final _options = Options(
-      method: r'PATCH',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(V1MePatchRequest);
-      _bodyData = _serializers.serialize(v1MePatchRequest, specifiedType: _type);
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(_dio.options, _path),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    V1MeGet200Response? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(rawResponse, specifiedType: const FullType(V1MeGet200Response))
-                as V1MeGet200Response;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<V1MeGet200Response>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1RecurrencesGet
-  ///
-  ///
-  /// Parameters:
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [BuiltList<V1RecurrencesGet200ResponseInner>] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<BuiltList<V1RecurrencesGet200ResponseInner>>> v1RecurrencesGet({
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/recurrences';
-    final _options = Options(
-      method: r'GET',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      validateStatus: validateStatus,
-    );
-
-    final _response = await _dio.request<Object>(
-      _path,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    BuiltList<V1RecurrencesGet200ResponseInner>? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(BuiltList, [
-                FullType(V1RecurrencesGet200ResponseInner),
-              ]),
-            ) as BuiltList<V1RecurrencesGet200ResponseInner>;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<BuiltList<V1RecurrencesGet200ResponseInner>>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1RecurrencesIdDelete
-  ///
-  ///
-  /// Parameters:
-  /// * [id]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future]
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> v1RecurrencesIdDelete({
-    required String id,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/recurrences/{id}'.replaceAll(
-      '{'
-      r'id'
-      '}',
-      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
-    );
-    final _options = Options(
-      method: r'DELETE',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      validateStatus: validateStatus,
-    );
-
-    final _response = await _dio.request<Object>(
-      _path,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    return _response;
-  }
-
-  /// v1RecurrencesIdPatch
-  ///
-  ///
-  /// Parameters:
-  /// * [id]
-  /// * [v1RecurrencesIdPatchRequest]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1RecurrencesGet200ResponseInner] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1RecurrencesGet200ResponseInner>> v1RecurrencesIdPatch({
-    required String id,
-    required V1RecurrencesIdPatchRequest v1RecurrencesIdPatchRequest,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/recurrences/{id}'.replaceAll(
-      '{'
-      r'id'
-      '}',
-      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
-    );
-    final _options = Options(
-      method: r'PATCH',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(V1RecurrencesIdPatchRequest);
-      _bodyData = _serializers.serialize(v1RecurrencesIdPatchRequest, specifiedType: _type);
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(_dio.options, _path),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    V1RecurrencesGet200ResponseInner? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1RecurrencesGet200ResponseInner),
-            ) as V1RecurrencesGet200ResponseInner;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<V1RecurrencesGet200ResponseInner>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1RecurrencesPost
-  ///
-  ///
-  /// Parameters:
-  /// * [v1RecurrencesPostRequest]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1RecurrencesGet200ResponseInner] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1RecurrencesGet200ResponseInner>> v1RecurrencesPost({
-    required V1RecurrencesPostRequest v1RecurrencesPostRequest,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/recurrences';
-    final _options = Options(
-      method: r'POST',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(V1RecurrencesPostRequest);
-      _bodyData = _serializers.serialize(v1RecurrencesPostRequest, specifiedType: _type);
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(_dio.options, _path),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    V1RecurrencesGet200ResponseInner? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1RecurrencesGet200ResponseInner),
-            ) as V1RecurrencesGet200ResponseInner;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<V1RecurrencesGet200ResponseInner>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1ReportsByCategoryGet
+  /// getCategoryReport
   ///
   ///
   /// Parameters:
@@ -1359,9 +1000,9 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1ReportsByCategoryGet200Response] as data
+  /// Returns a [Future] containing a [Response] with a [CategoryReport] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1ReportsByCategoryGet200Response>> v1ReportsByCategoryGet({
+  Future<Response<CategoryReport>> getCategoryReport({
     required String from,
     required String to,
     String? kind = 'expense',
@@ -1398,16 +1039,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1ReportsByCategoryGet200Response? _responseData;
+    CategoryReport? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1ReportsByCategoryGet200Response),
-            ) as V1ReportsByCategoryGet200Response;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(CategoryReport))
+                as CategoryReport;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1418,7 +1057,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1ReportsByCategoryGet200Response>(
+    return Response<CategoryReport>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -1430,7 +1069,7 @@ class DefaultApi {
     );
   }
 
-  /// v1ReportsCostOfLivingGet
+  /// getCostOfLivingReport
   ///
   ///
   /// Parameters:
@@ -1442,9 +1081,9 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1ReportsCostOfLivingGet200Response] as data
+  /// Returns a [Future] containing a [Response] with a [CostOfLivingReport] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1ReportsCostOfLivingGet200Response>> v1ReportsCostOfLivingGet({
+  Future<Response<CostOfLivingReport>> getCostOfLivingReport({
     int? months = 6,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -1475,16 +1114,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1ReportsCostOfLivingGet200Response? _responseData;
+    CostOfLivingReport? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1ReportsCostOfLivingGet200Response),
-            ) as V1ReportsCostOfLivingGet200Response;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(CostOfLivingReport))
+                as CostOfLivingReport;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1495,7 +1132,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1ReportsCostOfLivingGet200Response>(
+    return Response<CostOfLivingReport>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -1507,7 +1144,149 @@ class DefaultApi {
     );
   }
 
-  /// v1ReportsTrendGet
+  /// getMe
+  ///
+  ///
+  /// Parameters:
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Profile] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Profile>> getMe({
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/me';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Profile? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Profile))
+                as Profile;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Profile>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// getSummary
+  ///
+  ///
+  /// Parameters:
+  /// * [month]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Summary] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Summary>> getSummary({
+    String? month,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/summary';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (month != null)
+        r'month': encodeQueryParameter(_serializers, month, const FullType(String)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Summary? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Summary))
+                as Summary;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Summary>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// getTrendReport
   ///
   ///
   /// Parameters:
@@ -1520,9 +1299,9 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1ReportsTrendGet200Response] as data
+  /// Returns a [Future] containing a [Response] with a [TrendReport] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1ReportsTrendGet200Response>> v1ReportsTrendGet({
+  Future<Response<TrendReport>> getTrendReport({
     required String from,
     required String to,
     CancelToken? cancelToken,
@@ -1554,16 +1333,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1ReportsTrendGet200Response? _responseData;
+    TrendReport? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1ReportsTrendGet200Response),
-            ) as V1ReportsTrendGet200Response;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(TrendReport))
+                as TrendReport;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1574,7 +1351,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1ReportsTrendGet200Response>(
+    return Response<TrendReport>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -1586,11 +1363,11 @@ class DefaultApi {
     );
   }
 
-  /// v1SummaryGet
+  /// listCategories
   ///
   ///
   /// Parameters:
-  /// * [month]
+  /// * [includeArchived]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1598,10 +1375,10 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1SummaryGet200Response] as data
+  /// Returns a [Future] containing a [Response] with a [BuiltList<Category>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1SummaryGet200Response>> v1SummaryGet({
-    String? month,
+  Future<Response<BuiltList<Category>>> listCategories({
+    String? includeArchived,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1609,7 +1386,7 @@ class DefaultApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/v1/summary';
+    final _path = r'/v1/categories';
     final _options = Options(
       method: r'GET',
       headers: <String, dynamic>{...?headers},
@@ -1618,8 +1395,12 @@ class DefaultApi {
     );
 
     final _queryParameters = <String, dynamic>{
-      if (month != null)
-        r'month': encodeQueryParameter(_serializers, month, const FullType(String)),
+      if (includeArchived != null)
+        r'includeArchived': encodeQueryParameter(
+          _serializers,
+          includeArchived,
+          const FullType(String),
+        ),
     };
 
     final _response = await _dio.request<Object>(
@@ -1631,7 +1412,7 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1SummaryGet200Response? _responseData;
+    BuiltList<Category>? _responseData;
 
     try {
       final rawResponse = _response.data;
@@ -1639,8 +1420,8 @@ class DefaultApi {
           ? null
           : _serializers.deserialize(
               rawResponse,
-              specifiedType: const FullType(V1SummaryGet200Response),
-            ) as V1SummaryGet200Response;
+              specifiedType: const FullType(BuiltList, [FullType(Category)]),
+            ) as BuiltList<Category>;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1651,7 +1432,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1SummaryGet200Response>(
+    return Response<BuiltList<Category>>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -1663,11 +1444,10 @@ class DefaultApi {
     );
   }
 
-  /// v1TransactionsBatchDeletePost
-  /// Soft-deletes (restorable) the given transactions that are the caller&#39;s. Other ids are ignored without a trace.
+  /// listRecurrences
+  ///
   ///
   /// Parameters:
-  /// * [v1TransactionsBatchDeletePostRequest]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -1675,10 +1455,9 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future]
+  /// Returns a [Future] containing a [Response] with a [BuiltList<Recurrence>] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> v1TransactionsBatchDeletePost({
-    required V1TransactionsBatchDeletePostRequest v1TransactionsBatchDeletePostRequest,
+  Future<Response<BuiltList<Recurrence>>> listRecurrences({
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -1686,100 +1465,23 @@ class DefaultApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/v1/transactions/batch-delete';
+    final _path = r'/v1/recurrences';
     final _options = Options(
-      method: r'POST',
+      method: r'GET',
       headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      contentType: 'application/json',
       validateStatus: validateStatus,
     );
 
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(V1TransactionsBatchDeletePostRequest);
-      _bodyData = _serializers.serialize(
-        v1TransactionsBatchDeletePostRequest,
-        specifiedType: _type,
-      );
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(_dio.options, _path),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
     final _response = await _dio.request<Object>(
       _path,
-      data: _bodyData,
       options: _options,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
     );
 
-    return _response;
-  }
-
-  /// v1TransactionsBatchPost
-  /// Saves up to 20 transactions in one transaction: all or nothing. &#x60;Idempotency-Key&#x60; is required; a retry with the same key and body returns the first response.
-  ///
-  /// Parameters:
-  /// * [v1TransactionsBatchPostRequest]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1TransactionsBatchPost201Response] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1TransactionsBatchPost201Response>> v1TransactionsBatchPost({
-    required V1TransactionsBatchPostRequest v1TransactionsBatchPostRequest,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/transactions/batch';
-    final _options = Options(
-      method: r'POST',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(V1TransactionsBatchPostRequest);
-      _bodyData = _serializers.serialize(v1TransactionsBatchPostRequest, specifiedType: _type);
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(_dio.options, _path),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    V1TransactionsBatchPost201Response? _responseData;
+    BuiltList<Recurrence>? _responseData;
 
     try {
       final rawResponse = _response.data;
@@ -1787,8 +1489,8 @@ class DefaultApi {
           ? null
           : _serializers.deserialize(
               rawResponse,
-              specifiedType: const FullType(V1TransactionsBatchPost201Response),
-            ) as V1TransactionsBatchPost201Response;
+              specifiedType: const FullType(BuiltList, [FullType(Recurrence)]),
+            ) as BuiltList<Recurrence>;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1799,7 +1501,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1TransactionsBatchPost201Response>(
+    return Response<BuiltList<Recurrence>>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -1811,7 +1513,86 @@ class DefaultApi {
     );
   }
 
-  /// v1TransactionsGet
+  /// listTransactionSuggestions
+  ///
+  ///
+  /// Parameters:
+  /// * [q]
+  /// * [limit]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [TransactionSuggestions] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<TransactionSuggestions>> listTransactionSuggestions({
+    String? q,
+    int? limit = 8,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/transactions/suggestions';
+    final _options = Options(
+      method: r'GET',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      validateStatus: validateStatus,
+    );
+
+    final _queryParameters = <String, dynamic>{
+      if (q != null) r'q': encodeQueryParameter(_serializers, q, const FullType(String)),
+      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(int)),
+    };
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      queryParameters: _queryParameters,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    TransactionSuggestions? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(
+              rawResponse,
+              specifiedType: const FullType(TransactionSuggestions),
+            ) as TransactionSuggestions;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<TransactionSuggestions>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// listTransactions
   ///
   ///
   /// Parameters:
@@ -1827,9 +1608,9 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1TransactionsGet200Response] as data
+  /// Returns a [Future] containing a [Response] with a [TransactionPage] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1TransactionsGet200Response>> v1TransactionsGet({
+  Future<Response<TransactionPage>> listTransactions({
     String? month,
     String? category,
     String? status,
@@ -1871,16 +1652,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1TransactionsGet200Response? _responseData;
+    TransactionPage? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1TransactionsGet200Response),
-            ) as V1TransactionsGet200Response;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(TransactionPage))
+                as TransactionPage;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -1891,7 +1670,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1TransactionsGet200Response>(
+    return Response<TransactionPage>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -1903,7 +1682,7 @@ class DefaultApi {
     );
   }
 
-  /// v1TransactionsIdDelete
+  /// restoreTransaction
   ///
   ///
   /// Parameters:
@@ -1915,150 +1694,9 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future]
+  /// Returns a [Future] containing a [Response] with a [Transaction] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<void>> v1TransactionsIdDelete({
-    required String id,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/transactions/{id}'.replaceAll(
-      '{'
-      r'id'
-      '}',
-      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
-    );
-    final _options = Options(
-      method: r'DELETE',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      validateStatus: validateStatus,
-    );
-
-    final _response = await _dio.request<Object>(
-      _path,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    return _response;
-  }
-
-  /// v1TransactionsIdPatch
-  ///
-  ///
-  /// Parameters:
-  /// * [id]
-  /// * [v1TransactionsIdPatchRequest]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1TransactionsGet200ResponseItemsInner] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1TransactionsGet200ResponseItemsInner>> v1TransactionsIdPatch({
-    required String id,
-    required V1TransactionsIdPatchRequest v1TransactionsIdPatchRequest,
-    CancelToken? cancelToken,
-    Map<String, dynamic>? headers,
-    Map<String, dynamic>? extra,
-    ValidateStatus? validateStatus,
-    ProgressCallback? onSendProgress,
-    ProgressCallback? onReceiveProgress,
-  }) async {
-    final _path = r'/v1/transactions/{id}'.replaceAll(
-      '{'
-      r'id'
-      '}',
-      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
-    );
-    final _options = Options(
-      method: r'PATCH',
-      headers: <String, dynamic>{...?headers},
-      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
-      contentType: 'application/json',
-      validateStatus: validateStatus,
-    );
-
-    dynamic _bodyData;
-
-    try {
-      const _type = FullType(V1TransactionsIdPatchRequest);
-      _bodyData = _serializers.serialize(v1TransactionsIdPatchRequest, specifiedType: _type);
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _options.compose(_dio.options, _path),
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    final _response = await _dio.request<Object>(
-      _path,
-      data: _bodyData,
-      options: _options,
-      cancelToken: cancelToken,
-      onSendProgress: onSendProgress,
-      onReceiveProgress: onReceiveProgress,
-    );
-
-    V1TransactionsGet200ResponseItemsInner? _responseData;
-
-    try {
-      final rawResponse = _response.data;
-      _responseData = rawResponse == null
-          ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1TransactionsGet200ResponseItemsInner),
-            ) as V1TransactionsGet200ResponseItemsInner;
-    } catch (error, stackTrace) {
-      throw DioException(
-        requestOptions: _response.requestOptions,
-        response: _response,
-        type: DioExceptionType.unknown,
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
-
-    return Response<V1TransactionsGet200ResponseItemsInner>(
-      data: _responseData,
-      headers: _response.headers,
-      isRedirect: _response.isRedirect,
-      requestOptions: _response.requestOptions,
-      redirects: _response.redirects,
-      statusCode: _response.statusCode,
-      statusMessage: _response.statusMessage,
-      extra: _response.extra,
-    );
-  }
-
-  /// v1TransactionsIdRestorePost
-  ///
-  ///
-  /// Parameters:
-  /// * [id]
-  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
-  /// * [headers] - Can be used to add additional headers to the request
-  /// * [extras] - Can be used to add flags to the request
-  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
-  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
-  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
-  ///
-  /// Returns a [Future] containing a [Response] with a [V1TransactionsGet200ResponseItemsInner] as data
-  /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1TransactionsGet200ResponseItemsInner>> v1TransactionsIdRestorePost({
+  Future<Response<Transaction>> restoreTransaction({
     required String id,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
@@ -2088,16 +1726,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1TransactionsGet200ResponseItemsInner? _responseData;
+    Transaction? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1TransactionsGet200ResponseItemsInner),
-            ) as V1TransactionsGet200ResponseItemsInner;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Transaction))
+                as Transaction;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -2108,7 +1744,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1TransactionsGet200ResponseItemsInner>(
+    return Response<Transaction>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -2120,11 +1756,11 @@ class DefaultApi {
     );
   }
 
-  /// v1TransactionsPost
+  /// revertImport
   ///
   ///
   /// Parameters:
-  /// * [v1TransactionsPostRequest]
+  /// * [id]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2132,10 +1768,10 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1TransactionsGet200ResponseItemsInner] as data
+  /// Returns a [Future]
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1TransactionsGet200ResponseItemsInner>> v1TransactionsPost({
-    required V1TransactionsPostRequest v1TransactionsPostRequest,
+  Future<Response<void>> revertImport({
+    required String id,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2143,9 +1779,63 @@ class DefaultApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/v1/transactions';
+    final _path = r'/v1/imports/{id}'.replaceAll(
+      '{'
+      r'id'
+      '}',
+      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
+    );
     final _options = Options(
-      method: r'POST',
+      method: r'DELETE',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      validateStatus: validateStatus,
+    );
+
+    final _response = await _dio.request<Object>(
+      _path,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    return _response;
+  }
+
+  /// setCategoryBudget
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [setBudget]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Category] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Category>> setCategoryBudget({
+    required String id,
+    required SetBudget setBudget,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/categories/{id}/budget'.replaceAll(
+      '{'
+      r'id'
+      '}',
+      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
+    );
+    final _options = Options(
+      method: r'PUT',
       headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
       contentType: 'application/json',
@@ -2155,8 +1845,8 @@ class DefaultApi {
     dynamic _bodyData;
 
     try {
-      const _type = FullType(V1TransactionsPostRequest);
-      _bodyData = _serializers.serialize(v1TransactionsPostRequest, specifiedType: _type);
+      const _type = FullType(SetBudget);
+      _bodyData = _serializers.serialize(setBudget, specifiedType: _type);
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _options.compose(_dio.options, _path),
@@ -2175,16 +1865,14 @@ class DefaultApi {
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1TransactionsGet200ResponseItemsInner? _responseData;
+    Category? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1TransactionsGet200ResponseItemsInner),
-            ) as V1TransactionsGet200ResponseItemsInner;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Category))
+                as Category;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -2195,7 +1883,7 @@ class DefaultApi {
       );
     }
 
-    return Response<V1TransactionsGet200ResponseItemsInner>(
+    return Response<Category>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,
@@ -2207,12 +1895,12 @@ class DefaultApi {
     );
   }
 
-  /// v1TransactionsSuggestionsGet
+  /// updateCategory
   ///
   ///
   /// Parameters:
-  /// * [q]
-  /// * [limit]
+  /// * [id]
+  /// * [updateCategory]
   /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
   /// * [headers] - Can be used to add additional headers to the request
   /// * [extras] - Can be used to add flags to the request
@@ -2220,11 +1908,11 @@ class DefaultApi {
   /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
   /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
   ///
-  /// Returns a [Future] containing a [Response] with a [V1TransactionsSuggestionsGet200Response] as data
+  /// Returns a [Future] containing a [Response] with a [Category] as data
   /// Throws [DioException] if API call or serialization fails
-  Future<Response<V1TransactionsSuggestionsGet200Response>> v1TransactionsSuggestionsGet({
-    String? q,
-    int? limit = 8,
+  Future<Response<Category>> updateCategory({
+    required String id,
+    required UpdateCategory updateCategory,
     CancelToken? cancelToken,
     Map<String, dynamic>? headers,
     Map<String, dynamic>? extra,
@@ -2232,38 +1920,51 @@ class DefaultApi {
     ProgressCallback? onSendProgress,
     ProgressCallback? onReceiveProgress,
   }) async {
-    final _path = r'/v1/transactions/suggestions';
+    final _path = r'/v1/categories/{id}'.replaceAll(
+      '{'
+      r'id'
+      '}',
+      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
+    );
     final _options = Options(
-      method: r'GET',
+      method: r'PATCH',
       headers: <String, dynamic>{...?headers},
       extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      contentType: 'application/json',
       validateStatus: validateStatus,
     );
 
-    final _queryParameters = <String, dynamic>{
-      if (q != null) r'q': encodeQueryParameter(_serializers, q, const FullType(String)),
-      if (limit != null) r'limit': encodeQueryParameter(_serializers, limit, const FullType(int)),
-    };
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(UpdateCategory);
+      _bodyData = _serializers.serialize(updateCategory, specifiedType: _type);
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _options.compose(_dio.options, _path),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
 
     final _response = await _dio.request<Object>(
       _path,
+      data: _bodyData,
       options: _options,
-      queryParameters: _queryParameters,
       cancelToken: cancelToken,
       onSendProgress: onSendProgress,
       onReceiveProgress: onReceiveProgress,
     );
 
-    V1TransactionsSuggestionsGet200Response? _responseData;
+    Category? _responseData;
 
     try {
       final rawResponse = _response.data;
       _responseData = rawResponse == null
           ? null
-          : _serializers.deserialize(
-              rawResponse,
-              specifiedType: const FullType(V1TransactionsSuggestionsGet200Response),
-            ) as V1TransactionsSuggestionsGet200Response;
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Category))
+                as Category;
     } catch (error, stackTrace) {
       throw DioException(
         requestOptions: _response.requestOptions,
@@ -2274,7 +1975,276 @@ class DefaultApi {
       );
     }
 
-    return Response<V1TransactionsSuggestionsGet200Response>(
+    return Response<Category>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// updateMe
+  ///
+  ///
+  /// Parameters:
+  /// * [updateProfile]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Profile] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Profile>> updateMe({
+    required UpdateProfile updateProfile,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/me';
+    final _options = Options(
+      method: r'PATCH',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(UpdateProfile);
+      _bodyData = _serializers.serialize(updateProfile, specifiedType: _type);
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _options.compose(_dio.options, _path),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Profile? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Profile))
+                as Profile;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Profile>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// updateRecurrence
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [updateRecurrence]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Recurrence] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Recurrence>> updateRecurrence({
+    required String id,
+    required UpdateRecurrence updateRecurrence,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/recurrences/{id}'.replaceAll(
+      '{'
+      r'id'
+      '}',
+      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
+    );
+    final _options = Options(
+      method: r'PATCH',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(UpdateRecurrence);
+      _bodyData = _serializers.serialize(updateRecurrence, specifiedType: _type);
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _options.compose(_dio.options, _path),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Recurrence? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Recurrence))
+                as Recurrence;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Recurrence>(
+      data: _responseData,
+      headers: _response.headers,
+      isRedirect: _response.isRedirect,
+      requestOptions: _response.requestOptions,
+      redirects: _response.redirects,
+      statusCode: _response.statusCode,
+      statusMessage: _response.statusMessage,
+      extra: _response.extra,
+    );
+  }
+
+  /// updateTransaction
+  ///
+  ///
+  /// Parameters:
+  /// * [id]
+  /// * [updateTransaction]
+  /// * [cancelToken] - A [CancelToken] that can be used to cancel the operation
+  /// * [headers] - Can be used to add additional headers to the request
+  /// * [extras] - Can be used to add flags to the request
+  /// * [validateStatus] - A [ValidateStatus] callback that can be used to determine request success based on the HTTP status of the response
+  /// * [onSendProgress] - A [ProgressCallback] that can be used to get the send progress
+  /// * [onReceiveProgress] - A [ProgressCallback] that can be used to get the receive progress
+  ///
+  /// Returns a [Future] containing a [Response] with a [Transaction] as data
+  /// Throws [DioException] if API call or serialization fails
+  Future<Response<Transaction>> updateTransaction({
+    required String id,
+    required UpdateTransaction updateTransaction,
+    CancelToken? cancelToken,
+    Map<String, dynamic>? headers,
+    Map<String, dynamic>? extra,
+    ValidateStatus? validateStatus,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    final _path = r'/v1/transactions/{id}'.replaceAll(
+      '{'
+      r'id'
+      '}',
+      encodeQueryParameter(_serializers, id, const FullType(String)).toString(),
+    );
+    final _options = Options(
+      method: r'PATCH',
+      headers: <String, dynamic>{...?headers},
+      extra: <String, dynamic>{'secure': <Map<String, String>>[], ...?extra},
+      contentType: 'application/json',
+      validateStatus: validateStatus,
+    );
+
+    dynamic _bodyData;
+
+    try {
+      const _type = FullType(UpdateTransaction);
+      _bodyData = _serializers.serialize(updateTransaction, specifiedType: _type);
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _options.compose(_dio.options, _path),
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    final _response = await _dio.request<Object>(
+      _path,
+      data: _bodyData,
+      options: _options,
+      cancelToken: cancelToken,
+      onSendProgress: onSendProgress,
+      onReceiveProgress: onReceiveProgress,
+    );
+
+    Transaction? _responseData;
+
+    try {
+      final rawResponse = _response.data;
+      _responseData = rawResponse == null
+          ? null
+          : _serializers.deserialize(rawResponse, specifiedType: const FullType(Transaction))
+                as Transaction;
+    } catch (error, stackTrace) {
+      throw DioException(
+        requestOptions: _response.requestOptions,
+        response: _response,
+        type: DioExceptionType.unknown,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    return Response<Transaction>(
       data: _responseData,
       headers: _response.headers,
       isRedirect: _response.isRedirect,

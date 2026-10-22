@@ -1,5 +1,5 @@
-import { problemDto } from "@lukas/core";
 import type { ZodType } from "zod";
+import { Problem } from "./schemas.ts";
 
 export const jsonBody = <T extends ZodType>(schema: T) => ({
   content: { "application/json": { schema } },
@@ -15,6 +15,6 @@ export const problems = (...statuses: number[]) =>
   Object.fromEntries(
     statuses.map((status) => [
       status,
-      { content: { "application/problem+json": { schema: problemDto } }, description: "Problem" },
+      { content: { "application/problem+json": { schema: Problem } }, description: "Problem" },
     ]),
   );

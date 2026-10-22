@@ -1,15 +1,10 @@
 import { createRoute, z } from "@hono/zod-openapi";
 import {
-  type CreateTransaction,
-  createTransactionSchema,
-  createTransactionsBatchSchema,
-  deleteTransactionsBatchSchema,
   firstDay,
   isIsoDate,
   lastDay,
   monthSchema,
-  transactionDto,
-  updateTransactionSchema,
+  type CreateTransaction as NewTransaction,
 } from "@lukas/core";
 import { type Tx, transactions, withUser } from "@lukas/db";
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, type SQL, sql } from "@lukas/db/orm";
@@ -18,6 +13,14 @@ import { idempotent } from "../http/idempotency.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import {
+  CreateTransaction,
+  CreateTransactionsBatch,
+  DeleteTransactionsBatch,
+  idempotencyKeyHeader,
+  Transaction,
+  UpdateTransaction,
+} from "../http/schemas.ts";
 import { materializeRecurrences } from "../services/materialize.ts";
 import { currentMonth } from "../services/time.ts";
 import {
@@ -40,7 +43,13 @@ const suggestionsQuery = z.object({
   q: z.string().trim().max(100).optional(),
   limit: z.coerce.number().int().min(1).max(20).default(8),
 });
-const suggestionDto = z.object({ name: z.string(), categoryId: z.uuid() });
+const TransactionSuggestion = z
+  .object({ name: z.string(), categoryId: z.uuid() })
+  .openapi("TransactionSuggestion");
+const TransactionPage = z
+  .object({ items: z.array(Transaction), nextCursor: z.string().nullable() })
+  .openapi("TransactionPage");
+const TransactionList = z.object({ items: z.array(Transaction) }).openapi("TransactionList");
 
 const encodeCursor = (row: TransactionRow) =>
   Buffer.from(`${row.date}|${row.id}`).toString("base64url");
@@ -70,12 +79,10 @@ export function transactionRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/transactions",
+      operationId: "listTransactions",
       request: { query: listQuery },
       responses: {
-        200: jsonResponse(
-          z.object({ items: z.array(transactionDto), nextCursor: z.string().nullable() }),
-          "A page of transactions, newest first",
-        ),
+        200: jsonResponse(TransactionPage, "A page of transactions, newest first"),
         ...problems(422),
       },
     }),
@@ -121,10 +128,11 @@ export function transactionRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/transactions/suggestions",
+      operationId: "listTransactionSuggestions",
       request: { query: suggestionsQuery },
       responses: {
         200: jsonResponse(
-          z.object({ items: z.array(suggestionDto) }),
+          z.object({ items: z.array(TransactionSuggestion) }).openapi("TransactionSuggestions"),
           "Transaction names already used, with the category they usually go in, most used first (ties: most recent)",
         ),
         ...problems(422),
@@ -184,7 +192,7 @@ export function transactionRoutes(deps: AppDeps) {
   app.use("/v1/transactions/batch", idempotent(deps.db, { required: true }));
 
   /** The one insert path for single and batch create: category check, account lock, currency. */
-  async function insertTransactions(tx: Tx, userId: string, inputs: CreateTransaction[]) {
+  async function insertTransactions(tx: Tx, userId: string, inputs: NewTransaction[]) {
     for (const categoryId of new Set(inputs.map((i) => i.categoryId))) {
       await requireActiveCategory(tx, categoryId);
     }
@@ -202,8 +210,12 @@ export function transactionRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/transactions",
-      request: { body: jsonBody(createTransactionSchema) },
-      responses: { 201: jsonResponse(transactionDto, "Created"), ...problems(422) },
+      operationId: "createTransaction",
+      request: {
+        headers: idempotencyKeyHeader({ required: false }),
+        body: jsonBody(CreateTransaction),
+      },
+      responses: { 201: jsonResponse(Transaction, "Created"), ...problems(422) },
     }),
     async (c) => {
       const input = c.req.valid("json");
@@ -219,14 +231,15 @@ export function transactionRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/transactions/batch",
+      operationId: "createTransactionsBatch",
       description:
         "Saves up to 20 transactions in one transaction: all or nothing. `Idempotency-Key` is required; a retry with the same key and body returns the first response.",
-      request: { body: jsonBody(createTransactionsBatchSchema) },
+      request: {
+        headers: idempotencyKeyHeader({ required: true }),
+        body: jsonBody(CreateTransactionsBatch),
+      },
       responses: {
-        201: jsonResponse(
-          z.object({ items: z.array(transactionDto) }),
-          "Created, in request order",
-        ),
+        201: jsonResponse(TransactionList, "Created, in request order"),
         ...problems(400, 422),
       },
     }),
@@ -242,9 +255,10 @@ export function transactionRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/transactions/batch-delete",
+      operationId: "deleteTransactionsBatch",
       description:
         "Soft-deletes (restorable) the given transactions that are the caller's. Other ids are ignored without a trace.",
-      request: { body: jsonBody(deleteTransactionsBatchSchema) },
+      request: { body: jsonBody(DeleteTransactionsBatch) },
       responses: { 204: { description: "Deleted (restorable)" }, ...problems(422) },
     }),
     async (c) => {
@@ -263,8 +277,9 @@ export function transactionRoutes(deps: AppDeps) {
     createRoute({
       method: "patch",
       path: "/v1/transactions/{id}",
-      request: { params: idParam, body: jsonBody(updateTransactionSchema) },
-      responses: { 200: jsonResponse(transactionDto, "Updated"), ...problems(404, 422) },
+      operationId: "updateTransaction",
+      request: { params: idParam, body: jsonBody(UpdateTransaction) },
+      responses: { 200: jsonResponse(Transaction, "Updated"), ...problems(404, 422) },
     }),
     async (c) => {
       const { id } = c.req.valid("param");
@@ -287,6 +302,7 @@ export function transactionRoutes(deps: AppDeps) {
     createRoute({
       method: "delete",
       path: "/v1/transactions/{id}",
+      operationId: "deleteTransaction",
       request: { params: idParam },
       responses: { 204: { description: "Deleted (restorable)" }, ...problems(404) },
     }),
@@ -304,8 +320,9 @@ export function transactionRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/transactions/{id}/restore",
+      operationId: "restoreTransaction",
       request: { params: idParam },
-      responses: { 200: jsonResponse(transactionDto, "Restored"), ...problems(404) },
+      responses: { 200: jsonResponse(Transaction, "Restored"), ...problems(404) },
     }),
     async (c) => {
       const { id } = c.req.valid("param");

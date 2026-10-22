@@ -8,128 +8,115 @@ part of 'serializers.dart';
 
 Serializers _$serializers =
     (Serializers().toBuilder()
-          ..add(V1CategoriesGet200ResponseInner.serializer)
-          ..add(V1CategoriesGet200ResponseInnerKindEnum.serializer)
-          ..add(V1CategoriesIdBudgetPutRequest.serializer)
-          ..add(V1CategoriesIdPatchRequest.serializer)
-          ..add(V1CategoriesIdPatchRequestKindEnum.serializer)
-          ..add(V1CategoriesPostRequest.serializer)
-          ..add(V1CategoriesPostRequestKindEnum.serializer)
-          ..add(V1ImportsIdConfirmPostRequest.serializer)
-          ..add(V1ImportsPost201Response.serializer)
-          ..add(V1ImportsPost201ResponseStats.serializer)
-          ..add(V1ImportsPost201ResponseStatsAverageMonthlySpendingInner.serializer)
-          ..add(V1ImportsPost201ResponseStatsAverageWindow.serializer)
-          ..add(V1ImportsPost201ResponseStatsRejectedInner.serializer)
-          ..add(V1ImportsPost201ResponseStatusEnum.serializer)
-          ..add(V1MeClaimEmailSendPostRequest.serializer)
-          ..add(V1MeClaimEmailVerifyPostRequest.serializer)
-          ..add(V1MeGet200Response.serializer)
-          ..add(V1MePatch409Response.serializer)
-          ..add(V1MePatch409ResponseErrorsInner.serializer)
-          ..add(V1MePatchRequest.serializer)
-          ..add(V1MePatchRequestCurrencyEnum.serializer)
-          ..add(V1MePatchRequestLocaleEnum.serializer)
-          ..add(V1MePatchRequestOnboardingCompletedEnum.serializer)
-          ..add(V1RecurrencesGet200ResponseInner.serializer)
-          ..add(V1RecurrencesGet200ResponseInnerFrequencyEnum.serializer)
-          ..add(V1RecurrencesIdPatchRequest.serializer)
-          ..add(V1RecurrencesIdPatchRequestFrequencyEnum.serializer)
-          ..add(V1RecurrencesPostRequest.serializer)
-          ..add(V1RecurrencesPostRequestFrequencyEnum.serializer)
-          ..add(V1ReportsByCategoryGet200Response.serializer)
-          ..add(V1ReportsByCategoryGet200ResponseItemsInner.serializer)
-          ..add(V1ReportsCostOfLivingGet200Response.serializer)
-          ..add(V1ReportsCostOfLivingGet200ResponseCategoriesInner.serializer)
-          ..add(V1ReportsCostOfLivingGet200ResponseCategoriesInnerTypeEnum.serializer)
-          ..add(V1ReportsTrendGet200Response.serializer)
-          ..add(V1ReportsTrendGet200ResponseMonthsInner.serializer)
-          ..add(V1SummaryGet200Response.serializer)
-          ..add(V1SummaryGet200ResponseCategoriesInner.serializer)
-          ..add(V1SummaryGet200ResponseCategoriesInnerStateEnum.serializer)
-          ..add(V1TransactionsBatchDeletePostRequest.serializer)
-          ..add(V1TransactionsBatchPost201Response.serializer)
-          ..add(V1TransactionsBatchPostRequest.serializer)
-          ..add(V1TransactionsGet200Response.serializer)
-          ..add(V1TransactionsGet200ResponseItemsInner.serializer)
-          ..add(V1TransactionsGet200ResponseItemsInnerSource_Enum.serializer)
-          ..add(V1TransactionsGet200ResponseItemsInnerStatusEnum.serializer)
-          ..add(V1TransactionsIdPatchRequest.serializer)
-          ..add(V1TransactionsIdPatchRequestStatusEnum.serializer)
-          ..add(V1TransactionsPostRequest.serializer)
-          ..add(V1TransactionsPostRequestSource_Enum.serializer)
-          ..add(V1TransactionsPostRequestStatusEnum.serializer)
-          ..add(V1TransactionsSuggestionsGet200Response.serializer)
-          ..add(V1TransactionsSuggestionsGet200ResponseItemsInner.serializer)
+          ..add(Category.serializer)
+          ..add(CategoryKindEnum.serializer)
+          ..add(CategoryReport.serializer)
+          ..add(CategoryReportItemsInner.serializer)
+          ..add(ClaimEmailSend.serializer)
+          ..add(ClaimEmailVerify.serializer)
+          ..add(ConfirmImport.serializer)
+          ..add(CostOfLivingReport.serializer)
+          ..add(CostOfLivingReportCategoriesInner.serializer)
+          ..add(CostOfLivingReportCategoriesInnerTypeEnum.serializer)
+          ..add(CreateCategory.serializer)
+          ..add(CreateCategoryKindEnum.serializer)
+          ..add(CreateRecurrence.serializer)
+          ..add(CreateRecurrenceFrequencyEnum.serializer)
+          ..add(CreateTransaction.serializer)
+          ..add(CreateTransactionSource_Enum.serializer)
+          ..add(CreateTransactionStatusEnum.serializer)
+          ..add(CreateTransactionsBatch.serializer)
+          ..add(CreateTransactionsBatchItemsInner.serializer)
+          ..add(CreateTransactionsBatchItemsInnerSource_Enum.serializer)
+          ..add(CreateTransactionsBatchItemsInnerStatusEnum.serializer)
+          ..add(DeleteTransactionsBatch.serializer)
+          ..add(FileImport.serializer)
+          ..add(FileImportStatusEnum.serializer)
+          ..add(ImportStats.serializer)
+          ..add(ImportStatsAverageMonthlySpendingInner.serializer)
+          ..add(ImportStatsAverageWindow.serializer)
+          ..add(ImportStatsRejectedInner.serializer)
+          ..add(Problem.serializer)
+          ..add(ProblemErrorsInner.serializer)
+          ..add(Profile.serializer)
+          ..add(Recurrence.serializer)
+          ..add(RecurrenceFrequencyEnum.serializer)
+          ..add(SetBudget.serializer)
+          ..add(Summary.serializer)
+          ..add(SummaryCategoriesInner.serializer)
+          ..add(SummaryCategoriesInnerStateEnum.serializer)
+          ..add(Transaction.serializer)
+          ..add(TransactionList.serializer)
+          ..add(TransactionPage.serializer)
+          ..add(TransactionSource_Enum.serializer)
+          ..add(TransactionStatusEnum.serializer)
+          ..add(TransactionSuggestion.serializer)
+          ..add(TransactionSuggestions.serializer)
+          ..add(TrendReport.serializer)
+          ..add(TrendReportMonthsInner.serializer)
+          ..add(UpdateCategory.serializer)
+          ..add(UpdateCategoryKindEnum.serializer)
+          ..add(UpdateProfile.serializer)
+          ..add(UpdateProfileCurrencyEnum.serializer)
+          ..add(UpdateProfileLocaleEnum.serializer)
+          ..add(UpdateProfileOnboardingCompletedEnum.serializer)
+          ..add(UpdateRecurrence.serializer)
+          ..add(UpdateRecurrenceFrequencyEnum.serializer)
+          ..add(UpdateTransaction.serializer)
+          ..add(UpdateTransactionStatusEnum.serializer)
           ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(String)]),
-            () => ListBuilder<String>(),
+            const FullType(BuiltList, const [const FullType(CategoryReportItemsInner)]),
+            () => ListBuilder<CategoryReportItemsInner>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(CostOfLivingReportCategoriesInner)]),
+            () => ListBuilder<CostOfLivingReportCategoriesInner>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(CreateTransactionsBatchItemsInner)]),
+            () => ListBuilder<CreateTransactionsBatchItemsInner>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(ProblemErrorsInner)]),
+            () => ListBuilder<ProblemErrorsInner>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),
             () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(V1ImportsPost201ResponseStatsRejectedInner),
-            ]),
-            () => ListBuilder<V1ImportsPost201ResponseStatsRejectedInner>(),
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(ImportStatsRejectedInner)]),
+            () => ListBuilder<ImportStatsRejectedInner>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [
-              const FullType(V1ImportsPost201ResponseStatsAverageMonthlySpendingInner),
+              const FullType(ImportStatsAverageMonthlySpendingInner),
             ]),
-            () => ListBuilder<V1ImportsPost201ResponseStatsAverageMonthlySpendingInner>(),
+            () => ListBuilder<ImportStatsAverageMonthlySpendingInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(V1MePatch409ResponseErrorsInner)]),
-            () => ListBuilder<V1MePatch409ResponseErrorsInner>(),
+            const FullType(BuiltList, const [const FullType(SummaryCategoriesInner)]),
+            () => ListBuilder<SummaryCategoriesInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(V1ReportsByCategoryGet200ResponseItemsInner),
-            ]),
-            () => ListBuilder<V1ReportsByCategoryGet200ResponseItemsInner>(),
+            const FullType(BuiltList, const [const FullType(Transaction)]),
+            () => ListBuilder<Transaction>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(V1ReportsCostOfLivingGet200ResponseCategoriesInner),
-            ]),
-            () => ListBuilder<V1ReportsCostOfLivingGet200ResponseCategoriesInner>(),
+            const FullType(BuiltList, const [const FullType(Transaction)]),
+            () => ListBuilder<Transaction>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(V1ReportsTrendGet200ResponseMonthsInner),
-            ]),
-            () => ListBuilder<V1ReportsTrendGet200ResponseMonthsInner>(),
+            const FullType(BuiltList, const [const FullType(TransactionSuggestion)]),
+            () => ListBuilder<TransactionSuggestion>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(V1SummaryGet200ResponseCategoriesInner),
-            ]),
-            () => ListBuilder<V1SummaryGet200ResponseCategoriesInner>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(V1TransactionsGet200ResponseItemsInner),
-            ]),
-            () => ListBuilder<V1TransactionsGet200ResponseItemsInner>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(V1TransactionsGet200ResponseItemsInner),
-            ]),
-            () => ListBuilder<V1TransactionsGet200ResponseItemsInner>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(V1TransactionsPostRequest)]),
-            () => ListBuilder<V1TransactionsPostRequest>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, const [
-              const FullType(V1TransactionsSuggestionsGet200ResponseItemsInner),
-            ]),
-            () => ListBuilder<V1TransactionsSuggestionsGet200ResponseItemsInner>(),
+            const FullType(BuiltList, const [const FullType(TrendReportMonthsInner)]),
+            () => ListBuilder<TrendReportMonthsInner>(),
           ))
         .build();
 

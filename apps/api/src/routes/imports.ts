@@ -43,44 +43,48 @@ const idParam = z.object({ id: z.uuid() });
 type ImportRow = typeof imports.$inferSelect;
 type PayloadRow = BudgeRow & { hash: string };
 
-const statsSchema = z.object({
-  transactions: z.number().int(),
-  duplicates: z.number().int(),
-  newCategories: z.array(z.string()),
-  rejected: z.array(z.object({ line: z.number().int(), reason: z.string() })),
-  from: z.string().nullable(),
-  to: z.string().nullable(),
-  /** Per expense category, the average over the last 3 complete months (the running one excluded). */
-  averageMonthlySpending: z.array(z.object({ category: z.string(), amount: z.number().int() })),
-  /**
-   * The file's currency (what most of its rows use), even when it is not the account's: those
-   * rows are rejected as `currency_mismatch`, and a client can switch an empty account to this
-   * currency and read the file again. Null for a file without rows (and for older previews).
-   */
-  currency: z.string().nullable(),
-  /**
-   * The months `averageMonthlySpending` covers: up to the last 3 complete ones, starting no earlier
-   * than the file. Null when no complete month is left (and for older previews).
-   */
-  averageWindow: z
-    .object({ from: z.string(), to: z.string(), months: z.number().int() })
-    .nullable(),
-  /**
-   * The account has no transactions and the file is in another supported currency: the preview
-   * already counts the file's rows in that currency, and confirming with `adoptFileCurrency`
-   * switches the account to it (in the same transaction as the inserts).
-   */
-  adoptsCurrency: z.boolean(),
-  /** Adopting the currency removes the account's budgets (their amounts are in the old one). */
-  dropsBudgets: z.boolean(),
-  inserted: z.number().int().optional(),
-});
+const statsSchema = z
+  .object({
+    transactions: z.number().int(),
+    duplicates: z.number().int(),
+    newCategories: z.array(z.string()),
+    rejected: z.array(z.object({ line: z.number().int(), reason: z.string() })),
+    from: z.string().nullable(),
+    to: z.string().nullable(),
+    /** Per expense category, the average over the last 3 complete months (the running one excluded). */
+    averageMonthlySpending: z.array(z.object({ category: z.string(), amount: z.number().int() })),
+    /**
+     * The file's currency (what most of its rows use), even when it is not the account's: those
+     * rows are rejected as `currency_mismatch`, and a client can switch an empty account to this
+     * currency and read the file again. Null for a file without rows (and for older previews).
+     */
+    currency: z.string().nullable(),
+    /**
+     * The months `averageMonthlySpending` covers: up to the last 3 complete ones, starting no earlier
+     * than the file. Null when no complete month is left (and for older previews).
+     */
+    averageWindow: z
+      .object({ from: z.string(), to: z.string(), months: z.number().int() })
+      .nullable(),
+    /**
+     * The account has no transactions and the file is in another supported currency: the preview
+     * already counts the file's rows in that currency, and confirming with `adoptFileCurrency`
+     * switches the account to it (in the same transaction as the inserts).
+     */
+    adoptsCurrency: z.boolean(),
+    /** Adopting the currency removes the account's budgets (their amounts are in the old one). */
+    dropsBudgets: z.boolean(),
+    inserted: z.number().int().optional(),
+  })
+  .openapi("ImportStats");
 type ImportStats = z.infer<typeof statsSchema>;
-const importDto = z.object({
-  id: z.uuid(),
-  status: z.enum(["preview", "confirmed", "reverted"]),
-  stats: statsSchema,
-});
+const importDto = z
+  .object({
+    id: z.uuid(),
+    status: z.enum(["preview", "confirmed", "reverted"]),
+    stats: statsSchema,
+  })
+  .openapi("FileImport");
 const toDto = (row: ImportRow) => {
   type Optional = "currency" | "averageWindow" | "adoptsCurrency" | "dropsBudgets";
   // Older previews were stored before these fields existed.
@@ -157,6 +161,7 @@ export function importRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/imports",
+      operationId: "createImport",
       request: {
         body: {
           content: {
@@ -260,18 +265,21 @@ export function importRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/imports/{id}/confirm",
+      operationId: "confirmImport",
       request: {
         params: idParam,
         body: {
           content: {
             "application/json": {
-              schema: z.object({
-                /**
-                 * Switch the (still empty) account to the file's currency before inserting, as
-                 * the preview's `adoptsCurrency` said. Without it, a currency mismatch is a 409.
-                 */
-                adoptFileCurrency: z.boolean().optional(),
-              }),
+              schema: z
+                .object({
+                  /**
+                   * Switch the (still empty) account to the file's currency before inserting, as
+                   * the preview's `adoptsCurrency` said. Without it, a currency mismatch is a 409.
+                   */
+                  adoptFileCurrency: z.boolean().optional(),
+                })
+                .openapi("ConfirmImport"),
             },
           },
           required: false,
@@ -404,6 +412,7 @@ export function importRoutes(deps: AppDeps) {
     createRoute({
       method: "delete",
       path: "/v1/imports/{id}",
+      operationId: "revertImport",
       request: { params: idParam },
       responses: { 204: { description: "Reverted" }, ...problems(404) },
     }),

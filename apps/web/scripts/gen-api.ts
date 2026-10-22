@@ -100,7 +100,9 @@ if (documentFlag >= 0) {
   writeFileSync(target, `${JSON.stringify(document, null, 2)}\n`);
   console.log(`Wrote ${target}`);
 } else {
-  const ast = await openapiTS(document);
+  // A request field with a default is optional to send. The named request schemas live in
+  // `components`, where openapi-typescript would otherwise make such fields required.
+  const ast = await openapiTS(document, { defaultNonNullable: false });
   writeFileSync(OUTPUT, HEADER + astToString(ast));
   console.log(`Wrote ${OUTPUT}`);
 }

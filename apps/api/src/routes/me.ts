@@ -1,5 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { formatMinorAsDecimal, updateProfileSchema } from "@lukas/core";
+import { formatMinorAsDecimal } from "@lukas/core";
 import {
   accounts,
   categories,
@@ -25,25 +25,30 @@ import { isUniqueViolation } from "../http/db-errors.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { UpdateProfile } from "../http/schemas.ts";
 import { userToday } from "../services/time.ts";
 import { defaultAccount, toTransactionDto } from "../services/transactions.ts";
 
-const profileDto = z.object({
-  id: z.string(),
-  email: z.string(),
-  timezone: z.string(),
-  locale: z.string(),
-  onboardingCompletedAt: z.string().nullable(),
-  currency: z.string(),
-  /** A guest: signed up on the app without an email (its `email` is a placeholder until claimed). */
-  isAnonymous: z.boolean(),
-});
+const profileDto = z
+  .object({
+    id: z.string(),
+    email: z.string(),
+    timezone: z.string(),
+    locale: z.string(),
+    onboardingCompletedAt: z.string().nullable(),
+    currency: z.string(),
+    /** A guest: signed up on the app without an email (its `email` is a placeholder until claimed). */
+    isAnonymous: z.boolean(),
+  })
+  .openapi("Profile");
 
 /** An email as sign-in reads it: trimmed and lowercased. */
 const emailField = z.string().trim().toLowerCase().pipe(z.email().max(254));
 
-const claimSendBody = z.object({ email: emailField });
-const claimVerifyBody = z.object({ email: emailField, code: z.string().trim().min(1).max(32) });
+const claimSendBody = z.object({ email: emailField }).openapi("ClaimEmailSend");
+const claimVerifyBody = z
+  .object({ email: emailField, code: z.string().trim().min(1).max(32) })
+  .openapi("ClaimEmailVerify");
 
 const notAGuest = () => new ApiError(409, "not_a_guest", "This account already has an email");
 const emailTaken = () => new ApiError(409, "email_taken", "That email already has an account");
@@ -147,6 +152,7 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/me",
+      operationId: "getMe",
       responses: { 200: jsonResponse(profileDto, "Profile") },
     }),
     async (c) => c.json(await profile(deps, c.get("userId")), 200),
@@ -156,7 +162,8 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "patch",
       path: "/v1/me",
-      request: { body: jsonBody(updateProfileSchema) },
+      operationId: "updateMe",
+      request: { body: jsonBody(UpdateProfile) },
       responses: { 200: jsonResponse(profileDto, "Updated profile"), ...problems(409, 422) },
     }),
     async (c) => {
@@ -186,6 +193,7 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/me/claim-email/send",
+      operationId: "claimEmailSend",
       request: { body: jsonBody(claimSendBody) },
       responses: {
         204: { description: "A code is on its way to the email" },
@@ -213,6 +221,7 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/me/claim-email/verify",
+      operationId: "claimEmailVerify",
       request: { body: jsonBody(claimVerifyBody) },
       responses: {
         200: jsonResponse(profileDto, "The profile, no longer a guest"),
@@ -251,6 +260,7 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/me/export",
+      operationId: "exportMe",
       request: { query: z.object({ format: z.enum(["json", "csv"]).default("json") }) },
       responses: {
         200: {
@@ -318,6 +328,7 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "delete",
       path: "/v1/me",
+      operationId: "deleteMe",
       responses: { 204: { description: "Account and all data permanently deleted" } },
     }),
     async (c) => {

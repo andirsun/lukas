@@ -14,142 +14,138 @@ import 'package:built_value/iso_8601_date_time_serializer.dart';
 import 'package:lukitas/api/gen/src/date_serializer.dart';
 import 'package:lukitas/api/gen/src/model/date.dart';
 
-import 'package:lukitas/api/gen/src/model/v1_categories_get200_response_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_categories_id_budget_put_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_categories_id_patch_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_categories_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_imports_id_confirm_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_imports_post201_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_imports_post201_response_stats.dart';
-import 'package:lukitas/api/gen/src/model/v1_imports_post201_response_stats_average_monthly_spending_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_imports_post201_response_stats_average_window.dart';
-import 'package:lukitas/api/gen/src/model/v1_imports_post201_response_stats_rejected_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_claim_email_send_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_claim_email_verify_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_patch409_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_patch409_response_errors_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_me_patch_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_recurrences_get200_response_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_recurrences_id_patch_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_recurrences_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_by_category_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_by_category_get200_response_items_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_cost_of_living_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_cost_of_living_get200_response_categories_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_trend_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_reports_trend_get200_response_months_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_summary_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_summary_get200_response_categories_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_batch_delete_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_batch_post201_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_batch_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_get200_response_items_inner.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_id_patch_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_post_request.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_suggestions_get200_response.dart';
-import 'package:lukitas/api/gen/src/model/v1_transactions_suggestions_get200_response_items_inner.dart';
+import 'package:lukitas/api/gen/src/model/category.dart';
+import 'package:lukitas/api/gen/src/model/category_report.dart';
+import 'package:lukitas/api/gen/src/model/category_report_items_inner.dart';
+import 'package:lukitas/api/gen/src/model/claim_email_send.dart';
+import 'package:lukitas/api/gen/src/model/claim_email_verify.dart';
+import 'package:lukitas/api/gen/src/model/confirm_import.dart';
+import 'package:lukitas/api/gen/src/model/cost_of_living_report.dart';
+import 'package:lukitas/api/gen/src/model/cost_of_living_report_categories_inner.dart';
+import 'package:lukitas/api/gen/src/model/create_category.dart';
+import 'package:lukitas/api/gen/src/model/create_recurrence.dart';
+import 'package:lukitas/api/gen/src/model/create_transaction.dart';
+import 'package:lukitas/api/gen/src/model/create_transactions_batch.dart';
+import 'package:lukitas/api/gen/src/model/create_transactions_batch_items_inner.dart';
+import 'package:lukitas/api/gen/src/model/delete_transactions_batch.dart';
+import 'package:lukitas/api/gen/src/model/file_import.dart';
+import 'package:lukitas/api/gen/src/model/import_stats.dart';
+import 'package:lukitas/api/gen/src/model/import_stats_average_monthly_spending_inner.dart';
+import 'package:lukitas/api/gen/src/model/import_stats_average_window.dart';
+import 'package:lukitas/api/gen/src/model/import_stats_rejected_inner.dart';
+import 'package:lukitas/api/gen/src/model/problem.dart';
+import 'package:lukitas/api/gen/src/model/problem_errors_inner.dart';
+import 'package:lukitas/api/gen/src/model/profile.dart';
+import 'package:lukitas/api/gen/src/model/recurrence.dart';
+import 'package:lukitas/api/gen/src/model/set_budget.dart';
+import 'package:lukitas/api/gen/src/model/summary.dart';
+import 'package:lukitas/api/gen/src/model/summary_categories_inner.dart';
+import 'package:lukitas/api/gen/src/model/transaction.dart';
+import 'package:lukitas/api/gen/src/model/transaction_list.dart';
+import 'package:lukitas/api/gen/src/model/transaction_page.dart';
+import 'package:lukitas/api/gen/src/model/transaction_suggestion.dart';
+import 'package:lukitas/api/gen/src/model/transaction_suggestions.dart';
+import 'package:lukitas/api/gen/src/model/trend_report.dart';
+import 'package:lukitas/api/gen/src/model/trend_report_months_inner.dart';
+import 'package:lukitas/api/gen/src/model/update_category.dart';
+import 'package:lukitas/api/gen/src/model/update_profile.dart';
+import 'package:lukitas/api/gen/src/model/update_recurrence.dart';
+import 'package:lukitas/api/gen/src/model/update_transaction.dart';
 
 part 'serializers.g.dart';
 
 @SerializersFor([
-  V1CategoriesGet200ResponseInner,
-  V1CategoriesIdBudgetPutRequest,
-  V1CategoriesIdPatchRequest,
-  V1CategoriesPostRequest,
-  V1ImportsIdConfirmPostRequest,
-  V1ImportsPost201Response,
-  V1ImportsPost201ResponseStats,
-  V1ImportsPost201ResponseStatsAverageMonthlySpendingInner,
-  V1ImportsPost201ResponseStatsAverageWindow,
-  V1ImportsPost201ResponseStatsRejectedInner,
-  V1MeClaimEmailSendPostRequest,
-  V1MeClaimEmailVerifyPostRequest,
-  V1MeGet200Response,
-  V1MePatch409Response,
-  V1MePatch409ResponseErrorsInner,
-  V1MePatchRequest,
-  V1RecurrencesGet200ResponseInner,
-  V1RecurrencesIdPatchRequest,
-  V1RecurrencesPostRequest,
-  V1ReportsByCategoryGet200Response,
-  V1ReportsByCategoryGet200ResponseItemsInner,
-  V1ReportsCostOfLivingGet200Response,
-  V1ReportsCostOfLivingGet200ResponseCategoriesInner,
-  V1ReportsTrendGet200Response,
-  V1ReportsTrendGet200ResponseMonthsInner,
-  V1SummaryGet200Response,
-  V1SummaryGet200ResponseCategoriesInner,
-  V1TransactionsBatchDeletePostRequest,
-  V1TransactionsBatchPost201Response,
-  V1TransactionsBatchPostRequest,
-  V1TransactionsGet200Response,
-  V1TransactionsGet200ResponseItemsInner,
-  V1TransactionsIdPatchRequest,
-  V1TransactionsPostRequest,
-  V1TransactionsSuggestionsGet200Response,
-  V1TransactionsSuggestionsGet200ResponseItemsInner,
+  Category,
+  CategoryReport,
+  CategoryReportItemsInner,
+  ClaimEmailSend,
+  ClaimEmailVerify,
+  ConfirmImport,
+  CostOfLivingReport,
+  CostOfLivingReportCategoriesInner,
+  CreateCategory,
+  CreateRecurrence,
+  CreateTransaction,
+  CreateTransactionsBatch,
+  CreateTransactionsBatchItemsInner,
+  DeleteTransactionsBatch,
+  FileImport,
+  ImportStats,
+  ImportStatsAverageMonthlySpendingInner,
+  ImportStatsAverageWindow,
+  ImportStatsRejectedInner,
+  Problem,
+  ProblemErrorsInner,
+  Profile,
+  Recurrence,
+  SetBudget,
+  Summary,
+  SummaryCategoriesInner,
+  Transaction,
+  TransactionList,
+  TransactionPage,
+  TransactionSuggestion,
+  TransactionSuggestions,
+  TrendReport,
+  TrendReportMonthsInner,
+  UpdateCategory,
+  UpdateProfile,
+  UpdateRecurrence,
+  UpdateTransaction,
 ])
 Serializers serializers =
     (_$serializers.toBuilder()
           ..addBuilderFactory(
-            const FullType(BuiltList, [
-              FullType(V1TransactionsSuggestionsGet200ResponseItemsInner),
-            ]),
-            () => ListBuilder<V1TransactionsSuggestionsGet200ResponseItemsInner>(),
+            const FullType(BuiltList, [FullType(CategoryReportItemsInner)]),
+            () => ListBuilder<CategoryReportItemsInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [
-              FullType(V1ImportsPost201ResponseStatsAverageMonthlySpendingInner),
-            ]),
-            () => ListBuilder<V1ImportsPost201ResponseStatsAverageMonthlySpendingInner>(),
+            const FullType(BuiltList, [FullType(TrendReportMonthsInner)]),
+            () => ListBuilder<TrendReportMonthsInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1RecurrencesGet200ResponseInner)]),
-            () => ListBuilder<V1RecurrencesGet200ResponseInner>(),
+            const FullType(BuiltList, [FullType(Recurrence)]),
+            () => ListBuilder<Recurrence>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1ImportsPost201ResponseStatsRejectedInner)]),
-            () => ListBuilder<V1ImportsPost201ResponseStatsRejectedInner>(),
+            const FullType(BuiltList, [FullType(ProblemErrorsInner)]),
+            () => ListBuilder<ProblemErrorsInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1TransactionsGet200ResponseItemsInner)]),
-            () => ListBuilder<V1TransactionsGet200ResponseItemsInner>(),
+            const FullType(BuiltList, [FullType(Category)]),
+            () => ListBuilder<Category>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1TransactionsPostRequest)]),
-            () => ListBuilder<V1TransactionsPostRequest>(),
+            const FullType(BuiltList, [FullType(Transaction)]),
+            () => ListBuilder<Transaction>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1ReportsTrendGet200ResponseMonthsInner)]),
-            () => ListBuilder<V1ReportsTrendGet200ResponseMonthsInner>(),
+            const FullType(BuiltList, [FullType(TransactionSuggestion)]),
+            () => ListBuilder<TransactionSuggestion>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [
-              FullType(V1ReportsCostOfLivingGet200ResponseCategoriesInner),
-            ]),
-            () => ListBuilder<V1ReportsCostOfLivingGet200ResponseCategoriesInner>(),
+            const FullType(BuiltList, [FullType(CostOfLivingReportCategoriesInner)]),
+            () => ListBuilder<CostOfLivingReportCategoriesInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1SummaryGet200ResponseCategoriesInner)]),
-            () => ListBuilder<V1SummaryGet200ResponseCategoriesInner>(),
+            const FullType(BuiltList, [FullType(CreateTransactionsBatchItemsInner)]),
+            () => ListBuilder<CreateTransactionsBatchItemsInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1MePatch409ResponseErrorsInner)]),
-            () => ListBuilder<V1MePatch409ResponseErrorsInner>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1ReportsByCategoryGet200ResponseItemsInner)]),
-            () => ListBuilder<V1ReportsByCategoryGet200ResponseItemsInner>(),
-          )
-          ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(V1CategoriesGet200ResponseInner)]),
-            () => ListBuilder<V1CategoriesGet200ResponseInner>(),
+            const FullType(BuiltList, [FullType(SummaryCategoriesInner)]),
+            () => ListBuilder<SummaryCategoriesInner>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, [FullType(String)]),
             () => ListBuilder<String>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, [FullType(ImportStatsRejectedInner)]),
+            () => ListBuilder<ImportStatsRejectedInner>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, [FullType(ImportStatsAverageMonthlySpendingInner)]),
+            () => ListBuilder<ImportStatsAverageMonthlySpendingInner>(),
           )
           ..add(const OneOfSerializer())
           ..add(const AnyOfSerializer())

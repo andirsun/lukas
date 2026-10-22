@@ -11,134 +11,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Profile */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            timezone: string;
-                            locale: string;
-                            onboardingCompletedAt: string | null;
-                            currency: string;
-                            isAnonymous: boolean;
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["getMe"];
         put?: never;
         post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Account and all data permanently deleted */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["deleteMe"];
         options?: never;
         head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        timezone?: string;
-                        /** @enum {string} */
-                        locale?: "es" | "en";
-                        /** @enum {string} */
-                        currency?: "COP" | "USD" | "EUR";
-                        /** @enum {boolean} */
-                        onboardingCompleted?: true;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated profile */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            timezone: string;
-                            locale: string;
-                            onboardingCompletedAt: string | null;
-                            currency: string;
-                            isAnonymous: boolean;
-                        };
-                    };
-                };
-                /** @description Problem */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        patch: operations["updateMe"];
         trace?: never;
     };
     "/v1/me/claim-email/send": {
@@ -150,106 +29,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        email: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description A code is on its way to the email */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Problem */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["claimEmailSend"];
         delete?: never;
         options?: never;
         head?: never;
@@ -265,117 +45,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        email: string;
-                        code: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description The profile, no longer a guest */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            id: string;
-                            email: string;
-                            timezone: string;
-                            locale: string;
-                            onboardingCompletedAt: string | null;
-                            currency: string;
-                            isAnonymous: boolean;
-                        };
-                    };
-                };
-                /** @description Problem */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["claimEmailVerify"];
         delete?: never;
         options?: never;
         head?: never;
@@ -389,29 +59,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    format?: "json" | "csv";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description All of the user's data (JSON) or their transactions (CSV) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": unknown;
-                        "text/csv": string;
-                    };
-                };
-            };
-        };
+        get: operations["exportMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -427,120 +75,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    includeArchived?: "true" | "false";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Categories */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            /** @enum {string} */
-                            kind: "expense" | "income";
-                            icon: string;
-                            color: string;
-                            sortOrder: number;
-                            archived: boolean;
-                            currentBudget: number | null;
-                        }[];
-                    };
-                };
-            };
-        };
+        get: operations["listCategories"];
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        icon: string;
-                        color: string;
-                        sortOrder?: number;
-                        /** @enum {string} */
-                        kind: "expense" | "income";
-                    };
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            /** @enum {string} */
-                            kind: "expense" | "income";
-                            icon: string;
-                            color: string;
-                            sortOrder: number;
-                            archived: boolean;
-                            currentBudget: number | null;
-                        };
-                    };
-                };
-                /** @description Problem */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["createCategory"];
         delete?: never;
         options?: never;
         head?: never;
@@ -560,108 +97,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name?: string;
-                        icon?: string;
-                        color?: string;
-                        sortOrder?: number;
-                        /** @enum {string} */
-                        kind?: "expense" | "income";
-                        archived?: boolean;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            /** @enum {string} */
-                            kind: "expense" | "income";
-                            icon: string;
-                            color: string;
-                            sortOrder: number;
-                            archived: boolean;
-                            currentBudget: number | null;
-                        };
-                    };
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        patch: operations["updateCategory"];
         trace?: never;
     };
     "/v1/categories/{id}/budget": {
@@ -672,84 +108,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        amount: number;
-                        effectiveFrom: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Budget set */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            /** @enum {string} */
-                            kind: "expense" | "income";
-                            icon: string;
-                            color: string;
-                            sortOrder: number;
-                            archived: boolean;
-                            currentBudget: number | null;
-                        };
-                    };
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        put: operations["setCategoryBudget"];
         post?: never;
         delete?: never;
         options?: never;
@@ -764,155 +123,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    month?: string;
-                    category?: string;
-                    status?: "paid" | "pending";
-                    cursor?: string;
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description A page of transactions, newest first */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            items: {
-                                /** Format: uuid */
-                                id: string;
-                                name: string;
-                                amount: number;
-                                currency: string;
-                                date: string;
-                                /** @enum {string} */
-                                status: "paid" | "pending";
-                                note: string | null;
-                                /** Format: uuid */
-                                categoryId: string;
-                                /** Format: uuid */
-                                recurrenceId: string | null;
-                                /** Format: uuid */
-                                importId: string | null;
-                                /** @enum {string} */
-                                source: "app" | "web" | "widget" | "mcp" | "import" | "recurrence";
-                                createdAt: string;
-                                updatedAt: string;
-                            }[];
-                            nextCursor: string | null;
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["listTransactions"];
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        amount: number;
-                        /** Format: uuid */
-                        categoryId: string;
-                        date: string;
-                        /**
-                         * @default paid
-                         * @enum {string}
-                         */
-                        status?: "paid" | "pending";
-                        note?: string | null;
-                        /**
-                         * @default app
-                         * @enum {string}
-                         */
-                        source?: "app" | "web" | "widget" | "mcp";
-                    };
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            amount: number;
-                            currency: string;
-                            date: string;
-                            /** @enum {string} */
-                            status: "paid" | "pending";
-                            note: string | null;
-                            /** Format: uuid */
-                            categoryId: string;
-                            /** Format: uuid */
-                            recurrenceId: string | null;
-                            /** Format: uuid */
-                            importId: string | null;
-                            /** @enum {string} */
-                            source: "app" | "web" | "widget" | "mcp" | "import" | "recurrence";
-                            createdAt: string;
-                            updatedAt: string;
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["createTransaction"];
         delete?: never;
         options?: never;
         head?: never;
@@ -926,54 +139,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    q?: string;
-                    limit?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Transaction names already used, with the category they usually go in, most used first (ties: most recent) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            items: {
-                                name: string;
-                                /** Format: uuid */
-                                categoryId: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["listTransactionSuggestions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -992,109 +158,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Saves up to 20 transactions in one transaction: all or nothing. `Idempotency-Key` is required; a retry with the same key and body returns the first response. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        items: {
-                            name: string;
-                            amount: number;
-                            /** Format: uuid */
-                            categoryId: string;
-                            date: string;
-                            /**
-                             * @default paid
-                             * @enum {string}
-                             */
-                            status?: "paid" | "pending";
-                            note?: string | null;
-                            /**
-                             * @default app
-                             * @enum {string}
-                             */
-                            source?: "app" | "web" | "widget" | "mcp";
-                        }[];
-                    };
-                };
-            };
-            responses: {
-                /** @description Created, in request order */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            items: {
-                                /** Format: uuid */
-                                id: string;
-                                name: string;
-                                amount: number;
-                                currency: string;
-                                date: string;
-                                /** @enum {string} */
-                                status: "paid" | "pending";
-                                note: string | null;
-                                /** Format: uuid */
-                                categoryId: string;
-                                /** Format: uuid */
-                                recurrenceId: string | null;
-                                /** Format: uuid */
-                                importId: string | null;
-                                /** @enum {string} */
-                                source: "app" | "web" | "widget" | "mcp" | "import" | "recurrence";
-                                createdAt: string;
-                                updatedAt: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["createTransactionsBatch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1111,49 +175,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Soft-deletes (restorable) the given transactions that are the caller's. Other ids are ignored without a trace. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        ids: string[];
-                    };
-                };
-            };
-            responses: {
-                /** @description Deleted (restorable) */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["deleteTransactionsBatch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1170,140 +192,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted (restorable) */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        delete: operations["deleteTransaction"];
         options?: never;
         head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name?: string;
-                        amount?: number;
-                        /** Format: uuid */
-                        categoryId?: string;
-                        date?: string;
-                        /** @enum {string} */
-                        status?: "paid" | "pending";
-                        note?: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            amount: number;
-                            currency: string;
-                            date: string;
-                            /** @enum {string} */
-                            status: "paid" | "pending";
-                            note: string | null;
-                            /** Format: uuid */
-                            categoryId: string;
-                            /** Format: uuid */
-                            recurrenceId: string | null;
-                            /** Format: uuid */
-                            importId: string | null;
-                            /** @enum {string} */
-                            source: "app" | "web" | "widget" | "mcp" | "import" | "recurrence";
-                            createdAt: string;
-                            updatedAt: string;
-                        };
-                    };
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        patch: operations["updateTransaction"];
         trace?: never;
     };
     "/v1/transactions/{id}/restore": {
@@ -1315,67 +207,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Restored */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            amount: number;
-                            currency: string;
-                            date: string;
-                            /** @enum {string} */
-                            status: "paid" | "pending";
-                            note: string | null;
-                            /** Format: uuid */
-                            categoryId: string;
-                            /** Format: uuid */
-                            recurrenceId: string | null;
-                            /** Format: uuid */
-                            importId: string | null;
-                            /** @enum {string} */
-                            source: "app" | "web" | "widget" | "mcp" | "import" | "recurrence";
-                            createdAt: string;
-                            updatedAt: string;
-                        };
-                    };
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["restoreTransaction"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1389,107 +221,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Recurrences */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            amount: number;
-                            /** Format: uuid */
-                            categoryId: string;
-                            /** @enum {string} */
-                            frequency: "monthly" | "yearly";
-                            dayOfMonth: number;
-                            monthOfYear: number | null;
-                            startDate: string;
-                            endDate: string | null;
-                        }[];
-                    };
-                };
-            };
-        };
+        get: operations["listRecurrences"];
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        amount: number;
-                        /** Format: uuid */
-                        categoryId: string;
-                        /** @enum {string} */
-                        frequency: "monthly" | "yearly";
-                        dayOfMonth: number;
-                        monthOfYear?: number | null;
-                        startDate: string;
-                        endDate?: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            amount: number;
-                            /** Format: uuid */
-                            categoryId: string;
-                            /** @enum {string} */
-                            frequency: "monthly" | "yearly";
-                            dayOfMonth: number;
-                            monthOfYear: number | null;
-                            startDate: string;
-                            endDate: string | null;
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["createRecurrence"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1506,135 +240,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted; its unpaid pending transactions from this month on go, the rest are kept */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        delete: operations["deleteRecurrence"];
         options?: never;
         head?: never;
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name?: string;
-                        amount?: number;
-                        /** Format: uuid */
-                        categoryId?: string;
-                        /** @enum {string} */
-                        frequency?: "monthly" | "yearly";
-                        dayOfMonth?: number;
-                        monthOfYear?: number | null;
-                        startDate?: string;
-                        endDate?: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            name: string;
-                            amount: number;
-                            /** Format: uuid */
-                            categoryId: string;
-                            /** @enum {string} */
-                            frequency: "monthly" | "yearly";
-                            dayOfMonth: number;
-                            monthOfYear: number | null;
-                            startDate: string;
-                            endDate: string | null;
-                        };
-                    };
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        patch: operations["updateRecurrence"];
         trace?: never;
     };
     "/v1/summary": {
@@ -1644,63 +253,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    month?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Month summary */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            month: string;
-                            budgetTotal: number;
-                            spent: number;
-                            remaining: number;
-                            income: number;
-                            balance: number;
-                            categories: {
-                                categoryId: string;
-                                budget: number | null;
-                                spent: number;
-                                remaining: number | null;
-                                ratio: number | null;
-                                /** @enum {string} */
-                                state: "ok" | "near" | "over";
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["getSummary"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1716,61 +269,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query: {
-                    from: string;
-                    to: string;
-                    kind?: "expense" | "income";
-                    status?: "paid" | "pending";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Totals per category; expense totals are positive amounts spent */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            total: number;
-                            items: {
-                                /** Format: uuid */
-                                categoryId: string;
-                                name: string;
-                                icon: string;
-                                color: string;
-                                total: number;
-                                share: number;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["getCategoryReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1786,55 +285,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query: {
-                    from: string;
-                    to: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Income, expenses and budget per month */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            months: {
-                                month: string;
-                                income: number;
-                                expenses: number;
-                                budget: number;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["getTrendReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1850,59 +301,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: {
-            parameters: {
-                query?: {
-                    months?: number;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Average monthly expenses over the last complete months, split into fixed and variable */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            months: number;
-                            total: number;
-                            fixed: number;
-                            variable: number;
-                            categories: {
-                                /** Format: uuid */
-                                categoryId: string;
-                                average: number;
-                                /** @enum {string} */
-                                type: "fixed" | "variable";
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["getCostOfLivingReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1920,121 +319,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "multipart/form-data": {
-                        /** @enum {string} */
-                        source: "budge";
-                        /** Format: binary */
-                        file: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Preview */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            /** @enum {string} */
-                            status: "preview" | "confirmed" | "reverted";
-                            stats: {
-                                transactions: number;
-                                duplicates: number;
-                                newCategories: string[];
-                                rejected: {
-                                    line: number;
-                                    reason: string;
-                                }[];
-                                from: string | null;
-                                to: string | null;
-                                averageMonthlySpending: {
-                                    category: string;
-                                    amount: number;
-                                }[];
-                                currency: string | null;
-                                averageWindow: {
-                                    from: string;
-                                    to: string;
-                                    months: number;
-                                } | null;
-                                adoptsCurrency: boolean;
-                                dropsBudgets: boolean;
-                                inserted?: number;
-                            };
-                        };
-                    };
-                };
-                /** @description Problem */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["createImport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2050,101 +335,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        adoptFileCurrency?: boolean;
-                    };
-                };
-            };
-            responses: {
-                /** @description Imported */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** Format: uuid */
-                            id: string;
-                            /** @enum {string} */
-                            status: "preview" | "confirmed" | "reverted";
-                            stats: {
-                                transactions: number;
-                                duplicates: number;
-                                newCategories: string[];
-                                rejected: {
-                                    line: number;
-                                    reason: string;
-                                }[];
-                                from: string | null;
-                                to: string | null;
-                                averageMonthlySpending: {
-                                    category: string;
-                                    amount: number;
-                                }[];
-                                currency: string | null;
-                                averageWindow: {
-                                    from: string;
-                                    to: string;
-                                    months: number;
-                                } | null;
-                                adoptsCurrency: boolean;
-                                dropsBudgets: boolean;
-                                inserted?: number;
-                            };
-                        };
-                    };
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-                /** @description Problem */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        post: operations["confirmImport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2161,45 +352,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Reverted */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Problem */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/problem+json": {
-                            type: string;
-                            title: string;
-                            status: number;
-                            code: string;
-                            detail?: string;
-                            errors?: {
-                                path: string;
-                                message: string;
-                            }[];
-                        };
-                    };
-                };
-            };
-        };
+        delete: operations["revertImport"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2208,7 +361,286 @@ export interface paths {
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        Profile: {
+            id: string;
+            email: string;
+            timezone: string;
+            locale: string;
+            onboardingCompletedAt: string | null;
+            currency: string;
+            isAnonymous: boolean;
+        };
+        Problem: {
+            type: string;
+            title: string;
+            status: number;
+            code: string;
+            detail?: string;
+            errors?: {
+                path: string;
+                message: string;
+            }[];
+        };
+        UpdateProfile: {
+            timezone?: string;
+            /** @enum {string} */
+            locale?: "es" | "en";
+            /** @enum {string} */
+            currency?: "COP" | "USD" | "EUR";
+            /** @enum {boolean} */
+            onboardingCompleted?: true;
+        };
+        ClaimEmailSend: {
+            email: string;
+        };
+        ClaimEmailVerify: {
+            email: string;
+            code: string;
+        };
+        Category: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @enum {string} */
+            kind: "expense" | "income";
+            icon: string;
+            color: string;
+            sortOrder: number;
+            archived: boolean;
+            currentBudget: number | null;
+        };
+        CreateCategory: {
+            name: string;
+            icon: string;
+            color: string;
+            sortOrder?: number;
+            /** @enum {string} */
+            kind: "expense" | "income";
+        };
+        UpdateCategory: {
+            name?: string;
+            icon?: string;
+            color?: string;
+            sortOrder?: number;
+            /** @enum {string} */
+            kind?: "expense" | "income";
+            archived?: boolean;
+        };
+        SetBudget: {
+            amount: number;
+            effectiveFrom: string;
+        };
+        TransactionPage: {
+            items: components["schemas"]["Transaction"][];
+            nextCursor: string | null;
+        };
+        Transaction: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            amount: number;
+            currency: string;
+            date: string;
+            /** @enum {string} */
+            status: "paid" | "pending";
+            note: string | null;
+            /** Format: uuid */
+            categoryId: string;
+            /** Format: uuid */
+            recurrenceId: string | null;
+            /** Format: uuid */
+            importId: string | null;
+            /** @enum {string} */
+            source: "app" | "web" | "widget" | "mcp" | "import" | "recurrence";
+            createdAt: string;
+            updatedAt: string;
+        };
+        TransactionSuggestions: {
+            items: components["schemas"]["TransactionSuggestion"][];
+        };
+        TransactionSuggestion: {
+            name: string;
+            /** Format: uuid */
+            categoryId: string;
+        };
+        CreateTransaction: {
+            name: string;
+            amount: number;
+            /** Format: uuid */
+            categoryId: string;
+            date: string;
+            /**
+             * @default paid
+             * @enum {string}
+             */
+            status?: "paid" | "pending";
+            note?: string | null;
+            /**
+             * @default app
+             * @enum {string}
+             */
+            source?: "app" | "web" | "widget" | "mcp";
+        };
+        TransactionList: {
+            items: components["schemas"]["Transaction"][];
+        };
+        CreateTransactionsBatch: {
+            items: {
+                name: string;
+                amount: number;
+                /** Format: uuid */
+                categoryId: string;
+                date: string;
+                /**
+                 * @default paid
+                 * @enum {string}
+                 */
+                status?: "paid" | "pending";
+                note?: string | null;
+                /**
+                 * @default app
+                 * @enum {string}
+                 */
+                source?: "app" | "web" | "widget" | "mcp";
+            }[];
+        };
+        DeleteTransactionsBatch: {
+            ids: string[];
+        };
+        UpdateTransaction: {
+            name?: string;
+            amount?: number;
+            /** Format: uuid */
+            categoryId?: string;
+            date?: string;
+            /** @enum {string} */
+            status?: "paid" | "pending";
+            note?: string | null;
+        };
+        Recurrence: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            amount: number;
+            /** Format: uuid */
+            categoryId: string;
+            /** @enum {string} */
+            frequency: "monthly" | "yearly";
+            dayOfMonth: number;
+            monthOfYear: number | null;
+            startDate: string;
+            endDate: string | null;
+        };
+        CreateRecurrence: {
+            name: string;
+            amount: number;
+            /** Format: uuid */
+            categoryId: string;
+            /** @enum {string} */
+            frequency: "monthly" | "yearly";
+            dayOfMonth: number;
+            monthOfYear?: number | null;
+            startDate: string;
+            endDate?: string | null;
+        };
+        UpdateRecurrence: {
+            name?: string;
+            amount?: number;
+            /** Format: uuid */
+            categoryId?: string;
+            /** @enum {string} */
+            frequency?: "monthly" | "yearly";
+            dayOfMonth?: number;
+            monthOfYear?: number | null;
+            startDate?: string;
+            endDate?: string | null;
+        };
+        Summary: {
+            month: string;
+            budgetTotal: number;
+            spent: number;
+            remaining: number;
+            income: number;
+            balance: number;
+            categories: {
+                categoryId: string;
+                budget: number | null;
+                spent: number;
+                remaining: number | null;
+                ratio: number | null;
+                /** @enum {string} */
+                state: "ok" | "near" | "over";
+            }[];
+        };
+        CategoryReport: {
+            total: number;
+            items: {
+                /** Format: uuid */
+                categoryId: string;
+                name: string;
+                icon: string;
+                color: string;
+                total: number;
+                share: number;
+            }[];
+        };
+        TrendReport: {
+            months: {
+                month: string;
+                income: number;
+                expenses: number;
+                budget: number;
+            }[];
+        };
+        CostOfLivingReport: {
+            months: number;
+            total: number;
+            fixed: number;
+            variable: number;
+            categories: {
+                /** Format: uuid */
+                categoryId: string;
+                average: number;
+                /** @enum {string} */
+                type: "fixed" | "variable";
+            }[];
+        };
+        FileImport: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            status: "preview" | "confirmed" | "reverted";
+            stats: components["schemas"]["ImportStats"];
+        };
+        ImportStats: {
+            transactions: number;
+            duplicates: number;
+            newCategories: string[];
+            rejected: {
+                line: number;
+                reason: string;
+            }[];
+            from: string | null;
+            to: string | null;
+            averageMonthlySpending: {
+                category: string;
+                amount: number;
+            }[];
+            currency: string | null;
+            averageWindow: {
+                from: string;
+                to: string;
+                months: number;
+            } | null;
+            adoptsCurrency: boolean;
+            dropsBudgets: boolean;
+            inserted?: number;
+        };
+        ConfirmImport: {
+            adoptFileCurrency?: boolean;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -2216,4 +648,1053 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Profile"];
+                };
+            };
+        };
+    };
+    deleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Account and all data permanently deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfile"];
+            };
+        };
+        responses: {
+            /** @description Updated profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Profile"];
+                };
+            };
+            /** @description Problem */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    claimEmailSend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimEmailSend"];
+            };
+        };
+        responses: {
+            /** @description A code is on its way to the email */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    claimEmailVerify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimEmailVerify"];
+            };
+        };
+        responses: {
+            /** @description The profile, no longer a guest */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Profile"];
+                };
+            };
+            /** @description Problem */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    exportMe: {
+        parameters: {
+            query?: {
+                format?: "json" | "csv";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All of the user's data (JSON) or their transactions (CSV) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                    "text/csv": string;
+                };
+            };
+        };
+    };
+    listCategories: {
+        parameters: {
+            query?: {
+                includeArchived?: "true" | "false";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Categories */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"][];
+                };
+            };
+        };
+    };
+    createCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategory"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            /** @description Problem */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCategory"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    setCategoryBudget: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetBudget"];
+            };
+        };
+        responses: {
+            /** @description Budget set */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listTransactions: {
+        parameters: {
+            query?: {
+                month?: string;
+                category?: string;
+                status?: "paid" | "pending";
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of transactions, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionPage"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createTransaction: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description A key that stays the same across retries of the same request (a UUID, say): a retry with the same key and body returns the first response instead of saving twice. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransaction"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listTransactionSuggestions: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Transaction names already used, with the category they usually go in, most used first (ties: most recent) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionSuggestions"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createTransactionsBatch: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A key that stays the same across retries of the same request (a UUID, say): a retry with the same key and body returns the first response instead of saving twice. */
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTransactionsBatch"];
+            };
+        };
+        responses: {
+            /** @description Created, in request order */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransactionList"];
+                };
+            };
+            /** @description Problem */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteTransactionsBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteTransactionsBatch"];
+            };
+        };
+        responses: {
+            /** @description Deleted (restorable) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted (restorable) */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTransaction"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    restoreTransaction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Restored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transaction"];
+                };
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    listRecurrences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recurrences */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recurrence"][];
+                };
+            };
+        };
+    };
+    createRecurrence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRecurrence"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recurrence"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    deleteRecurrence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted; its unpaid pending transactions from this month on go, the rest are kept */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    updateRecurrence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRecurrence"];
+            };
+        };
+        responses: {
+            /** @description Updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recurrence"];
+                };
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getSummary: {
+        parameters: {
+            query?: {
+                month?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Month summary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Summary"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getCategoryReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                kind?: "expense" | "income";
+                status?: "paid" | "pending";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Totals per category; expense totals are positive amounts spent */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryReport"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getTrendReport: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Income, expenses and budget per month */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrendReport"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getCostOfLivingReport: {
+        parameters: {
+            query?: {
+                months?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Average monthly expenses over the last complete months, split into fixed and variable */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CostOfLivingReport"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @enum {string} */
+                    source: "budge";
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Preview */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileImport"];
+                };
+            };
+            /** @description Problem */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    confirmImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ConfirmImport"];
+            };
+        };
+        responses: {
+            /** @description Imported */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileImport"];
+                };
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description Problem */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    revertImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reverted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+}
