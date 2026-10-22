@@ -90,11 +90,9 @@ export const NoSpot: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole("button", { name: "paid" }));
-    const overlay = await canvas.findByTestId("celebration", {}, { timeout: 3000 });
+    const overlay = await canvas.findByTestId("celebration");
     const lukas = overlay.querySelector<HTMLElement>(".lk-celebration-lukas") as HTMLElement;
-    await waitFor(() => expect(lukas.getBoundingClientRect().top).toBeLessThan(40), {
-      timeout: 3000,
-    });
+    await waitFor(() => expect(lukas.getBoundingClientRect().top).toBeLessThan(40));
   },
 };
 
@@ -133,7 +131,7 @@ export const Paid: Story = {
     await expect(running).toContain("lk-confetti-burst");
     await expect(running).toContain("lk-celebration-pop");
 
-    await waitFor(() => expect(canvas.queryByTestId("celebration")).toBeNull(), { timeout: 3000 });
+    await waitFor(() => expect(canvas.queryByTestId("celebration")).toBeNull());
   },
 };
 
@@ -172,7 +170,7 @@ export const ReducedMotion: Story = {
       .map((animation) => (animation as CSSAnimation).animationName);
     await expect(running).toEqual(["lk-celebration-fade"]);
 
-    await waitFor(() => expect(canvas.queryByTestId("celebration")).toBeNull(), { timeout: 3000 });
+    await waitFor(() => expect(canvas.queryByTestId("celebration")).toBeNull());
   },
 };
 

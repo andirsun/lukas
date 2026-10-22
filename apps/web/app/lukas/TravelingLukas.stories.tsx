@@ -90,7 +90,8 @@ export const Entrance: Story = {
     await expect(layer).toHaveAttribute("aria-hidden", "true");
     await expect(layer.dataset.entrance).toBe("playing");
     await expect(sessionStorage.getItem(ENTRANCE_KEY)).toBe("seen");
-    await expect(document.documentElement.dataset.lukasLive).toBe("live");
+    // Set on the next animation frame after he mounts.
+    await waitFor(() => expect(document.documentElement.dataset.lukasLive).toBe("live"));
     await waitFor(() => expect(layer.dataset.entrance).toBe("done"), { timeout: 15_000 });
     await expect(layer.dataset.spot).toBe("hero");
     await expect(layer.dataset.mood).toBe("happy");
@@ -118,9 +119,7 @@ export const SpotsAndHop: Story = {
 
     hit?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch" }));
     await waitFor(() => expect(layer.querySelector(".lk-traveler-hop.is-hopping")).not.toBeNull());
-    await waitFor(() => expect(layer.querySelector(".lk-traveler-hop.is-hopping")).toBeNull(), {
-      timeout: 3000,
-    });
+    await waitFor(() => expect(layer.querySelector(".lk-traveler-hop.is-hopping")).toBeNull());
 
     scrollToSpot("how");
     await waitFor(() => expect(layer.dataset.mood).toBe("worried"));

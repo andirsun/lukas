@@ -50,8 +50,7 @@ const budgetCategory = (key: string) => {
   return { id: key, name: c.names.es, glyph: c.glyph, tint: c.tint };
 };
 
-const heading = (canvas: Canvas, name: string) =>
-  canvas.findByRole("heading", { level: 1, name }, { timeout: 3000 });
+const heading = (canvas: Canvas, name: string) => canvas.findByRole("heading", { level: 1, name });
 
 const upload = async (canvas: Canvas) =>
   userEvent.upload(
@@ -519,7 +518,7 @@ export const FlowEnterDirectly: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("button", { name: "Entrar directo" }));
-    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    await expect(await canvas.findByText("App (stand-in)")).toBeVisible();
     const lines = calls(args.onRequest);
     await expect(lines[0]).toBe('PATCH /api/v1/me {"timezone":"America/Bogota"}');
     await expect(lines).toContain('PATCH /api/v1/me {"currency":"COP"}');
@@ -554,7 +553,7 @@ export const FlowSkipEveryStep: Story = {
       await waitFor(() => expect(h1).toHaveFocus());
       await userEvent.click(canvas.getByRole("button", { name: "Saltar" }));
     }
-    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    await expect(await canvas.findByText("App (stand-in)")).toBeVisible();
     const lines = calls(args.onRequest);
     await expect(lines).toContain('PATCH /api/v1/me {"currency":"COP"}');
     await expect(lines.filter((l) => l.startsWith("POST /api/v1/categories "))).toHaveLength(8);
@@ -583,7 +582,7 @@ export const FlowAddCustomCategory: Story = {
     await userEvent.click(sheet.getByRole("radio", { name: "Verde" }));
     await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
     // The sheet slides out (`--sheet`) once the save is through; a loaded machine needs headroom.
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 4000 });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await expect(args.onRequest).toHaveBeenCalledWith(
       'POST /api/v1/categories {"name":"Mascotas","kind":"expense","icon":"🐶","color":"#2fd388"}',
     );
@@ -789,7 +788,7 @@ export const FlowSkipLockedWhileConfirming: Story = {
     await expect(canvas.getByRole("button", { name: "Saltar" })).toBeDisabled();
     await expect(canvas.getByRole("button", { name: "Atrás" })).toBeDisabled();
     await expect(
-      await canvas.findByRole("heading", { name: "Importamos 22 movimientos." }, { timeout: 4000 }),
+      await canvas.findByRole("heading", { name: "Importamos 22 movimientos." }),
     ).toBeVisible();
     await expect(calls(args.onRequest).some((l) => l.startsWith("DELETE"))).toBe(false);
   },
@@ -822,7 +821,7 @@ export const FlowEnterDirectlyRetries: Story = {
     );
     await expect(categoryPosts(args.onRequest)).toHaveLength(8);
     await userEvent.click(direct);
-    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    await expect(await canvas.findByText("App (stand-in)")).toBeVisible();
     await expect(categoryPosts(args.onRequest)).toHaveLength(9);
   },
 };
@@ -836,7 +835,7 @@ export const FlowEnterDirectlyAfterLostAnswer: Story = {
     await userEvent.click(direct);
     await canvas.findByRole("alert");
     await userEvent.click(direct);
-    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    await expect(await canvas.findByText("App (stand-in)")).toBeVisible();
     await expect(categoryPosts(args.onRequest)).toHaveLength(8);
   },
 };
@@ -847,7 +846,7 @@ export const FlowEnterDirectlyNameTaken: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("button", { name: "Entrar directo" }));
-    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    await expect(await canvas.findByText("App (stand-in)")).toBeVisible();
   },
 };
 
@@ -870,7 +869,7 @@ export const FlowSkipCategoriesAfterCustom: Story = {
     const sheet = within(await screen.findByRole("dialog", { name: "Nueva categoría" }));
     await userEvent.type(sheet.getByRole("textbox", { name: "Nombre" }), "Mascotas");
     await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 4000 });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await within(canvas.getByRole("group", { name: "Gastos" })).findByRole("button", {
       name: "Mascotas",
     });
@@ -940,9 +939,7 @@ export const FlowLockedCurrencyWinsOverDraft: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole("radio", { name: /EUR/ }, { timeout: 3000 }),
-    ).toBeChecked();
+    await expect(await canvas.findByRole("radio", { name: /EUR/ })).toBeChecked();
     await expect(canvas.getByRole("radio", { name: /COP/ })).not.toBeChecked();
   },
 };
@@ -963,7 +960,7 @@ export const FlowEnterDirectlyAfterDeselectingAll: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await userEvent.click(await canvas.findByRole("button", { name: "Entrar directo" }));
-    await expect(await canvas.findByText("App (stand-in)", {}, { timeout: 3000 })).toBeVisible();
+    await expect(await canvas.findByText("App (stand-in)")).toBeVisible();
     const restored = calls(args.onRequest).filter((l) => l.endsWith('{"archived":false}'));
     await expect(restored).toHaveLength(SUGGESTED_CATEGORIES.length);
     await expect(calls(args.onRequest).at(-1)).toBe(
@@ -1061,8 +1058,7 @@ const openEdit = async (canvas: Canvas, name: string) => {
   await userEvent.click(await canvas.findByRole("button", { name: `Editar ${name}` }));
   return within(await screen.findByRole("dialog", { name: "Editar categoría" }));
 };
-const sheetClosed = () =>
-  waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 4000 });
+const sheetClosed = () => waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 
 /** Rename, emoji and tint in the edit sheet; then delete it (no transactions, so it can go). */
 export const FlowEditAndDeleteCategory: Story = {
@@ -1074,9 +1070,7 @@ export const FlowEditAndDeleteCategory: Story = {
     await heading(canvas, "¿En qué se te va el dinero?");
     let sheet = await openEdit(canvas, "Supermercado");
     await expect(sheet.getByRole("textbox", { name: "Nombre" })).toHaveValue("Supermercado");
-    await expect(
-      await sheet.findByRole("button", { name: "Eliminar categoría" }, { timeout: 3000 }),
-    ).toBeVisible();
+    await expect(await sheet.findByRole("button", { name: "Eliminar categoría" })).toBeVisible();
     const name = sheet.getByRole("textbox", { name: "Nombre" });
     await userEvent.clear(name);
     await userEvent.type(name, "Mercado");
@@ -1089,9 +1083,7 @@ export const FlowEditAndDeleteCategory: Story = {
     );
 
     sheet = await openEdit(canvas, "Mercado");
-    await userEvent.click(
-      await sheet.findByRole("button", { name: "Eliminar categoría" }, { timeout: 3000 }),
-    );
+    await userEvent.click(await sheet.findByRole("button", { name: "Eliminar categoría" }));
     await sheetClosed();
     await expect(args.onRequest).toHaveBeenCalledWith(
       'PATCH /api/v1/categories/cat-groceries {"archived":true}',
@@ -1130,7 +1122,7 @@ export const FlowSwitchKind: Story = {
     const canvas = within(canvasElement);
     await heading(canvas, "¿En qué se te va el dinero?");
     const sheet = await openEdit(canvas, "Salario");
-    await sheet.findByRole("button", { name: "Eliminar categoría" }, { timeout: 3000 });
+    await sheet.findByRole("button", { name: "Eliminar categoría" });
     await userEvent.click(sheet.getByRole("radio", { name: "Gasto" }));
     await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
     await sheetClosed();
@@ -1174,7 +1166,6 @@ export const FlowCategoryWithTransactions: Story = {
       await sheet.findByText(
         "No se puede borrar porque tiene 132 movimientos. Puedes archivarla para que no aparezca al anotar.",
         {},
-        { timeout: 3000 },
       ),
     ).toBeVisible();
     await expect(sheet.queryByRole("button", { name: "Eliminar categoría" })).toBeNull();
@@ -1300,7 +1291,6 @@ export const FlowCountFails: Story = {
       await sheet.findByText(
         "No pudimos contar sus movimientos. Puedes archivarla para que no aparezca al anotar.",
         {},
-        { timeout: 3000 },
       ),
     ).toBeVisible();
     await expect(sheet.queryByText(/más de 0/)).toBeNull();

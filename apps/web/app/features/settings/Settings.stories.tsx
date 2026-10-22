@@ -40,10 +40,10 @@ const writesTo = (spy: Spies["onRequest"], prefix: string) =>
   lines(spy).filter((line) => line.startsWith(prefix));
 
 const title = (canvas: Canvas, name = "Ajustes") =>
-  canvas.findByRole("heading", { level: 1, name }, { timeout: 4000 });
+  canvas.findByRole("heading", { level: 1, name });
 
 const region = async (canvas: Canvas, name: string) =>
-  within(await canvas.findByRole("region", { name }, { timeout: 4000 }));
+  within(await canvas.findByRole("region", { name }));
 
 /** Waits until a toast saying `text` has fully faded in (so the a11y checks see it settled). */
 const toastShown = (text: string | RegExp, role: "status" | "alert" = "status") =>
@@ -121,9 +121,7 @@ export const DeleteNeedsExactEmail: Story = {
     await expect(writesTo(args.onRequest, "DELETE /api/v1/me")).toHaveLength(0);
 
     await userEvent.click(confirm);
-    await expect(
-      await canvas.findByText("Landing (stand-in)", {}, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByText("Landing (stand-in)")).toBeVisible();
     await expect(writesTo(args.onRequest, "DELETE /api/v1/me")).toHaveLength(1);
     await expect(args.signOut).toHaveBeenCalledTimes(1);
   },
@@ -147,9 +145,7 @@ export const DeleteWithEnter: Story = {
 
     await userEvent.type(email, "m{Enter}{Enter}");
     await userEvent.click(sheet.getByRole("button", { name: /Eliminar para siempre|Eliminando…/ }));
-    await expect(
-      await canvas.findByText("Landing (stand-in)", {}, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByText("Landing (stand-in)")).toBeVisible();
     await expect(writesTo(args.onRequest, "DELETE /api/v1/me")).toHaveLength(1);
     await expect(args.signOut).toHaveBeenCalledTimes(1);
   },
@@ -206,9 +202,7 @@ export const SwitchLanguage: Story = {
     );
     // Home speaks it too.
     await userEvent.click(canvas.getByRole("link", { name: "Back to home" }));
-    await expect(
-      await canvas.findByRole("region", { name: "Left this month" }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("region", { name: "Left this month" })).toBeVisible();
   },
 };
 
@@ -309,7 +303,7 @@ export const CurrencyOpen: Story = {
     const canvas = within(canvasElement);
     await title(canvas);
     const time = await region(canvas, "Hora y moneda");
-    const euro = await time.findByRole("radio", { name: /Euro/ }, { timeout: 4000 });
+    const euro = await time.findByRole("radio", { name: /Euro/ });
     await expect(euro).toBeChecked();
     await expect(euro).toBeEnabled();
     const peso = time.getByRole("radio", { name: /Peso colombiano/ });
@@ -336,7 +330,6 @@ export const CurrencyLocked: Story = {
       await time.findByText(
         "Tu moneda es EUR. Ya tienes movimientos o recurrentes, así que se queda así.",
         {},
-        { timeout: 4000 },
       ),
     ).toBeVisible();
     await expect(time.queryByRole("radio", { name: /Peso colombiano/ })).toBeNull();
@@ -353,14 +346,11 @@ export const CurrencyLockedByServer: Story = {
     const canvas = within(canvasElement);
     await title(canvas);
     const time = await region(canvas, "Hora y moneda");
-    await userEvent.click(
-      await time.findByRole("radio", { name: /Dólar estadounidense/ }, { timeout: 4000 }),
-    );
+    await userEvent.click(await time.findByRole("radio", { name: /Dólar estadounidense/ }));
     await expect(
       await time.findByText(
         "Tu moneda es EUR. Ya tienes movimientos o recurrentes, así que se queda así.",
         {},
-        { timeout: 4000 },
       ),
     ).toBeVisible();
     await expect(time.queryByRole("radio")).toBeNull();
@@ -451,9 +441,7 @@ export const FromAvatarMenu: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Tu cuenta" }, { timeout: 4000 }),
-    );
+    await userEvent.click(await canvas.findByRole("button", { name: "Tu cuenta" }));
     const menu = within(canvasElement.querySelector(".lk-menu") as HTMLElement);
     const link = menu.getByRole("link", { name: "Ajustes" });
     await expect(link).toHaveAttribute("href", "/app/settings");
@@ -484,9 +472,7 @@ export const Day: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await title(canvas);
-    await expect(
-      await canvas.findByRole("radio", { name: /Euro/ }, { timeout: 4000 }),
-    ).toBeChecked();
+    await expect(await canvas.findByRole("radio", { name: /Euro/ })).toBeChecked();
   },
 };
 

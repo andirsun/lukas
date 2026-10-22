@@ -47,7 +47,7 @@ const meta = {
 export default meta;
 
 /** Springs settle well within this, even on a busy machine running every story at once. */
-const SETTLE = { timeout: 4000 };
+const SETTLE = { timeout: 8000 };
 type Story = StoryObj<typeof meta>;
 
 const rowOf = (canvasElement: HTMLElement) =>

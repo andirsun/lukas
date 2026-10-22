@@ -186,7 +186,7 @@ export const ShortDragSpringsBack: Story = {
       },
     });
     await fingerDrag(dialog, { dy: 40, steps: 10, stepMs: 24 });
-    await waitFor(() => expect(Math.abs(dragOffset())).toBeLessThan(1), { timeout: 4000 });
+    await waitFor(() => expect(Math.abs(dragOffset())).toBeLessThan(1));
     await expect(args.onClose).not.toHaveBeenCalled();
   },
 };

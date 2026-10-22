@@ -1,3 +1,5 @@
+import { transactions } from "@lukas/db";
+import { eq } from "@lukas/db/orm";
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { createTestApp, type TestApp } from "./harness.ts";
 
@@ -120,8 +122,25 @@ describe("transactions", () => {
   });
 
   test("pagination over many same-day transactions returns each exactly once", async () => {
-    for (let i = 0; i < 120; i++)
-      await create({ name: `bulk ${i}`, amount: -1, date: "2026-12-15" });
+    // One through the API; the other 119 straight into the table in one insert. Creating is not
+    // what this checks, and 120 requests one by one took 20-27 s on a loaded machine.
+    const first = (await (
+      await create({ name: "bulk 0", amount: -1, date: "2026-12-15" })
+    ).json()) as Tx;
+    const [row] = await t.admin.select().from(transactions).where(eq(transactions.id, first.id));
+    if (!row) throw new Error("The first bulk transaction is in the table");
+    await t.admin.insert(transactions).values(
+      Array.from({ length: 119 }, (_, i) => ({
+        userId: row.userId,
+        accountId: row.accountId,
+        categoryId: row.categoryId,
+        name: `bulk ${i + 1}`,
+        amount: row.amount,
+        currency: row.currency,
+        date: row.date,
+        source: row.source,
+      })),
+    );
     const ids: string[] = [];
     const sizes: number[] = [];
     let cursor: string | null = null;

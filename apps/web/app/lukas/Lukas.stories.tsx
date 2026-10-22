@@ -63,7 +63,7 @@ export const Happy: Story = {
         seen.add(getComputedStyle(sheet).backgroundPosition);
         expect(seen.size).toBeGreaterThanOrEqual(3);
       },
-      { timeout: 2000, interval: 60 },
+      { interval: 60 },
     );
   },
 };

@@ -73,8 +73,7 @@ function paste(text: string) {
   );
 }
 
-const budgetRegion = (canvas: Canvas) =>
-  canvas.findByRole("region", { name: "Presupuesto" }, { timeout: 4000 });
+const budgetRegion = (canvas: Canvas) => canvas.findByRole("region", { name: "Presupuesto" });
 
 // -- Category detail -------------------------------------------------------------------------------
 
@@ -83,9 +82,7 @@ export const Detail: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories/cat-fun" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Ocio" }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Ocio" })).toBeVisible();
     const budget = await budgetRegion(canvas);
     await waitFor(() => expect(budget).toHaveTextContent(`Quedan ${eur("383,67")}`));
     await expect(budget).toHaveTextContent(`Gastado ${eur("266,33")} de ${eur("650,00")}`);
@@ -225,9 +222,7 @@ export const RenameAndRestyle: Story = {
         'PATCH /api/v1/categories/cat-fun {"name":"Planes","icon":"🎁","color":"#3fa7ff"}',
       ),
     );
-    await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Planes" }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Planes" })).toBeVisible();
     await toastShown("Guardaste los cambios de Planes.");
   },
 };
@@ -276,9 +271,7 @@ export const ArchiveCountsRecurrences: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const archiveFrom = async (name: string) => {
-      await userEvent.click(
-        await canvas.findByRole("button", { name: `Editar ${name}` }, { timeout: 4000 }),
-      );
+      await userEvent.click(await canvas.findByRole("button", { name: `Editar ${name}` }));
       const edit = within(await screen.findByRole("dialog", { name: "Editar categoría" }));
       await userEvent.click(edit.getByRole("button", { name: "Archivar categoría" }));
       return within(await screen.findByRole("dialog", { name: `¿Archivar ${name}?` }));
@@ -307,7 +300,7 @@ export const CategoriesList: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Categorías" }, { timeout: 4000 }),
+      await canvas.findByRole("heading", { level: 1, name: "Categorías" }),
     ).toBeVisible();
     const expenses = within(await canvas.findByRole("region", { name: "Gastos" }));
     await expect(
@@ -330,9 +323,7 @@ export const CategoriesList: Story = {
         'PATCH /api/v1/categories/cat-transport {"archived":false}',
       ),
     );
-    await expect(
-      await expenses.findByRole("link", { name: /^Transporte/ }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await expenses.findByRole("link", { name: /^Transporte/ })).toBeVisible();
     await toastShown("Transporte está de vuelta.");
   },
 };
@@ -342,9 +333,7 @@ export const CreateCategory: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories" />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: "Nueva categoría" }, { timeout: 4000 }),
-    );
+    await userEvent.click(await canvas.findByRole("button", { name: "Nueva categoría" }));
     const sheet = within(await screen.findByRole("dialog", { name: "Nueva categoría" }));
     await userEvent.type(sheet.getByRole("textbox", { name: "Nombre" }), "Mascotas");
     await userEvent.click(sheet.getByRole("radio", { name: "🐶" }));
@@ -356,9 +345,7 @@ export const CreateCategory: Story = {
       ),
     );
     const expenses = within(canvas.getByRole("region", { name: "Gastos" }));
-    await expect(
-      await expenses.findByRole("link", { name: /^Mascotas/ }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await expenses.findByRole("link", { name: /^Mascotas/ })).toBeVisible();
     await toastShown("Listo: creaste Mascotas.");
   },
 };
@@ -368,11 +355,7 @@ export const EditFromList: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = await canvas.findByRole(
-      "button",
-      { name: "Editar Supermercado" },
-      { timeout: 4000 },
-    );
+    const button = await canvas.findByRole("button", { name: "Editar Supermercado" });
     await expectTarget(button);
     await userEvent.click(button);
     const sheet = within(await screen.findByRole("dialog", { name: "Editar categoría" }));
@@ -389,7 +372,7 @@ export const DesktopDay: Story = {
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole("region", { name: "Gastos" }, { timeout: 4000 });
+    await canvas.findByRole("region", { name: "Gastos" });
     const nav = within(canvas.getByRole("navigation", { name: "Navegación principal" }));
     await expect(nav.getByRole("link", { name: "Categorías" })).toHaveAttribute(
       "aria-current",

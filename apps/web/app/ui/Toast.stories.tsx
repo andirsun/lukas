@@ -166,7 +166,7 @@ export const AutoDismiss: Story = {
     await userEvent.click(within(canvasElement).getByRole("button", { name: "Show" }));
     const status = await screen.findByRole("status");
     await waitFor(() => expect(status).toHaveTextContent("Toast 1"));
-    await waitFor(() => expect(status).toBeEmptyDOMElement(), { timeout: 2000 });
+    await waitFor(() => expect(status).toBeEmptyDOMElement());
   },
 };
 
@@ -185,7 +185,7 @@ export const PausesWhileHovered: Story = {
     const bar = toast.querySelector<HTMLElement>(".lk-toast-progress") as HTMLElement;
     await expect(getComputedStyle(bar).animationPlayState).toBe("paused");
     await userEvent.unhover(toast);
-    await waitFor(() => expect(status).toBeEmptyDOMElement(), { timeout: 2000 });
+    await waitFor(() => expect(status).toBeEmptyDOMElement());
   },
 };
 
@@ -204,7 +204,7 @@ export const PausesWhileFocused: Story = {
     const bar = status.querySelector<HTMLElement>(".lk-toast-progress") as HTMLElement;
     await expect(getComputedStyle(bar).animationPlayState).toBe("paused");
     show.focus();
-    await waitFor(() => expect(status).toBeEmptyDOMElement(), { timeout: 2000 });
+    await waitFor(() => expect(status).toBeEmptyDOMElement());
   },
 };
 
@@ -225,7 +225,7 @@ export const ReplacedWhileHovered: Story = {
     // A plain click: no pointer movement, so the hovered toast is removed without a leave.
     fireEvent.click(show);
     await waitFor(() => expect(status).toHaveTextContent("Toast 2"));
-    await waitFor(() => expect(status).toBeEmptyDOMElement(), { timeout: 2000 });
+    await waitFor(() => expect(status).toBeEmptyDOMElement());
   },
 };
 

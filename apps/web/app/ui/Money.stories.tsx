@@ -74,7 +74,7 @@ export const CountUp: Story = {
     await new Promise((resolve) => setTimeout(resolve, 150));
     await expect(spoken).toHaveTextContent("556,84 €");
     await expect(shown.textContent).not.toBe("556,84 €");
-    await waitFor(() => expect(shown).toHaveTextContent("556,84 €"), { timeout: 2000 });
+    await waitFor(() => expect(shown).toHaveTextContent("556,84 €"));
   },
 };
 

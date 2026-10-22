@@ -61,9 +61,7 @@ async function typeOnKeypad(dialog: Canvas, text: string) {
 }
 
 async function openNew(canvas: Canvas) {
-  await userEvent.click(
-    await canvas.findByRole("button", { name: "Nuevo recurrente" }, { timeout: 4000 }),
-  );
+  await userEvent.click(await canvas.findByRole("button", { name: "Nuevo recurrente" }));
   return within(await screen.findByRole("dialog", { name: "Nuevo recurrente" }));
 }
 
@@ -84,7 +82,7 @@ export const List: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Recurrentes" }, { timeout: 4000 }),
+      await canvas.findByRole("heading", { level: 1, name: "Recurrentes" }),
     ).toBeVisible();
     const day = Number(STORY_TODAY.slice(8, 10));
     const spotify = await canvas.findByRole("button", { name: /^Spotify −3,53\s€/ });
@@ -135,9 +133,7 @@ export const YearlyRequiresMonth: Story = {
       startDate: STORY_TODAY,
     });
     await expect(sent.endDate ?? null).toBeNull();
-    await expect(
-      await canvas.findByRole("button", { name: /^Seguro de la moto/ }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("button", { name: /^Seguro de la moto/ })).toBeVisible();
     await toastShown("Guardaste Seguro de la moto.");
   },
 };
@@ -169,9 +165,7 @@ export const EditAndDelete: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} path="/app/recurring" />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(
-      await canvas.findByRole("button", { name: /^Spotify/ }, { timeout: 4000 }),
-    );
+    await userEvent.click(await canvas.findByRole("button", { name: /^Spotify/ }));
     const sheet = within(await screen.findByRole("dialog", { name: "Editar recurrente" }));
     await expect(sheet.getByRole("textbox", { name: "Nombre" })).toHaveValue("Spotify");
     await expect(sheet.getByTestId("recurring-amount")).toHaveTextContent("−3,53");
@@ -207,9 +201,7 @@ export const PesosRecurring: Story = {
     await dialogGone();
     await waitFor(() => expect(recurrencePosts(args.onRequest)).toHaveLength(1));
     await expect(recurrencePosts(args.onRequest)[0]).toContain('"amount":-5000000');
-    await expect(
-      await canvas.findByRole("button", { name: /^Arriendo −\$50\.000/ }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("button", { name: /^Arriendo −\$50\.000/ })).toBeVisible();
     await toastShown("Guardaste Arriendo.");
   },
 };
@@ -219,9 +211,7 @@ export const Empty: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} path="/app/recurring" noRecurrences />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByText(/Aquí van tus pagos fijos/, {}, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByText(/Aquí van tus pagos fijos/)).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Nuevo recurrente" })).toBeVisible();
   },
 };
@@ -232,7 +222,7 @@ export const DesktopDay: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} path="/app/recurring" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findByRole("button", { name: /^Spotify/ }, { timeout: 4000 });
+    await canvas.findByRole("button", { name: /^Spotify/ });
     const nav = within(canvas.getByRole("navigation", { name: "Navegación principal" }));
     await expect(nav.getByRole("link", { name: "Recurrentes" })).toHaveAttribute(
       "aria-current",

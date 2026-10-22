@@ -103,11 +103,8 @@ export const CreatePasskey: Story = {
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
     const toast = await page.findByText("Listo: la próxima vez entras con tu huella.");
     // The toast fades in (Motion): checked once it is fully opaque.
-    await waitFor(
-      () => expect(getComputedStyle(toast.closest(".lk-toast") ?? toast).opacity).toBe("1"),
-      {
-        timeout: 3000,
-      },
+    await waitFor(() =>
+      expect(getComputedStyle(toast.closest(".lk-toast") ?? toast).opacity).toBe("1"),
     );
   },
 };
@@ -212,11 +209,8 @@ export const ReturningUserWithoutAPasskey: Story = {
     const toast = await within(canvasElement.ownerDocument.body).findByText(
       "Listo: la próxima vez entras con tu huella.",
     );
-    await waitFor(
-      () => expect(getComputedStyle(toast.closest(".lk-toast") ?? toast).opacity).toBe("1"),
-      {
-        timeout: 3000,
-      },
+    await waitFor(() =>
+      expect(getComputedStyle(toast.closest(".lk-toast") ?? toast).opacity).toBe("1"),
     );
   },
 };

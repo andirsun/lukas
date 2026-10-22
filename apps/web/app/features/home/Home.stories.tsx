@@ -49,21 +49,17 @@ const endsInEuros = (start: string, amount: string) => new RegExp(`^${start} ${a
 /** Waits for a toast (the regions exist, empty, before any toast shows) and returns it. */
 async function toastSaying(text: string, role: "status" | "alert" = "status") {
   let found: HTMLElement | null = null;
-  await waitFor(
-    () => {
-      const region = screen.getByRole(role);
-      expect(region).toHaveTextContent(text);
-      const toast = region.querySelector<HTMLElement>(".lk-toast");
-      expect(toast && getComputedStyle(toast).opacity).toBe("1");
-      found = toast;
-    },
-    { timeout: 4000 },
-  );
+  await waitFor(() => {
+    const region = screen.getByRole(role);
+    expect(region).toHaveTextContent(text);
+    const toast = region.querySelector<HTMLElement>(".lk-toast");
+    expect(toast && getComputedStyle(toast).opacity).toBe("1");
+    found = toast;
+  });
   return within(found as unknown as HTMLElement);
 }
 
-const hero = (canvas: Canvas) =>
-  canvas.findByRole("region", { name: "Te quedan este mes" }, { timeout: 4000 });
+const hero = (canvas: Canvas) => canvas.findByRole("region", { name: "Te quedan este mes" });
 
 /** Opens the add sheet from the bottom bar's ＋. */
 async function openAdd(canvas: Canvas) {
@@ -428,11 +424,7 @@ export const EmptyMonth: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} data="empty" />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const region = await canvas.findByRole(
-      "region",
-      { name: "Gastado este mes" },
-      { timeout: 4000 },
-    );
+    const region = await canvas.findByRole("region", { name: "Gastado este mes" });
     await expect(region).toHaveTextContent(eur("0,00"));
     await expect(await canvas.findByText("Ponle presupuesto a tus categorías")).toBeVisible();
     await expect(await canvas.findByText("Trae tu historial")).toBeVisible();
@@ -460,11 +452,7 @@ export const NoCategories: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} data="no-categories" />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const use = await canvas.findByRole(
-      "button",
-      { name: "Usar las sugeridas" },
-      { timeout: 4000 },
-    );
+    const use = await canvas.findByRole("button", { name: "Usar las sugeridas" });
     await userEvent.click(use);
     await waitFor(() =>
       expect(
@@ -472,9 +460,7 @@ export const NoCategories: Story = {
       ).toHaveLength(8),
     );
     await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
-    await expect(
-      await canvas.findByRole("button", { name: /^Supermercado/ }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("button", { name: /^Supermercado/ })).toBeVisible();
   },
 };
 
@@ -534,7 +520,7 @@ export const AvatarMenu: Story = {
     await userEvent.click(avatar);
     await userEvent.click(menu.getByRole("link", { name: "Categorías" }));
     await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Categorías" }, { timeout: 4000 }),
+      await canvas.findByRole("heading", { level: 1, name: "Categorías" }),
     ).toBeVisible();
   },
 };
@@ -548,13 +534,11 @@ export const BudgetRowOpensDetail: Story = {
     await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
     const panel = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
     await userEvent.click(await panel.findByRole("button", { name: /^Ocio/ }));
-    await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Ocio" }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Ocio" })).toBeVisible();
     await expect(screen.queryByRole("dialog")).toBeNull();
-    await expect(
-      await canvas.findByRole("region", { name: "Presupuesto" }, { timeout: 4000 }),
-    ).toHaveTextContent(/Quedan/);
+    await expect(await canvas.findByRole("region", { name: "Presupuesto" })).toHaveTextContent(
+      /Quedan/,
+    );
     // And back home.
     await userEvent.click(canvas.getByRole("link", { name: "Volver al inicio" }));
     await hero(canvas);

@@ -85,7 +85,7 @@ function settledAfter<Context extends { canvasElement: HTMLElement }>(
 
 /** A section of the screen, by its heading, once it has risen into place. */
 async function region(canvas: Canvas, name: string) {
-  const found = await canvas.findByRole("region", { name }, { timeout: 4000 });
+  const found = await canvas.findByRole("region", { name });
   await settled(found);
   return found;
 }
@@ -100,7 +100,7 @@ function bodyRows(table: HTMLElement): string[][] {
 }
 
 async function tableIn(scope: HTMLElement, name: string | RegExp) {
-  return within(scope).findByRole("table", { name }, { timeout: 4000 });
+  return within(scope).findByRole("table", { name });
 }
 
 /** The donut is drawn: one sector per category, once the chart's code has loaded. */
@@ -120,9 +120,7 @@ export const DonutByCategory: Story = {
   render: october,
   play: settledAfter(async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Análisis" }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Análisis" })).toBeVisible();
     const donut = await region(canvas, "Por categoría");
     const table = await tableIn(donut, `Gastos por categoría en ${inSentence(0)}`);
     const rows = bodyRows(table);
@@ -271,7 +269,7 @@ export const TrendFromKeyboard: Story = {
     const canvas = within(canvasElement);
     await showSixMonths(canvas);
     const trend = await region(canvas, "Mes a mes");
-    const readout = await within(trend).findByTestId("trend-readout", {}, { timeout: 4000 });
+    const readout = await within(trend).findByTestId("trend-readout");
     await expect(readout).toHaveTextContent(rowName(0));
     await expect(readout).toHaveTextContent(`Ingresos ${eur("6200,00")}`);
     await expect(readout).toHaveTextContent(`Gastos ${eur("2237,08")}`);
@@ -381,7 +379,6 @@ export const StaleWhileLoading: Story = {
       await canvas.findByText(
         `Casa fue lo que más lukas se llevó en ${inSentence(1)}: ${eur("1329,78")}.`,
         {},
-        { timeout: 4000 },
       ),
     ).toBeVisible();
   }),
@@ -399,9 +396,7 @@ export const CostOfLiving: Story = {
   play: settledAfter(async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const living = await region(canvas, "¿Cuánto me cuesta vivir?");
-    await waitFor(() => expect(living).toHaveTextContent(`${eur("2237,08")} al mes`), {
-      timeout: 4000,
-    });
+    await waitFor(() => expect(living).toHaveTextContent(`${eur("2237,08")} al mes`));
     await expect(living).toHaveTextContent("tus últimos 6 meses completos");
     const split = within(living).getByTestId("living-split");
     await expect(split).toHaveTextContent(`Fijos${eur("1366,67")}`);
@@ -458,13 +453,11 @@ export const FromBottomBar: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} data="october" />,
   play: settledAfter(async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await canvas.findAllByRole("navigation", { name: "Navegación principal" }, { timeout: 4000 });
+    await canvas.findAllByRole("navigation", { name: "Navegación principal" });
     const bar = within(canvasElement.querySelector(".lk-tabbar") as HTMLElement);
     await expect(bar.queryByText("Pronto")).toBeNull();
     await userEvent.click(bar.getByRole("link", { name: "Análisis" }));
-    await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Análisis" }, { timeout: 4000 }),
-    ).toBeVisible();
+    await expect(await canvas.findByRole("heading", { level: 1, name: "Análisis" })).toBeVisible();
     await expect(bar.getByRole("link", { name: "Análisis" })).toHaveAttribute(
       "aria-current",
       "page",

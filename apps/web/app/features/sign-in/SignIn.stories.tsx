@@ -221,7 +221,7 @@ export const Resend: Story = {
     );
     const toast = await page.findByText("Te mandamos un código nuevo.");
     // The toast fades in (Motion): give it time on a loaded machine.
-    await waitFor(() => expect(toast).toBeVisible(), { timeout: 3000 });
+    await waitFor(() => expect(toast).toBeVisible());
     await expect(canvas.getByRole("button", { name: /^Reenviar en \d+ s$/ })).toBeDisabled();
   },
 };

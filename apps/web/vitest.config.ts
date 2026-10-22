@@ -43,6 +43,11 @@ export default defineConfig({
         ],
         test: {
           name: "storybook",
+          // The stories animate in real time. Run after the Node projects (API integration tests
+          // with their Postgres containers, unit tests), not beside them, and on fewer pages at
+          // once: a starved browser drops frames and its springs miss the stories' waits.
+          sequence: { groupOrder: 1 },
+          maxWorkers: 4,
           browser: {
             enabled: true,
             headless: true,
