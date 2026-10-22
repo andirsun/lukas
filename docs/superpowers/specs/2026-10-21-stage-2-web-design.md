@@ -153,7 +153,7 @@ To lower the barrier of creating an account, `/demo` lets anyone use the full ap
 ### 2.7 Other screens
 
 - **Category detail:** the month's transactions in that category, its budget with an edit action (`PUT /v1/categories/:id/budget` from the selected month), rename / icon / color, archive.
-- **Insights:** donut by category (expenses or income; paid/pending filter) for the selected month or range; month-over-month trend (income, expenses, budget); **"¿Cuánto me cuesta vivir?"**: average monthly spending over the last 6 complete months, per category, split into fixed (categories with active recurrences) and variable.
+- **Insights:** donut by category (expenses or income; paid/pending filter) for the selected month or range; month-over-month trend (income, expenses, budget) over the same span as the donut (founder, 2026-10-22); **"¿Cuánto me cuesta vivir?"**: average monthly spending over the last 6 complete months, per category, split into fixed (categories with active recurrences) and variable.
 - **Recurring:** list with next date; create / edit / delete.
 - **Categories:** list (with archived toggle), create, edit, archive.
 - **Settings:** profile time zone and language, theme (auto / night / day), sound on/off, passkeys (add / remove), import from Budge, export (JSON / CSV), delete account (typed confirmation).
