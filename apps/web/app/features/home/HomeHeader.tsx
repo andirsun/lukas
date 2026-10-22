@@ -20,13 +20,12 @@ export interface HomeHeaderProps {
 const SECTIONS = [
   { key: "recurring", to: "/app/recurring" },
   { key: "categories", to: "/app/categories" },
+  { key: "settings", to: "/app/settings" },
 ] as const;
-/** Sections that live in the avatar menu and do not exist yet (Task 15). */
-const SOON = ["settings"] as const;
 
 /**
  * Home's header: the wordmark, the month (previous months browsable), and the avatar menu with
- * the day/night switch, Recurrentes and Categorías, the sections still to come, and sign-out. The menu is a disclosure: its
+ * the day/night switch, Recurrentes, Categorías and Ajustes, and sign-out. The menu is a disclosure: its
  * button says whether it is open, Escape or a tap outside closes it and gives focus back.
  */
 export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeaderProps) {
@@ -97,15 +96,6 @@ export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeader
                 {t(`nav.${key}`)}
                 <span aria-hidden="true">›</span>
               </Link>
-            </li>
-          ))}
-          {SOON.map((key) => (
-            <li
-              key={key}
-              className="flex min-h-11 items-center justify-between text-[14px] font-bold text-ink-muted"
-            >
-              {t(`nav.${key}`)}
-              <span className="lk-soon">{t("nav.soon")}</span>
             </li>
           ))}
         </ul>

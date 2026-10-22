@@ -747,5 +747,80 @@
       "empty": "I need at least one complete month with spending to work this out. Once your first month with transactions closes, you'll see it here.",
       "archived": "archived"
     }
+  },
+  "settings": {
+    "meta_title": "Settings · Lukitas",
+    "title": "Settings",
+    "signed_in_as": "Signed in as {email}",
+    "preferences": "Preferences",
+    "theme_hint": "Automatic follows your phone's setting.",
+    "sound": "Sounds",
+    "sound_hint": "They play when you add and celebrate. Vibration stays on.",
+    "time_and_money": "Time and currency",
+    "timezone": {
+      "label": "Time zone",
+      "hint": "It tells us when your day and your month begin.",
+      "change": "Change",
+      "change_label": "Change time zone",
+      "sheet_title": "Choose your time zone",
+      "search": "Search for your city",
+      "placeholder": "Bogotá, Madrid, Lima…",
+      "use_device": "Use this device's: {city}",
+      "current": "Current",
+      "no_results": "We couldn't find “{query}”. Try the nearest big city.",
+      "more": "{count} more: keep typing to find yours.",
+      "saved": "Done: we now use {city} time."
+    },
+    "currency": {
+      "label": "Currency",
+      "hint": "You can change it until your first transaction.",
+      "locked": "Your currency is {currency}. You already have transactions or recurring payments, so it stays as is.",
+      "saved": "Done: your currency is now {currency}."
+    },
+    "passkeys": {
+      "title": "Sign in with your fingerprint",
+      "lead": "A passkey is a key saved on your phone or in your password manager. Your fingerprint or face only unlocks it, and your email still works.",
+      "empty": "You don't have one yet: you sign in with the code in your email.",
+      "unsupported": "This browser can't create passkeys. Keep signing in with your email.",
+      "list_failed": "We couldn't load your passkeys. Try again in a moment.",
+      "default_name": "Passkey",
+      "created": "Created on {date}",
+      "synced": "Synced",
+      "add": "Add a fingerprint",
+      "adding": "Waiting for your fingerprint…",
+      "added": "Done: you can now sign in with your fingerprint.",
+      "add_failed": "We couldn't save your fingerprint. Try again.",
+      "remove": "Delete",
+      "remove_label": "Delete the passkey created on {date}",
+      "remove_named_label": "Delete {name}, created on {date}",
+      "remove_title": "Delete this passkey?",
+      "remove_body": "You won't be able to sign in with it anymore. Your email still works.",
+      "remove_confirm": "Yes, delete",
+      "removed": "Passkey deleted.",
+      "remove_failed": "We couldn't delete the passkey. Try again."
+    },
+    "data": {
+      "title": "Your data",
+      "import_title": "Bring your history",
+      "import_lead": "Import what you have in Budge.",
+      "import_action": "Import from Budge",
+      "export_title": "Download your data",
+      "export_lead": "Everything as JSON, or your transactions as CSV to open in Excel or Google Sheets.",
+      "export_json": "Download JSON",
+      "export_csv": "Download CSV",
+      "exported": "Done: we downloaded {file}."
+    },
+    "delete": {
+      "title": "Delete your account",
+      "lead": "Deletes your account and all your data for good. It can't be undone.",
+      "action": "Delete my account",
+      "sheet_title": "Delete your account?",
+      "sheet_body": "Your transactions, categories, budgets, recurring payments and passkeys are deleted. There is no way to get them back.",
+      "export_first": "Download your data first",
+      "confirm_label": "Type your email to confirm",
+      "confirm_hint": "Your email is {email}.",
+      "confirm": "Delete forever",
+      "deleting": "Deleting…"
+    }
   }
 }

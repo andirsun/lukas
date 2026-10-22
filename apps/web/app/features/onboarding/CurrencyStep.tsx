@@ -10,7 +10,7 @@ export interface CurrencyStepProps extends StepNavProps {
 }
 
 /** "Peso colombiano": the currency's name in the person's language, capitalized. */
-function currencyName(code: string, locale: string): string {
+export function currencyName(code: string, locale: string): string {
   const name = new Intl.DisplayNames([locale], { type: "currency" }).of(code) ?? code;
   return name.charAt(0).toLocaleUpperCase(locale) + name.slice(1);
 }

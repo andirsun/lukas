@@ -14,11 +14,16 @@ import { type ReactNode, useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { OCTOBER_2026 } from "../../../../../packages/core/test/fixtures/october-2026.ts";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
+import type { PasskeyOutcome } from "../../auth/passkey.ts";
+import type { Locale } from "../../i18n/format.ts";
+import { IntlProvider, useLocale } from "../../i18n/IntlProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
 import { CategoriesPage } from "../categories/CategoriesPage.tsx";
 import { CategoryDetail } from "../categories/CategoryDetail.tsx";
 import { Insights } from "../insights/Insights.tsx";
 import { RecurringPage } from "../recurring/RecurringPage.tsx";
+import type { PasskeyItem, PasskeysApi } from "../settings/passkeys.ts";
+import { Settings } from "../settings/Settings.tsx";
 import { AppShell } from "./AppShell.tsx";
 import { Home } from "./Home.tsx";
 import { clearHomeStorage } from "./home-storage.ts";
@@ -286,6 +291,17 @@ export interface HomeApiOptions {
   reportDelayMs?: number;
   /** Budgets start this many months before this one (12 by default); earlier months have none. */
   budgetsSince?: number;
+  /** The profile's language (the story's locale by default). */
+  locale?: Locale;
+  /**
+   * The currency stays locked (409 `currency_locked`) even with no transactions or recurrences
+   * in sight, as when only deleted transactions remain.
+   */
+  currencyLocked?: boolean;
+  /** Exporting answers 503. */
+  failExport?: boolean;
+  /** Deleting the account answers 503. */
+  failDelete?: boolean;
 }
 
 /** One budget amount, from its month on (until a later one), as the API keeps them. */
@@ -337,6 +353,10 @@ function homeFetch({
   noRecurrences = false,
   reportDelayMs = 0,
   budgetsSince = 12,
+  locale = "es",
+  currencyLocked = false,
+  failExport = false,
+  failDelete = false,
 }: HomeApiOptions): typeof fetch {
   let categories: FakeCategory[] =
     data === "no-categories"
@@ -383,13 +403,13 @@ function homeFetch({
         : [];
   let recurrenceIds = 0;
   const deleted = new Map<string, TransactionDto>();
-  const profile = {
+  let profile = {
     id: STORY_USER_ID,
     email: "ana@example.com",
     timezone: STORY_TIMEZONE,
-    locale: "es",
+    locale: locale as string,
     onboardingCompletedAt: "2026-10-01T10:00:00.000Z",
-    currency,
+    currency: currency as string,
   };
   const newestFirst = (a: TransactionDto, b: TransactionDto) =>
     a.date === b.date ? (a.id < b.id ? 1 : -1) : a.date < b.date ? 1 : -1;
@@ -407,7 +427,39 @@ function homeFetch({
       );
     }
 
+    if (path === "/api/v1/me" && request.method === "PATCH") {
+      const patch = body as Partial<typeof profile>;
+      // Like the API: the currency changes only while the account has no transactions or recurrences.
+      if (
+        patch.currency &&
+        patch.currency !== profile.currency &&
+        (currencyLocked || transactions.length > 0 || recurrences.length > 0)
+      ) {
+        return Response.json({ code: "currency_locked" }, { status: 409 });
+      }
+      profile = { ...profile, ...patch };
+      return Response.json(profile);
+    }
+    if (path === "/api/v1/me" && request.method === "DELETE") {
+      if (failDelete) return Response.json({ code: "internal_error" }, { status: 503 });
+      return new Response(null, { status: 204 });
+    }
     if (path === "/api/v1/me") return Response.json(profile);
+    if (path === "/api/v1/me/export") {
+      if (failExport) return Response.json({ code: "internal_error" }, { status: 503 });
+      const csv = url.searchParams.get("format") === "csv";
+      return new Response(
+        csv
+          ? "date,name,amount,currency,category,status,note\n"
+          : JSON.stringify({ user: profile }),
+        {
+          headers: {
+            "content-type": csv ? "text/csv; charset=utf-8" : "application/json",
+            "content-disposition": `attachment; filename="lukas-export-${STORY_TODAY}.${csv ? "csv" : "json"}"`,
+          },
+        },
+      );
+    }
     if (path === "/api/v1/categories" && request.method === "GET") {
       const all = url.searchParams.get("includeArchived") === "true";
       return Response.json(categories.filter((c) => all || !c.archived).map(withBudget));
@@ -628,54 +680,123 @@ function homeFetch({
   };
 }
 
+/**
+ * Passkeys kept in memory, standing in for Better Auth and the browser's prompt: `outcome` is what
+ * adding one comes to (a new passkey when "added").
+ */
+export function storyPasskeys({
+  initial = [],
+  supported = true,
+  outcome = "added",
+  failList = false,
+}: {
+  initial?: PasskeyItem[];
+  supported?: boolean;
+  outcome?: PasskeyOutcome;
+  failList?: boolean;
+} = {}): PasskeysApi {
+  let items = [...initial];
+  return {
+    supported: () => supported,
+    list: async () => {
+      if (failList) throw new Error("passkeys_unavailable");
+      return [...items];
+    },
+    add: async () => {
+      if (outcome === "added") {
+        items = [
+          ...items,
+          {
+            id: `pk-${items.length + 1}`,
+            name: null,
+            createdAt: `${STORY_TODAY}T10:00:00.000Z`,
+            synced: true,
+          },
+        ];
+      }
+      return outcome;
+    },
+    remove: async (id) => {
+      items = items.filter((item) => item.id !== id);
+    },
+  };
+}
+
 export interface HomeStageProps extends HomeApiOptions {
   /** Stands in for Better Auth's sign-out; by default it succeeds. */
   signOut?: SignOutRequest;
   /** Where the story starts (`/app` by default): any screen of the signed-in app. */
   path?: string;
+  /** Stands in for Better Auth's passkeys in settings; by default none, and the browser can add one. */
+  passkeys?: PasskeysApi;
+  /** Receives settings' downloads instead of the browser. */
+  onSave?(filename: string, blob: Blob): void;
 }
 
 /**
  * The signed-in app (the shell with its bottom bar or sidebar and the add sheet; home, the
- * categories, a category's detail, the recurring ones and insights) in a memory router, against the fake
- * API above, with the toasts. Each story starts with no remembered choices; "Recargar" remounts
- * everything as a reload would, keeping what the browser stored.
+ * categories, a category's detail, the recurring ones, insights and settings) in a memory router,
+ * against the fake API above, with the toasts. It speaks the story's language until settings
+ * switches it. Each story starts with no remembered choices; "Recargar" remounts everything as a
+ * reload would, keeping what the browser stored.
  */
 export function HomeStage({
   signOut = async () => ({ error: null }),
   path = "/app",
+  passkeys: passkeysProp,
+  onSave = () => {},
   ...api
 }: HomeStageProps) {
+  // The toolbar's language, held here so settings can switch it (the toolbar's provider can't).
+  const storyLocale = useLocale().locale;
+  const [locale, setLocale] = useState(storyLocale);
+  const [passkeys] = useState(() => passkeysProp ?? storyPasskeys());
   const [fetchImpl] = useState(() => {
     clearHomeStorage(STORY_USER_ID);
-    return homeFetch(api);
+    return homeFetch({ locale: storyLocale, ...api });
   });
   const [reloads, setReloads] = useState(0);
   const shell = (screen: ReactNode) => <AppShell>{screen}</AppShell>;
   return (
-    <MemoryRouter initialEntries={[path]}>
-      <button
-        type="button"
-        className="sr-only focus:not-sr-only"
-        onClick={() => setReloads((n) => n + 1)}
-      >
-        Recargar (stand-in)
-      </button>
-      <ApiProvider key={reloads} fetch={fetchImpl}>
-        <ToastProvider>
-          <Routes>
-            <Route path="/app" element={shell(<Home signOut={signOut} />)} />
-            <Route path="/app/categories" element={shell(<CategoriesPage />)} />
-            <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
-            <Route path="/app/recurring" element={shell(<RecurringPage />)} />
-            <Route path="/app/insights" element={shell(<Insights />)} />
-            <Route
-              path="/sign-in"
-              element={<p className="p-(--space-4) text-ink">Sign-in (stand-in)</p>}
-            />
-          </Routes>
-        </ToastProvider>
-      </ApiProvider>
-    </MemoryRouter>
+    <IntlProvider locale={locale} onLocaleChange={setLocale}>
+      <MemoryRouter initialEntries={[path]}>
+        <button
+          type="button"
+          className="sr-only focus:not-sr-only"
+          onClick={() => setReloads((n) => n + 1)}
+        >
+          Recargar (stand-in)
+        </button>
+        <ApiProvider key={reloads} fetch={fetchImpl}>
+          <ToastProvider>
+            <Routes>
+              <Route path="/app" element={shell(<Home signOut={signOut} />)} />
+              <Route path="/app/categories" element={shell(<CategoriesPage />)} />
+              <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
+              <Route path="/app/recurring" element={shell(<RecurringPage />)} />
+              <Route path="/app/insights" element={shell(<Insights />)} />
+              <Route
+                path="/app/settings"
+                element={shell(
+                  <Settings
+                    passkeys={passkeys}
+                    signOut={signOut}
+                    save={(blob, filename) => onSave(filename, blob)}
+                  />,
+                )}
+              />
+              <Route
+                path="/sign-in"
+                element={<p className="p-(--space-4) text-ink">Sign-in (stand-in)</p>}
+              />
+              <Route
+                path="/"
+                element={<p className="p-(--space-4) text-ink">Landing (stand-in)</p>}
+              />
+            </Routes>
+          </ToastProvider>
+        </ApiProvider>
+      </MemoryRouter>
+    </IntlProvider>
   );
 }

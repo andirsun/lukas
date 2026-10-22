@@ -747,5 +747,80 @@
       "empty": "Necesito al menos un mes completo con gastos para calcularlo. Cuando cierre tu primer mes con movimientos, aquí lo verás.",
       "archived": "archivada"
     }
+  },
+  "settings": {
+    "meta_title": "Ajustes · Lukitas",
+    "title": "Ajustes",
+    "signed_in_as": "Entraste como {email}",
+    "preferences": "Preferencias",
+    "theme_hint": "Automático sigue el modo de tu teléfono.",
+    "sound": "Sonidos",
+    "sound_hint": "Suenan al anotar y al celebrar. La vibración sigue igual.",
+    "time_and_money": "Hora y moneda",
+    "timezone": {
+      "label": "Zona horaria",
+      "hint": "Con ella sabemos cuándo empieza tu día y tu mes.",
+      "change": "Cambiar",
+      "change_label": "Cambiar zona horaria",
+      "sheet_title": "Elige tu zona horaria",
+      "search": "Busca tu ciudad",
+      "placeholder": "Bogotá, Madrid, Lima…",
+      "use_device": "Usar la de este dispositivo: {city}",
+      "current": "Actual",
+      "no_results": "No encontramos «{query}». Prueba con la ciudad grande más cercana.",
+      "more": "Hay {count} más: sigue escribiendo para encontrar la tuya.",
+      "saved": "Listo: ahora usamos la hora de {city}."
+    },
+    "currency": {
+      "label": "Moneda",
+      "hint": "Puedes cambiarla hasta tu primer movimiento.",
+      "locked": "Tu moneda es {currency}. Ya tienes movimientos o recurrentes, así que se queda así.",
+      "saved": "Listo: tu moneda ahora es {currency}."
+    },
+    "passkeys": {
+      "title": "Entrar con tu huella",
+      "lead": "Una passkey es una llave guardada en tu teléfono o en tu gestor de contraseñas. Tu huella o tu cara solo la desbloquean, y tu correo sigue funcionando.",
+      "empty": "Aún no tienes ninguna: entras con el código de tu correo.",
+      "unsupported": "Este navegador no permite crear huellas. Sigue entrando con tu correo.",
+      "list_failed": "No pudimos cargar tus huellas. Inténtalo de nuevo en un momento.",
+      "default_name": "Passkey",
+      "created": "Creada el {date}",
+      "synced": "Sincronizada",
+      "add": "Agregar una huella",
+      "adding": "Esperando tu huella…",
+      "added": "Listo: ya puedes entrar con tu huella.",
+      "add_failed": "No pudimos guardar tu huella. Inténtalo otra vez.",
+      "remove": "Eliminar",
+      "remove_label": "Eliminar la passkey creada el {date}",
+      "remove_named_label": "Eliminar {name}, creada el {date}",
+      "remove_title": "¿Eliminar esta huella?",
+      "remove_body": "Ya no podrás entrar con ella. Tu correo sigue funcionando.",
+      "remove_confirm": "Sí, eliminar",
+      "removed": "Eliminamos la huella.",
+      "remove_failed": "No pudimos eliminar la huella. Inténtalo otra vez."
+    },
+    "data": {
+      "title": "Tus datos",
+      "import_title": "Trae tu historial",
+      "import_lead": "Importa lo que llevas en Budge.",
+      "import_action": "Importar desde Budge",
+      "export_title": "Descarga tus datos",
+      "export_lead": "Todo en JSON, o tus movimientos en CSV para abrirlos en Excel o Google Sheets.",
+      "export_json": "Descargar JSON",
+      "export_csv": "Descargar CSV",
+      "exported": "Listo: descargamos {file}."
+    },
+    "delete": {
+      "title": "Eliminar tu cuenta",
+      "lead": "Borra tu cuenta y todos tus datos para siempre. No se puede deshacer.",
+      "action": "Eliminar mi cuenta",
+      "sheet_title": "¿Eliminar tu cuenta?",
+      "sheet_body": "Se borran tus movimientos, categorías, presupuestos, recurrentes y huellas. No hay forma de recuperarlos.",
+      "export_first": "Descarga tus datos antes",
+      "confirm_label": "Escribe tu correo para confirmar",
+      "confirm_hint": "Tu correo es {email}.",
+      "confirm": "Eliminar para siempre",
+      "deleting": "Eliminando…"
+    }
   }
 }

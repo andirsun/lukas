@@ -9,9 +9,6 @@ import {
   useTransactionSheet,
 } from "../add-transaction/TransactionSheetProvider.tsx";
 
-/** Sections linked from the navigation that do not exist yet (Task 15 adds them). */
-const SOON_SIDEBAR = ["settings"] as const;
-
 const SECTIONS = new Set(["insights", "recurring", "categories", "settings"]);
 
 /** The navigation's section for a path: `/app/categories/…` is Categorías, and so on. */
@@ -26,7 +23,7 @@ function Frame({ children }: { children: ReactNode }) {
   return (
     <div className="lk-screen lk-app-shell flex min-h-dvh">
       <div className="sticky top-0 hidden h-dvh flex-none lg:flex">
-        <Sidebar current={current} onAdd={() => openAdd()} soon={SOON_SIDEBAR} />
+        <Sidebar current={current} onAdd={() => openAdd()} />
       </div>
       <div className="min-w-0 flex-1 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-(--space-6)">
         {children}

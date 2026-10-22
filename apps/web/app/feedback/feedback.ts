@@ -66,11 +66,28 @@ export function __resetFeedbackForTests(): void {
 }
 
 function soundMuted(): boolean {
+  return !soundEnabled();
+}
+
+/** Whether sounds play (the settings switch). Blocked or missing storage: sound stays on. */
+export function soundEnabled(): boolean {
   try {
-    return localStorage.getItem(SOUND_STORAGE_KEY) === "off";
+    return localStorage.getItem(SOUND_STORAGE_KEY) !== "off";
   } catch {
-    // Blocked or missing storage: sound stays on.
-    return false;
+    return true;
+  }
+}
+
+/**
+ * Turns sounds on or off on this device (vibration stays either way). With storage blocked the
+ * choice is not kept, and sound stays on.
+ */
+export function setSoundEnabled(on: boolean): void {
+  try {
+    if (on) localStorage.removeItem(SOUND_STORAGE_KEY);
+    else localStorage.setItem(SOUND_STORAGE_KEY, "off");
+  } catch {
+    // Not kept; see above.
   }
 }
 

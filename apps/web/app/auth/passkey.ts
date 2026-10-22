@@ -76,6 +76,11 @@ export function rememberPasskeyUsed(storage: MemoryStorage | null = browserStora
   write(storage, PASSKEY_USED_KEY, "1");
 }
 
+/** Called when the person deleted their last passkey: the fingerprint button would only fail. */
+export function forgetPasskeyUsed(storage: MemoryStorage | null = browserStorage()): void {
+  write(storage, PASSKEY_USED_KEY, "0");
+}
+
 function decidedIds(storage: MemoryStorage | null): string[] {
   try {
     const parsed: unknown = JSON.parse(read(storage, PASSKEY_OFFERED_KEY) ?? "[]");

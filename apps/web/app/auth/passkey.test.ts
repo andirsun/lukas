@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  forgetPasskeyUsed,
   hasUsedPasskey,
   type OfferDeps,
   offerDecided,
@@ -41,6 +42,13 @@ describe("the passkey flag of this browser", () => {
     expect(() => rememberPasskeyUsed(null)).not.toThrow();
     expect(hasUsedPasskey(blockedStorage)).toBe(false);
     expect(() => rememberPasskeyUsed(blockedStorage)).not.toThrow();
+  });
+
+  it("is off again once the last passkey is deleted", () => {
+    const storage = memoryStorage({ "lukas.passkey.used": "1" });
+    forgetPasskeyUsed(storage);
+    expect(hasUsedPasskey(storage)).toBe(false);
+    expect(() => forgetPasskeyUsed(blockedStorage)).not.toThrow();
   });
 });
 

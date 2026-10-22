@@ -78,13 +78,21 @@ function ignoreLocaleChange() {}
  * (`/en/...` is English); `setLocale` lets later features (the profile setting) take over.
  * Keeps `<html lang>` in sync after hydration, since the prerendered fallback is Spanish.
  *
- * Passing `locale` forces it and needs no router (Storybook's locale toolbar); `setLocale` is
- * then ignored.
+ * Passing `locale` forces it and needs no router (Storybook's locale toolbar); `setLocale` then
+ * calls `onLocaleChange` when given (a story that holds the locale itself), and is ignored otherwise.
  */
-export function IntlProvider({ children, locale }: { children: ReactNode; locale?: Locale }) {
+export function IntlProvider({
+  children,
+  locale,
+  onLocaleChange,
+}: {
+  children: ReactNode;
+  locale?: Locale;
+  onLocaleChange?: (locale: Locale) => void;
+}) {
   if (locale) {
     return (
-      <IntlRoot locale={locale} setLocale={ignoreLocaleChange}>
+      <IntlRoot locale={locale} setLocale={onLocaleChange ?? ignoreLocaleChange}>
         {children}
       </IntlRoot>
     );

@@ -501,7 +501,7 @@ export const SheetDayTheme: Story = {
   },
 };
 
-/** The avatar menu: the theme switch, sign-out, and the sections that come soon. */
+/** The avatar menu: the theme switch, sign-out, and the sections that live there. */
 export const AvatarMenu: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} />,
   play: async ({ canvasElement }) => {
@@ -514,9 +514,11 @@ export const AvatarMenu: Story = {
     await expect(canvas.getByRole("button", { name: "Cambiar a modo día" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
     const menu = within(canvasElement.querySelector(".lk-menu") as HTMLElement);
-    await expect(menu.getByText(/Ajustes/)).toBeVisible();
-    // Recurring and categories are real now; settings comes later.
-    await expect(menu.queryByRole("link", { name: /Ajustes/ })).toBeNull();
+    await expect(menu.getByRole("link", { name: "Ajustes" })).toHaveAttribute(
+      "href",
+      "/app/settings",
+    );
+    await expect(menu.queryByText("Pronto")).toBeNull();
     await expectTarget(menu.getByRole("link", { name: "Categorías" }));
     await expect(menu.getByRole("link", { name: "Recurrentes" })).toHaveAttribute(
       "href",
@@ -586,9 +588,11 @@ export const Desktop: Story = {
       "href",
       "/app/insights",
     );
-    // Sections still to come are listed, not links.
-    await expect(nav.queryByRole("link", { name: /Ajustes/ })).toBeNull();
-    await expect(nav.getByText("Ajustes")).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Ajustes" })).toHaveAttribute(
+      "href",
+      "/app/settings",
+    );
+    await expect(nav.queryByText("Pronto")).toBeNull();
     await userEvent.click(nav.getByRole("button", { name: "Agregar" }));
     await expect(await screen.findByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
   },

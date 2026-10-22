@@ -7,7 +7,7 @@ import { useToast } from "../../ui/Toast.tsx";
 /** Ends the session; Better Auth answers `{ error }` rather than throwing on an HTTP failure. */
 export type SignOutRequest = () => Promise<{ error: unknown }>;
 
-const liveSignOut: SignOutRequest = () => authClient.signOut();
+export const liveSignOut: SignOutRequest = () => authClient.signOut();
 
 /**
  * Signs out, safely: only once the server says the session is over does it go to /sign-in and
