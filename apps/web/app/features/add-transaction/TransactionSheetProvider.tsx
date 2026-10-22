@@ -1,5 +1,13 @@
 import type { TransactionDto } from "@lukas/core";
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { AddTransactionSheet } from "./AddTransactionSheet.tsx";
 import {
   type TransactionActions,
@@ -21,7 +29,12 @@ interface TransactionSheetContext {
   actions: TransactionActions;
   /** The latest save or payment in this session, for Lukitas on home. */
   lastEvent: TransactionEvent | null;
+  /** Transactions just brought back by Deshacer: their rows slide in when they reappear. */
+  restored: ReadonlySet<string>;
 }
+
+/** How long a restored transaction counts as just restored (its row mounts well within it). */
+const RESTORED_MS = 2000;
 
 const Context = createContext<TransactionSheetContext | null>(null);
 
@@ -71,10 +84,21 @@ export function TransactionSheetProvider({
     [],
   );
 
-  const actions = useTransactionActions({ currency, openEdit, report });
+  const [restored, setRestored] = useState<ReadonlySet<string>>(new Set());
+  const onRestored = useCallback(
+    (id: string) => setRestored((current) => new Set(current).add(id)),
+    [],
+  );
+  useEffect(() => {
+    if (restored.size === 0) return;
+    const timer = setTimeout(() => setRestored(new Set()), RESTORED_MS);
+    return () => clearTimeout(timer);
+  }, [restored]);
+
+  const actions = useTransactionActions({ currency, openEdit, report, onRestored });
   const value = useMemo(
-    () => ({ openAdd, openEdit, actions, lastEvent }),
-    [openAdd, openEdit, actions, lastEvent],
+    () => ({ openAdd, openEdit, actions, lastEvent, restored }),
+    [openAdd, openEdit, actions, lastEvent, restored],
   );
 
   return (

@@ -149,7 +149,7 @@
   "keypad": {
     "label": "Keypad",
     "decimal": "Decimal point",
-    "backspace": "Delete"
+    "backspace": "Delete digit"
   },
   "name_field": {
     "label": "Name (optional)",
@@ -832,5 +832,12 @@
     "create_account": "Create my account",
     "leave": "Leave the demo",
     "meta_title_screen": "Demo · {screen}"
+  },
+  "swipe": {
+    "delete": "Delete",
+    "edit": "Edit",
+    "paid": "Paid",
+    "hint": "Swipe left to delete or right to edit.",
+    "hint_pending": "Swipe left to delete or right to mark it paid."
   }
 }

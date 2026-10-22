@@ -1,7 +1,12 @@
 import { InvalidAmountError } from "@lukas/core";
 import { describe, expect, it } from "vitest";
 import { createApiClient } from "../../api/client.ts";
-import { budgetExample, draftFromCents, parseBudgetInput } from "./budget-input.ts";
+import {
+  budgetExample,
+  draftFromCents,
+  formatBudgetTyping,
+  parseBudgetInput,
+} from "./budget-input.ts";
 import { categoryChips } from "./category-chips.ts";
 import { defaultCurrency } from "./currency.ts";
 import { countCategoryTransactions, createSuggestions } from "./onboarding-api.ts";
@@ -77,6 +82,43 @@ describe("parseBudgetInput", () => {
     }
     expect(budgetExample("COP", "es")).toBe("300.000");
     expect(budgetExample("EUR", "es")).toBe("300");
+  });
+});
+
+describe("formatBudgetTyping", () => {
+  const cop = { locale: "es" as const, currency: "COP" };
+  const eurEs = { locale: "es" as const, currency: "EUR" };
+  const eurEn = { locale: "en" as const, currency: "EUR" };
+
+  it("groups thousands while typing, like the keypad's amount", () => {
+    expect(formatBudgetTyping("300000", 6, cop)).toEqual({ text: "300.000", caret: 7 });
+    expect(formatBudgetTyping("1250000", 7, cop)).toEqual({ text: "1.250.000", caret: 9 });
+    expect(formatBudgetTyping("1250,5", 6, eurEs).text).toBe("1250,5");
+    expect(formatBudgetTyping("12500,5", 7, eurEs).text).toBe("12.500,5");
+    expect(formatBudgetTyping("1250.5", 6, eurEn).text).toBe("1,250.5");
+  });
+
+  it("reads the separators already there as grouping, and keeps the decimal one", () => {
+    expect(formatBudgetTyping("300.0000", 8, cop).text).toBe("3.000.000");
+    expect(formatBudgetTyping("12,", 3, eurEs).text).toBe("12,");
+    expect(formatBudgetTyping("12,345", 6, eurEs).text).toBe("12,34");
+  });
+
+  it("drops what is not a digit, and pesos take no decimals", () => {
+    expect(formatBudgetTyping("$ 50.000", 8, cop).text).toBe("50.000");
+    expect(formatBudgetTyping("50000,5", 7, cop).text).toBe("50.000");
+    expect(formatBudgetTyping("abc", 3, cop)).toEqual({ text: "", caret: 0 });
+  });
+
+  it("keeps the caret after the same digit when a separator appears before it", () => {
+    // "30|0000" with a digit typed at 2: "300000" → "300.000", the caret after the third digit.
+    expect(formatBudgetTyping("300000", 3, cop)).toEqual({ text: "300.000", caret: 3 });
+    expect(formatBudgetTyping("3000000", 2, cop)).toEqual({ text: "3.000.000", caret: 3 });
+  });
+
+  it("parses back to the same amount", () => {
+    const { text } = formatBudgetTyping("1250000", 7, cop);
+    expect(parseBudgetInput(text, "es")).toBe(125000000);
   });
 });
 

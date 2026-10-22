@@ -35,6 +35,11 @@ export const EmailStep: Story = {
     await expect(canvas.getByRole("img", { name: "Lukitas, contento" })).toBeVisible();
     const email = canvas.getByRole("textbox", { name: "Tu correo" });
     await expect(email).toHaveAttribute("type", "email");
+    // Its name comes from a real, visible label, never from the placeholder.
+    const label = (email as HTMLInputElement).labels?.[0];
+    await expect(label).toHaveTextContent("Tu correo");
+    await expect(label).toBeVisible();
+    await expect(email).not.toHaveAttribute("placeholder", "Tu correo");
     // Existing passkeys appear in the field's autofill (WebAuthn conditional mediation).
     await expect(email).toHaveAttribute("autocomplete", "username webauthn");
     const send = canvas.getByRole("button", { name: "Enviar código" });

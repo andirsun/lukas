@@ -11,6 +11,37 @@ const TONES = ["gold", "candy", "good"] as const;
 const PIECES = 28;
 /** Used when the `--celebrate` token cannot be read (no stylesheet). */
 const FALLBACK_MS = 1200;
+/** How long to wait for a landing spot to appear (a screen still arriving, as after onboarding). */
+const FIND_SPOT_MS = 800;
+
+/**
+ * Marks where Lukitas may land: free space that never holds text or figures (the ＋ of the bottom
+ * bar, an empty spot in the sidebar). Its value is his size in px. The first one on screen wins.
+ */
+export const CELEBRATION_ANCHOR = "data-celebration-anchor";
+
+interface Spot {
+  /** The spot's horizontal center and top, in viewport px. */
+  x: number;
+  top: number;
+  size: number;
+}
+
+/** The first landing spot on screen, or null while there is none. */
+function findSpot(): Spot | null {
+  for (const element of document.querySelectorAll<HTMLElement>(`[${CELEBRATION_ANCHOR}]`)) {
+    const rect = element.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) continue;
+    const size = Number(element.getAttribute(CELEBRATION_ANCHOR)) || rect.width;
+    return { x: rect.left + rect.width / 2, top: rect.top, size };
+  }
+  return null;
+}
+
+/** No spot at all (a screen without a bottom bar or sidebar): the top of the screen. */
+function fallbackSpot(): Spot {
+  return { x: window.innerWidth / 2, top: 8, size: 72 };
+}
 
 interface Piece {
   tone: (typeof TONES)[number];
@@ -39,30 +70,48 @@ const BURST: readonly Piece[] = Array.from({ length: PIECES }, (_, index) => {
 
 /**
  * Confetti and a celebrating Lukitas, shown when `feedback()` reports something worth
- * celebrating. Purely decorative (hidden from assistive technology: the toast or screen already
- * says what happened) and it never takes a tap. Under reduced motion there is no confetti: Lukitas
- * shows as his still celebrating frame and only fades in and out. Mounted once, in the app layout.
+ * celebrating. Lukitas lands in free space, never over text or figures: on the ＋ of the bottom bar
+ * on phones, in the sidebar's empty spot on wide screens (`CELEBRATION_ANCHOR`), and the confetti
+ * bursts from there. Purely decorative (hidden from assistive technology: the toast or screen
+ * already says what happened) and it never takes a tap. Under reduced motion there is no confetti:
+ * Lukitas shows as his still celebrating frame and only fades in and out. Mounted once, in the app
+ * layout.
  */
 export function Celebration() {
   const reduceMotion = useReducedMotionPreference();
-  const [shown, setShown] = useState<{ id: number } | null>(null);
+  const [shown, setShown] = useState<({ id: number } & Spot) | null>(null);
 
   useEffect(() => {
     let id = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let frame = 0;
     const onFeedback = (event: Event) => {
       const detail = (event as CustomEvent<FeedbackDetail>).detail;
       if (!detail || !CELEBRATED_EVENTS.includes(detail.event)) return;
       id += 1;
-      setShown({ id });
+      const mine = id;
       clearTimeout(timer);
-      const ms = durationToken("--celebrate") * 1000 || FALLBACK_MS;
-      timer = setTimeout(() => setShown(null), ms + 50);
+      cancelAnimationFrame(frame);
+      const started = performance.now();
+      // The screen may still be arriving (onboarding hands over to home): look for a spot.
+      const place = () => {
+        if (mine !== id) return;
+        const spot = findSpot();
+        if (!spot && performance.now() - started < FIND_SPOT_MS) {
+          frame = requestAnimationFrame(place);
+          return;
+        }
+        setShown({ id: mine, ...(spot ?? fallbackSpot()) });
+        const ms = durationToken("--celebrate") * 1000 || FALLBACK_MS;
+        timer = setTimeout(() => setShown(null), ms + 50);
+      };
+      place();
     };
     window.addEventListener(FEEDBACK_DOM_EVENT, onFeedback);
     return () => {
       window.removeEventListener(FEEDBACK_DOM_EVENT, onFeedback);
       clearTimeout(timer);
+      cancelAnimationFrame(frame);
     };
   }, []);
 
@@ -75,7 +124,7 @@ export function Celebration() {
       aria-hidden="true"
       data-testid="celebration"
     >
-      <div className="lk-celebration-burst">
+      <div className="lk-celebration-burst" style={{ left: shown.x, top: shown.top }}>
         {!reduceMotion &&
           BURST.map((piece, index) => (
             <span
@@ -91,8 +140,8 @@ export function Celebration() {
               }
             />
           ))}
-        <span className="lk-celebration-lukas">
-          <Lukas mood="celebrating" size={120} decorative />
+        <span className="lk-celebration-lukas" style={{ width: shown.size, height: shown.size }}>
+          <Lukas mood="celebrating" size={shown.size} decorative />
         </span>
       </div>
     </div>

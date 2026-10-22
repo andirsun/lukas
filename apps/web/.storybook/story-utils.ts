@@ -43,3 +43,71 @@ export async function expectSunk(element: Element, px: number): Promise<void> {
   await waitFor(() => expect(translateY(element)).toBe(px));
   await expectEdge(element, 1);
 }
+
+const pause = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * A finger drag, as pointer events (`pointerType: "touch"`): down at `from` (the element's center
+ * by default), then `steps` moves `stepMs` apart to `from + (dx, dy)` (or through each leg of
+ * `path`, offsets from `from`), then up. Fast (few steps) is a flick. `hold` runs while the finger
+ * is still down at the end, to look at the drag mid-way.
+ */
+export async function fingerDrag(
+  element: Element,
+  {
+    dx = 0,
+    dy = 0,
+    steps = 12,
+    stepMs = 16,
+    from,
+    path,
+    hold,
+  }: {
+    dx?: number;
+    dy?: number;
+    steps?: number;
+    stepMs?: number;
+    from?: { x: number; y: number };
+    path?: { dx: number; dy?: number; steps?: number }[];
+    hold?: () => Promise<void>;
+  } = {},
+): Promise<void> {
+  const box = element.getBoundingClientRect();
+  const start = from ?? { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+  const pointerId = 100 + Math.floor(Math.random() * 1000);
+  const fire = (type: string, x: number, y: number) =>
+    element.dispatchEvent(
+      new PointerEvent(type, {
+        pointerId,
+        pointerType: "touch",
+        isPrimary: true,
+        clientX: x,
+        clientY: y,
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+      }),
+    );
+  fire("pointerdown", start.x, start.y);
+  let at = { dx: 0, dy: 0 };
+  for (const leg of path ?? [{ dx, dy, steps }]) {
+    const n = leg.steps ?? steps;
+    const to = { dx: leg.dx, dy: leg.dy ?? 0 };
+    for (let i = 1; i <= n; i++) {
+      await pause(stepMs);
+      fire(
+        "pointermove",
+        start.x + at.dx + ((to.dx - at.dx) * i) / n,
+        start.y + at.dy + ((to.dy - at.dy) * i) / n,
+      );
+    }
+    at = to;
+  }
+  await hold?.();
+  fire("pointerup", start.x + at.dx, start.y + at.dy);
+}
+
+/** Horizontal offset of an element's transform, in px (0 when it has none). */
+export function translateX(element: Element): number {
+  return new DOMMatrix(getComputedStyle(element).transform).m41;
+}

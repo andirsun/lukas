@@ -7,7 +7,7 @@ import {
   todayIn,
 } from "@lukas/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { type PointerEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslations } from "use-intl";
 import { useApi, useApiMode } from "../../api/ApiProvider.tsx";
@@ -28,11 +28,14 @@ import { categoryLook } from "../../ui/category-look.ts";
 import { cx } from "../../ui/cx.ts";
 import { LukasBubble } from "../../ui/LukasBubble.tsx";
 import { Money } from "../../ui/Money.tsx";
+import { type Pager, PagerTrack, usePager } from "../../ui/Pager.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
+import { SwipeRow } from "../../ui/SwipeRow.tsx";
 import { useToast } from "../../ui/Toast.tsx";
 import { TransactionRow } from "../../ui/TransactionRow.tsx";
+import { useWideScreen } from "../../ui/use-wide-screen.ts";
 import { useTransactionSheet } from "../add-transaction/TransactionSheetProvider.tsx";
 import { createSuggestions, useHasTransactions } from "../onboarding/onboarding-api.ts";
 import { SUGGESTED_CATEGORIES } from "../onboarding/suggested-categories.ts";
@@ -44,16 +47,18 @@ import type { SignOutRequest } from "./use-sign-out.ts";
 
 /** How long Lukitas celebrates after a save or a payment. */
 const CELEBRATE_MS = 2500;
-/** A sideways move of at least this much (px), and clearly more sideways than down, is a swipe. */
-const SWIPE_PX = 60;
+/** The phone's pages, in order: Movimientos first (founder decision 2026-10-22). */
+const VIEWS: readonly HomeView[] = ["transactions", "budgets"];
 
 /**
  * Home (`/app`, spec §2.5): the month (the person's current one by default, earlier ones
  * browsable), Lukitas with a line about it, what is left (or, without budgets, what was spent),
  * and two lists: Movimientos (by day: today on top, the upcoming pending ones next, then the past)
- * and Presupuestos (one row per spending category, opening its detail). On phones a segmented
- * control (or a sideways swipe) switches between them, Movimientos first and by default, and the
- * choice is remembered on the device; on wide screens they sit side by side, Movimientos first. Around them, gentle cards for an account that skipped the setup.
+ * and Presupuestos (one row per spending category, opening its detail). On phones they are two
+ * pages that follow the finger (a sideways drag anywhere on the screen but a row, which has its
+ * own swipes; `gestureOwner` decides), or the segmented control above them; Movimientos first and
+ * by default, the choice remembered on the device. On wide screens they sit side by side,
+ * Movimientos first. Around them, gentle cards for an account that skipped the setup.
  */
 export interface HomeProps {
   /** Ends the session (stories pass a stand-in); Better Auth's by default. */
@@ -98,6 +103,13 @@ function MonthView({ userId, currency, today, current, month, onMonth, signOut }
   // Archived ones too: older transactions (and a month's summary) can still be in them.
   const categories = useAllCategories();
   const [view, setView] = useHomeView();
+  const wide = useWideScreen();
+  const pager = usePager({
+    index: VIEWS.indexOf(view),
+    count: VIEWS.length,
+    onIndexChange: (index) => setView(VIEWS[index] ?? "transactions"),
+    enabled: !wide,
+  });
 
   if (summary.error && !summary.data) throw summary.error;
   if (transactions.error && !transactions.data) throw transactions.error;
@@ -110,7 +122,7 @@ function MonthView({ userId, currency, today, current, month, onMonth, signOut }
   return (
     <div className="mx-auto flex w-full max-w-[480px] flex-col gap-(--space-3) px-(--space-4) pt-(--space-3) lg:max-w-[1040px] lg:px-(--space-6) lg:pt-(--space-5)">
       <HomeHeader month={month} onMonth={onMonth} max={current} signOut={signOut} />
-      <main className="flex flex-col gap-(--space-3)">
+      <main className="flex flex-col gap-(--space-3)" {...pager.surface}>
         {summary.data && categories.data && transactions.data ? (
           <>
             <Lukitas
@@ -141,6 +153,7 @@ function MonthView({ userId, currency, today, current, month, onMonth, signOut }
             <Lists
               view={view}
               onView={setView}
+              pager={wide ? null : pager}
               summary={summary.data}
               categories={categories.data}
               items={transactions.data?.items}
@@ -424,6 +437,8 @@ function NoCategories() {
 interface ListsProps {
   view: HomeView;
   onView(view: HomeView): void;
+  /** Phones: the two lists are the pager's pages. Wide screens (null): side by side. */
+  pager: Pager | null;
   summary: MonthSummary | undefined;
   categories: CategoryDto[] | undefined;
   items: TransactionDto[] | undefined;
@@ -436,6 +451,7 @@ interface ListsProps {
 function Lists({
   view,
   onView,
+  pager,
   summary,
   categories,
   items,
@@ -445,63 +461,49 @@ function Lists({
   monthName,
 }: ListsProps) {
   const t = useTranslations("home");
-  const start = useRef<{ x: number; y: number } | null>(null);
+  const transactions = (
+    <section role="tabpanel" aria-label={t("view.transactions")} className="lk-panel flex">
+      <h2 className="lk-panel-title">{t("view.transactions")}</h2>
+      <Transactions
+        items={items}
+        categories={categories}
+        today={today}
+        currency={currency}
+        monthName={monthName}
+      />
+    </section>
+  );
+  const budgets = (
+    <section role="tabpanel" aria-label={t("view.budgets")} className="lk-panel flex">
+      <h2 className="lk-panel-title">{t("view.budgets")}</h2>
+      <Budgets summary={summary} categories={categories} currency={currency} month={month} />
+    </section>
+  );
 
-  // A sideways swipe on the list switches it, like the tabs read: right shows Presupuestos (the
-  // second), left goes back to Movimientos.
-  const onPointerDown = (event: PointerEvent<HTMLElement>) => {
-    start.current = event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY };
-  };
-  const onPointerUp = (event: PointerEvent<HTMLElement>) => {
-    const from = start.current;
-    start.current = null;
-    if (!from) return;
-    const dx = event.clientX - from.x;
-    const dy = event.clientY - from.y;
-    if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < 2 * Math.abs(dy)) return;
-    onView(dx > 0 ? "budgets" : "transactions");
-  };
-  const swipe = { onPointerDown, onPointerUp, onPointerCancel: () => (start.current = null) };
-
+  if (!pager) {
+    return (
+      <div className="grid grid-cols-2 items-start gap-(--space-6)">
+        {transactions}
+        {budgets}
+      </div>
+    );
+  }
   return (
     <>
-      <div className="lg:hidden">
-        <SegmentedControl<HomeView>
-          label={t("view.label")}
-          value={view}
-          options={[
-            { value: "transactions", label: t("view.transactions") },
-            { value: "budgets", label: t("view.budgets") },
-          ]}
-          onChange={onView}
-        />
-      </div>
-      <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-(--space-6)">
-        <section
-          role="tabpanel"
-          aria-label={t("view.transactions")}
-          className={cx("lk-panel", view === "transactions" ? "flex" : "hidden lg:flex")}
-          {...swipe}
-        >
-          <h2 className="lk-panel-title">{t("view.transactions")}</h2>
-          <Transactions
-            items={items}
-            categories={categories}
-            today={today}
-            currency={currency}
-            monthName={monthName}
-          />
-        </section>
-        <section
-          role="tabpanel"
-          aria-label={t("view.budgets")}
-          className={cx("lk-panel", view === "budgets" ? "flex" : "hidden lg:flex")}
-          {...swipe}
-        >
-          <h2 className="lk-panel-title">{t("view.budgets")}</h2>
-          <Budgets summary={summary} categories={categories} currency={currency} month={month} />
-        </section>
-      </div>
+      <SegmentedControl<HomeView>
+        label={t("view.label")}
+        value={view}
+        position={pager.position}
+        options={[
+          { value: "transactions", label: t("view.transactions") },
+          { value: "budgets", label: t("view.budgets") },
+        ]}
+        onChange={onView}
+      />
+      <PagerTrack pager={pager}>
+        {transactions}
+        {budgets}
+      </PagerTrack>
     </>
   );
 }
@@ -612,7 +614,7 @@ export function Day({
 }) {
   const t = useTranslations("home");
   const { locale } = useLocale();
-  const { openEdit, actions } = useTransactionSheet();
+  const { openEdit, actions, restored } = useTransactionSheet();
   const [paidHere, setPaidHere] = useState<ReadonlySet<string>>(new Set());
   const headingId = useId();
   const day = formatDay(group.date, locale);
@@ -653,21 +655,34 @@ export function Day({
         const category = byId.get(tx.categoryId);
         // A row the API has not confirmed yet cannot be edited or paid.
         const draft = tx.id.startsWith("pending-");
+        // Swipes are shortcuts: left deletes, right edits (or pays a pending one).
         return (
-          <TransactionRow
+          <SwipeRow
             key={tx.id}
-            name={tx.name}
-            categoryName={category?.name ?? ""}
-            glyph={category ? categoryLook(category).glyph : "🏷️"}
-            amount={tx.amount}
-            currency={currency}
-            status={tx.status}
-            paidHere={paidHere.has(tx.id)}
-            onOpen={() => {
-              if (!draft) openEdit(tx);
-            }}
-            {...(draft ? {} : { onPay: () => pay(tx) })}
-          />
+            enter={restored.has(tx.id)}
+            onDelete={draft ? undefined : () => void actions.remove(tx)}
+            right={
+              draft
+                ? undefined
+                : tx.status === "pending"
+                  ? { kind: "paid", run: () => void pay(tx).catch(() => {}) }
+                  : { kind: "edit", run: () => openEdit(tx) }
+            }
+          >
+            <TransactionRow
+              name={tx.name}
+              categoryName={category?.name ?? ""}
+              glyph={category ? categoryLook(category).glyph : "🏷️"}
+              amount={tx.amount}
+              currency={currency}
+              status={tx.status}
+              paidHere={paidHere.has(tx.id)}
+              onOpen={() => {
+                if (!draft) openEdit(tx);
+              }}
+              {...(draft ? {} : { onPay: () => pay(tx) })}
+            />
+          </SwipeRow>
         );
       })}
     </section>

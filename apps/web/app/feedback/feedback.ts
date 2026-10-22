@@ -14,7 +14,13 @@ export type FeedbackEvent =
   | "paid"
   | "nearLimit"
   | "overBudget"
-  | "undo";
+  | "undo"
+  /** A swiped row crossed the line where letting go runs its action (or came back under it). */
+  | "swipeThreshold"
+  /** The home pager settled on the other list. */
+  | "pageChange"
+  /** A transaction was deleted (a swipe or the edit sheet). */
+  | "delete";
 
 /** The DOM event every `feedback()` call dispatches on `window`; `Celebration` listens to it. */
 export const FEEDBACK_DOM_EVENT = "lukas:feedback";
@@ -37,13 +43,19 @@ export const VIBRATION_PATTERNS: Record<FeedbackEvent, readonly number[]> = {
   nearLimit: [30],
   overBudget: [40, 60, 40],
   undo: [8],
+  // Gestures: one short tick each, light enough to repeat while a finger moves.
+  swipeThreshold: [10],
+  pageChange: [15],
+  delete: [14, 30, 8],
 };
 
 /**
  * The sound files. The URLs are plain strings (`?no-inline` keeps Vite from embedding the tiny
  * files as data URIs in the JavaScript); nothing is fetched until an event first plays one.
+ * Gesture events (a threshold, a page change, a delete) only vibrate: a sound on every swipe
+ * would wear thin fast.
  */
-const SOUND_URLS: Record<FeedbackEvent, string> = {
+const SOUND_URLS: Partial<Record<FeedbackEvent, string>> = {
   tap: tapUrl,
   expenseSaved: expenseSavedUrl,
   incomeSaved: incomeSavedUrl,
@@ -92,10 +104,10 @@ export function setSoundEnabled(on: boolean): void {
 }
 
 /** The event's audio element, created (and so fetched) the first time it is needed. */
-function soundFor(event: FeedbackEvent): HTMLAudioElement {
+function soundFor(event: FeedbackEvent, url: string): HTMLAudioElement {
   let audio = sounds.get(event);
   if (!audio) {
-    audio = new Audio(SOUND_URLS[event]);
+    audio = new Audio(url);
     audio.preload = "auto";
     audio.volume = VOLUME;
     sounds.set(event, audio);
@@ -104,8 +116,9 @@ function soundFor(event: FeedbackEvent): HTMLAudioElement {
 }
 
 function playSound(event: FeedbackEvent): void {
-  if (typeof Audio === "undefined" || soundMuted()) return;
-  const audio = soundFor(event);
+  const url = SOUND_URLS[event];
+  if (!url || typeof Audio === "undefined" || soundMuted()) return;
+  const audio = soundFor(event, url);
   // A real sound takes over from a silent unlock still settling on this element.
   if (unlocking.delete(audio)) audio.muted = false;
   audio.currentTime = 0;
@@ -121,9 +134,9 @@ function playSound(event: FeedbackEvent): void {
  */
 export function unlockSounds(): void {
   if (typeof Audio === "undefined") return;
-  for (const event of Object.keys(SOUND_URLS) as FeedbackEvent[]) {
+  for (const [event, url] of Object.entries(SOUND_URLS) as [FeedbackEvent, string][]) {
     try {
-      const audio = soundFor(event);
+      const audio = soundFor(event, url);
       if (!audio.paused) continue; // Already playing for real.
       audio.muted = true;
       unlocking.add(audio);

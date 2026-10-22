@@ -149,7 +149,7 @@
   "keypad": {
     "label": "Teclado numérico",
     "decimal": "Coma decimal",
-    "backspace": "Borrar"
+    "backspace": "Borrar dígito"
   },
   "name_field": {
     "label": "Nombre (opcional)",
@@ -832,5 +832,12 @@
     "create_account": "Crear mi cuenta",
     "leave": "Salir del demo",
     "meta_title_screen": "Demo · {screen}"
+  },
+  "swipe": {
+    "delete": "Borrar",
+    "edit": "Editar",
+    "paid": "Pagado",
+    "hint": "Desliza a la izquierda para borrar o a la derecha para editar.",
+    "hint_pending": "Desliza a la izquierda para borrar o a la derecha para marcarlo pagado."
   }
 }

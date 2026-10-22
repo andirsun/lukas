@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, fn, screen, userEvent, waitFor, within } from "storybook/test";
-import { expectTarget } from "../../../.storybook/story-utils.ts";
+import { expectTarget, fingerDrag } from "../../../.storybook/story-utils.ts";
 import { HomeStage } from "./story-harness.tsx";
 
 /**
@@ -157,13 +157,14 @@ export const ViewRememberedAndSwiped: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await hero(canvas);
-    const panel = canvas.getByRole("tabpanel", { name: "Movimientos" });
-    // Swipe right (finger moves left to right): Presupuestos, the second tab.
-    fireEvent.pointerDown(panel, { clientX: 140, clientY: 400, pointerType: "touch" });
-    fireEvent.pointerUp(panel, { clientX: 300, clientY: 410, pointerType: "touch" });
-    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    const card = canvas.getByRole("region", { name: "Te quedan este mes" });
+    // The pages follow the finger: dragged left (from the summary card), Presupuestos comes in.
+    await fingerDrag(card, { dx: -260, steps: 16 });
+    await waitFor(() =>
+      expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
     );
     // The choice wins over the default after a reload.
     await userEvent.click(canvas.getByRole("button", { name: "Recargar (stand-in)" }));
@@ -174,18 +175,18 @@ export const ViewRememberedAndSwiped: Story = {
     );
     // A mostly vertical drag is a scroll, not a swipe.
     const list = canvas.getByRole("tabpanel", { name: "Presupuestos" });
-    fireEvent.pointerDown(list, { clientX: 300, clientY: 200, pointerType: "touch" });
-    fireEvent.pointerUp(list, { clientX: 140, clientY: 500, pointerType: "touch" });
+    await fingerDrag(list, { dx: -60, dy: 240, steps: 12 });
     await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    // Swipe left: back to Movimientos.
-    fireEvent.pointerDown(list, { clientX: 300, clientY: 400, pointerType: "touch" });
-    fireEvent.pointerUp(list, { clientX: 140, clientY: 410, pointerType: "touch" });
-    await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
-      "aria-selected",
-      "true",
+    // Dragged right, anywhere on Presupuestos (its rows do not swipe): back to Movimientos.
+    await fingerDrag(list, { dx: 260, steps: 16 });
+    await waitFor(() =>
+      expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      ),
     );
   },
 };
@@ -232,7 +233,7 @@ export const SaveDisabledAtZero: Story = {
     await expect(save).toBeDisabled();
     await typeAmount(sheet, "5");
     await expect(save).toBeEnabled();
-    await userEvent.click(sheet.getByRole("button", { name: "Borrar" }));
+    await userEvent.click(sheet.getByRole("button", { name: "Borrar dígito" }));
     await expect(save).toBeDisabled();
   },
 };
@@ -408,7 +409,9 @@ export const EditAndDelete: Story = {
     const toast = await toastSaying("Eliminado: cine");
     await waitFor(() => expect(panel.queryByRole("button", { name: /^cine/ })).toBeNull());
     await userEvent.click(toast.getByRole("button", { name: "Deshacer" }));
-    await expect(await panel.findByRole("button", { name: /^cine/ })).toBeVisible();
+    // It slides back in (unfolding from nothing), then it is fully there.
+    const back = await panel.findByRole("button", { name: /^cine/ });
+    await waitFor(() => expect(back).toBeVisible());
     const lines = calls(args.onRequest).map(([line]) => line);
     await expect(lines).toContainEqual(expect.stringMatching(/^DELETE /));
     await expect(lines).toContainEqual(expect.stringMatching(/\/restore$/));

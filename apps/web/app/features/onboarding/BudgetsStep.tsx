@@ -1,9 +1,9 @@
-import { useId } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 import { useTranslations } from "use-intl";
 import { formatMoney, type Locale, lukasHint } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { cx } from "../../ui/cx.ts";
-import { budgetExample, parseBudgetInput } from "./budget-input.ts";
+import { budgetExample, formatBudgetTyping, parseBudgetInput } from "./budget-input.ts";
 import { StepError, StepFrame, type StepNavProps, useStepActions } from "./StepFrame.tsx";
 
 export interface BudgetCategory {
@@ -52,11 +52,14 @@ export function AmountWithHint({
   currency,
   className,
   id,
+  hintShownElsewhere = false,
 }: {
   cents: number;
   currency: string;
   className?: string;
   id?: string;
+  /** The hint already shows beside the field: here it is only read out, not shown twice. */
+  hintShownElsewhere?: boolean;
 }) {
   const { locale } = useLocale();
   const hint = lukasHint(cents, currency, locale);
@@ -68,7 +71,11 @@ export function AmountWithHint({
       {hint && (
         <>
           {" "}
-          <span className="text-[0.8em] font-bold text-ink-muted">({hint})</span>
+          <span
+            className={hintShownElsewhere ? "sr-only" : "text-[0.8em] font-bold text-ink-muted"}
+          >
+            ({hint})
+          </span>
         </>
       )}
     </span>
@@ -179,6 +186,19 @@ function BudgetRow({
   const errorId = useId();
   const value = readDraft(text, locale);
   const invalid = value === "invalid";
+  const hint = typeof value === "number" ? lukasHint(value, currency, locale) : null;
+  const input = useRef<HTMLInputElement>(null);
+  /** Where the cursor goes once the formatted text is in the field. */
+  const caret = useRef<number | null>(null);
+
+  // Grouped as typed ("300000" → "300.000"), the cursor staying after the same digit.
+  useLayoutEffect(() => {
+    const at = caret.current;
+    caret.current = null;
+    if (at !== null && input.current && document.activeElement === input.current) {
+      input.current.setSelectionRange(at, at);
+    }
+  }, [text]);
 
   return (
     <li className="lk-rowcard items-start">
@@ -202,14 +222,28 @@ function BudgetRow({
             aria-label={t("budgets.amount_label", { category: category.name })}
             aria-invalid={invalid || undefined}
             aria-describedby={invalid ? `${amountId} ${errorId}` : amountId}
+            ref={input}
             value={text}
-            onChange={(event) => onChange(event.target.value)}
+            onChange={(event) => {
+              const typed = event.target.value;
+              const next = formatBudgetTyping(typed, event.target.selectionStart ?? typed.length, {
+                locale,
+                currency,
+              });
+              caret.current = next.caret;
+              onChange(next.text);
+            }}
             className="lk-num min-h-9 min-w-0 flex-1 border-0 bg-transparent p-0 font-text text-[16px] text-ink outline-none"
           />
+          {hint && (
+            <span aria-hidden="true" className="flex-none text-[14px] font-bold text-ink-muted">
+              ({hint})
+            </span>
+          )}
         </div>
         <p id={amountId} className="text-[15px] text-ink">
           {typeof value === "number" ? (
-            <AmountWithHint cents={value} currency={currency} />
+            <AmountWithHint cents={value} currency={currency} hintShownElsewhere />
           ) : (
             <span className="text-ink-muted">{t("budgets.none")}</span>
           )}

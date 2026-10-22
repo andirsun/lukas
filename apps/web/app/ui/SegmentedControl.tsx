@@ -1,3 +1,4 @@
+import { type MotionValue, motion, useTransform } from "motion/react";
 import { type KeyboardEvent, useRef } from "react";
 import { cx } from "./cx.ts";
 
@@ -7,6 +8,11 @@ export interface SegmentedControlProps<T extends string> {
   onChange(value: T): void;
   /** Names the tab list for assistive technology. */
   label: string;
+  /**
+   * Where a pager is, in options (0 = the first, 0.5 = halfway to the second): the raised thumb
+   * slides with it, following the finger. Without it the selected option is raised in place.
+   */
+  position?: MotionValue<number> | undefined;
 }
 
 /**
@@ -18,6 +24,7 @@ export function SegmentedControl<T extends string>({
   options,
   onChange,
   label,
+  position,
 }: SegmentedControlProps<T>) {
   const tabs = useRef(new Map<T, HTMLButtonElement>());
 
@@ -43,7 +50,13 @@ export function SegmentedControl<T extends string>({
   };
 
   return (
-    <div role="tablist" aria-label={label} className="lk-seg" onKeyDown={onKeyDown}>
+    <div
+      role="tablist"
+      aria-label={label}
+      className={cx("lk-seg", position && "has-thumb")}
+      onKeyDown={onKeyDown}
+    >
+      {position && <Thumb position={position} count={options.length} />}
       {options.map((option) => {
         const selected = option.value === value;
         return (
@@ -70,5 +83,17 @@ export function SegmentedControl<T extends string>({
         );
       })}
     </div>
+  );
+}
+
+/** The selected look, on its own layer, moved by the pager's position (options are 3 px apart). */
+function Thumb({ position, count }: { position: MotionValue<number>; count: number }) {
+  const x = useTransform(position, (p) => `calc(${p * 100}% + ${p * 3}px)`);
+  return (
+    <motion.span
+      aria-hidden="true"
+      className="lk-seg-thumb"
+      style={{ x, width: `calc((100% - 6px - ${(count - 1) * 3}px) / ${count})` }}
+    />
   );
 }

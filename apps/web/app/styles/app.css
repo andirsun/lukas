@@ -1321,3 +1321,197 @@
     border: 2px solid color-mix(in srgb, var(--over) 55%, var(--stroke));
   }
 }
+
+/*
+ * Feel pass (Task 12c): rows that swipe, the home pager, the tabs' sliding thumb, the toast's time
+ * bar, and the add sheet's pinned keypad. Timings are the duration tokens; springs, distances and
+ * speeds are in motion-tokens.ts (GESTURE, SPRINGS).
+ */
+@layer components {
+  /* A swipeable row: the face moves, the actions wait behind it on either side. */
+  .lk-swipe {
+    position: relative;
+    touch-action: pan-y pinch-zoom;
+  }
+  .lk-swipe-face {
+    position: relative;
+    z-index: 1;
+  }
+  .lk-swipe-side {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: stretch;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  /* Swiping left reveals Borrar at the right edge; swiping right, Editar or Pagado at the left. */
+  .lk-swipe-side.is-left {
+    justify-content: flex-end;
+    background: var(--over);
+    color: var(--bg);
+  }
+  .lk-swipe-side.is-right {
+    justify-content: flex-start;
+    background: var(--brand);
+    color: var(--on-brand);
+  }
+  .lk-swipe-side.is-right.is-paid {
+    background: var(--good);
+    color: var(--bg);
+  }
+  .lk-swipe-action {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 88px;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-family: var(--font-text);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .lk-swipe-action:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: -5px;
+    border-radius: var(--radius-lg);
+  }
+  .lk-swipe-glyph {
+    font-size: 18px;
+    line-height: 1;
+    transition: transform var(--press) ease;
+  }
+  /* Past the threshold the action pops: letting go now runs it. */
+  .lk-swipe-side.is-armed .lk-swipe-glyph {
+    transform: scale(1.35);
+  }
+
+  /* The home pager: the active page is in the flow (it sets the height), the other waits beside. */
+  .lk-pager {
+    position: relative;
+    overflow: hidden;
+    overflow: clip;
+    /*
+     * Full bleed: the pages (and a swiped row) slide out at the screen's edge, not at the content's.
+     * The padding keeps the content where it was, with room below for the cards' edges.
+     */
+    margin: 0 calc(-1 * var(--space-4));
+    padding: 0 var(--space-4) var(--space-2);
+  }
+  .lk-pager-track {
+    position: relative;
+  }
+  .lk-pager-page {
+    width: 100%;
+    top: 0;
+  }
+
+  /* The tabs' thumb: the raised selected look, sliding with the pager. */
+  .lk-seg.has-thumb {
+    position: relative;
+  }
+  .lk-seg.has-thumb button {
+    position: relative;
+    z-index: 1;
+  }
+  .lk-seg.has-thumb button[aria-selected="true"] {
+    background: transparent;
+    box-shadow: none;
+  }
+  .lk-seg-thumb {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: 3px;
+    border-radius: 11px;
+    background: var(--surface-row);
+    box-shadow: var(--edge-sm);
+  }
+
+  /* The toast's time left: a thin bar that empties, stopped while the toast is held. */
+  .lk-toast {
+    position: relative;
+    overflow: hidden;
+  }
+  .lk-toast-progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--brand);
+    transform-origin: left center;
+    animation: lk-toast-countdown linear forwards;
+  }
+  .lk-toast.border-over .lk-toast-progress {
+    background: var(--over);
+  }
+
+  /* A sheet with a pinned footer: header, a scrolling middle, then the footer always in view. */
+  .lk-sheet.has-footer {
+    overflow: hidden;
+  }
+  .lk-sheet-body {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 calc(-1 * var(--space-3));
+    padding: 0 var(--space-3) var(--space-1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .lk-sheet-body .lk-sheet-amount {
+    top: 0;
+  }
+  .lk-sheet.has-footer .lk-sheet-footer {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  /* Short phones: tighter keys (still 44 px targets) so the whole keypad and Guardar fit. */
+  @media (height < 740px) {
+    .lk-sheet.has-footer .lk-keys {
+      gap: 4px;
+    }
+    .lk-sheet.has-footer .lk-key {
+      padding: 6px 0;
+    }
+    .lk-sheet.has-footer .lk-sheet-footer {
+      gap: var(--space-1);
+      padding-top: var(--space-1);
+    }
+  }
+}
+
+@keyframes lk-toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@layer components {
+  /* Focus scrolls a control clear of the sticky amount, inside the add sheet's scrolling middle. */
+  .lk-sheet-body:has(.lk-sheet-amount) {
+    scroll-padding-block: 64px 8px;
+  }
+}
+
+@layer components {
+  /* A row swiped right (Editar) slides past the screen's edge: never a sideways scroll for it. */
+  .lk-app-shell {
+    overflow-x: clip;
+  }
+}

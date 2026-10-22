@@ -10,6 +10,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "use-intl";
+import { cx } from "./cx.ts";
 import { durationToken, useReducedMotionPreference } from "./motion-tokens.ts";
 import { PressButton } from "./PressButton.tsx";
 import { useToastHost } from "./Toast.tsx";
@@ -20,6 +21,11 @@ export interface SheetProps {
   /** Names the dialog; shown in the sheet's header. */
   title: string;
   children?: ReactNode;
+  /**
+   * Pinned under the content, always in view (the add sheet's keypad and Guardar): the content
+   * scrolls between the header and it. Without it the whole sheet scrolls.
+   */
+  footer?: ReactNode;
 }
 
 const FOCUSABLE =
@@ -43,7 +49,7 @@ function focusables(root: HTMLElement): HTMLElement[] {
  * the header down all call `onClose`. Focus returns to whatever had it before. Slides over
  * `--sheet`; under reduced motion it only fades. While open it hosts the toasts (`useToastHost`).
  */
-export function Sheet({ open, onClose, title, children }: SheetProps) {
+export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
   const t = useTranslations("common");
   const reduceMotion = useReducedMotionPreference();
   const titleId = useId();
@@ -134,7 +140,10 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
             aria-labelledby={titleId}
             tabIndex={-1}
             onKeyDown={trapTab}
-            className="lk-sheet relative max-h-[90dvh] w-full max-w-[480px] overflow-y-auto pb-[max(var(--space-4),env(safe-area-inset-bottom))] outline-none"
+            className={cx(
+              "lk-sheet relative max-h-[90dvh] w-full max-w-[480px] pb-[max(var(--space-4),env(safe-area-inset-bottom))] outline-none",
+              footer ? "has-footer" : "overflow-y-auto",
+            )}
             initial={hidden}
             animate={shown}
             exit={hidden}
@@ -159,8 +168,20 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
                 </PressButton>
               </div>
             </div>
-            {children}
-            <div ref={setToastSlot} className="sticky bottom-0 z-10" />
+            {footer ? (
+              <>
+                <div className="lk-sheet-body">
+                  {children}
+                  <div ref={setToastSlot} className="sticky bottom-0 z-10" />
+                </div>
+                {footer}
+              </>
+            ) : (
+              <>
+                {children}
+                <div ref={setToastSlot} className="sticky bottom-0 z-10" />
+              </>
+            )}
           </motion.div>
         </div>
       )}

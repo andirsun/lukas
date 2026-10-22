@@ -47,6 +47,8 @@ export interface TransactionActionsDeps {
   /** Opens the edit sheet ("Ponerle nombre" opens it on the name). */
   openEdit(tx: TransactionDto, options?: { focusName?: boolean }): void;
   report(event: Omit<TransactionEvent, "id">): void;
+  /** A deleted transaction is coming back (Deshacer): its row slides in. */
+  onRestored?(id: string): void;
 }
 
 /** "−6,08 €"-style money, and the COP hint ("50 lukas") as a small muted part after it. */
@@ -63,7 +65,12 @@ function moneyWithHint(cents: number, currency: string, locale: Locale) {
  * (the mutations do) and shows the error in an `alert` toast. Kept in the always-mounted provider,
  * so an undo works after the sheet is gone.
  */
-export function useTransactionActions({ currency, openEdit, report }: TransactionActionsDeps) {
+export function useTransactionActions({
+  currency,
+  openEdit,
+  report,
+  onRestored,
+}: TransactionActionsDeps) {
   const t = useTranslations("transaction");
   const tRoot = useTranslations() as unknown as Translator;
   const { locale } = useLocale();
@@ -93,6 +100,7 @@ export function useTransactionActions({ currency, openEdit, report }: Transactio
   }
 
   async function bringBack(tx: TransactionDto) {
+    onRestored?.(tx.id);
     try {
       await restore.mutateAsync({ transaction: tx });
       feedback("undo");
@@ -154,6 +162,7 @@ export function useTransactionActions({ currency, openEdit, report }: Transactio
 
     /** Deletes (the API keeps it), with Deshacer to bring it back. */
     async remove(tx: TransactionDto) {
+      feedback("delete");
       try {
         await remove.mutateAsync({ id: tx.id, month: monthOf(tx.date) });
         toast.show({

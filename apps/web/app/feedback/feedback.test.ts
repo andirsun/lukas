@@ -74,7 +74,17 @@ describe("feedback: vibration", () => {
       nearLimit: [30],
       overBudget: [40, 60, 40],
       undo: [8],
+      swipeThreshold: [10],
+      pageChange: [15],
+      delete: [14, 30, 8],
     });
+  });
+
+  it("only vibrates for gesture events: no sound for a threshold, a page change or a delete", () => {
+    for (const event of ["swipeThreshold", "pageChange", "delete"] as const) feedback(event);
+    expect(created).toEqual([]);
+    expect(navigator.vibrate).toHaveBeenCalledWith([10]);
+    expect(navigator.vibrate).toHaveBeenCalledWith([15]);
   });
 
   it("does not throw without navigator.vibrate (iOS Safari)", () => {

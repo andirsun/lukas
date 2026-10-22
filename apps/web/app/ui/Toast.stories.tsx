@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, useState } from "react";
 import { expect, fireEvent, fn, screen, userEvent, waitFor, within } from "storybook/test";
 import { useTranslations } from "use-intl";
+import { fingerDrag } from "../../.storybook/story-utils.ts";
 import { Money } from "./Money.tsx";
 import { PressButton } from "./PressButton.tsx";
 import { Sheet } from "./Sheet.tsx";
@@ -140,7 +141,24 @@ function CountingDemo() {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Leaves on its own once the time is up (shortened here; 5 seconds by default). */
+/**
+ * A toast with an action (Deshacer) stays 8 seconds, and a thin bar shows the time left: still
+ * there after 5.5 s, and its bar runs for 8 s.
+ */
+export const UndoStaysEightSeconds: Story = {
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole("button", { name: "Guardar" }));
+    const status = await screen.findByRole("status");
+    const toast = await entered(status);
+    const bar = toast.querySelector<HTMLElement>(".lk-toast-progress");
+    await expect(bar).not.toBeNull();
+    await expect(getComputedStyle(bar as HTMLElement).animationDuration).toBe("8s");
+    await sleep(5500);
+    await expect(status).toHaveTextContent("Supermercado · −6,08 €");
+  },
+};
+
+/** Leaves on its own once the time is up (shortened here; 8 seconds with an action, else 5). */
 export const AutoDismiss: Story = {
   parameters: { toastDismissMs: 400 },
   render: () => <CountingDemo />,
@@ -152,7 +170,7 @@ export const AutoDismiss: Story = {
   },
 };
 
-/** Hovering keeps it; leaving restarts the countdown. */
+/** Hovering (or a finger on it) keeps it, its bar stopped; leaving resumes the countdown. */
 export const PausesWhileHovered: Story = {
   parameters: { toastDismissMs: 400 },
   render: () => <CountingDemo />,
@@ -164,6 +182,8 @@ export const PausesWhileHovered: Story = {
     await userEvent.hover(toast);
     await sleep(900);
     await expect(status).toHaveTextContent("Toast 1");
+    const bar = toast.querySelector<HTMLElement>(".lk-toast-progress") as HTMLElement;
+    await expect(getComputedStyle(bar).animationPlayState).toBe("paused");
     await userEvent.unhover(toast);
     await waitFor(() => expect(status).toBeEmptyDOMElement(), { timeout: 2000 });
   },
@@ -181,6 +201,8 @@ export const PausesWhileFocused: Story = {
     action.focus();
     await sleep(900);
     await expect(status).toHaveTextContent("Toast 1");
+    const bar = status.querySelector<HTMLElement>(".lk-toast-progress") as HTMLElement;
+    await expect(getComputedStyle(bar).animationPlayState).toBe("paused");
     show.focus();
     await waitFor(() => expect(status).toBeEmptyDOMElement(), { timeout: 2000 });
   },
@@ -293,5 +315,23 @@ export const ErrorInsideSheet: Story = {
     // The sheet slides out over `--sheet`; on a loaded machine its frames come late.
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 8000 });
     await expect(screen.getByRole("alert")).toHaveTextContent("Sin conexión. Inténtalo de nuevo.");
+  },
+};
+
+/** Swiping the toast down, or sideways, puts it away. */
+export const SwipeDismisses: Story = {
+  render: () => <CountingDemo />,
+  play: async ({ canvasElement }) => {
+    const show = within(canvasElement).getByRole("button", { name: "Show" });
+    await userEvent.click(show);
+    const status = await screen.findByRole("status");
+    let toast = await entered(status);
+    await fingerDrag(toast, { dy: 90, steps: 10 });
+    await waitFor(() => expect(status).toBeEmptyDOMElement());
+
+    await userEvent.click(show);
+    toast = await entered(status);
+    await fingerDrag(toast, { dx: 140, steps: 10 });
+    await waitFor(() => expect(status).toBeEmptyDOMElement());
   },
 };

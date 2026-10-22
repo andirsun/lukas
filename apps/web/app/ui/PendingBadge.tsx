@@ -8,6 +8,8 @@ export interface PendingBadgeProps {
    * back to "Pendiente" (the caller reports the error, e.g. with a toast).
    */
   onPay(): Promise<void>;
+  /** Already paid elsewhere (a swipe on the row): shows "✓ Pagado" and is inert. */
+  paid?: boolean;
 }
 
 type Status = "idle" | "paying" | "paid";
@@ -17,7 +19,7 @@ type Status = "idle" | "paying" | "paid";
  * keeps the design's size; the button around it is a 44px target. While paying it is busy and
  * once paid it is inert, so a transaction is never paid twice from here.
  */
-export function PendingBadge({ onPay }: PendingBadgeProps) {
+export function PendingBadge({ onPay, paid: paidElsewhere = false }: PendingBadgeProps) {
   const t = useTranslations("common");
   const [status, setStatus] = useState<Status>("idle");
   const mounted = useRef(false);
@@ -30,7 +32,7 @@ export function PendingBadge({ onPay }: PendingBadgeProps) {
   }, []);
 
   const pay = async () => {
-    if (status !== "idle") return;
+    if (status !== "idle" || paidElsewhere) return;
     setStatus("paying");
     try {
       await onPay();
@@ -40,14 +42,14 @@ export function PendingBadge({ onPay }: PendingBadgeProps) {
     }
   };
 
-  const paid = status === "paid";
+  const paid = status === "paid" || paidElsewhere;
   return (
     <span aria-live="polite" className="inline-flex">
       <button
         type="button"
         onClick={pay}
         aria-label={paid ? undefined : t("pending_pay_label")}
-        aria-disabled={status === "idle" ? undefined : true}
+        aria-disabled={status === "idle" && !paid ? undefined : true}
         aria-busy={status === "paying" ? true : undefined}
         className={cx(
           "group inline-flex min-h-11 min-w-11 items-center justify-center",

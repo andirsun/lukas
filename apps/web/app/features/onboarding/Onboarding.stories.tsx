@@ -450,14 +450,18 @@ export const BudgetsRunningTotal: Story = {
     await userEvent.type(canvas.getByRole("textbox", { name: "Presupuesto de Casa" }), "600");
     await expect(total).toHaveTextContent("1020,50 €");
 
-    // Not a number: the field says so, the total ignores it, SIGUIENTE waits, SALTAR doesn't.
+    // Like the keypad, the field takes only an amount: a letter is not typed at all.
     const home = canvas.getByRole("textbox", { name: "Presupuesto de Casa" });
     await userEvent.type(home, "x");
-    await expect(home).toHaveAttribute("aria-invalid", "true");
-    await expect(canvas.getByText("Escribe solo el número, como 300.")).toBeVisible();
-    await expect(total).toHaveTextContent("420,50 €");
-    await expect(canvas.getByRole("button", { name: "Siguiente" })).toBeDisabled();
-    await expect(canvas.getByRole("button", { name: "Saltar" })).toBeEnabled();
+    await expect(home).toHaveValue("600");
+    await expect(home).not.toHaveAttribute("aria-invalid");
+    await expect(total).toHaveTextContent("1020,50 €");
+    // Thousands are grouped as they are typed, the decimals kept.
+    await userEvent.clear(home);
+    await userEvent.type(home, "12500,5");
+    await expect(home).toHaveValue("12.500,5");
+    await expect(total).toHaveTextContent("12.921,00 €");
+    await expect(canvas.getByRole("button", { name: "Siguiente" })).toBeEnabled();
     await expect(canvas.queryByText(/lukas/)).toBeNull();
   },
 };
@@ -469,14 +473,17 @@ export const BudgetsInPesos: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const groceries = canvas.getByRole("textbox", { name: "Presupuesto de Supermercado" });
-    await userEvent.type(groceries, "300.000");
+    // Typed as digits, grouped as typed: "300000" reads "300.000", with "(300 lukas)" beside it.
+    await userEvent.type(groceries, "300000");
+    await expect(groceries).toHaveValue("300.000");
+    const besideField = within(groceries.parentElement as HTMLElement).getByText("(300 lukas)");
+    await expect(besideField.className).toMatch(/text-ink-muted/);
     const [row] = canvas.getAllByRole("listitem");
     const amount = within(row as HTMLElement).getByText("$300.000", {
       selector: "[data-budget-amount]",
     });
+    // Under the field the amount is read with its hint, which shows only once (beside the field).
     await expect(amount.parentElement).toHaveTextContent("$300.000 (300 lukas)");
-    const hint = within(amount.parentElement as HTMLElement).getByText("(300 lukas)");
-    await expect(hint.className).toMatch(/text-ink-muted/);
     await expect(groceries).toHaveAttribute("aria-describedby", amount.closest("p")?.id);
     await userEvent.type(canvas.getByRole("textbox", { name: "Presupuesto de Casa" }), "4300000");
     await expect(canvas.getByRole("status")).toHaveTextContent("$4.600.000 (4,6 palos)");

@@ -54,7 +54,14 @@ export function BottomBar({ current, onAdd, soon = [], base = "/app" }: BottomBa
   return (
     <nav aria-label={t("label")} className="lk-tabbar">
       {tab("home")}
-      <button type="button" className="lk-plus" aria-label={t("add")} onClick={onAdd}>
+      {/* Lukitas lands on the ＋ when something is celebrated: free space, no text under him. */}
+      <button
+        type="button"
+        className="lk-plus"
+        aria-label={t("add")}
+        onClick={onAdd}
+        data-celebration-anchor="64"
+      >
         <span aria-hidden="true">＋</span>
       </button>
       {tab("insights")}

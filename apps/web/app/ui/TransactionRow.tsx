@@ -4,6 +4,7 @@ import { formatMoney } from "../i18n/format.ts";
 import { useLocale } from "../i18n/IntlProvider.tsx";
 import { cx } from "./cx.ts";
 import { PendingBadge } from "./PendingBadge.tsx";
+import { useSwipeHint } from "./SwipeRow.tsx";
 
 export interface TransactionRowProps {
   /** The transaction's name; blank shows the category name instead. */
@@ -46,6 +47,8 @@ export function TransactionRow({
   const t = useTranslations("common");
   const { locale } = useLocale();
   const id = useId();
+  // Inside a SwipeRow, the row's button also says what its swipes do.
+  const swipeHint = useSwipeHint();
   const title = name.trim() || categoryName;
   const income = amount > 0;
 
@@ -55,6 +58,7 @@ export function TransactionRow({
         type="button"
         className="lk-row-hit"
         aria-labelledby={`${id}-name ${id}-amount ${id}-category`}
+        aria-describedby={swipeHint}
         onClick={onOpen}
       />
       <span className="lk-tile" aria-hidden="true">
@@ -74,7 +78,7 @@ export function TransactionRow({
           {(status === "pending" || (paidHere && onPay)) &&
             (onPay ? (
               <span className="lk-row-control -my-(--space-3)">
-                <PendingBadge onPay={onPay} />
+                <PendingBadge onPay={onPay} paid={status === "paid"} />
               </span>
             ) : (
               <span className="lk-badge cursor-default">{t("pending")}</span>

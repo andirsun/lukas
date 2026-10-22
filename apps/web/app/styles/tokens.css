@@ -102,6 +102,9 @@
   --shiver: 1600ms;
   --bob: 2600ms;
   --hop: 520ms;
+  --collapse: 200ms;
+  --fade: 160ms;
+  --undo: 8000ms;
   --font-display: "Fredoka", "Baloo 2", ui-rounded, system-ui, sans-serif;
   --font-text: "Nunito", ui-rounded, system-ui, sans-serif;
   --font-hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;

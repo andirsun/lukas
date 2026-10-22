@@ -5,12 +5,20 @@ import { PressButton } from "../ui/PressButton.tsx";
 import { Celebration } from "./Celebration.tsx";
 import { type FeedbackEvent, feedback } from "./feedback.ts";
 
-function CelebrationDemo({ event }: { event: FeedbackEvent }) {
+function CelebrationDemo({ event, spot = true }: { event: FeedbackEvent; spot?: boolean }) {
   return (
     <>
       <PressButton variant="primary" onClick={() => feedback(event)}>
         {event}
       </PressButton>
+      {/* A landing spot, as the bottom bar's ＋ is in the app. */}
+      {spot && (
+        <span
+          data-testid="spot"
+          data-celebration-anchor="64"
+          className="fixed bottom-6 left-1/2 block size-[58px] -translate-x-1/2"
+        />
+      )}
       <Celebration />
     </>
   );
@@ -26,6 +34,39 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Lukitas lands on the spot (the ＋ in the app): his box starts at its top and stays in its column,
+ * never above it, where the list's text would be.
+ */
+export const LandsOnTheSpot: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "paid" }));
+    const overlay = await canvas.findByTestId("celebration");
+    const lukas = overlay.querySelector<HTMLElement>(".lk-celebration-lukas") as HTMLElement;
+    const spot = canvas.getByTestId("spot").getBoundingClientRect();
+    await sleep(500);
+    const box = lukas.getBoundingClientRect();
+    await expect(box.top).toBeGreaterThanOrEqual(spot.top - 4);
+    await expect(box.left).toBeGreaterThanOrEqual(spot.left - 8);
+    await expect(box.right).toBeLessThanOrEqual(spot.right + 8);
+  },
+};
+
+/** No spot on the screen at all: he waits a moment for one, then shows at the top. */
+export const NoSpot: Story = {
+  args: { spot: false },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "paid" }));
+    const overlay = await canvas.findByTestId("celebration", {}, { timeout: 3000 });
+    const lukas = overlay.querySelector<HTMLElement>(".lk-celebration-lukas") as HTMLElement;
+    await waitFor(() => expect(lukas.getBoundingClientRect().top).toBeLessThan(40), {
+      timeout: 3000,
+    });
+  },
+};
 
 /** `paid` fires the confetti and a celebrating Lukitas, decorative and untouchable, then leaves. */
 export const Paid: Story = {

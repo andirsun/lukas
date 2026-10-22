@@ -121,7 +121,27 @@ export function AddTransactionSheet({
   const statusText = form.pending ? tRoot("common.pending") : tRoot("common.paid");
 
   return (
-    <Sheet open={open} onClose={onClose} title={title}>
+    <Sheet
+      open={open}
+      onClose={onClose}
+      title={title}
+      footer={
+        // Pinned under the content, so every key and Guardar are in view even on short phones.
+        <div className="lk-sheet-footer">
+          <Keypad value={form.raw} onChange={form.setRaw} locale={locale} currency={currency} />
+          <div className="flex gap-(--space-2)">
+            {editing && (
+              <PressButton variant="secondary" onClick={remove}>
+                {t("delete")}
+              </PressButton>
+            )}
+            <PressButton className="flex-1" disabled={!form.valid} onClick={save}>
+              {editing ? t("save_changes") : tRoot("common.save")}
+            </PressButton>
+          </div>
+        </div>
+      }
+    >
       <div className="flex flex-col gap-(--space-2)">
         <SegmentedControl<Kind>
           label={t("kind_label")}
@@ -242,20 +262,6 @@ export function AddTransactionSheet({
               onChange={(event) => form.setNote(event.target.value)}
             />
           </label>
-        </div>
-
-        <Keypad value={form.raw} onChange={form.setRaw} locale={locale} currency={currency} />
-
-        {/* Always in view, even on short phones: the content scrolls above it. */}
-        <div className="lk-sheet-footer flex gap-(--space-2)">
-          {editing && (
-            <PressButton variant="secondary" onClick={remove}>
-              {t("delete")}
-            </PressButton>
-          )}
-          <PressButton className="flex-1" disabled={!form.valid} onClick={save}>
-            {editing ? t("save_changes") : tRoot("common.save")}
-          </PressButton>
         </div>
       </div>
     </Sheet>

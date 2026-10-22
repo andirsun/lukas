@@ -1,6 +1,6 @@
 /*
- * The celebration overlay: confetti bursting from where Lukitas pops up. It covers the screen but
- * never takes a tap (`pointer-events: none`), sits above the toast, and lasts one `--celebrate`.
+ * The celebration overlay: confetti bursting from where Lukitas pops up (his landing spot, free
+ * space such as the ＋; see Celebration.tsx). It covers the screen but never takes a tap (`pointer-events: none`), sits above the toast, and lasts one `--celebrate`.
  * Colors are the brand tokens; each piece is placed by custom properties set in Celebration.tsx.
  */
 .lk-celebration {
@@ -11,10 +11,9 @@
   pointer-events: none;
 }
 
+/* Placed (inline) at the landing spot's center and top: Lukitas stands there, the burst starts. */
 .lk-celebration-burst {
   position: absolute;
-  left: 50%;
-  bottom: max(25%, 160px);
   width: 0;
   height: 0;
 }
@@ -22,8 +21,9 @@
 .lk-celebration-lukas {
   position: absolute;
   left: 0;
-  bottom: 0;
+  top: 0;
   translate: -50% 0;
+  transform-origin: 50% 100%;
   animation: lk-celebration-pop var(--celebrate) ease-out both;
 }
 
@@ -56,24 +56,26 @@
   background: var(--good);
 }
 
+/* Pops up out of the spot, bounces once, and sinks back into it: never above the spot's top. */
 @keyframes lk-celebration-pop {
   0% {
     opacity: 0;
-    transform: translateY(24px) scale(0.6);
+    transform: translateY(40%) scale(0.5);
   }
   20% {
     opacity: 1;
-    transform: translateY(0) scale(1.08);
+    transform: translateY(0) scale(1.06);
   }
   35% {
     transform: translateY(0) scale(1);
   }
   80% {
     opacity: 1;
+    transform: translateY(0) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateY(-8px) scale(1);
+    transform: translateY(30%) scale(0.9);
   }
 }
 
