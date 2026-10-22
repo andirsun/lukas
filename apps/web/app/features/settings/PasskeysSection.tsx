@@ -4,9 +4,9 @@ import { useTranslations } from "use-intl";
 import type { Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { ConfirmSheet } from "../../ui/ConfirmSheet.tsx";
+import { FingerprintIcon } from "../../ui/FingerprintIcon.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { useToast } from "../../ui/Toast.tsx";
-import { FingerprintIcon } from "../sign-in/SignIn.tsx";
 import { SettingsSection } from "./parts.tsx";
 import type { PasskeyItem, PasskeysApi } from "./passkeys.ts";
 
