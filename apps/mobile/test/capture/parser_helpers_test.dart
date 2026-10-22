@@ -143,6 +143,27 @@ void main() {
       expect(read('4,3 palos'), 430000000);
     });
 
+    test('a scale word lets go of the digits glued after it', () {
+      expect(tokenize('2mil500', 'es').map((t) => t.text), ['2', 'mil', '500']);
+      expect(tokenize('1millón200', 'es').map((t) => t.text), ['1', 'millón', '200']);
+      expect(tokenize('2k500', 'es').map((t) => t.text), ['2', 'k', '500']);
+      expect(cents('2mil500'), 250000);
+      expect(cents('1millon200'), 100020000);
+      expect(cents('15 k'), 1500000);
+    });
+
+    test('a separator before four or more digits is unread', () {
+      expect(tokenize('12,5000 pan', 'es').map((t) => t.text), ['12,5000', 'pan']);
+      expect(readAmount(tokenize('12,5000', 'es'), 0, 'es')!.cents, isNull);
+    });
+
+    test('an unused ambiguous number does not spoil the amount before it', () {
+      final tokens = tokenize('20 mil 1,500k', 'es');
+      final first = readAmount(tokens, 0, 'es')!;
+      expect(first.cents, 2000000);
+      expect(readAmount(tokens, first.end, 'es')!.cents, isNull);
+    });
+
     test('a word keeps the digits glued to it', () {
       expect(tokenize('el D1 20 mil', 'es').map((t) => t.text), ['el', 'D1', '20', 'mil']);
       expect(tokenize('MiTienda24', 'es').single.isNumber, isFalse);
@@ -289,6 +310,18 @@ void main() {
       final result = parseSentence('  ', ctx);
       expect(result.drafts, isEmpty);
       expect(result.unread, isEmpty);
+    });
+
+    test('COP is whole pesos, EUR keeps its cents', () {
+      expect(parseSentence('gasté 9,50 en café', ctx).unread, ['gasté 9,50 en café']);
+      expect(parseSentence('me pagaron 4,3 palos', ctx).drafts.single.amount, 430000000);
+      const eur = ParseContext(
+        locale: 'es',
+        currency: 'EUR',
+        today: '2026-10-22',
+        timeZone: 'Europe/Madrid',
+      );
+      expect(parseSentence('gasté 9,50 en café', eur).drafts.single.amount, 950);
     });
 
     test('a zero amount is unread', () {

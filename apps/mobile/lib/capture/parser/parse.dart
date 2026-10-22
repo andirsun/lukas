@@ -56,7 +56,10 @@ int? _cents(Movement movement, ParseContext ctx) {
   final amount = amounts.single.amount!;
   // Lukas and palos count only in COP; elsewhere the movement stays unread.
   if (amount.slang && ctx.currency != 'COP') return null;
-  // Null when ambiguous (`4,300 palos`), zero, or above 999 999 999.
+  // COP is whole pesos: a fractional peso (`9,50`, `9.50`, `nueve con cincuenta`) is unread. A
+  // decimal before a scale word comes out whole (`4,3 palos`).
+  if (ctx.currency == 'COP' && !amount.value.isInteger) return null;
+  // Null when ambiguous (`4,300 palos`, `12,5000`), zero, or above 999 999 999.
   return amount.cents;
 }
 

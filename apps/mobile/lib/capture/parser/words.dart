@@ -50,16 +50,30 @@ class Token {
 // the decimal (amounts.dart, readDigits). In es, a space before three digits is thousands too
 // (`120 000`; Whisper writes that).
 const _kSuffix = r'(?:[kK](?![\p{L}\p{N}]))?';
-const _digits = r'\d+(?:[.,]\d{3}(?!\d))*(?:[.,]\d{1,2}(?!\d))?';
+// A separator before four or more digits (`12,5000`) is taken into the number, which is then
+// malformed and unread (readDigits), rather than a connector.
+const _fraction = r'(?:[.,]\d{1,2}(?!\d)|[.,]\d{4,})?';
+const _digits =
+    r'\d+(?:[.,]\d{3}(?!\d))*'
+    '$_fraction';
 final _numberEs = RegExp(
-  r'(?:\d{1,3}(?: \d{3})+(?!\d)(?:[.,]\d{1,2}(?!\d))?|'
+  r'(?:\d{1,3}(?: \d{3})+(?!\d)'
+  '$_fraction|'
   '$_digits)$_kSuffix',
   unicode: true,
 );
 final _numberEn = RegExp('$_digits$_kSuffix', unicode: true);
 
-// A word starts with a letter and keeps the digits glued to it (`D1`, `MiTienda24`).
+// A word starts with a letter and keeps the digits glued to it (`D1`, `MiTienda24`), except a
+// scale word, which lets go of the digits after it (`2mil500` is `2`, `mil`, `500`).
 final _word = RegExp(r'[\p{L}\p{M}][\p{L}\p{M}\p{N}]*', unicode: true);
+final _letters = RegExp(r'[\p{L}\p{M}]+', unicode: true);
+
+/// Scale words (folded) that split from digits glued after them.
+const gluedScaleWords = {
+  'mil', 'millon', 'millones', 'palo', 'palos', 'luca', 'lucas', 'luka', 'lukas', //
+  'thousand', 'million', 'millions', 'k',
+};
 
 /// Splits [text] into words, numbers and commas. Everything else (spaces, dots ending a sentence,
 /// other punctuation) separates tokens and is dropped.
@@ -82,8 +96,12 @@ List<Token> tokenize(String text, String locale) {
     }
     final w = _word.matchAsPrefix(text, i);
     if (w != null) {
-      tokens.add(Token(w[0]!, i, w.end));
-      i = w.end;
+      final letters = _letters.matchAsPrefix(text, i)!;
+      final end = letters.end < w.end && gluedScaleWords.contains(fold(letters[0]!))
+          ? letters.end
+          : w.end;
+      tokens.add(Token(text.substring(i, end), i, end));
+      i = end;
       continue;
     }
     i++;

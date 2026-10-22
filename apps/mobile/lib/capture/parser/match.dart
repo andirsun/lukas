@@ -1,7 +1,8 @@
 // The category of a draft (spec 5.2): the usual category of that name, else a category with that
 // name, else none. Only categories of the draft's kind count: a transaction takes its sign from
-// its category, so an income draft must never land in an expense category. Names compare whole, ignoring accents and case on both sides; there are no
-// partial matches (`cafetería` is not `Café`, `transportes` is not `Transporte`).
+// its category, so an income draft must never land in an expense category. Names compare whole,
+// ignoring accents and case on both sides; there are no partial matches (`cafetería` is not
+// `Café`, `transportes` is not `Transporte`).
 import 'types.dart';
 import 'words.dart';
 

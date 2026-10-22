@@ -136,6 +136,7 @@ const _scales = {
   'millon': 1000000, 'millones': 1000000, 'million': 1000000, 'millions': 1000000,
   'luca': 1000, 'lucas': 1000, 'luka': 1000, 'lukas': 1000,
   'palo': 1000000, 'palos': 1000000,
+  'k': 1000,
 };
 const _slangScales = {'luca', 'lucas', 'luka', 'lukas', 'palo', 'palos'};
 
@@ -319,6 +320,7 @@ class _Reader {
       Dec? s;
       var k = j;
       var grouped = false;
+      var sAmbiguous = false;
       final w = word(j);
       if ((_oneBeforeScale[locale] ?? const {}).contains(w) && scaleAt(j + 1) != null) {
         s = Dec(1);
@@ -330,14 +332,14 @@ class _Reader {
         s = r.value;
         k = r.next;
         grouped = r.grouped;
-        ambiguous = ambiguous || r.ambiguous;
+        sAmbiguous = r.ambiguous;
       }
       final scale = scaleAt(k);
       if (s != null && scale != null && scale < lastScale) {
         total = total + s.times(scale);
         lastScale = scale;
         slang = slang || _slangScales.contains(word(k));
-        ambiguous = ambiguous || grouped;
+        ambiguous = ambiguous || grouped || sAmbiguous;
         j = k + 1;
         any = true;
         halfMore(scale);
@@ -355,6 +357,7 @@ class _Reader {
           scale == null &&
           (lastScale == _bigScale || s.compareTo(Dec(lastScale)) < 0)) {
         total = total + s;
+        ambiguous = ambiguous || sAmbiguous;
         // en "twelve fifty": two word numbers, the second 10–99, are units and cents.
         if (_en && lastScale == _bigScale && !isNumber(j) && s.isIntegerIn(1, 99)) {
           final c = isNumber(k) ? null : _below100En(k);
@@ -375,7 +378,7 @@ class _Reader {
     final joiner = word(j);
     if (!scaled && total.isInteger && (joiner == 'con' || (_en && joiner == 'and'))) {
       final c = small(j + 1);
-      if (c != null && c.value.isIntegerIn(1, 99) && scaleAt(c.next) == null) {
+      if (c != null && !c.ambiguous && c.value.isIntegerIn(1, 99) && scaleAt(c.next) == null) {
         final hasCentWord = _centWords.contains(word(c.next));
         if (joiner == 'con' || hasCentWord) {
           total = total + Dec.big(c.value.whole, 2);
@@ -405,6 +408,10 @@ const _maxIntegerDigits = 15;
   if (s.endsWith('k') || s.endsWith('K')) {
     k = 1000;
     s = s.substring(0, s.length - 1);
+  }
+  // A separator before four or more digits (`12,5000`): neither thousands nor cents.
+  if (RegExp(r'[.,]\d{4,}$').hasMatch(s)) {
+    return (value: Dec.zero, grouped: false, ambiguous: true);
   }
   var frac = '';
   final decimal = RegExp(r'[.,](\d{1,2})$').firstMatch(s);
