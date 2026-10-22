@@ -1,4 +1,4 @@
-import { isWholeUnit, type Locale } from "../i18n/format.ts";
+import { isWholeUnit, type Locale, parseAmountInput } from "../i18n/format.ts";
 
 /**
  * What the add sheet's amount accepts, as raw text in the locale (`6,08` es, `6.08` en), from the
@@ -130,4 +130,42 @@ export function pasteAmount(text: string, format: AmountFormat): string | null {
   const digits = groups.join("").replace(/^0+(?=\d)/, "") || "0";
   if (Number(digits) > MAX_WHOLE) return null;
   return decimals === undefined ? digits : `${digits}${separator}${decimals}`;
+}
+
+/**
+ * Stored cents as keypad text in the locale (`26280` → `262,80`; `5000` → `50`). Whole-unit
+ * currencies (COP) are rounded to whole pesos: the keypad never holds fractional pesos.
+ */
+export function keypadText(cents: number, locale: Locale, currency?: string): string {
+  const abs = Math.abs(cents);
+  if (currency && isWholeUnit(currency)) return String(Math.round(abs / 100));
+  const whole = Math.floor(abs / 100);
+  const rest = abs % 100;
+  return rest === 0
+    ? String(whole)
+    : `${whole}${locale === "es" ? "," : "."}${String(rest).padStart(2, "0")}`;
+}
+
+/** The typed amount in cents, or 0 while it is empty or not a number yet. */
+export function centsOf(raw: string, locale: Locale): number {
+  if (!raw) return 0;
+  try {
+    return parseAmountInput(raw, locale);
+  } catch {
+    return 0;
+  }
+}
+
+/** The keypad's text as cents (unsigned): whole pesos only for whole-unit currencies; 0 while empty. */
+export function amountCents(raw: string, format: AmountFormat): number {
+  return centsOf(wholeAmount(raw, format), format.locale);
+}
+
+/**
+ * Whether pasted text is a negative amount (`-50.000`, `−6,08 €`): a minus sign before the first
+ * digit. Forms that take only positive amounts refuse it instead of dropping the sign.
+ */
+export function pastedNegative(text: string): boolean {
+  const beforeDigits = text.split(/\d/)[0] ?? "";
+  return /[-−‐‑–]/.test(beforeDigits);
 }

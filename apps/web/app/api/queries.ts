@@ -380,3 +380,128 @@ export function useMarkPaid() {
     ),
   );
 }
+
+// -- Categories, budgets and recurrences ------------------------------------------------------
+//
+// Not optimistic: each waits for the API (the sheet shows a refusal, such as a name already
+// taken) and then refetches what it changes.
+
+export type CategoryPatch = JsonBody<"/v1/categories/{id}", "patch">;
+export type NewCategoryBody = JsonBody<"/v1/categories", "post">;
+export type NewRecurrence = JsonBody<"/v1/recurrences", "post">;
+export type RecurrencePatch = JsonBody<"/v1/recurrences/{id}", "patch">;
+
+/** One category's transactions in a month, newest first (up to 200). */
+export function useCategoryTransactions(month: string, categoryId: string) {
+  const api = useApi();
+  return useQuery({
+    // Under the month's key, so every write that refetches the month refetches this too.
+    queryKey: [...queryKeys.transactions(month), "category", categoryId] as const,
+    queryFn: async ({ signal }) =>
+      dataOf(
+        await api.GET("/v1/transactions", {
+          params: { query: { month, category: categoryId, limit: 200 } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/** What a change to categories or budgets shows up in: the lists, every month's summary, reports. */
+function settleCategories(qc: QueryClient) {
+  return Promise.all([
+    qc.invalidateQueries({ queryKey: queryKeys.categories() }),
+    qc.invalidateQueries({ queryKey: ["summary"] }),
+    qc.invalidateQueries({ queryKey: queryKeys.reports() }),
+    qc.invalidateQueries({ queryKey: ["suggestions"] }),
+  ]);
+}
+
+export function useCreateCategory() {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: NewCategoryBody) => dataOf(await api.POST("/v1/categories", { body })),
+    onSettled: () => settleCategories(qc),
+  });
+}
+
+/** Rename, restyle, change the kind (409 while it has transactions), archive or restore. */
+export function useUpdateCategory() {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: CategoryPatch }) =>
+      dataOf(await api.PATCH("/v1/categories/{id}", { params: { path: { id } }, body: patch })),
+    onSettled: () => settleCategories(qc),
+  });
+}
+
+/** A category's budget from `effectiveFrom` (a month) on, in hundredths. */
+export function useSetBudget() {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      amount,
+      effectiveFrom,
+    }: {
+      id: string;
+      amount: number;
+      effectiveFrom: string;
+    }) =>
+      dataOf(
+        await api.PUT("/v1/categories/{id}/budget", {
+          params: { path: { id } },
+          body: { amount, effectiveFrom },
+        }),
+      ),
+    onSettled: () => settleCategories(qc),
+  });
+}
+
+/**
+ * A recurrence's change reaches the months it materializes in (this one and the next): their
+ * lists and summaries are refetched, which makes the API add the pending occurrences.
+ */
+function settleRecurrences(qc: QueryClient) {
+  return Promise.all([
+    qc.invalidateQueries({ queryKey: queryKeys.recurrences() }),
+    qc.invalidateQueries({ queryKey: ["transactions"] }),
+    qc.invalidateQueries({ queryKey: ["summary"] }),
+    qc.invalidateQueries({ queryKey: queryKeys.reports() }),
+    qc.invalidateQueries({ queryKey: ["onboarding", "has-transactions"] }),
+  ]);
+}
+
+export function useCreateRecurrence() {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: NewRecurrence) => dataOf(await api.POST("/v1/recurrences", { body })),
+    onSettled: () => settleRecurrences(qc),
+  });
+}
+
+export function useUpdateRecurrence() {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: RecurrencePatch }) =>
+      dataOf(await api.PATCH("/v1/recurrences/{id}", { params: { path: { id } }, body: patch })),
+    onSettled: () => settleRecurrences(qc),
+  });
+}
+
+/** Deletes the rule; the transactions it already made stay. */
+export function useDeleteRecurrence() {
+  const api = useApi();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      await api.DELETE("/v1/recurrences/{id}", { params: { path: { id } } });
+    },
+    onSettled: () => settleRecurrences(qc),
+  });
+}

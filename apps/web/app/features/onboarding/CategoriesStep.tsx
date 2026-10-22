@@ -4,7 +4,11 @@ import { useTranslations } from "use-intl";
 import { CategoryChip } from "../../ui/CategoryChip.tsx";
 import { cx } from "../../ui/cx.ts";
 import { PressButton } from "../../ui/PressButton.tsx";
-import { type CategoryRemoval, CategorySheet, type NewCategory } from "./CategorySheet.tsx";
+import {
+  CategoryForm,
+  type CategoryRemoval,
+  type NewCategory,
+} from "../categories/CategoryForm.tsx";
 import type { CategoryChipModel } from "./category-chips.ts";
 import { StepError, StepFrame, type StepNavProps, useStepActions } from "./StepFrame.tsx";
 import type { CategoryNotice } from "./use-categories-step.ts";
@@ -185,7 +189,7 @@ export function CategoriesStep({
         {t("categories.add")}
       </PressButton>
       {error && <StepError>{error}</StepError>}
-      <CategorySheet
+      <CategoryForm
         key={opened}
         open={sheet.mode !== "closed"}
         onClose={closeSheet}

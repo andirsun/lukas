@@ -5,7 +5,6 @@ import { CATEGORY_GLYPHS, CATEGORY_TINTS } from "../../ui/category-look.ts";
 import { cx } from "../../ui/cx.ts";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { Sheet } from "../../ui/Sheet.tsx";
-import { StepError } from "./StepFrame.tsx";
 
 export interface NewCategory {
   name: string;
@@ -27,7 +26,7 @@ export type CategoryRemoval =
   /** The count failed: only archiving is safe. */
   | { kind: "unknown"; onRemove(): Promise<void> };
 
-export interface CategorySheetProps {
+export interface CategoryFormProps {
   open: boolean;
   onClose(): void;
   /** Editing an existing category (or a suggestion) rather than adding one. */
@@ -38,6 +37,13 @@ export interface CategorySheetProps {
   removal?: CategoryRemoval | undefined;
   /** Turns a failure into the text to show. */
   errorText(problem: unknown): string;
+  /**
+   * The categories page: the kind is fixed (it has transactions, or they are being counted), with
+   * the line saying why when `true`. Onboarding derives this from `removal` instead.
+   */
+  kindLocked?: boolean | "counting" | undefined;
+  /** The categories page: "Archivar categoría", which asks for confirmation elsewhere. */
+  onArchive?: (() => void) | undefined;
 }
 
 const DEFAULT: NewCategory = {
@@ -52,20 +58,23 @@ const OPTION =
   "flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md border-2 border-stroke shadow-edge-sm has-checked:outline-3 has-checked:outline-gold has-checked:outline-offset-1 has-focus-visible:outline-3 has-focus-visible:outline-focus has-focus-visible:outline-offset-2 has-disabled:cursor-not-allowed has-disabled:opacity-60";
 
 /**
- * A category's sheet: "＋ Agregar categoría", or editing one from the categories step. Name,
+ * A category's sheet: "＋ Agregar categoría", or editing one (from onboarding's categories step,
+ * the categories page or a category's detail). Name,
  * spending or income, an emoji and a tint, each a native radio group (the tints named for screen
  * readers). Editing adds "Eliminar categoría" when it has no transactions; with transactions it says
  * how many, offers "Archivar" instead, and its kind can't change here. Mount it with a `key` per
  * category, so its fields start from `initial`.
  */
-export function CategorySheet({
+export function CategoryForm({
   open,
   onClose,
   initial,
   onSave,
   removal,
   errorText,
-}: CategorySheetProps) {
+  kindLocked: lockedHere,
+  onArchive,
+}: CategoryFormProps) {
   const t = useTranslations("onboarding.categories");
   const nameId = useId();
   const errorId = useId();
@@ -74,7 +83,12 @@ export function CategorySheet({
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const kindLocked =
-    removal?.kind === "archive" || removal?.kind === "counting" || removal?.kind === "unknown";
+    Boolean(lockedHere) ||
+    removal?.kind === "archive" ||
+    removal?.kind === "counting" ||
+    removal?.kind === "unknown";
+  const sayKindLocked =
+    lockedHere === true || removal?.kind === "archive" || removal?.kind === "unknown";
   const set = (patch: Partial<NewCategory>) => setValues((current) => ({ ...current, ...patch }));
 
   const close = () => {
@@ -146,9 +160,7 @@ export function CategorySheet({
               </label>
             ))}
           </div>
-          {(removal?.kind === "archive" || removal?.kind === "unknown") && (
-            <p className="text-[15px] text-ink-muted">{t("kind_locked")}</p>
-          )}
+          {sayKindLocked && <p className="text-[15px] text-ink-muted">{t("kind_locked")}</p>}
         </fieldset>
 
         <fieldset className="flex flex-col gap-(--space-2)">
@@ -194,11 +206,25 @@ export function CategorySheet({
           </div>
         </fieldset>
 
-        {error && <StepError id={errorId}>{error}</StepError>}
+        {error && (
+          <p id={errorId} role="alert" className="text-[15px] text-over">
+            {error}
+          </p>
+        )}
         <PressButton type="submit" className="w-full" disabled={saving}>
           {t("save")}
         </PressButton>
 
+        {onArchive && (
+          <PressButton
+            variant="ghost"
+            className="self-center text-over"
+            disabled={saving}
+            onClick={onArchive}
+          >
+            {t("archive")}
+          </PressButton>
+        )}
         {removal?.kind === "counting" && (
           <p role="status" className="text-[15px] text-ink-muted">
             {t("counting")}

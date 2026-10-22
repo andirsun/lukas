@@ -8,6 +8,7 @@ import {
 } from "@lukas/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { type PointerEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 import { useTranslations } from "use-intl";
 import { useApi } from "../../api/ApiProvider.tsx";
 import { ApiProblem, problemMessage, type Translator } from "../../api/errors.ts";
@@ -48,10 +49,10 @@ const SWIPE_PX = 60;
 /**
  * Home (`/app`, spec §2.5): the month (the person's current one by default, earlier ones
  * browsable), Lukitas with a line about it, what is left (or, without budgets, what was spent),
- * and two lists: Presupuestos (one row per spending category) and Movimientos (by day: today on
- * top, the upcoming pending ones next, then the past). On phones a segmented control (or a
- * sideways swipe) switches between them and the choice is remembered on the device; on wide
- * screens they sit side by side. Around them, gentle cards for an account that skipped the setup.
+ * and two lists: Movimientos (by day: today on top, the upcoming pending ones next, then the past)
+ * and Presupuestos (one row per spending category, opening its detail). On phones a segmented
+ * control (or a sideways swipe) switches between them, Movimientos first and by default, and the
+ * choice is remembered on the device; on wide screens they sit side by side, Movimientos first. Around them, gentle cards for an account that skipped the setup.
  */
 export interface HomeProps {
   /** Ends the session (stories pass a stand-in); Better Auth's by default. */
@@ -144,6 +145,7 @@ function MonthView({ userId, currency, today, current, month, onMonth, signOut }
               items={transactions.data?.items}
               today={today}
               currency={currency}
+              month={month}
               monthName={monthName}
             />
           </>
@@ -301,7 +303,12 @@ function Nudges({
     categories.every((c) => c.currentBudget === null);
   const cards = [
     noBudgets && !dismissed.has("budgets")
-      ? { id: "budgets", title: t("nudge_budgets_title"), lead: t("nudge_budgets_lead") }
+      ? {
+          id: "budgets",
+          title: t("nudge_budgets_title"),
+          lead: t("nudge_budgets_lead"),
+          action: { label: t("nudge_budgets_action"), to: "/app/categories" },
+        }
       : null,
     hasTransactions.data === false && !dismissed.has("import")
       ? {
@@ -418,6 +425,7 @@ interface ListsProps {
   items: TransactionDto[] | undefined;
   today: string;
   currency: string;
+  month: Month;
   monthName: string;
 }
 
@@ -429,12 +437,14 @@ function Lists({
   items,
   today,
   currency,
+  month,
   monthName,
 }: ListsProps) {
   const t = useTranslations("home");
   const start = useRef<{ x: number; y: number } | null>(null);
 
-  // A sideways swipe on the list switches it (left: Movimientos, right: Presupuestos).
+  // A sideways swipe on the list switches it, like the tabs read: right shows Presupuestos (the
+  // second), left goes back to Movimientos.
   const onPointerDown = (event: PointerEvent<HTMLElement>) => {
     start.current = event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY };
   };
@@ -445,7 +455,7 @@ function Lists({
     const dx = event.clientX - from.x;
     const dy = event.clientY - from.y;
     if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < 2 * Math.abs(dy)) return;
-    onView(dx < 0 ? "transactions" : "budgets");
+    onView(dx > 0 ? "budgets" : "transactions");
   };
   const swipe = { onPointerDown, onPointerUp, onPointerCancel: () => (start.current = null) };
 
@@ -456,22 +466,13 @@ function Lists({
           label={t("view.label")}
           value={view}
           options={[
-            { value: "budgets", label: t("view.budgets") },
             { value: "transactions", label: t("view.transactions") },
+            { value: "budgets", label: t("view.budgets") },
           ]}
           onChange={onView}
         />
       </div>
       <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-(--space-6)">
-        <section
-          role="tabpanel"
-          aria-label={t("view.budgets")}
-          className={cx("lk-panel", view === "budgets" ? "flex" : "hidden lg:flex")}
-          {...swipe}
-        >
-          <h2 className="lk-panel-title">{t("view.budgets")}</h2>
-          <Budgets summary={summary} categories={categories} currency={currency} />
-        </section>
         <section
           role="tabpanel"
           aria-label={t("view.transactions")}
@@ -487,6 +488,15 @@ function Lists({
             monthName={monthName}
           />
         </section>
+        <section
+          role="tabpanel"
+          aria-label={t("view.budgets")}
+          className={cx("lk-panel", view === "budgets" ? "flex" : "hidden lg:flex")}
+          {...swipe}
+        >
+          <h2 className="lk-panel-title">{t("view.budgets")}</h2>
+          <Budgets summary={summary} categories={categories} currency={currency} month={month} />
+        </section>
       </div>
     </>
   );
@@ -496,14 +506,16 @@ function Budgets({
   summary,
   categories,
   currency,
+  month,
 }: {
   summary: MonthSummary | undefined;
   categories: CategoryDto[] | undefined;
   currency: string;
+  month: Month;
 }) {
   const t = useTranslations("home");
   const tTransaction = useTranslations("transaction");
-  const { openAdd } = useTransactionSheet();
+  const navigate = useNavigate();
   if (!summary || !categories) return <div className="min-h-[120px]" aria-busy="true" />;
   const byId = new Map(categories.map((c) => [c.id, c]));
   const rows = summary.categories
@@ -532,9 +544,8 @@ function Budgets({
             state={s.state}
             currency={currency}
             {...(category.archived ? { note: tTransaction("archived") } : {})}
-            // Until the category detail exists (Task 13), a row starts an expense in it (in an
-            // archived one, no new expenses: the sheet starts on the usual choice).
-            onOpen={() => (category.archived ? openAdd() : openAdd(category.id))}
+            // Its detail, in the month on screen.
+            onOpen={() => navigate(`/app/categories/${category.id}?month=${month}`)}
           />
         );
       })}
@@ -580,7 +591,12 @@ function Transactions({
   );
 }
 
-function Day({
+/**
+ * One day of transactions: its heading (today, yesterday, upcoming) with the day's total, and its
+ * rows, each opening the edit sheet; a pending one is paid from its badge. Also used by a
+ * category's detail.
+ */
+export function Day({
   group,
   byId,
   currency,

@@ -53,8 +53,9 @@ async function profile(deps: AppDeps, userId: string) {
 
 /**
  * Sets the default account's currency, only while it has no transactions (soft-deleted ones
- * count: they carry the old currency and can be restored). The check is part of the UPDATE
- * itself; it runs in the caller's transaction, so a 409 rolls back the whole PATCH.
+ * count: they carry the old currency and can be restored) and no recurrences (they would later
+ * materialize their old-currency amounts in the new one). The check is part of the UPDATE itself;
+ * it runs in the caller's transaction, so a 409 rolls back the whole PATCH.
  */
 async function setCurrency(tx: Tx, currency: string) {
   // Wait for any import or new transaction holding the account's lock. Taken in its own statement:
@@ -70,6 +71,7 @@ async function setCurrency(tx: Tx, currency: string) {
         eq(accounts.isDefault, true),
         // Written out: Drizzle renders columns unqualified inside UPDATE, so `id` would be ambiguous.
         sql`not exists (select 1 from transactions t where t.account_id = accounts.id)`,
+        sql`not exists (select 1 from recurrences r where r.account_id = accounts.id)`,
       ),
     )
     .returning({ id: accounts.id });
@@ -83,7 +85,7 @@ async function setCurrency(tx: Tx, currency: string) {
     throw new ApiError(
       409,
       "currency_locked",
-      "The currency cannot change once the account has transactions",
+      "The currency cannot change once the account has transactions or recurrences",
     );
   }
 }

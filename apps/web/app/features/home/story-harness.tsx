@@ -7,10 +7,13 @@ import {
   type TransactionDto,
   todayIn,
 } from "@lukas/core";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
+import { CategoriesPage } from "../categories/CategoriesPage.tsx";
+import { CategoryDetail } from "../categories/CategoryDetail.tsx";
+import { RecurringPage } from "../recurring/RecurringPage.tsx";
 import { AppShell } from "./AppShell.tsx";
 import { Home } from "./Home.tsx";
 import { clearHomeStorage } from "./home-storage.ts";
@@ -110,6 +113,58 @@ function sampleTransactions(): TransactionDto[] {
   ];
 }
 
+interface FakeRecurrence {
+  id: string;
+  name: string;
+  amount: number;
+  categoryId: string;
+  frequency: "monthly" | "yearly";
+  dayOfMonth: number;
+  monthOfYear: number | null;
+  startDate: string;
+  endDate: string | null;
+}
+
+/** Rent-like fixed costs: Spotify every month (the pending one above), the salary, a yearly insurance. */
+function sampleRecurrences(): FakeRecurrence[] {
+  const spotifyDay = Number(dayFromToday(2).slice(8, 10));
+  return [
+    {
+      id: "rec-spotify",
+      name: "Spotify",
+      amount: -353,
+      categoryId: "cat-fun",
+      frequency: "monthly",
+      dayOfMonth: spotifyDay,
+      monthOfYear: null,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+    {
+      id: "rec-salary",
+      name: "Salario",
+      amount: 250000,
+      categoryId: "cat-salary",
+      frequency: "monthly",
+      dayOfMonth: 1,
+      monthOfYear: null,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+    {
+      id: "rec-insurance",
+      name: "Seguro del carro",
+      amount: -42000,
+      categoryId: "cat-transport",
+      frequency: "yearly",
+      dayOfMonth: 15,
+      monthOfYear: 3,
+      startDate: "2025-03-01",
+      endDate: null,
+    },
+  ];
+}
+
 const SUGGESTIONS = [
   { name: "continente", categoryId: "cat-groceries" },
   { name: "pingo doce", categoryId: "cat-groceries" },
@@ -129,10 +184,28 @@ export interface HomeApiOptions {
   createDelayMs?: number;
   /** Transporte is archived, with a taxi ride in it today (sample data only). */
   archivedCategory?: boolean;
+  /** No recurrences (the sample has Spotify, the salary and a yearly insurance). */
+  noRecurrences?: boolean;
+}
+
+/** One budget amount, from its month on (until a later one), as the API keeps them. */
+interface FakeBudget {
+  categoryId: string;
+  amount: number;
+  effectiveFrom: string;
+}
+
+/** The budget in force in `month`: the latest one starting on or before it. */
+function budgetIn(budgets: FakeBudget[], categoryId: string, month: string): number | null {
+  const found = budgets
+    .filter((b) => b.categoryId === categoryId && b.effectiveFrom <= month)
+    .sort((a, b) => (a.effectiveFrom < b.effectiveFrom ? 1 : -1))[0];
+  return found ? found.amount : null;
 }
 
 function summaryOf(
   categories: FakeCategory[],
+  budgets: FakeBudget[],
   transactions: TransactionDto[],
   month: string,
 ): MonthSummary {
@@ -144,11 +217,10 @@ function summaryOf(
     categories: categories
       .filter((c) => !c.archived || used.has(c.id))
       .map((c) => ({ id: c.id, kind: c.kind })),
-    budgets: categories.flatMap((c) =>
-      c.currentBudget === null
-        ? []
-        : [{ categoryId: c.id, amount: c.currentBudget, effectiveFrom: addMonths(month, -12) }],
-    ),
+    budgets: categories.flatMap((c) => {
+      const amount = budgetIn(budgets, c.id, month);
+      return amount === null ? [] : [{ categoryId: c.id, amount, effectiveFrom: month }];
+    }),
     transactions: inMonth,
   });
 }
@@ -162,6 +234,7 @@ function homeFetch({
   failCreate = false,
   createDelayMs = 0,
   archivedCategory = false,
+  noRecurrences = false,
 }: HomeApiOptions): typeof fetch {
   let categories: FakeCategory[] =
     data === "no-categories"
@@ -178,6 +251,18 @@ function homeFetch({
     );
     transactions = [...transactions, transaction("taxi", "cat-transport", -1500, STORY_TODAY)];
   }
+  let budgets: FakeBudget[] = categories.flatMap((c) =>
+    c.currentBudget === null
+      ? []
+      : [{ categoryId: c.id, amount: c.currentBudget, effectiveFrom: addMonths(MONTH, -12) }],
+  );
+  const withBudget = (c: FakeCategory): FakeCategory => ({
+    ...c,
+    currentBudget: budgetIn(budgets, c.id, MONTH),
+  });
+  let recurrences: FakeRecurrence[] =
+    data === "sample" && currency === "EUR" && !noRecurrences ? sampleRecurrences() : [];
+  let recurrenceIds = 0;
   const deleted = new Map<string, TransactionDto>();
   const profile = {
     id: STORY_USER_ID,
@@ -206,7 +291,7 @@ function homeFetch({
     if (path === "/api/v1/me") return Response.json(profile);
     if (path === "/api/v1/categories" && request.method === "GET") {
       const all = url.searchParams.get("includeArchived") === "true";
-      return Response.json(categories.filter((c) => all || !c.archived));
+      return Response.json(categories.filter((c) => all || !c.archived).map(withBudget));
     }
     if (path === "/api/v1/categories" && request.method === "POST") {
       const created = {
@@ -218,9 +303,74 @@ function homeFetch({
       categories = [...categories, created];
       return Response.json(created, { status: 201 });
     }
+    const categoryBudget = /^\/api\/v1\/categories\/([^/]+)\/budget$/.exec(path);
+    if (categoryBudget && request.method === "PUT") {
+      const id = categoryBudget[1] as string;
+      const { amount, effectiveFrom } = body as { amount: number; effectiveFrom: string };
+      if (!Number.isInteger(amount) || amount < 0) {
+        return Response.json({ code: "validation_failed" }, { status: 422 });
+      }
+      budgets = [
+        ...budgets.filter((b) => !(b.categoryId === id && b.effectiveFrom === effectiveFrom)),
+        { categoryId: id, amount, effectiveFrom },
+      ];
+      return Response.json(withBudget(categories.find((c) => c.id === id) as FakeCategory));
+    }
+    const oneCategory = /^\/api\/v1\/categories\/([^/]+)$/.exec(path);
+    if (oneCategory && request.method === "PATCH") {
+      const id = oneCategory[1] as string;
+      const patch = body as Partial<FakeCategory> & { archived?: boolean };
+      const existing = categories.find((c) => c.id === id);
+      if (!existing) return Response.json({ code: "not_found" }, { status: 404 });
+      if (
+        patch.kind &&
+        patch.kind !== existing.kind &&
+        transactions.some((t) => t.categoryId === id)
+      ) {
+        return Response.json({ code: "category_has_transactions" }, { status: 409 });
+      }
+      if (
+        patch.name &&
+        categories.some((c) => c.id !== id && c.name.toLowerCase() === patch.name?.toLowerCase())
+      ) {
+        return Response.json({ code: "category_name_taken" }, { status: 409 });
+      }
+      categories = categories.map((c) => (c.id === id ? { ...c, ...patch } : c));
+      return Response.json(withBudget(categories.find((c) => c.id === id) as FakeCategory));
+    }
+    if (path === "/api/v1/recurrences" && request.method === "GET") {
+      return Response.json(recurrences);
+    }
+    if (path === "/api/v1/recurrences" && request.method === "POST") {
+      const input = body as Omit<FakeRecurrence, "id">;
+      if (input.frequency === "yearly" && input.monthOfYear == null) {
+        return Response.json({ code: "validation_failed" }, { status: 422 });
+      }
+      recurrenceIds += 1;
+      const created: FakeRecurrence = {
+        ...input,
+        id: `rec-new-${recurrenceIds}`,
+        monthOfYear: input.monthOfYear ?? null,
+        endDate: input.endDate ?? null,
+      };
+      recurrences = [...recurrences, created];
+      return Response.json(created, { status: 201 });
+    }
+    const oneRecurrence = /^\/api\/v1\/recurrences\/([^/]+)$/.exec(path);
+    if (oneRecurrence && request.method === "PATCH") {
+      const id = oneRecurrence[1] as string;
+      recurrences = recurrences.map((r) =>
+        r.id === id ? { ...r, ...(body as Partial<FakeRecurrence>) } : r,
+      );
+      return Response.json(recurrences.find((r) => r.id === id));
+    }
+    if (oneRecurrence && request.method === "DELETE") {
+      recurrences = recurrences.filter((r) => r.id !== oneRecurrence[1]);
+      return new Response(null, { status: 204 });
+    }
     if (path === "/api/v1/summary") {
       return Response.json(
-        summaryOf(categories, transactions, url.searchParams.get("month") ?? MONTH),
+        summaryOf(categories, budgets, transactions, url.searchParams.get("month") ?? MONTH),
       );
     }
     if (path === "/api/v1/transactions/suggestions") {
@@ -229,8 +379,10 @@ function homeFetch({
     }
     if (path === "/api/v1/transactions" && request.method === "GET") {
       const month = url.searchParams.get("month");
+      const category = url.searchParams.get("category");
       const items = transactions
         .filter((t) => !month || monthOf(t.date) === month)
+        .filter((t) => !category || t.categoryId === category)
         .sort(newestFirst)
         .slice(0, Number(url.searchParams.get("limit") ?? 50));
       return Response.json({ items, nextCursor: null });
@@ -277,21 +429,29 @@ function homeFetch({
 export interface HomeStageProps extends HomeApiOptions {
   /** Stands in for Better Auth's sign-out; by default it succeeds. */
   signOut?: SignOutRequest;
+  /** Where the story starts (`/app` by default): any screen of the signed-in app. */
+  path?: string;
 }
 
 /**
- * `/app` (the shell with its bottom bar and the add sheet, and home) in a memory router, against
- * the fake API above, with the toasts. Each story starts with no remembered choices; "Recargar"
- * remounts everything as a reload would, keeping what the browser stored.
+ * The signed-in app (the shell with its bottom bar or sidebar and the add sheet; home, the
+ * categories, a category's detail and the recurring ones) in a memory router, against the fake
+ * API above, with the toasts. Each story starts with no remembered choices; "Recargar" remounts
+ * everything as a reload would, keeping what the browser stored.
  */
-export function HomeStage({ signOut = async () => ({ error: null }), ...api }: HomeStageProps) {
+export function HomeStage({
+  signOut = async () => ({ error: null }),
+  path = "/app",
+  ...api
+}: HomeStageProps) {
   const [fetchImpl] = useState(() => {
     clearHomeStorage(STORY_USER_ID);
     return homeFetch(api);
   });
   const [reloads, setReloads] = useState(0);
+  const shell = (screen: ReactNode) => <AppShell>{screen}</AppShell>;
   return (
-    <MemoryRouter initialEntries={["/app"]}>
+    <MemoryRouter initialEntries={[path]}>
       <button
         type="button"
         className="sr-only focus:not-sr-only"
@@ -302,14 +462,10 @@ export function HomeStage({ signOut = async () => ({ error: null }), ...api }: H
       <ApiProvider key={reloads} fetch={fetchImpl}>
         <ToastProvider>
           <Routes>
-            <Route
-              path="/app"
-              element={
-                <AppShell>
-                  <Home signOut={signOut} />
-                </AppShell>
-              }
-            />
+            <Route path="/app" element={shell(<Home signOut={signOut} />)} />
+            <Route path="/app/categories" element={shell(<CategoriesPage />)} />
+            <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
+            <Route path="/app/recurring" element={shell(<RecurringPage />)} />
             <Route
               path="/sign-in"
               element={<p className="p-(--space-4) text-ink">Sign-in (stand-in)</p>}

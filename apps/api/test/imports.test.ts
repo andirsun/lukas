@@ -509,6 +509,52 @@ describe("adopting the file's currency on confirm", () => {
     expect(await countTransactions(headers)).toBe(1);
   });
 
+  test("an account with a recurrence can't adopt: the preview keeps its currency, confirm is currency_locked", async () => {
+    const { headers } = await t.signIn("adopt-recurrence@lukas.test");
+    await t.request("PATCH", "/v1/me", { headers, body: { currency: "COP" } });
+    // Previewed while the account is still free to adopt the file's currency...
+    const preview = (await (await upload(headers, FIXTURE)).json()) as Preview & {
+      stats: { adoptsCurrency: boolean };
+    };
+    expect(preview.stats.adoptsCurrency).toBe(true);
+    // ...then a recurrence appears: its pesos would materialize as euros after the switch.
+    const cat = (await (
+      await t.request("POST", "/v1/categories", {
+        headers,
+        body: { name: "Arriendo", kind: "expense", icon: "🏠", color: "#8b5cff" },
+      })
+    ).json()) as { id: string };
+    const recurrence = await t.request("POST", "/v1/recurrences", {
+      headers,
+      body: {
+        name: "Arriendo",
+        amount: -150_000_000,
+        categoryId: cat.id,
+        frequency: "monthly",
+        dayOfMonth: 5,
+        startDate: "2099-01-01",
+      },
+    });
+    expect(recurrence.status).toBe(201);
+    const res = await t.request("POST", `/v1/imports/${preview.id}/confirm`, {
+      headers,
+      body: { adoptFileCurrency: true },
+    });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ code: "currency_locked" });
+    expect(await countTransactions(headers)).toBe(0);
+    const me = (await (await t.request("GET", "/v1/me", { headers })).json()) as {
+      currency: string;
+    };
+    expect(me.currency).toBe("COP");
+
+    // A new preview no longer offers the switch: the file's rows in another currency are rejected.
+    const again = (await (await upload(headers, FIXTURE)).json()) as Preview & {
+      stats: { adoptsCurrency: boolean; transactions: number };
+    };
+    expect(again.stats).toMatchObject({ adoptsCurrency: false, transactions: 0 });
+  });
+
   test("an account with transactions previews in its own currency (rows rejected)", async () => {
     const { headers } = await t.signIn("adopt-has-tx@lukas.test");
     await t.request("PATCH", "/v1/me", { headers, body: { currency: "COP" } });

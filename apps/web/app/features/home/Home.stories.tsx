@@ -101,10 +101,14 @@ export const Budgets: Story = {
     await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
     await expect(region).toHaveTextContent(`Gastado ${eur("718,87")}`);
     await expect(region).toHaveTextContent(`de ${eur("1220,00")}`);
-    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+    // Movimientos comes first and is the default; Presupuestos is one tap away.
+    const tabs = canvas.getAllByRole("tab");
+    await expect(tabs.map((tab) => tab.textContent)).toEqual(["Movimientos", "Presupuestos"]);
+    await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
+    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
     const panel = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
     // Status in words, never color alone.
     await expect(
@@ -153,24 +157,32 @@ export const ViewRememberedAndSwiped: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await hero(canvas);
-    const panel = canvas.getByRole("tabpanel", { name: "Presupuestos" });
-    // Swipe left (finger moves right to left): Movimientos.
-    fireEvent.pointerDown(panel, { clientX: 300, clientY: 400, pointerType: "touch" });
-    fireEvent.pointerUp(panel, { clientX: 140, clientY: 410, pointerType: "touch" });
-    await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
+    const panel = canvas.getByRole("tabpanel", { name: "Movimientos" });
+    // Swipe right (finger moves left to right): Presupuestos, the second tab.
+    fireEvent.pointerDown(panel, { clientX: 140, clientY: 400, pointerType: "touch" });
+    fireEvent.pointerUp(panel, { clientX: 300, clientY: 410, pointerType: "touch" });
+    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
+    // The choice wins over the default after a reload.
     await userEvent.click(canvas.getByRole("button", { name: "Recargar (stand-in)" }));
     await hero(canvas);
-    await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
+    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     // A mostly vertical drag is a scroll, not a swipe.
-    const list = canvas.getByRole("tabpanel", { name: "Movimientos" });
-    fireEvent.pointerDown(list, { clientX: 140, clientY: 200, pointerType: "touch" });
-    fireEvent.pointerUp(list, { clientX: 300, clientY: 500, pointerType: "touch" });
+    const list = canvas.getByRole("tabpanel", { name: "Presupuestos" });
+    fireEvent.pointerDown(list, { clientX: 300, clientY: 200, pointerType: "touch" });
+    fireEvent.pointerUp(list, { clientX: 140, clientY: 500, pointerType: "touch" });
+    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    // Swipe left: back to Movimientos.
+    fireEvent.pointerDown(list, { clientX: 300, clientY: 400, pointerType: "touch" });
+    fireEvent.pointerUp(list, { clientX: 140, clientY: 410, pointerType: "touch" });
     await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
       "aria-selected",
       "true",
@@ -421,10 +433,14 @@ export const EmptyMonth: Story = {
     await expect(region).toHaveTextContent(eur("0,00"));
     await expect(await canvas.findByText("Ponle presupuesto a tus categorías")).toBeVisible();
     await expect(await canvas.findByText("Trae tu historial")).toBeVisible();
-    // The history card leads to the import; budgets still say "pronto".
+    // The history card leads to the import; the budgets card to the categories.
     await expect(canvas.getByRole("link", { name: "Traer mi historial" })).toHaveAttribute(
       "href",
       "/app/import",
+    );
+    await expect(canvas.getByRole("link", { name: "Ir a Categorías" })).toHaveAttribute(
+      "href",
+      "/app/categories",
     );
     await userEvent.click(canvas.getByRole("button", { name: "Ahora no: Trae tu historial" }));
     await waitFor(() => expect(canvas.queryByText("Trae tu historial")).toBeNull());
@@ -452,6 +468,7 @@ export const NoCategories: Story = {
         calls(args.onRequest).filter(([line]) => line.startsWith("POST /api/v1/categories")),
       ).toHaveLength(8),
     );
+    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
     await expect(
       await canvas.findByRole("button", { name: /^Supermercado/ }, { timeout: 4000 }),
     ).toBeVisible();
@@ -496,12 +513,46 @@ export const AvatarMenu: Story = {
     await expect(avatar).toHaveAttribute("aria-expanded", "true");
     await expect(canvas.getByRole("button", { name: "Cambiar a modo día" })).toBeVisible();
     await expect(canvas.getByRole("button", { name: "Cerrar sesión" })).toBeVisible();
-    await expect(
-      within(canvasElement.querySelector(".lk-menu") as HTMLElement).getByText(/Ajustes/),
-    ).toBeVisible();
+    const menu = within(canvasElement.querySelector(".lk-menu") as HTMLElement);
+    await expect(menu.getByText(/Ajustes/)).toBeVisible();
+    // Recurring and categories are real now; settings comes later.
+    await expect(menu.queryByRole("link", { name: /Ajustes/ })).toBeNull();
+    await expectTarget(menu.getByRole("link", { name: "Categorías" }));
+    await expect(menu.getByRole("link", { name: "Recurrentes" })).toHaveAttribute(
+      "href",
+      "/app/recurring",
+    );
     await userEvent.keyboard("{Escape}");
     await expect(avatar).toHaveAttribute("aria-expanded", "false");
     await expect(avatar).toHaveFocus();
+    // From the menu to the categories page.
+    await userEvent.click(avatar);
+    await userEvent.click(menu.getByRole("link", { name: "Categorías" }));
+    await expect(
+      await canvas.findByRole("heading", { level: 1, name: "Categorías" }, { timeout: 4000 }),
+    ).toBeVisible();
+  },
+};
+
+/** A budget row opens that category's detail, in the month on screen. */
+export const BudgetRowOpensDetail: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    await userEvent.click(await panel.findByRole("button", { name: /^Ocio/ }));
+    await expect(
+      await canvas.findByRole("heading", { level: 1, name: "Ocio" }, { timeout: 4000 }),
+    ).toBeVisible();
+    await expect(screen.queryByRole("dialog")).toBeNull();
+    await expect(
+      await canvas.findByRole("region", { name: "Presupuesto" }, { timeout: 4000 }),
+    ).toHaveTextContent(/Quedan/);
+    // And back home.
+    await userEvent.click(canvas.getByRole("link", { name: "Volver al inicio" }));
+    await hero(canvas);
   },
 };
 
@@ -513,10 +564,24 @@ export const Desktop: Story = {
     const canvas = within(canvasElement);
     await hero(canvas);
     await expect(canvas.queryByRole("tab", { name: "Movimientos" })).toBeNull();
-    await expect(canvas.getByRole("tabpanel", { name: "Presupuestos" })).toBeVisible();
-    await expect(canvas.getByRole("tabpanel", { name: "Movimientos" })).toBeVisible();
+    const budgets = canvas.getByRole("tabpanel", { name: "Presupuestos" });
+    const transactions = canvas.getByRole("tabpanel", { name: "Movimientos" });
+    await expect(budgets).toBeVisible();
+    await expect(transactions).toBeVisible();
+    // Movimientos first: on the left.
+    await expect(transactions.getBoundingClientRect().left).toBeLessThan(
+      budgets.getBoundingClientRect().left,
+    );
     const nav = within(canvas.getByRole("navigation", { name: "Navegación principal" }));
     await expect(nav.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
+    await expect(nav.getByRole("link", { name: "Categorías" })).toHaveAttribute(
+      "href",
+      "/app/categories",
+    );
+    await expect(nav.getByRole("link", { name: "Recurrentes" })).toHaveAttribute(
+      "href",
+      "/app/recurring",
+    );
     // Sections still to come are listed, not links.
     await expect(nav.queryByRole("link", { name: /Análisis/ })).toBeNull();
     await expect(nav.getByText("Análisis")).toBeVisible();
@@ -537,6 +602,7 @@ export const ArchivedCategory: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await hero(canvas);
+    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
     const budgets = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
     await expect(await budgets.findByRole("button", { name: /^Transporte/ })).toHaveAccessibleName(
       "Transporte · archivada Sin presupuesto",

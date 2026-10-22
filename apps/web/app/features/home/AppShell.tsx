@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect } from "react";
+import { useLocation } from "react-router";
 import { useMe } from "../../api/queries.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { BottomBar } from "../../ui/BottomBar.tsx";
@@ -8,22 +9,31 @@ import {
   useTransactionSheet,
 } from "../add-transaction/TransactionSheetProvider.tsx";
 
-/** Sections linked from the navigation that do not exist yet (Tasks 13–15 add them). */
-const SOON_SIDEBAR = ["insights", "recurring", "categories", "settings"] as const;
+/** Sections linked from the navigation that do not exist yet (Tasks 14–15 add them). */
+const SOON_SIDEBAR = ["insights", "settings"] as const;
 const SOON_TABS = ["insights"] as const;
+
+const SECTIONS = new Set(["insights", "recurring", "categories", "settings"]);
+
+/** The navigation's section for a path: `/app/categories/…` is Categorías, and so on. */
+export function sectionOf(pathname: string): string {
+  const [, app, section = ""] = pathname.split("/");
+  return app === "app" && SECTIONS.has(section) ? section : "home";
+}
 
 function Frame({ children }: { children: ReactNode }) {
   const { openAdd } = useTransactionSheet();
+  const current = sectionOf(useLocation().pathname);
   return (
     <div className="lk-screen lk-app-shell flex min-h-dvh">
       <div className="sticky top-0 hidden h-dvh flex-none lg:flex">
-        <Sidebar current="home" onAdd={() => openAdd()} soon={SOON_SIDEBAR} />
+        <Sidebar current={current} onAdd={() => openAdd()} soon={SOON_SIDEBAR} />
       </div>
       <div className="min-w-0 flex-1 pb-[calc(112px+env(safe-area-inset-bottom))] lg:pb-(--space-6)">
         {children}
       </div>
       <div className="fixed inset-x-0 bottom-0 z-30 pb-[env(safe-area-inset-bottom)] lg:hidden">
-        <BottomBar current="home" onAdd={() => openAdd()} soon={SOON_TABS} />
+        <BottomBar current={current} onAdd={() => openAdd()} soon={SOON_TABS} />
       </div>
     </div>
   );

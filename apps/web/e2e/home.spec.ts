@@ -1,7 +1,5 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
-import { clientIp, signUpNewUser } from "./helpers.ts";
+import { clientIp, onboardWithSample, signUpNewUser } from "./helpers.ts";
 
 /**
  * Home and the add sheet against the dev stack (spec §2.5, §2.6): a new user who imported the
@@ -9,56 +7,10 @@ import { clientIp, signUpNewUser } from "./helpers.ts";
  * pending one, and sees the month of their own time zone.
  */
 
-const BUDGE_SAMPLE = fileURLToPath(
-  new URL("../../../packages/importers/test/fixtures/budge-sample.csv", import.meta.url),
-);
-
 test.use({
   extraHTTPHeaders: async ({ extraHTTPHeaders }, use) =>
     use({ ...extraHTTPHeaders, "x-forwarded-for": clientIp() }),
 });
-
-interface Category {
-  id: string;
-  name: string;
-}
-interface Summary {
-  remaining: number;
-}
-
-/** The onboarding the e2e for it already covers, done through the API: profile, import, budget. */
-async function onboardWithSample(page: Page, timezone: string) {
-  // The welcome screen saves the browser's zone once; wait for it so ours is the last word.
-  await expect
-    .poll(
-      async () =>
-        ((await (await page.request.get("/api/v1/me")).json()) as { timezone: string }).timezone,
-    )
-    .not.toBe("UTC");
-  const me = await page.request.patch("/api/v1/me", {
-    data: { currency: "EUR", timezone, locale: "es" },
-  });
-  expect(me.ok(), await me.text()).toBe(true);
-  const preview = await page.request.post("/api/v1/imports", {
-    multipart: {
-      source: "budge",
-      file: { name: "budge.csv", mimeType: "text/csv", buffer: readFileSync(BUDGE_SAMPLE) },
-    },
-  });
-  expect(preview.ok(), await preview.text()).toBe(true);
-  const { id } = (await preview.json()) as { id: string };
-  const confirm = await page.request.post(`/api/v1/imports/${id}/confirm`);
-  expect(confirm.ok(), await confirm.text()).toBe(true);
-  const categories = (await (await page.request.get("/api/v1/categories")).json()) as Category[];
-  const groceries = categories.find((c) => c.name === "Supermercado");
-  if (!groceries) throw new Error("The sample has Supermercado");
-  const budget = await page.request.put(`/api/v1/categories/${groceries.id}/budget`, {
-    data: { amount: 50000, effectiveFrom: "2026-09" },
-  });
-  expect(budget.ok(), await budget.text()).toBe(true);
-  const done = await page.request.patch("/api/v1/me", { data: { onboardingCompleted: true } });
-  expect(done.ok(), await done.text()).toBe(true);
-}
 
 /** Euros as the Spanish UI writes them (Playwright's text matching treats NBSP as a space). */
 const eur = (cents: number) =>
@@ -66,10 +18,20 @@ const eur = (cents: number) =>
     .format(cents / 100)
     .replace("-", "−");
 
-/** Movimientos is a tab on phones; on wide screens (64rem and up) both lists show side by side. */
+interface Summary {
+  remaining: number;
+}
+
+/**
+ * Movimientos is the first tab on phones, and the one shown by default; on wide screens (64rem
+ * and up) both lists show side by side, Movimientos first.
+ */
 async function showTransactions(page: Page) {
   if ((page.viewportSize()?.width ?? 0) < 1024) {
-    await page.getByRole("tab", { name: "Movimientos" }).click();
+    await expect(page.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   }
   return page.getByRole("tabpanel", { name: "Movimientos" });
 }

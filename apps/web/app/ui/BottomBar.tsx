@@ -2,7 +2,8 @@ import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 
 export interface BottomBarProps {
-  current: "home" | "insights";
+  /** The current section; one the bar has no tab for (categories, say) marks none. */
+  current: string;
   /** Opens the add sheet. */
   onAdd(): void;
   /** Tabs whose screen does not exist yet: shown, marked "pronto", and not a link. */

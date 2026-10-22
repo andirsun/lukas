@@ -116,6 +116,45 @@ test("a soft-deleted transaction still locks the currency", async () => {
   expect(res.status).toBe(409);
 });
 
+test("a recurrence locks the currency, even before any transaction", async () => {
+  // A recurrence would later materialize its old-currency amount in the new currency.
+  const r = await t.signIn("recurrence-lock@lukas.test");
+  const cat = (await (
+    await t.request("POST", "/v1/categories", {
+      headers: r.headers,
+      body: { name: "Arriendo", kind: "expense", icon: "🏠", color: "#8b5cff" },
+    })
+  ).json()) as { id: string };
+  const created = await t.request("POST", "/v1/recurrences", {
+    headers: r.headers,
+    body: {
+      name: "Arriendo",
+      amount: -150_000_000,
+      categoryId: cat.id,
+      frequency: "monthly",
+      dayOfMonth: 5,
+      startDate: "2099-01-01",
+    },
+  });
+  expect(created.status).toBe(201);
+  const res = await t.request("PATCH", "/v1/me", { headers: r.headers, body: { currency: "COP" } });
+  expect(res.status).toBe(409);
+  expect(((await res.json()) as { code: string }).code).toBe("currency_locked");
+  const me = (await (await t.request("GET", "/v1/me", { headers: r.headers })).json()) as {
+    currency: string;
+  };
+  expect(me.currency).toBe("EUR");
+
+  // Once the recurrence is gone (and nothing was materialized), the currency is free again.
+  const { id } = (await created.json()) as { id: string };
+  await t.request("DELETE", `/v1/recurrences/${id}`, { headers: r.headers });
+  const freed = await t.request("PATCH", "/v1/me", {
+    headers: r.headers,
+    body: { currency: "COP" },
+  });
+  expect(freed.status).toBe(200);
+});
+
 test("unsupported currencies are rejected", async () => {
   const e = await t.signIn("e@lukas.test");
   // COP, USD and EUR only at launch (spec §2.4): the other Latin American currencies wait.

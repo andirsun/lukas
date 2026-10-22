@@ -151,6 +151,12 @@ export function formatMonth(month: Month, locale: Locale): string {
   return name.charAt(0).toLocaleUpperCase(locale) + name.slice(1);
 }
 
+/** A month's name mid-sentence: lowercase in Spanish (`desde octubre`), as is in English. */
+export function monthInSentence(month: Month, locale: Locale): string {
+  const name = formatMonth(month, locale);
+  return locale === "es" ? name.toLocaleLowerCase(locale) : name;
+}
+
 /**
  * Parses what a person types into an amount field, using the locale's decimal separator
  * (es `,`, en `.`). The other locale's separator is rejected rather than guessed at.

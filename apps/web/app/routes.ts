@@ -30,6 +30,9 @@ export default [
             index("routes/app._index.tsx"),
             // The import on its own, after onboarding (home's "Trae tu historial").
             route("import", "routes/app.import.tsx"),
+            route("categories", "routes/app.categories.tsx"),
+            route("categories/:id", "routes/app.categories.$id.tsx"),
+            route("recurring", "routes/app.recurring.tsx"),
           ]),
         ]),
       ]),

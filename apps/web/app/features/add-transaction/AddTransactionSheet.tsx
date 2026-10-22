@@ -3,11 +3,12 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "use-intl";
 import { formatAmountInput, formatDay, lukasHint } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
+import { useAmountKeys } from "../../ui/AmountField.tsx";
 import { CategoryChip } from "../../ui/CategoryChip.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
 import { cx } from "../../ui/cx.ts";
 import { Keypad } from "../../ui/Keypad.tsx";
-import { pasteAmount, typeOnKeypad, wholeAmount } from "../../ui/keypad-input.ts";
+import { wholeAmount } from "../../ui/keypad-input.ts";
 import { NameField } from "../../ui/NameField.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
@@ -77,35 +78,9 @@ export function AddTransactionSheet({
     if (open && focusName && nameInput) nameInput.focus();
   }, [open, focusName, nameInput]);
 
-  // Typing or pasting fills the amount, unless a text field has the keys. The thousands
-  // separator is ignored ("15.000" in Spanish is 15000) and pesos take no decimals.
+  // Typing or pasting fills the amount, unless a text field has the keys.
   const { raw, setRaw } = form;
-  useEffect(() => {
-    if (!open) return;
-    const format = { locale, currency };
-    const inField = (target: EventTarget | null) =>
-      target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || inField(event.target)) return;
-      const next = typeOnKeypad(raw, event.key, format);
-      if (next === null) return;
-      event.preventDefault();
-      setRaw(next);
-    };
-    const onPaste = (event: ClipboardEvent) => {
-      if (inField(event.target)) return;
-      const next = pasteAmount(event.clipboardData?.getData("text") ?? "", format);
-      if (next === null) return;
-      event.preventDefault();
-      setRaw(next);
-    };
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("paste", onPaste);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("paste", onPaste);
-    };
-  }, [open, raw, setRaw, locale, currency]);
+  useAmountKeys({ active: open, raw, setRaw, currency });
 
   const save = () => {
     if (saving.current || !form.valid || !form.selected) return;

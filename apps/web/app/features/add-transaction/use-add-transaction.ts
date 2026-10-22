@@ -23,15 +23,9 @@ import {
   useUpdateTransaction,
 } from "../../api/queries.ts";
 import { feedback } from "../../feedback/feedback.ts";
-import {
-  formatMoney,
-  isWholeUnit,
-  type Locale,
-  lukasHint,
-  parseAmountInput,
-} from "../../i18n/format.ts";
+import { formatMoney, type Locale, lukasHint } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
-import { wholeAmount } from "../../ui/keypad-input.ts";
+import { centsOf, keypadText, wholeAmount } from "../../ui/keypad-input.ts";
 import { useToast } from "../../ui/Toast.tsx";
 import { feedbackForSave, orderByUse } from "../home/home-model.ts";
 
@@ -198,30 +192,6 @@ export function useTransactionActions({ currency, openEdit, report }: Transactio
 export type TransactionActions = ReturnType<typeof useTransactionActions>;
 
 // -- The form --------------------------------------------------------------------------------------
-
-/**
- * Stored cents as keypad text in the locale (`26280` → `262,80`; `5000` → `50`). Whole-unit
- * currencies (COP) are rounded to whole pesos: the keypad never holds fractional pesos.
- */
-export function keypadText(cents: number, locale: Locale, currency?: string): string {
-  const abs = Math.abs(cents);
-  if (currency && isWholeUnit(currency)) return String(Math.round(abs / 100));
-  const whole = Math.floor(abs / 100);
-  const rest = abs % 100;
-  return rest === 0
-    ? String(whole)
-    : `${whole}${locale === "es" ? "," : "."}${String(rest).padStart(2, "0")}`;
-}
-
-/** The typed amount in cents, or 0 while it is empty or not a number yet. */
-export function centsOf(raw: string, locale: Locale): number {
-  if (!raw) return 0;
-  try {
-    return parseAmountInput(raw, locale);
-  } catch {
-    return 0;
-  }
-}
 
 /** How many category chips show before "Más" (two rows of four, "Más" being the eighth). */
 const VISIBLE_CHIPS = 7;

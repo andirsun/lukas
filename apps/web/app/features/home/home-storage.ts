@@ -37,10 +37,13 @@ export function clearHomeStorage(userId: string): void {
   }
 }
 
-/** The list home shows (Presupuestos or Movimientos), remembered per device. */
+/**
+ * The list home shows on phones, remembered per device once the person picks one. Movimientos
+ * comes first and is the default (founder decision, 2026-10-22).
+ */
 export function useHomeView(): [HomeView, (view: HomeView) => void] {
   const [view, setView] = useState<HomeView>(() =>
-    read(VIEW_KEY) === "transactions" ? "transactions" : "budgets",
+    read(VIEW_KEY) === "budgets" ? "budgets" : "transactions",
   );
   const choose = useCallback((next: HomeView) => {
     setView(next);

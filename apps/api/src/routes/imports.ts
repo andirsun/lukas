@@ -6,6 +6,7 @@ import {
   categories,
   categoryBudgets,
   imports,
+  recurrences,
   type Tx,
   transactions,
   withUser,
@@ -124,13 +125,23 @@ async function assertFileNotImported(tx: Tx, fileHash: string, exceptId?: string
 }
 
 /** Whether the account has any transaction, soft-deleted ones included (as the currency lock). */
-async function accountHasTransactions(tx: Tx, accountId: string): Promise<boolean> {
+/**
+ * Whether the account's currency is settled: it has transactions (soft-deleted ones too), or
+ * recurrences, which would later materialize their old-currency amounts in a new currency.
+ */
+async function currencyLocked(tx: Tx, accountId: string): Promise<boolean> {
   const [found] = await tx
     .select({ id: transactions.id })
     .from(transactions)
     .where(eq(transactions.accountId, accountId))
     .limit(1);
-  return found !== undefined;
+  if (found) return true;
+  const [recurrence] = await tx
+    .select({ id: recurrences.id })
+    .from(recurrences)
+    .where(eq(recurrences.accountId, accountId))
+    .limit(1);
+  return recurrence !== undefined;
 }
 
 async function findImport(tx: Tx, id: string): Promise<ImportRow> {
@@ -186,13 +197,14 @@ export function importRoutes(deps: AppDeps) {
         await assertFileNotImported(tx, fileHash);
         const account = await defaultAccount(tx);
         // An empty account can take the file's currency on confirm: the preview counts the file's
-        // rows in it. With transactions, the account's currency stands and other rows are rejected.
+        // rows in it. With transactions or recurrences, the account's currency stands and other
+        // rows are rejected.
         const fromFile = fileCurrency(parsed.rows);
         const adoptsCurrency =
           fromFile !== null &&
           fromFile !== account.currency &&
           (SUPPORTED_CURRENCIES as readonly string[]).includes(fromFile) &&
-          !(await accountHasTransactions(tx, account.id));
+          !(await currencyLocked(tx, account.id));
         const target = adoptsCurrency ? (fromFile as string) : account.currency;
         const dropsBudgets =
           adoptsCurrency &&
@@ -283,8 +295,9 @@ export function importRoutes(deps: AppDeps) {
         const rows = (imp.payload ?? []) as PayloadRow[];
         // The preview kept rows in one currency: the account's, or the file's when it could adopt
         // it. Under the lock, a different one goes in only by adopting it now, and only while the
-        // account is still empty; the old currency's budgets go with it. Otherwise the currency
-        // changed since the preview, and the rows would go in under the wrong one.
+        // account is still empty (no transactions, no recurrences); the old currency's budgets go
+        // with it. Otherwise the currency changed since the preview, and the rows would go in
+        // under the wrong one.
         const rowCurrency = rows[0]?.currency;
         if (rowCurrency && rows.some((r) => r.currency !== account.currency)) {
           if (!adoptFileCurrency) {
@@ -294,7 +307,7 @@ export function importRoutes(deps: AppDeps) {
               "The account's currency changed after this preview; upload the file again",
             );
           }
-          if (await accountHasTransactions(tx, account.id)) {
+          if (await currencyLocked(tx, account.id)) {
             throw new ApiError(
               409,
               "currency_locked",

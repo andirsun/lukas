@@ -65,7 +65,9 @@ export function recurrenceRoutes(deps: AppDeps) {
       const userId = c.get("userId");
       const row = await withUser(deps.db, userId, async (tx) => {
         await requireActiveCategory(tx, input.categoryId);
-        const account = await defaultAccount(tx);
+        // Locked like a new transaction: a currency switch in flight (PATCH /v1/me, an import that
+        // adopts the file's currency) finishes first, and one after this finds the account locked.
+        const account = await defaultAccount(tx, { lock: true });
         const [created] = await tx
           .insert(recurrences)
           .values({

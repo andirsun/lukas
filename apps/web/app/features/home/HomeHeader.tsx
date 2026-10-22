@@ -1,5 +1,6 @@
 import type { Month } from "@lukas/core";
 import { useEffect, useId, useRef, useState } from "react";
+import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { MonthPicker } from "../../ui/MonthPicker.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
@@ -15,12 +16,17 @@ export interface HomeHeaderProps {
   signOut?: SignOutRequest | undefined;
 }
 
-/** Sections that live in the avatar menu and do not exist yet (Tasks 13 and 15). */
-const SOON = ["recurring", "categories", "settings"] as const;
+/** Sections that live in the avatar menu (on phones, the only way there). */
+const SECTIONS = [
+  { key: "recurring", to: "/app/recurring" },
+  { key: "categories", to: "/app/categories" },
+] as const;
+/** Sections that live in the avatar menu and do not exist yet (Task 15). */
+const SOON = ["settings"] as const;
 
 /**
  * Home's header: the wordmark, the month (previous months browsable), and the avatar menu with
- * the day/night switch, the sections still to come, and sign-out. The menu is a disclosure: its
+ * the day/night switch, Recurrentes and Categorías, the sections still to come, and sign-out. The menu is a disclosure: its
  * button says whether it is open, Escape or a tap outside closes it and gives focus back.
  */
 export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeaderProps) {
@@ -82,6 +88,17 @@ export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeader
           <ThemeToggle />
         </div>
         <ul className="m-0 flex list-none flex-col gap-(--space-1) p-0">
+          {SECTIONS.map(({ key, to }) => (
+            <li key={key}>
+              <Link
+                to={to}
+                className="flex min-h-11 items-center justify-between rounded-sm text-[14px] font-bold text-ink no-underline hover:underline focus-visible:outline-3 focus-visible:outline-focus focus-visible:outline-offset-2"
+              >
+                {t(`nav.${key}`)}
+                <span aria-hidden="true">›</span>
+              </Link>
+            </li>
+          ))}
           {SOON.map((key) => (
             <li
               key={key}

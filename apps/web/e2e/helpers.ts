@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { expect, type Page, request } from "@playwright/test";
 
 /**
@@ -145,4 +147,47 @@ export async function signUpNewUser(page: Page, { lang = "es" as "es" | "en" } =
   await skipPasskeyOffer(page, { lang });
   await expect(page).toHaveURL(/\/welcome$/);
   return email;
+}
+
+const BUDGE_SAMPLE = fileURLToPath(
+  new URL("../../../packages/importers/test/fixtures/budge-sample.csv", import.meta.url),
+);
+
+interface Category {
+  id: string;
+  name: string;
+}
+
+/** The onboarding the e2e for it already covers, done through the API: profile, import, budget. */
+export async function onboardWithSample(page: Page, timezone: string) {
+  // The welcome screen saves the browser's zone once; wait for it so ours is the last word.
+  await expect
+    .poll(
+      async () =>
+        ((await (await page.request.get("/api/v1/me")).json()) as { timezone: string }).timezone,
+    )
+    .not.toBe("UTC");
+  const me = await page.request.patch("/api/v1/me", {
+    data: { currency: "EUR", timezone, locale: "es" },
+  });
+  expect(me.ok(), await me.text()).toBe(true);
+  const preview = await page.request.post("/api/v1/imports", {
+    multipart: {
+      source: "budge",
+      file: { name: "budge.csv", mimeType: "text/csv", buffer: readFileSync(BUDGE_SAMPLE) },
+    },
+  });
+  expect(preview.ok(), await preview.text()).toBe(true);
+  const { id } = (await preview.json()) as { id: string };
+  const confirm = await page.request.post(`/api/v1/imports/${id}/confirm`);
+  expect(confirm.ok(), await confirm.text()).toBe(true);
+  const categories = (await (await page.request.get("/api/v1/categories")).json()) as Category[];
+  const groceries = categories.find((c) => c.name === "Supermercado");
+  if (!groceries) throw new Error("The sample has Supermercado");
+  const budget = await page.request.put(`/api/v1/categories/${groceries.id}/budget`, {
+    data: { amount: 50000, effectiveFrom: "2026-09" },
+  });
+  expect(budget.ok(), await budget.text()).toBe(true);
+  const done = await page.request.patch("/api/v1/me", { data: { onboardingCompleted: true } });
+  expect(done.ok(), await done.text()).toBe(true);
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApi } from "../../api/ApiProvider.tsx";
 import type { Locale } from "../../i18n/format.ts";
-import type { NewCategory } from "./CategorySheet.tsx";
+import type { NewCategory } from "../categories/CategoryForm.tsx";
 import { type CategoryChipModel, categoryChips, suggestionChipId } from "./category-chips.ts";
 import {
   applyCategorySelection,
