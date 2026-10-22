@@ -683,6 +683,8 @@ export const ArchivedCategory: Story = {
         expect.stringMatching(/^PATCH \/api\/v1\/transactions\/\S+ \{"note":"aeropuerto"\}$/),
       ),
     );
+    // The toast fully in before the a11y run: half-faded text fails contrast on a slow machine.
+    await toastSaying("Cambios guardados: taxi");
 
     // A new transaction is never put in an archived category.
     const sheet = await openAdd(canvas);
