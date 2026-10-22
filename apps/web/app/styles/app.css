@@ -1366,7 +1366,8 @@
     align-items: center;
     justify-content: center;
     gap: 2px;
-    min-width: 88px;
+    /* GESTURE.rowActionWidth, set on the row. */
+    min-width: var(--lk-swipe-action);
     min-height: 44px;
     border: 0;
     background: transparent;
@@ -1479,7 +1480,7 @@
     gap: var(--space-2);
   }
   /* Short phones: tighter keys (still 44 px targets) so the whole keypad and Guardar fit. */
-  @media (height < 740px) {
+  @media (max-height: 739.98px) {
     .lk-sheet.has-footer .lk-keys {
       gap: 4px;
     }
@@ -1513,5 +1514,21 @@
   /* A row swiped right (Editar) slides past the screen's edge: never a sideways scroll for it. */
   .lk-app-shell {
     overflow-x: clip;
+  }
+}
+
+@layer components {
+  /*
+   * Home's tabs on phones: stuck under the header (the demo's banner sets --lk-sticky-top) once the
+   * summary scrolls away. The negative margins keep the layout as it was; the background hides the
+   * list scrolling under it.
+   */
+  .lk-tabs-sticky {
+    position: sticky;
+    top: var(--lk-sticky-top, 0px);
+    z-index: 20;
+    margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-4)) calc(-1 * var(--space-1));
+    padding: var(--space-2) var(--space-4) var(--space-1);
+    background: var(--bg);
   }
 }

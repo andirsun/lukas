@@ -10,8 +10,9 @@ import {
   useState,
 } from "react";
 import { feedback } from "../feedback/feedback.ts";
-import { gestureOwner, lockAxis, pagerTarget, rubberBand, velocityTracker } from "./gesture.ts";
+import { pagerTarget, rubberBand } from "./gesture.ts";
 import { durationToken, GESTURE, SPRINGS, useReducedMotionPreference } from "./motion-tokens.ts";
+import { useAxisDrag } from "./use-axis-drag.ts";
 
 export interface PagerOptions {
   /** The page shown (and remembered by the caller). */
@@ -20,17 +21,6 @@ export interface PagerOptions {
   onIndexChange(index: number): void;
   /** Off (wide screens, where the pages sit side by side): no gestures. */
   enabled?: boolean;
-}
-
-interface Drag {
-  pointerId: number;
-  x: number;
-  y: number;
-  /** Where the track was (in pages) when the finger came down: mid-spring, between two. */
-  from: number;
-  width: number;
-  axis: "x" | "y" | null;
-  tracker: ReturnType<typeof velocityTracker>;
 }
 
 export interface Pager {
@@ -70,8 +60,6 @@ export function usePager({ index, count, onIndexChange, enabled = true }: PagerO
   const reduceMotion = useReducedMotionPreference();
   const position = useMotionValue(index);
   const [settled, setSettled] = useState(true);
-  const drag = useRef<Drag | null>(null);
-  const dragged = useRef(false);
   const frame = useRef<HTMLDivElement>(null);
   const pages = useRef<(HTMLDivElement | null)[]>([]);
   /** The velocity (pages/s) a release hands to the spring that follows its page change. */
@@ -109,97 +97,56 @@ export function usePager({ index, count, onIndexChange, enabled = true }: PagerO
     settle(index, velocity);
   }, [index]);
 
-  const onPointerDown = (event: PointerEvent<HTMLElement>) => {
-    // Any new press starts clean: a touch drag is never followed by a click to swallow.
-    dragged.current = false;
-    if (!enabled || event.pointerType === "mouse" || !event.isPrimary) return;
-    if (gestureOwner(event.target) !== "pager") return;
-    const page = frame.current?.offsetWidth ?? 0;
-    if (page === 0) return;
-    // One page further along is a page and the gap between two.
-    const width = page + GESTURE.pagerGap;
-    // Mid-spring: catch the track where it is.
-    position.stop();
-    const tracker = velocityTracker();
-    tracker.add(event.timeStamp, event.clientX);
-    drag.current = {
-      pointerId: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-      from: position.get(),
-      width,
-      axis: null,
-      tracker,
-    };
-    dragged.current = false;
-  };
-
-  const onPointerMove = (event: PointerEvent<HTMLElement>) => {
-    const current = drag.current;
-    if (!current || event.pointerId !== current.pointerId) return;
-    const dx = event.clientX - current.x;
-    const dy = event.clientY - current.y;
-    if (current.axis === null) {
-      current.axis = lockAxis(dx, dy, GESTURE.axisSlop);
-      if (current.axis === "y") {
-        drag.current = null;
-        if (!settled || position.get() !== index) settle(index, 0);
-        return;
-      }
-      if (current.axis === null) return;
-      dragged.current = true;
-      setSettled(false);
-      try {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } catch {
-        // Synthetic pointers (tests) cannot be captured; moves still arrive here.
-      }
-    }
-    current.tracker.add(event.timeStamp, event.clientX);
-    if (reduceMotion) return;
-    position.set(rubberBand(current.from - dx / current.width, 0, count - 1, GESTURE.rubberBand));
-  };
-
-  const release = (event: PointerEvent<HTMLElement>, cancelled: boolean) => {
-    const current = drag.current;
-    if (!current || event.pointerId !== current.pointerId) return;
-    drag.current = null;
-    if (current.axis !== "x") return;
-    // The click a drag may produce comes before any timer: forget the drag after it.
-    setTimeout(() => {
-      dragged.current = false;
-    }, 0);
-    const vx = cancelled ? 0 : current.tracker.velocity(event.timeStamp);
-    const base = Math.round(current.from);
-    const dx = event.clientX - current.x;
-    const target = cancelled
-      ? index
-      : pagerTarget({
-          index: base,
-          // Measured from the page it started nearest to, so a catch mid-spring counts right.
-          dx: dx + (current.from - base) * -current.width,
-          vx,
-          width: current.width,
-          count,
-          flick: GESTURE.flickVelocity,
-        });
-    const max = GESTURE.pagerMaxVelocity;
-    const velocity = Math.max(-max, Math.min(max, -vx / current.width));
-    if (target !== index) {
-      handoff.current = velocity;
-      onIndexChange(target);
-    } else {
-      settle(index, velocity);
-    }
-  };
-
-  // A drag is never also a tap on what it started on.
-  const onClickCapture = (event: MouseEvent<HTMLElement>) => {
-    if (!dragged.current) return;
-    dragged.current = false;
-    event.preventDefault();
-    event.stopPropagation();
-  };
+  /** The drag under way: where the track was (in pages, maybe mid-spring) and one page's px. */
+  const from = useRef({ position: 0, width: 1 });
+  const gesture = useAxisDrag(
+    "pager",
+    {
+      onStart() {
+        const page = frame.current?.offsetWidth ?? 0;
+        if (page === 0) return false;
+        // A touch catches the track where it is (mid-spring too); onSettle or a release moves on.
+        position.stop();
+        // One page further along is a page and the gap between two.
+        from.current = { position: position.get(), width: page + GESTURE.pagerGap };
+        return true;
+      },
+      onLock: () => setSettled(false),
+      onMove(dx) {
+        if (reduceMotion) return;
+        const { position: start, width } = from.current;
+        position.set(rubberBand(start - dx / width, 0, count - 1, GESTURE.rubberBand));
+      },
+      onRelease(dx, vx, cancelled) {
+        const { position: start, width } = from.current;
+        const base = Math.round(start);
+        const target = cancelled
+          ? index
+          : pagerTarget({
+              index: base,
+              // Measured from the page it started nearest to, so a catch mid-spring counts right.
+              dx: dx + (start - base) * -width,
+              vx,
+              width,
+              count,
+              flick: GESTURE.flickVelocity,
+            });
+        const max = GESTURE.pagerMaxVelocity;
+        const velocity = Math.max(-max, Math.min(max, -vx / width));
+        if (target !== index) {
+          handoff.current = velocity;
+          onIndexChange(target);
+        } else {
+          settle(index, velocity);
+        }
+      },
+      // A tap, a scroll or a cancel caught the track: it goes on to the page shown.
+      onSettle() {
+        if (position.get() !== index) settle(index, 0);
+      },
+    },
+    enabled,
+  );
 
   return {
     position,
@@ -208,11 +155,11 @@ export function usePager({ index, count, onIndexChange, enabled = true }: PagerO
     frame,
     pages,
     surface: {
-      onPointerDown,
-      onPointerMove,
-      onPointerUp: (event) => release(event, false),
-      onPointerCancel: (event) => release(event, true),
-      onClickCapture,
+      onPointerDown: gesture.onPointerDown,
+      onPointerMove: gesture.onPointerMove,
+      onPointerUp: gesture.onPointerUp,
+      onPointerCancel: gesture.onPointerCancel,
+      onClickCapture: (event) => void gesture.swallowClick(event),
       // Vertical scrolling and zoom stay the browser's; sideways drags are ours.
       style: enabled ? { touchAction: "pan-y pinch-zoom" } : {},
     },

@@ -490,16 +490,20 @@ function Lists({
   }
   return (
     <>
-      <SegmentedControl<HomeView>
-        label={t("view.label")}
-        value={view}
-        position={pager.position}
-        options={[
-          { value: "transactions", label: t("view.transactions") },
-          { value: "budgets", label: t("view.budgets") },
-        ]}
-        onChange={onView}
-      />
+      {/* Stuck under the header once the summary scrolls away: a tap or a sideways drag on it
+          reaches the pager anywhere in a long list (rows own the drags that start on them). */}
+      <div className="lk-tabs-sticky">
+        <SegmentedControl<HomeView>
+          label={t("view.label")}
+          value={view}
+          position={pager.position}
+          options={[
+            { value: "transactions", label: t("view.transactions") },
+            { value: "budgets", label: t("view.budgets") },
+          ]}
+          onChange={onView}
+        />
+      </div>
       <PagerTrack pager={pager}>
         {transactions}
         {budgets}
@@ -665,7 +669,13 @@ export function Day({
               draft
                 ? undefined
                 : tx.status === "pending"
-                  ? { kind: "paid", run: () => void pay(tx).catch(() => {}) }
+                  ? {
+                      kind: "paid",
+                      // Paid once: a second quick swipe (or the badge) never pays it again.
+                      run: () => {
+                        if (!paidHere.has(tx.id)) void pay(tx).catch(() => {});
+                      },
+                    }
                   : { kind: "edit", run: () => openEdit(tx) }
             }
           >

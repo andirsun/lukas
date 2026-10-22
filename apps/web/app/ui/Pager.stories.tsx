@@ -253,3 +253,18 @@ export const ReducedMotion: Story = {
     );
   },
 };
+
+/** A tap on the card while the track slides to a tab's page still lets it settle there. */
+export const TapMidSpringSettles: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const track = trackOf(canvasElement);
+    const width = track.getBoundingClientRect().width;
+    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
+    await fingerDrag(canvas.getByTestId("card"), { steps: 0 });
+    await waitFor(
+      () => expect(translateX(track)).toBeCloseTo(-(width + GESTURE.pagerGap), 0),
+      SETTLE,
+    );
+  },
+};

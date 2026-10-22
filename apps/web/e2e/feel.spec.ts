@@ -131,6 +131,96 @@ test.describe("the tab pager", () => {
   });
 });
 
+/** The pager track's offset, in px (0 on Movimientos). */
+const trackX = (page: Page) =>
+  page
+    .locator("[data-pager-track]")
+    .evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m41);
+/** One page further along: a page's width and the 32 px gap. */
+const pageStep = (page: Page) =>
+  page
+    .locator("[data-pager-track]")
+    .evaluate((element) => (element as HTMLElement).offsetWidth + 32);
+/** A row's face offset, in px (0 closed). */
+const faceX = (row: Locator) =>
+  row
+    .locator(".lk-swipe-face")
+    .evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m41);
+/** A finger tap at a point, with nothing in between (for taps a few ms apart). */
+const tapAt = async (page: Page, at: { x: number; y: number }) => (await touchDown(page, at)).up();
+
+test.describe("a touch that interrupts a spring", () => {
+  test("a double tap on Presupuestos settles on Presupuestos", async ({ page }) => {
+    await openDemo(page);
+    const at = await centerOf(tab(page, "Presupuestos"));
+    await tapAt(page, at);
+    await page.waitForTimeout(60);
+    await tapAt(page, at);
+    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
+    const step = await pageStep(page);
+    await expect.poll(() => trackX(page)).toBeCloseTo(-step, 0);
+    await page.waitForTimeout(300);
+    expect(Math.abs((await trackX(page)) + step)).toBeLessThanOrEqual(1);
+  });
+
+  test("a tap on the tab, then on the summary card, settles on the tab's page", async ({
+    page,
+  }) => {
+    await openDemo(page);
+    const tabAt = await centerOf(tab(page, "Presupuestos"));
+    const cardAt = await centerOf(page.locator(".lk-hero"));
+    await tapAt(page, tabAt);
+    await page.waitForTimeout(60);
+    await tapAt(page, cardAt);
+    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
+    const step = await pageStep(page);
+    await expect.poll(() => trackX(page)).toBeCloseTo(-step, 0);
+    await page.waitForTimeout(300);
+    expect(Math.abs((await trackX(page)) + step)).toBeLessThanOrEqual(1);
+  });
+
+  test("a small row swipe, then a vertical scroll on it, settles the row closed", async ({
+    page,
+  }) => {
+    await openDemo(page);
+    const row = paidRows(page).nth(1);
+    await row.evaluate((element) => element.scrollIntoView({ block: "center" }));
+    const from = await edgeOf(row, "right");
+    const title = await titleOf(row);
+    // 32 px, slowly: under half the action and no flick, so it springs closed...
+    await swipe(page, from, { dx: -32, steps: 8, stepMs: 24 });
+    await page.waitForTimeout(30);
+    // ...and a scroll starts on it mid-spring.
+    await swipe(page, from, { dx: 0, dy: -200, steps: 10, stepMs: 16 });
+    await expect.poll(() => faceX(row)).toBeCloseTo(0, 0);
+    await page.waitForTimeout(300);
+    expect(Math.abs(await faceX(row))).toBeLessThanOrEqual(1);
+    // The same row, still there: nothing was deleted on the way.
+    expect(await titleOf(row)).toBe(title);
+    await expect(page.getByRole("status")).not.toContainText("Eliminado");
+  });
+});
+
+test.describe("deep in a long list", () => {
+  test("the tabs stay under the header, and a sideways drag on them turns the page", async ({
+    page,
+  }) => {
+    await openDemo(page);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(200);
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(800);
+    const tabs = page.getByRole("tablist", { name: "Vista" });
+    const box = await tabs.boundingBox();
+    if (!box) throw new Error("tabs not on screen");
+    // Stuck just under the demo banner, in view.
+    const banner = await page.getByRole("complementary", { name: "Demo" }).boundingBox();
+    expect(box.y).toBeGreaterThanOrEqual((banner?.y ?? 0) + (banner?.height ?? 0) - 1);
+    expect(box.y).toBeLessThan(200);
+    await swipe(page, { x: box.x + box.width - 30, y: box.y + box.height / 2 }, { dx: -230 });
+    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
+  });
+});
+
 test.describe("row swipes", () => {
   test("left deletes, Deshacer brings it back, and the total is unchanged", async ({ page }) => {
     await openDemo(page);
@@ -212,7 +302,7 @@ test.describe("in Madrid, on 21 October 2026", () => {
 
   // Te quedan counts pending transactions already (packages/core summary.ts), so paying one
   // moves nothing on the hero: the row, the toast, the celebration and the API say it is paid.
-  test("a pending row swiped right is paid, with its celebration; Te quedan holds", async ({
+  test("a pending row swiped right is paid, with its celebration; Te quedan holds because the summary already counts pending as spent", async ({
     page,
   }) => {
     await page.clock.install({ time: new Date("2026-10-21T15:00:00Z") });
@@ -244,11 +334,15 @@ test.describe("the keypad on short phones", () => {
     { width: 375, height: 667 },
     { width: 375, height: 812 },
     { width: 390, height: 844 },
+    // An Android phone (412×893) less Chrome's bottom toolbar, and a small Android phone.
+    { width: 412, height: 760 },
+    { width: 360, height: 640 },
   ];
 
   for (const lang of ["es", "en"] as const) {
     for (const theme of ["night", "day"] as const) {
       test(`every key and the save button show, ${lang}, ${theme}`, async ({ page }) => {
+        test.setTimeout(120_000);
         await page.addInitScript((value) => localStorage.setItem("lukas.theme", value), theme);
         const l =
           lang === "es"
@@ -312,7 +406,7 @@ test.describe("the keypad on short phones", () => {
             }
             // And they work: clear what is there, then 5, 0 and back to 5.
             const amount = sheet.getByTestId("amount");
-            for (let i = 0; i < 12; i++) await tap(page, back);
+            if (which === "edit") for (let i = 0; i < 12; i++) await tap(page, back);
             const cleared = await amount.innerText();
             await tap(page, sheet.getByRole("button", { name: "5", exact: true }));
             await expect(amount).not.toHaveText(cleared);
@@ -332,7 +426,7 @@ test.describe("the keypad on short phones", () => {
 });
 
 test.describe("the celebration", () => {
-  test("Lukitas lands on the ＋, never over the list or the summary", async ({ page }) => {
+  test("Lukitas lands above the ＋, which stays visible and tappable", async ({ page }) => {
     await openDemo(page);
     await tap(page, plus(page));
     const sheet = page.getByRole("dialog", { name: "Nuevo gasto" });
@@ -343,19 +437,30 @@ test.describe("the celebration", () => {
       sheet.getByRole("group", { name: "Categoría" }).getByRole("button", { name: "Mercado" }),
     );
     await tap(page, sheet.getByRole("button", { name: "Guardar", exact: true }));
+    await expect(sheet).toBeHidden();
     const lukas = page.locator(".lk-celebration-lukas");
     await expect(lukas).toBeVisible();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(400);
     const box = await lukas.boundingBox();
     const button = await plus(page).boundingBox();
     if (!box || !button) throw new Error("not on screen");
-    // Within the ＋'s column, and no higher than its top: over the bar, not the content.
-    expect(box.y).toBeGreaterThanOrEqual(button.y - 4);
-    expect(box.x).toBeGreaterThanOrEqual(button.x - 12);
-    expect(box.x + box.width).toBeLessThanOrEqual(button.x + button.width + 12);
+    // Above the ＋ (never on it), centered on its column.
+    expect(box.y + box.height).toBeLessThanOrEqual(button.y + 1);
+    expect(Math.abs(box.x + box.width / 2 - (button.x + button.width / 2))).toBeLessThan(2);
     expect(
       await page.locator(".lk-celebration").evaluate((el) => getComputedStyle(el).pointerEvents),
     ).toBe("none");
+    // The ＋ is what a finger finds at its center, and a tap there opens the sheet mid-party.
+    const center = { x: button.x + button.width / 2, y: button.y + button.height / 2 };
+    expect(
+      await page.evaluate(
+        ({ x, y }) => document.elementFromPoint(x, y)?.closest(".lk-plus") !== null,
+        center,
+      ),
+    ).toBe(true);
+    await expect(page.getByTestId("celebration")).toBeAttached();
+    await (await touchDown(page, center)).up();
+    await expect(page.getByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
   });
 });
 

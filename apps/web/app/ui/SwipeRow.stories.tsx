@@ -157,7 +157,7 @@ export const KeyboardSkipsClosedActions: Story = {
     const open = canvas.getByRole("button", { name: /^Spotify/ });
     await expect(open).toHaveFocus();
     await expect(open).toHaveAccessibleDescription(
-      "Desliza a la izquierda para borrar o a la derecha para marcarlo pagado.",
+      "Tócalo para editarlo o borrarlo; Pendiente lo marca pagado.",
     );
     await userEvent.tab();
     await expect(canvas.getByRole("button", { name: /Pendiente/ })).toHaveFocus();
@@ -190,5 +190,17 @@ export const DayEnglish: Story = {
     await waitFor(() => expect(translateX(faceOf(row))).toBeCloseTo(0, 0), SETTLE);
     await fingerDrag(row, { dx: 70, steps: 12, stepMs: 24 });
     await expect(await canvas.findByRole("button", { name: "Edit" })).toBeVisible();
+  },
+};
+
+/** A tap that lands while the row springs back still lets it settle (it never freezes part-way). */
+export const TapMidSpringSettles: Story = {
+  play: async ({ canvasElement, args }) => {
+    const row = rowOf(canvasElement);
+    // Slow and short: it springs back closed (a flick would delete).
+    await fingerDrag(row, { dx: -32, steps: 8, stepMs: 24 });
+    await fingerDrag(row, { steps: 0 });
+    await waitFor(() => expect(translateX(faceOf(row))).toBeCloseTo(0, 0), SETTLE);
+    await expect(args.onDelete).not.toHaveBeenCalled();
   },
 };

@@ -837,7 +837,7 @@
     "delete": "Delete",
     "edit": "Edit",
     "paid": "Paid",
-    "hint": "Swipe left to delete or right to edit.",
-    "hint_pending": "Swipe left to delete or right to mark it paid."
+    "hint": "Tap it to edit or delete it.",
+    "hint_pending": "Tap it to edit or delete it; Pending marks it paid."
   }
 }

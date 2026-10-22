@@ -15,10 +15,14 @@ const FALLBACK_MS = 1200;
 const FIND_SPOT_MS = 800;
 
 /**
- * Marks where Lukitas may land: free space that never holds text or figures (the ＋ of the bottom
- * bar, an empty spot in the sidebar). Its value is his size in px. The first one on screen wins.
+ * Marks where Lukitas may land: free space that never holds text or figures (an empty spot in the
+ * sidebar), or, with `data-celebration-place="above"`, the element he stands just above (the ＋ of
+ * the bottom bar, which stays in view and tappable). Its value is his size in px. The first one on
+ * screen wins.
  */
 export const CELEBRATION_ANCHOR = "data-celebration-anchor";
+/** px between Lukitas's feet and the element he stands above. */
+const ABOVE_GAP = 4;
 
 interface Spot {
   /** The spot's horizontal center and top, in viewport px. */
@@ -33,7 +37,12 @@ function findSpot(): Spot | null {
     const rect = element.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) continue;
     const size = Number(element.getAttribute(CELEBRATION_ANCHOR)) || rect.width;
-    return { x: rect.left + rect.width / 2, top: rect.top, size };
+    const above = element.dataset.celebrationPlace === "above";
+    return {
+      x: rect.left + rect.width / 2,
+      top: above ? rect.top - size - ABOVE_GAP : rect.top,
+      size,
+    };
   }
   return null;
 }
@@ -70,8 +79,8 @@ const BURST: readonly Piece[] = Array.from({ length: PIECES }, (_, index) => {
 
 /**
  * Confetti and a celebrating Lukitas, shown when `feedback()` reports something worth
- * celebrating. Lukitas lands in free space, never over text or figures: on the ＋ of the bottom bar
- * on phones, in the sidebar's empty spot on wide screens (`CELEBRATION_ANCHOR`), and the confetti
+ * celebrating. Lukitas lands in free space, never over text or figures: just above the ＋ of the
+ * bottom bar on phones (never on it: it stays visible and tappable), in the sidebar's empty spot on wide screens (`CELEBRATION_ANCHOR`), and the confetti
  * bursts from there. Purely decorative (hidden from assistive technology: the toast or screen
  * already says what happened) and it never takes a tap. Under reduced motion there is no confetti:
  * Lukitas shows as his still celebrating frame and only fades in and out. Mounted once, in the app

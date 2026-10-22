@@ -56,26 +56,27 @@
   background: var(--good);
 }
 
-/* Pops up out of the spot, bounces once, and sinks back into it: never above the spot's top. */
+/*
+ * Grows up from his feet, bounces once, and shrinks back down: scaled from the bottom, so he never
+ * reaches below his spot (the ＋ under him stays clear).
+ */
 @keyframes lk-celebration-pop {
   0% {
     opacity: 0;
-    transform: translateY(40%) scale(0.5);
+    transform: scale(0.4);
   }
   20% {
     opacity: 1;
-    transform: translateY(0) scale(1.06);
+    transform: scale(1.06);
   }
-  35% {
-    transform: translateY(0) scale(1);
-  }
+  35%,
   80% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
   100% {
     opacity: 0;
-    transform: translateY(30%) scale(0.9);
+    transform: scale(0.85);
   }
 }
 

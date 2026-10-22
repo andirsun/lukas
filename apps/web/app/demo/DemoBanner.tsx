@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useTranslations } from "use-intl";
 import { useLocale } from "../i18n/IntlProvider.tsx";
 import { PressLink } from "../ui/PressLink.tsx";
@@ -18,8 +19,26 @@ export interface DemoBannerProps {
 export function DemoBanner({ signInHref }: DemoBannerProps) {
   const t = useTranslations("demo");
   const { locale } = useLocale();
+  const banner = useRef<HTMLElement>(null);
+
+  // Whatever sticks to the top under it (home's tabs) sits below it: --lk-sticky-top is its height.
+  useEffect(() => {
+    const element = banner.current;
+    const root = document.documentElement;
+    if (!element || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() =>
+      root.style.setProperty("--lk-sticky-top", `${element.offsetHeight}px`),
+    );
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--lk-sticky-top");
+    };
+  }, []);
+
   return (
     <aside
+      ref={banner}
       aria-label={t("label")}
       className="sticky top-0 z-[25] border-stroke border-b-2 bg-surface-sunken px-(--space-4) py-(--space-2) lg:px-(--space-6)"
     >

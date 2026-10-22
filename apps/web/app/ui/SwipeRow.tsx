@@ -1,8 +1,8 @@
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 import {
+  type CSSProperties,
   createContext,
   type MouseEvent,
-  type PointerEvent,
   type ReactNode,
   useCallback,
   useContext,
@@ -15,16 +15,9 @@ import {
 import { useTranslations } from "use-intl";
 import { feedback } from "../feedback/feedback.ts";
 import { cx } from "./cx.ts";
-import {
-  armedSide,
-  gestureOwner,
-  lockAxis,
-  rowOffset,
-  rowRelease,
-  SWIPE_ROW_ATTRIBUTE,
-  velocityTracker,
-} from "./gesture.ts";
+import { armedSide, rowOffset, rowRelease, SWIPE_ROW_ATTRIBUTE } from "./gesture.ts";
 import { durationToken, GESTURE, SPRINGS, useReducedMotionPreference } from "./motion-tokens.ts";
+import { useAxisDrag } from "./use-axis-drag.ts";
 
 export interface SwipeRowProps {
   children: ReactNode;
@@ -49,16 +42,6 @@ let closeOpenRow: (() => void) | null = null;
 
 type Side = "left" | "right";
 
-interface Drag {
-  pointerId: number;
-  x: number;
-  y: number;
-  start: number;
-  width: number;
-  axis: "x" | "y" | null;
-  tracker: ReturnType<typeof velocityTracker>;
-}
-
 /**
  * A row with swipe shortcuts (spec §2.6, founder request 2026-10-22): left reveals a red Borrar,
  * right reveals Editar (Pagado on a pending row). The row follows the finger; let go past 40 % of
@@ -67,7 +50,8 @@ interface Drag {
  * open at a time.
  *
  * Swipes are shortcuts only: tapping the row edits (and the edit sheet deletes), the pending badge
- * pays. The row's button describes them (`useSwipeHint`), and closed actions are out of the tab
+ * pays. The row's button describes those taps (`useSwipeHint`): screen readers take over one-finger
+ * swipes, so the hint names what they can do instead. Closed actions are out of the tab
  * order and hidden from assistive technology. Which gestures are the row's (and not the home
  * pager's) is decided by `gestureOwner` in gesture.ts.
  */
@@ -79,8 +63,6 @@ export function SwipeRow({ children, onDelete, right, enter = false }: SwipeRowP
   const [open, setOpen] = useState<Side | null>(null);
   const [armed, setArmed] = useState<Side | null>(null);
   const [gone, setGone] = useState(false);
-  const drag = useRef<Drag | null>(null);
-  const dragged = useRef(false);
   const hintId = useId();
   const left = onDelete !== undefined;
   const hasRight = right !== undefined;
@@ -207,105 +189,82 @@ export function SwipeRow({ children, onDelete, right, enter = false }: SwipeRowP
     right.run();
   };
 
-  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    // Any new press starts clean: a touch drag is never followed by a click to swallow.
-    dragged.current = false;
-    if (event.pointerType === "mouse" || gone || !event.isPrimary) return;
-    if (gestureOwner(event.target) !== "row") return;
-    // A new drag mid-spring carries on from where the row is.
-    x.stop();
-    const tracker = velocityTracker();
-    tracker.add(event.timeStamp, event.clientX);
-    drag.current = {
-      pointerId: event.pointerId,
-      x: event.clientX,
-      y: event.clientY,
-      start: x.get(),
-      width: event.currentTarget.offsetWidth,
-      axis: null,
-      tracker,
-    };
-    dragged.current = false;
-  };
-
-  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    const current = drag.current;
-    if (!current || event.pointerId !== current.pointerId) return;
-    const dx = event.clientX - current.x;
-    const dy = event.clientY - current.y;
-    if (current.axis === null) {
-      current.axis = lockAxis(dx, dy, GESTURE.axisSlop);
-      if (current.axis === "y") {
-        // A scroll: the browser's.
-        drag.current = null;
-        return;
-      }
-      if (current.axis === null) return;
-      dragged.current = true;
-      setRevealed(true);
-      if (closeOpenRow && closeOpenRow !== close) closeOpenRow();
-      try {
-        event.currentTarget.setPointerCapture(event.pointerId);
-      } catch {
-        // Synthetic pointers (tests) cannot be captured; moves still arrive here.
-      }
-    }
-    current.tracker.add(event.timeStamp, event.clientX);
-    const offset = rowOffset({
-      start: current.start,
-      dx,
-      width: current.width,
-      factor: GESTURE.rubberBand,
-      left,
-      right: hasRight,
-    });
-    x.set(offset);
-    const nowArmed = armedSide(offset, current.width, GESTURE.rowThreshold);
-    const usable = nowArmed === "left" ? left : nowArmed === "right" ? hasRight : true;
-    const next = usable ? nowArmed : null;
-    if (next !== armed) {
-      setArmed(next);
-      feedback("swipeThreshold");
-    }
-  };
-
-  const release = (event: PointerEvent<HTMLDivElement>, cancelled: boolean) => {
-    const current = drag.current;
-    if (!current || event.pointerId !== current.pointerId) return;
-    drag.current = null;
-    if (current.axis !== "x") return;
-    // The click a drag may produce comes before any timer: forget the drag after it.
-    setTimeout(() => {
-      dragged.current = false;
-    }, 0);
-    const vx = cancelled ? 0 : current.tracker.velocity(event.timeStamp);
-    const outcome = rowRelease({
-      offset: x.get(),
-      vx,
-      width: current.width,
-      threshold: GESTURE.rowThreshold,
-      flick: GESTURE.flickVelocity,
-      openWidth: GESTURE.rowActionWidth,
-      left,
-      right: hasRight,
-    });
-    setArmed(null);
-    if (outcome === "commit-left") void remove(vx);
-    else if (outcome === "commit-right") runRight(vx);
-    else if (outcome === "open-left" || outcome === "open-right") {
-      opened(outcome === "open-left" ? "left" : "right", vx);
-    } else close();
-  };
+  const rest = () =>
+    open === "left" ? -GESTURE.rowActionWidth : open === "right" ? GESTURE.rowActionWidth : 0;
+  /** The drag under way: where the row was (maybe mid-spring) and its width. */
+  const from = useRef({ offset: 0, width: 1 });
+  /** The side armed so far in this drag (a ref: two moves in one frame must agree). */
+  const armedNow = useRef<Side | null>(null);
+  const gesture = useAxisDrag(
+    "row",
+    {
+      onStart(event) {
+        if (gone) return false;
+        // A touch catches the row where it is (mid-spring too); onSettle or a release moves on.
+        x.stop();
+        from.current = { offset: x.get(), width: event.currentTarget.offsetWidth };
+        armedNow.current = null;
+        return true;
+      },
+      onLock() {
+        setRevealed(true);
+        if (closeOpenRow && closeOpenRow !== close) closeOpenRow();
+      },
+      onMove(dx) {
+        const { offset: start, width } = from.current;
+        const offset = rowOffset({
+          start,
+          dx,
+          width,
+          factor: GESTURE.rubberBand,
+          left,
+          right: hasRight,
+        });
+        x.set(offset);
+        const side = armedSide(offset, width, GESTURE.rowThreshold);
+        const next = (side === "left" ? left : side === "right" ? hasRight : true) ? side : null;
+        if (next !== armedNow.current) {
+          armedNow.current = next;
+          setArmed(next);
+          feedback("swipeThreshold");
+        }
+      },
+      onRelease(_dx, vx) {
+        const outcome = rowRelease({
+          offset: x.get(),
+          vx,
+          width: from.current.width,
+          threshold: GESTURE.rowThreshold,
+          flick: GESTURE.flickVelocity,
+          openWidth: GESTURE.rowActionWidth,
+          left,
+          right: hasRight,
+        });
+        armedNow.current = null;
+        setArmed(null);
+        if (outcome === "commit-left") void remove(vx);
+        else if (outcome === "commit-right") runRight(vx);
+        else if (outcome === "open-left" || outcome === "open-right") {
+          opened(outcome === "open-left" ? "left" : "right", vx);
+        } else close();
+      },
+      // A tap or a scroll caught the row: it goes back to where it rests, open or closed.
+      onSettle() {
+        if (!gone && x.get() !== rest()) springTo(rest());
+      },
+    },
+    left || hasRight,
+  );
 
   // A drag (or a tap on an open row, which closes it) is never also a tap on the row.
   const onClickCapture = (event: MouseEvent<HTMLDivElement>) => {
+    if (gesture.swallowClick(event)) return;
     const onAction =
       event.target instanceof Element && event.target.closest(".lk-swipe-action") !== null;
-    if (dragged.current || (open && !onAction)) {
+    if (open && !onAction) {
       event.preventDefault();
       event.stopPropagation();
-      dragged.current = false;
-      if (open && !onAction) close();
+      close();
     }
   };
 
@@ -341,12 +300,14 @@ export function SwipeRow({ children, onDelete, right, enter = false }: SwipeRowP
   return (
     <div
       ref={root}
-      {...{ [SWIPE_ROW_ATTRIBUTE]: "" }}
+      // Only a row with actions takes sideways drags; any other one leaves them to the pager.
+      {...(left || hasRight ? { [SWIPE_ROW_ATTRIBUTE]: "" } : {})}
       className="lk-swipe"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={(event) => release(event, false)}
-      onPointerCancel={(event) => release(event, true)}
+      style={{ "--lk-swipe-action": `${GESTURE.rowActionWidth}px` } as CSSProperties}
+      onPointerDown={gesture.onPointerDown}
+      onPointerMove={gesture.onPointerMove}
+      onPointerUp={gesture.onPointerUp}
+      onPointerCancel={gesture.onPointerCancel}
       onClickCapture={onClickCapture}
     >
       {revealed && left && action("left")}

@@ -16,6 +16,7 @@ function CelebrationDemo({ event, spot = true }: { event: FeedbackEvent; spot?: 
         <span
           data-testid="spot"
           data-celebration-anchor="64"
+          data-celebration-place="above"
           className="fixed bottom-6 left-1/2 block size-[58px] -translate-x-1/2"
         />
       )}
@@ -35,10 +36,7 @@ type Story = StoryObj<typeof meta>;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/**
- * Lukitas lands on the spot (the ＋ in the app): his box starts at its top and stays in its column,
- * never above it, where the list's text would be.
- */
+/** Lukitas lands just above the spot (the ＋ in the app), which stays clear and tappable. */
 export const LandsOnTheSpot: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -48,9 +46,11 @@ export const LandsOnTheSpot: Story = {
     const spot = canvas.getByTestId("spot").getBoundingClientRect();
     await sleep(500);
     const box = lukas.getBoundingClientRect();
-    await expect(box.top).toBeGreaterThanOrEqual(spot.top - 4);
-    await expect(box.left).toBeGreaterThanOrEqual(spot.left - 8);
-    await expect(box.right).toBeLessThanOrEqual(spot.right + 8);
+    // Standing just above the spot (the ＋), centered on it, never over it.
+    await expect(box.bottom).toBeLessThanOrEqual(spot.top + 1);
+    await expect(Math.abs((box.left + box.right) / 2 - (spot.left + spot.right) / 2)).toBeLessThan(
+      2,
+    );
   },
 };
 

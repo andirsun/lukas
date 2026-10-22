@@ -837,7 +837,7 @@
     "delete": "Borrar",
     "edit": "Editar",
     "paid": "Pagado",
-    "hint": "Desliza a la izquierda para borrar o a la derecha para editar.",
-    "hint_pending": "Desliza a la izquierda para borrar o a la derecha para marcarlo pagado."
+    "hint": "Tócalo para editarlo o borrarlo.",
+    "hint_pending": "Tócalo para editarlo o borrarlo; Pendiente lo marca pagado."
   }
 }
