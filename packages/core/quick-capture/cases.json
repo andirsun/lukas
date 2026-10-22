@@ -4559,5 +4559,170 @@
       ],
       "unread": []
     }
+  },
+  {
+    "id": "amount-glued-scale-mil",
+    "input": "gasté 2mil500 en el bus",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 250000,
+          "kind": "expense",
+          "name": "bus",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-glued-scale-millon",
+    "input": "me pagaron 1millon200",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 100020000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-glued-scale-mil-name-first",
+    "input": "almuerzo 15mil500",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550000,
+          "kind": "expense",
+          "name": "almuerzo",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-k-spaced",
+    "input": "gasté 15 k en almuerzo",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500000,
+          "kind": "expense",
+          "name": "almuerzo",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-cop-fraction-comma-unread",
+    "input": "gasté 9,50 en café",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["gasté 9,50 en café"] }
+  },
+  {
+    "id": "amount-cop-fraction-dot-unread",
+    "input": "gasté 9.50 en café",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["gasté 9.50 en café"] }
+  },
+  {
+    "id": "amount-cop-fraction-words-unread",
+    "input": "pagué nueve con cincuenta en pan",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["pagué nueve con cincuenta en pan"] }
+  },
+  {
+    "id": "amount-en-cop-fraction-unread",
+    "input": "spent 9.50 on coffee",
+    "locale": "en",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["spent 9.50 on coffee"] }
+  },
+  {
+    "id": "amount-eur-decimal-dot",
+    "input": "gasté 9.50 en café",
+    "locale": "es",
+    "currency": "EUR",
+    "today": "2026-10-22",
+    "timeZone": "Europe/Madrid",
+    "categories": [],
+    "usual": [],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 950,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": null,
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-separator-four-digits-unread",
+    "input": "gasté 12,5000 en pan",
+    "locale": "es",
+    "currency": "COP",
+    "today": "2026-10-22",
+    "timeZone": "America/Bogota",
+    "categories": [],
+    "usual": [],
+    "expected": { "drafts": [], "unread": ["gasté 12,5000 en pan"] }
   }
 ]

@@ -231,6 +231,24 @@ describe("quick-capture cases file", () => {
     expect(get("amount-thousands-before-scale-unread").expected.drafts).toEqual([]);
   });
 
+  test("COP is whole pesos; EUR and USD keep their cents", () => {
+    for (const c of cases.filter((x) => x.currency === "COP")) {
+      for (const d of c.expected.drafts) expect(d.amount % 100, `${c.id}: ${d.name}`).toBe(0);
+    }
+    expect(get("amount-cop-fraction-comma-unread").expected.drafts).toEqual([]);
+    expect(get("amount-en-cop-fraction-unread").expected.drafts).toEqual([]);
+    expect(get("amount-eur-decimal-comma").expected.drafts[0]?.amount).toBe(950);
+    expect(get("amount-eur-decimal-dot").expected.drafts[0]?.amount).toBe(950);
+  });
+
+  test("a scale word lets go of the digits glued after it", () => {
+    const amountOf = (id: string) => get(id).expected.drafts.map((d) => d.amount);
+    expect(amountOf("amount-glued-scale-mil")).toEqual([250_000]);
+    expect(amountOf("amount-glued-scale-millon")).toEqual([100_020_000]);
+    expect(amountOf("amount-glued-scale-mil-name-first")).toEqual([1_550_000]);
+    expect(get("category-store-d1").expected.drafts.map((d) => d.name)).toEqual(["d1"]);
+  });
+
   test("amounts above 999 999 999 are unread", () => {
     for (const id of [
       "amount-over-cap-digits",

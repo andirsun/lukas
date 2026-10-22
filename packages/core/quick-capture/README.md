@@ -45,6 +45,7 @@ The spec leaves these open, and the expected values rely on them. If the parser 
   - Everything else stays, in order, so a misheard word stays in the name (`este almuerzo`, `rapid`).
   - What remains can be empty: `""`.
   - **Words keep their digits:** a word starts with a letter and runs through the letters and digits glued to it, so `D1` and `MiTienda24` are names (`d1`, `mitienda24`), never an amount. A number starts only with a digit (`15k`, `15mil` is `15` then `mil`).
+  - **Except a scale word:** when the letters of a word are a scale word (`mil`, `millón`/`millon`, `millones`, `palo(s)`, `luca(s)`/`luka(s)`, `thousand`, `million(s)`, `k`), the digits glued after it are a number of their own. So `2mil500` is `2 mil 500`, which is 2.500 (`gasté 2mil500 en el bus` is 250000 cents, named `bus`). `15mil500` is 15.500, and `1millon200` is `1 millón 200`, which is 1.000.200 by the scale rules (a number after a scale adds to it). `D1` and `MiTienda24` are not affected: `d` and `mitienda` are not scale words.
   - **"A name"** (in the rules below) is any word that is not an amount word, a date word, a function word or the verb. A misheard verb is therefore a name: `gastos` in `gastos de mil` is one, and so is `spend` (the verb is `spent`).
 - **Where a name sits:** before the amount (`uber siete mil`), after it (`gasté 8 mil en taxi`) or around it (`pagué el arriendo, un millón`).
 - **Splitting**
@@ -60,10 +61,12 @@ The spec leaves these open, and the expected values rely on them. If the parser 
     - A dot or comma followed by **exactly three digits** is a thousands separator, because cents have two digits: `15.000`, `1.500.000`, `15,000`, `$25,000` and `2,500` in COP are 15.000, 25.000 and 2.500, and `1,500 €` and `9,999` in EUR are 1.500 € and 9.999 €.
     - A last dot or comma followed by **one or two digits** is the decimal: `9,50` (950 cents), `12.50`, `4,3 palos`, `1.234,56`, `1,200.50`.
     - In es, a space before exactly three digits is thousands too (`120 000`; Whisper writes that).
+    - A dot or comma before **four or more digits** (`12,5000`) is neither, so the movement is unread (`amount-separator-four-digits-unread`).
   - **Thousands before a scale word is ambiguous, so unread:** `4,300 palos` could be 4,3 palos or 4.300 palos, and `1,500k` is the same.
-  - `k` after digits is x1.000, in any currency. `mil`, `millón` and `millones` work with digits and with words.
+  - `k` after digits is x1.000, in any currency, glued or not (`15k`, `15 k`). `mil`, `millón` and `millones` work with digits and with words.
+  - **COP is whole pesos.** In COP, an amount with a fractional peso and no scale word is unread: `9,50`, `9.50`, `nueve con cincuenta` and en `9.50` (`amount-cop-fraction-*`, `amount-en-cop-fraction-unread`). A decimal before a scale word is fine, because it comes out whole (`4,3 palos`, `2,5 millones`, `1.5k`). EUR and USD keep their cents (`9,50` and `9.50` are 950).
   - Bare `mil` is 1.000 (`gasté mil en chicle`, and the `mil` left by a misheard `doce` in `gastos de mil`).
-  - **Scale words** are `mil`, `millón`/`millones`, `thousand`, `million`, and the COP slang units `palo(s)` and `luca(s)`/`lukas`.
+  - **Scale words** are `mil`, `millón`/`millones`, `thousand`, `million`, `k`, and the COP slang units `palo(s)` and `luca(s)`/`lukas`.
   - `con` joins units and cents (`nueve con cincuenta`, `9 euros con 50`). In en, `and … cents` does (`twelve dollars and fifty cents`).
   - `coma` (es) and `point` (en) are the decimal in words. The decimals keep their written length: `10 coma 05` is 10,05 and `cuatro coma tres` is 4,3.
   - A larger scale right after a scale multiplies everything before it: `mil millones` is 1.000.000.000 (then over the cap, so unread).
