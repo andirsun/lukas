@@ -51,6 +51,7 @@ class SoundChannel(private val context: Context, messenger: BinaryMessenger) :
         }
     }
 
+    @Synchronized
     fun dispose() {
         methods.setMethodCallHandler(null)
         pool?.release()

@@ -14,13 +14,14 @@ then copy the files here. The notes (frequency in Hz, length in seconds) are lis
 
 | File                | Web event      | Plays in the app on       |
 | ------------------- | -------------- | ------------------------- |
-| `expense-saved.mp3` | `expenseSaved` | `saved`                   |
+| `expense-saved.mp3` | `expenseSaved` | `saved` (an expense)      |
 | `paid.mp3`          | `paid`         | `paid`                    |
 | `undo.mp3`          | `undo`         | `undo`                    |
+| `income-saved.mp3`  | `incomeSaved`  | `incomeSaved`             |
+| `near-limit.mp3`    | `nearLimit`    | `nearLimit`               |
+| `over-budget.mp3`   | `overBudget`   | `overBudget`              |
 | `tap.mp3`           | `tap`          | (not used yet)            |
-| `income-saved.mp3`  | `incomeSaved`  | (not used yet)            |
-| `near-limit.mp3`    | `nearLimit`    | (not used yet)            |
-| `over-budget.mp3`   | `overBudget`   | (not used yet)            |
 
 All are under 4 KB. `SoundChannel.kt` loads the ones in use into a `SoundPool` when the app starts.
-Gestures (a swipe line, a delete, a key) only vibrate, as on the web.
+A save picks its event from the month's figures once they are in, like the web's `feedbackForSave`:
+income, near a limit, over a limit, or a plain expense. Gestures (a swipe line, a delete, a key) only vibrate, as on the web.

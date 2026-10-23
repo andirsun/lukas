@@ -1,7 +1,16 @@
 /// What just happened, as the person feels it (the web's `FeedbackEvent`, apps/web/app/feedback).
 enum FeedbackEvent {
-  /// A movement, or a whole batch, was saved.
+  /// An expense, or a batch, was saved (the web's `expenseSaved`).
   saved,
+
+  /// An income, or a batch of incomes, was saved.
+  incomeSaved,
+
+  /// A save left its category near its limit: it says so instead of celebrating.
+  nearLimit,
+
+  /// A save left its category over its limit: it says so instead of celebrating.
+  overBudget,
 
   /// A pending movement was marked paid.
   paid,
@@ -58,6 +67,15 @@ const hapticPatterns = <FeedbackEvent, HapticPattern>{
     [12, 40, 18],
     [HapticPrimitive('tick', 0.6), HapticPrimitive('click', 1, delayMs: 40)],
   ),
+  FeedbackEvent.incomeSaved: HapticPattern(
+    [12, 40, 18],
+    [HapticPrimitive('tick', 0.6), HapticPrimitive('click', 1, delayMs: 40)],
+  ),
+  FeedbackEvent.nearLimit: HapticPattern([30], [HapticPrimitive('click', 0.6)]),
+  FeedbackEvent.overBudget: HapticPattern(
+    [40, 60, 40],
+    [HapticPrimitive('click', 1), HapticPrimitive('click', 1, delayMs: 60)],
+  ),
   FeedbackEvent.paid: HapticPattern(
     [10, 30, 10, 30, 24],
     [
@@ -79,6 +97,9 @@ const hapticPatterns = <FeedbackEvent, HapticPattern>{
 /// The web's sound files (assets/sounds, with the licence note in its README).
 enum FeedbackSound {
   expenseSaved('assets/sounds/expense-saved.mp3'),
+  incomeSaved('assets/sounds/income-saved.mp3'),
+  nearLimit('assets/sounds/near-limit.mp3'),
+  overBudget('assets/sounds/over-budget.mp3'),
   paid('assets/sounds/paid.mp3'),
   undo('assets/sounds/undo.mp3');
 
@@ -91,6 +112,9 @@ enum FeedbackSound {
 /// every swipe or key would wear thin fast (the web's rule).
 const feedbackSounds = <FeedbackEvent, FeedbackSound>{
   FeedbackEvent.saved: FeedbackSound.expenseSaved,
+  FeedbackEvent.incomeSaved: FeedbackSound.incomeSaved,
+  FeedbackEvent.nearLimit: FeedbackSound.nearLimit,
+  FeedbackEvent.overBudget: FeedbackSound.overBudget,
   FeedbackEvent.paid: FeedbackSound.paid,
   FeedbackEvent.undo: FeedbackSound.undo,
 };

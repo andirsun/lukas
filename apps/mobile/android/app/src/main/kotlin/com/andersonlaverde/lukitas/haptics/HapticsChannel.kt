@@ -79,7 +79,8 @@ class HapticsChannel(context: Context, messenger: BinaryMessenger) :
         else -> VibrationEffect.Composition.PRIMITIVE_TICK
     }
 
-    // A touch: it follows the phone's "touch feedback" setting, as a keyboard's tick does.
+    // A touch on Android 13+ (it follows the phone's "touch feedback" setting, as a keyboard's tick
+    // does); below, the sonification usage, which that setting does not gate.
     @Suppress("DEPRECATION")
     private fun vibrate(motor: Vibrator, effect: VibrationEffect) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

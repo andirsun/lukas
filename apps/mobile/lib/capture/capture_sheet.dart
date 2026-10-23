@@ -12,6 +12,7 @@ import '../api/session.dart';
 import '../feedback/feedback.dart';
 import '../home/home_controller.dart';
 import '../home/home_repository.dart';
+import '../home/saved_feedback.dart';
 import '../home/home_widgets.dart' show QuietSpinner;
 import '../home/toast.dart';
 import '../l10n/app_localizations.dart';
@@ -25,13 +26,17 @@ import 'parser/parse.dart' as p;
 import 'preview/capture_cards.dart';
 import 'preview/capture_preview.dart';
 
-/// Told about every batch saved, with its rows, as the sheet closes. By default the batch feels
-/// like any save (the saved sound and haptic) and Lukitas celebrates on home; the celebration line
-/// and Deshacer are the toast's. Tests replace it to see what was saved.
+/// Told about every batch saved, with its rows, once the month's figures include the whole batch.
+/// By default the batch feels like any save: by kind and by the limit state after the batch (see
+/// [savedFeedbackFor]), and Lukitas celebrates on home unless a category is near or over its limit,
+/// like for a single save. The celebration line and Deshacer are the toast's. Tests replace it to
+/// see what was saved.
 final batchSavedFeedbackProvider = Provider<void Function(List<Transaction> saved)>(
-  (ref) => (_) {
-    ref.read(feedbackProvider)(FeedbackEvent.saved);
-    ref.read(celebrationProvider.notifier).celebrate();
+  (ref) => (saved) {
+    final data = ref.exists(homeProvider) ? ref.read(homeProvider).data : null;
+    final event = savedFeedbackFor(data, saved);
+    ref.read(feedbackProvider)(event);
+    if (celebrates(event)) ref.read(celebrationProvider.notifier).celebrate();
   },
 );
 
@@ -368,8 +373,11 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
     });
     try {
       final saved = await repo.saveBatch(drafts, idempotencyKey: key);
-      unawaited(container.read(homeProvider.notifier).savedBatch(saved));
-      container.read(batchSavedFeedbackProvider)(saved);
+      // Once the figures of the whole batch are in, it feels like a save (see the hook).
+      unawaited(
+        afterFigures(container.read(homeProvider.notifier).savedBatch(saved))
+            .then((_) => container.read(batchSavedFeedbackProvider)(saved)),
+      );
       if (mounted) navigator.pop();
       _celebrate(
         container: container,

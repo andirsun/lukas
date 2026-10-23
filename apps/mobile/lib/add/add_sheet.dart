@@ -10,6 +10,7 @@ import '../feedback/feedback.dart';
 import '../home/home_controller.dart';
 import '../home/home_format.dart';
 import '../home/home_repository.dart';
+import '../home/saved_feedback.dart';
 import '../home/home_widgets.dart';
 import '../home/toast.dart';
 import '../l10n/app_localizations.dart';
@@ -220,8 +221,8 @@ class _AddSheetState extends ConsumerState<AddSheet> {
           : await repo.update(editing.id, patch!);
       final home = container.read(homeProvider.notifier);
       if (editing == null) {
-        container.read(feedbackProvider)(FeedbackEvent.saved);
-        unawaited(home.saved(saved));
+        // The feel follows the figures (near or over a limit say so), as on the web.
+        unawaited(feelSaved(container, home.saved(saved), [saved]));
       } else {
         unawaited(home.updated(saved));
       }

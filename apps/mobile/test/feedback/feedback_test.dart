@@ -22,6 +22,12 @@ ProviderContainer containerWith(
   return container;
 }
 
+/// The app at rest: feedback is built (at the start, by the app) and the sound setting is read.
+Future<void> started(ProviderContainer container) async {
+  container.read(feedbackProvider);
+  await container.read(soundEnabledProvider.notifier).ready;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   group('events', () {
@@ -29,6 +35,9 @@ void main() {
     // Sounds are the web's too; gestures only vibrate there, and so here.
     const table = <FeedbackEvent, (List<int>, FeedbackSound?)>{
       FeedbackEvent.saved: ([12, 40, 18], FeedbackSound.expenseSaved),
+      FeedbackEvent.incomeSaved: ([12, 40, 18], FeedbackSound.incomeSaved),
+      FeedbackEvent.nearLimit: ([30], FeedbackSound.nearLimit),
+      FeedbackEvent.overBudget: ([40, 60, 40], FeedbackSound.overBudget),
       FeedbackEvent.paid: ([10, 30, 10, 30, 24], FeedbackSound.paid),
       FeedbackEvent.deleted: ([14, 30, 8], null),
       FeedbackEvent.undo: ([8], FeedbackSound.undo),
@@ -42,6 +51,7 @@ void main() {
       for (final entry in table.entries) {
         final platform = FakeFeedbackPlatform();
         final container = containerWith(platform);
+        await started(container);
         container.read(feedbackProvider)(entry.key);
         await Future<void>.delayed(Duration.zero);
         final (waveform, sound) = entry.value;
@@ -67,6 +77,9 @@ void main() {
       expect(FeedbackSound.expenseSaved.asset, 'assets/sounds/expense-saved.mp3');
       expect(FeedbackSound.paid.asset, 'assets/sounds/paid.mp3');
       expect(FeedbackSound.undo.asset, 'assets/sounds/undo.mp3');
+      expect(FeedbackSound.incomeSaved.asset, 'assets/sounds/income-saved.mp3');
+      expect(FeedbackSound.nearLimit.asset, 'assets/sounds/near-limit.mp3');
+      expect(FeedbackSound.overBudget.asset, 'assets/sounds/over-budget.mp3');
     });
 
     test('feedback never throws, whatever the phone does', () async {
@@ -95,9 +108,65 @@ void main() {
       expect(container.read(soundEnabledProvider), isTrue);
     });
 
+    test('a muted person who launches the app fresh never hears the first sound', () async {
+      // Nothing listens to the setting first: feedback goes off the moment the app is up, before
+      // the stored "off" has been read back.
+      final platform = FakeFeedbackPlatform();
+      final container = containerWith(platform, store: FakeSoundStore(false));
+      container.read(feedbackProvider)(FeedbackEvent.saved);
+      container.read(feedbackProvider)(FeedbackEvent.paid);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.sounds, isEmpty);
+      expect(platform.haptics, hasLength(2), reason: 'haptics are unaffected');
+
+      await container.read(soundEnabledProvider.notifier).ready;
+      container.read(feedbackProvider)(FeedbackEvent.saved);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.sounds, isEmpty, reason: 'and still muted once it is read');
+    });
+
+    test('until the setting is read nothing is heard, and after it sounds play', () async {
+      final platform = FakeFeedbackPlatform();
+      final container = containerWith(platform, store: FakeSoundStore(true));
+      container.read(feedbackProvider)(FeedbackEvent.saved);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.sounds, isEmpty, reason: 'not loaded yet is silent');
+      await container.read(soundEnabledProvider.notifier).ready;
+      container.read(feedbackProvider)(FeedbackEvent.saved);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.sounds, [FeedbackSound.expenseSaved]);
+    });
+
+    test('feedback starts reading the setting as soon as it is built', () {
+      final store = FakeSoundStore();
+      final container = containerWith(FakeFeedbackPlatform(), store: store);
+      container.read(feedbackProvider);
+      expect(store.reads, 1);
+    });
+
+    test('a person who never chose hears sounds, once the setting is read', () async {
+      final platform = FakeFeedbackPlatform();
+      final container = containerWith(platform, store: FakeSoundStore());
+      await started(container);
+      expect(container.read(soundEnabledProvider), isTrue);
+      container.read(feedbackProvider)(FeedbackEvent.undo);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.sounds, [FeedbackSound.undo]);
+    });
+
+    test('a store that cannot be read leaves sounds on, once that is known', () async {
+      final platform = FakeFeedbackPlatform();
+      final container = containerWith(platform, store: _BrokenStore());
+      await started(container);
+      container.read(feedbackProvider)(FeedbackEvent.undo);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.sounds, [FeedbackSound.undo]);
+    });
+
     test('mute stops sounds, not haptics', () async {
       final platform = FakeFeedbackPlatform();
       final container = containerWith(platform);
+      await started(container);
       await container.read(soundEnabledProvider.notifier).set(false);
       container.read(feedbackProvider)(FeedbackEvent.paid);
       container.read(feedbackProvider)(FeedbackEvent.undo);
@@ -112,6 +181,7 @@ void main() {
     test('turning sounds back on plays them again', () async {
       final platform = FakeFeedbackPlatform();
       final container = containerWith(platform);
+      await started(container);
       final setting = container.read(soundEnabledProvider.notifier);
       await setting.set(false);
       await setting.set(true);

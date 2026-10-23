@@ -12,11 +12,13 @@ export 'feedback_platform.dart';
 export 'sound_setting.dart';
 
 /// Gives feedback for something that happened (spec section 6.2): plays its sound (unless muted),
-/// vibrates, and never throws: a phone with no motor or speaker just skips that part. Call it from
+/// vibrates (sounds wait for the sound setting to be read, and stay silent when it is mute), and never throws: a phone with no motor or speaker just skips that part. Call it from
 /// a gesture's handler: `ref.read(feedbackProvider)(FeedbackEvent.saved)`, or [FeedbackContext.feedback]
 /// where there is only a `BuildContext`.
 final feedbackProvider = Provider<void Function(FeedbackEvent event)>((ref) {
   final platform = ref.watch(feedbackPlatformProvider);
+  // Starts reading the sound setting now, at the app's start: no sound plays before it is known.
+  ref.read(soundEnabledProvider);
   _quietly(platform.warmUp);
 
   void run(FeedbackEvent event) {
@@ -31,9 +33,9 @@ final feedbackProvider = Provider<void Function(FeedbackEvent event)>((ref) {
 
 bool _soundOn(Ref ref) {
   try {
-    return ref.read(soundEnabledProvider);
+    return ref.read(soundEnabledProvider.notifier).playable;
   } on Object {
-    return true;
+    return false;
   }
 }
 
