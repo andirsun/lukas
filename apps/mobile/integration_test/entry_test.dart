@@ -247,6 +247,7 @@ void main() {
       expect(movement.statusCode, 201, reason: '${movement.data}');
 
       // Home offers "Guarda tu progreso" to a guest; it asks for the email and sends the code.
+      await _tap(tester, 'home.account');
       await _tap(tester, 'home.saveProgress');
       await _pumpUntil(tester, find.byKey(const Key('progress.email')));
       await tester.enterText(find.byKey(const Key('progress.email')), email);
@@ -275,7 +276,9 @@ void main() {
         (kept.data!['items'] as List<dynamic>).where((t) => (t as Map)['name'] == name),
         hasLength(1),
       );
-      // And home no longer offers it.
+      // And home no longer offers it (not in the face button's menu either).
+      await _tap(tester, 'home.account');
+      await _pumpUntil(tester, find.byKey(const Key('home.settings')));
       expect(find.byKey(const Key('home.saveProgress')), findsNothing);
     },
   );

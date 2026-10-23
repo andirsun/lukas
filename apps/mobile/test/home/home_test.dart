@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,19 +113,19 @@ void main() {
       expect(find.text('Gasto 9'), findsOneWidget);
       expect(find.text('Gasto 7'), findsOneWidget);
       expect(find.text('Gasto 6'), findsNothing);
-      expect(find.text('Ver más movimientos'), findsOneWidget);
+      expect(find.text('VER MÁS MOVIMIENTOS'), findsOneWidget);
 
-      await tester.tap(find.text('Ver más movimientos'));
+      await tester.tap(find.text('VER MÁS MOVIMIENTOS'));
       await tester.pumpAndSettle();
       expect(find.text('Gasto 6'), findsOneWidget);
       expect(find.text('Gasto 4'), findsOneWidget);
       expect(find.text('Gasto 3'), findsNothing);
-      expect(find.text('Ver más movimientos'), findsOneWidget);
+      expect(find.text('VER MÁS MOVIMIENTOS'), findsOneWidget);
 
-      await tester.tap(find.text('Ver más movimientos'));
+      await tester.tap(find.text('VER MÁS MOVIMIENTOS'));
       await tester.pumpAndSettle();
       expect(find.text('Gasto 1'), findsOneWidget);
-      expect(find.text('Ver más movimientos'), findsNothing);
+      expect(find.text('VER MÁS MOVIMIENTOS'), findsNothing);
       expect(repo.calls.where((c) => c.startsWith('transactions')), [
         'transactions 2026-10',
         'transactions 2026-10 3',
@@ -142,11 +143,11 @@ void main() {
       );
       await pumpHome(tester, repo);
       repo.failures['transactions'] = const HomeFailure(0);
-      await tester.tap(find.text('Ver más movimientos'));
+      await tester.tap(find.text('VER MÁS MOVIMIENTOS'));
       await tester.pumpAndSettle();
       expect(find.text('Uno'), findsOneWidget);
       expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
-      expect(find.text('Ver más movimientos'), findsOneWidget);
+      expect(find.text('VER MÁS MOVIMIENTOS'), findsOneWidget);
     });
 
     testWidgets('the Movimientos tab sticks under the top while the list scrolls', (tester) async {
@@ -418,6 +419,367 @@ void main() {
     });
   });
 
+  group('the header and the months', () {
+    FakeHomeRepository threeMonths() => FakeHomeRepository(
+      budgetTotal: 200000000,
+      categoryList: [category('cat-groceries', 'Supermercado', icon: '🛒')],
+      items: [
+        tx('coffee', '2026-10-22', -450000, name: 'Café'),
+        tx('sept', '2026-09-14', -3000000, name: 'Zapatos'),
+        tx('sept2', '2026-09-03', -1000000, name: 'Libro'),
+        tx('july', '2026-07-09', -7000000, name: 'Vuelo'),
+      ],
+    );
+
+    testWidgets('the header shows the Lukitas wordmark and the face button', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpHome(tester, monthWithBudgets());
+      expect(find.text('Lukitas'), findsOneWidget, reason: 'the wordmark');
+      final face = find.byKey(const Key('home.account'));
+      expect(face, findsOneWidget);
+      expect(find.text('🙂'), findsOneWidget);
+      expect(tester.getSemantics(face).label, 'Tu cuenta');
+      // 44px round button, as `.lk-avatar`.
+      expect(tester.getSize(face), const Size(44, 44));
+      // Under 400px the wordmark and the face share the first row, and the month has its own.
+      expect(tester.getCenter(find.text('Lukitas')).dy, closeTo(tester.getCenter(face).dy, 1));
+      expect(tester.getCenter(find.text('Octubre')).dy, greaterThan(tester.getCenter(face).dy));
+      handle.dispose();
+    });
+
+    testWidgets('the face button opens the menu, and a tap anywhere else closes it', (
+      tester,
+    ) async {
+      await pumpHome(tester, monthWithBudgets(), withMenu: true);
+      expect(find.byKey(const Key('menu.entry')), findsNothing);
+      await tester.tap(find.byKey(const Key('home.account')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('menu.entry')), findsOneWidget);
+      expect(tester.getSize(find.byKey(const Key('menu.entry'))).height, greaterThanOrEqualTo(44));
+
+      await tester.tap(find.text('Te quedan este mes'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('menu.entry')), findsNothing);
+
+      // The button toggles it, and an entry closes it.
+      await tester.tap(find.byKey(const Key('home.account')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('home.account')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('menu.entry')), findsNothing);
+      await tester.tap(find.byKey(const Key('home.account')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('menu.entry')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('menu.entry')), findsNothing);
+    });
+
+    testWidgets('‹ moves to the previous month and loads its summary and movements', (
+      tester,
+    ) async {
+      final repo = threeMonths();
+      await pumpHome(tester, repo);
+      expect(find.text('Octubre'), findsOneWidget);
+      expect(find.text('Café'), findsOneWidget);
+
+      await tester.tap(find.text('‹'));
+      await tester.pumpAndSettle();
+      expect(find.text('Septiembre'), findsOneWidget);
+      expect(find.text('Octubre'), findsNothing);
+      expect(repo.calls, containsAll(['summary 2026-09', 'transactions 2026-09']));
+      // Its movements, not October's; and its own figures, said about September.
+      expect(find.text('Zapatos'), findsOneWidget);
+      expect(find.text('Libro'), findsOneWidget);
+      expect(find.text('Café'), findsNothing);
+      expect(find.text('Te quedaron en septiembre'), findsOneWidget);
+      expect(find.text('Te quedan este mes'), findsNothing);
+      expect(find.text(r'Gastado $40.000'), findsOneWidget);
+      // No day of September is "Hoy", and none is "Ayer".
+      expect(find.textContaining('HOY'), findsNothing);
+      // Lukitas talks about the month that closed.
+      expect(find.textContaining('septiembre'), findsWidgets);
+
+      await tester.tap(find.text('›'));
+      await tester.pumpAndSettle();
+      expect(find.text('Octubre'), findsOneWidget);
+      expect(find.text('Café'), findsOneWidget);
+      expect(find.text('Te quedan este mes'), findsOneWidget);
+    });
+
+    testWidgets('the current month has no later month: › is disabled, as on the web', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      final repo = threeMonths();
+      await pumpHome(tester, repo);
+      final next = find.bySemanticsLabel('Mes siguiente');
+      expect(next, findsOneWidget);
+      expect(tester.getSemantics(next).flagsCollection.isEnabled, Tristate.isFalse);
+      final before = repo.calls.length;
+      await tester.tap(find.text('›'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(repo.calls.length, before, reason: 'nothing was asked');
+      expect(find.text('Octubre'), findsOneWidget);
+      // ‹ is there and enabled.
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('Mes anterior')).flagsCollection.isEnabled,
+        Tristate.isTrue,
+      );
+      handle.dispose();
+    });
+
+    testWidgets('a month shows its year when it is not the current year', (tester) async {
+      final repo = FakeHomeRepository(items: [tx('old', '2025-12-24', -100, name: 'Regalo')]);
+      await pumpHome(tester, repo, initialMonth: '2025-12');
+      expect(find.text('Diciembre 2025'), findsOneWidget);
+      expect(find.text('Regalo'), findsOneWidget);
+    });
+
+    testWidgets('a month with no movements shows the web\'s empty state', (tester) async {
+      final repo = threeMonths();
+      await pumpHome(tester, repo);
+      await tester.tap(find.text('‹'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('‹'));
+      await tester.pumpAndSettle();
+      expect(find.text('Agosto'), findsOneWidget);
+      expect(
+        find.text('Aún no hay movimientos en Agosto. Toca ＋ y anota el primero.'),
+        findsOneWidget,
+      );
+      // The web's button under it ("Agregar gasto"), a secondary one.
+      expect(find.text('AGREGAR GASTO'), findsOneWidget);
+      expect(find.text('Te quedaron en agosto'), findsOneWidget);
+    });
+
+    testWidgets('moving months offline shows the offline note and never another month\'s figures', (
+      tester,
+    ) async {
+      final repo = threeMonths();
+      await pumpHome(tester, repo);
+      expect(find.text('Café'), findsOneWidget);
+
+      repo.failures['summary'] = const HomeFailure(0);
+      await tester.tap(find.text('‹'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Septiembre'), findsOneWidget, reason: 'the month asked for');
+      expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
+      // None of October's figures under September's name.
+      expect(find.text('Café'), findsNothing);
+      expect(find.textContaining('Te quedan'), findsNothing);
+      expect(find.textContaining('Te quedaron'), findsNothing);
+      expect(find.textContaining('Gastado'), findsNothing);
+      expect(find.text(r'$1.787.500'), findsNothing);
+      expect(
+        find.textContaining('Vas muy bien'),
+        findsNothing,
+        reason: 'nor Lukitas\' line about it',
+      );
+
+      // Back online, a retry brings the month.
+      await tester.tap(find.text('REINTENTAR'));
+      await tester.pumpAndSettle();
+      expect(find.text('Zapatos'), findsOneWidget);
+      expect(find.text('Te quedaron en septiembre'), findsOneWidget);
+      expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsNothing);
+    });
+
+    testWidgets('while another month loads, no figures of the month before show', (tester) async {
+      final repo = threeMonths();
+      await pumpHome(tester, repo);
+      final gate = Completer<void>();
+      repo.holdSummary = gate;
+      await tester.tap(find.text('‹'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(find.text('Septiembre'), findsOneWidget);
+      expect(find.text('Café'), findsNothing);
+      expect(find.textContaining('Te quedan'), findsNothing);
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('Zapatos'), findsOneWidget);
+    });
+
+    testWidgets('?month= opens home on that month', (tester) async {
+      final repo = threeMonths();
+      await pumpHome(tester, repo, initialMonth: '2026-09');
+      expect(find.text('Septiembre'), findsOneWidget);
+      expect(find.text('Zapatos'), findsOneWidget);
+      expect(find.text('Café'), findsNothing);
+    });
+
+    testWidgets('a ?month= that is not a month, or is in the future, opens the current one', (
+      tester,
+    ) async {
+      await pumpHome(tester, threeMonths(), initialMonth: 'soon');
+      expect(find.text('Octubre'), findsOneWidget);
+      expect(find.text('Café'), findsOneWidget);
+      await leave(tester);
+      await pumpHome(tester, threeMonths(), initialMonth: '2027-02');
+      expect(find.text('Octubre'), findsOneWidget);
+      expect(find.text('Café'), findsOneWidget);
+    });
+
+    testWidgets('a payment made in October is not talked about on September\'s screen', (
+      tester,
+    ) async {
+      final repo = monthWithBudgets();
+      await pumpHome(tester, repo);
+      await swipe(tester, find.text('Arriendo'), 250);
+      expect(find.textContaining('Pagaste «Arriendo»'), findsOneWidget);
+      await tester.tap(find.text('‹'));
+      await tester.pumpAndSettle();
+      expect(find.text('Septiembre'), findsOneWidget);
+      expect(find.textContaining('Pagaste «Arriendo»'), findsNothing);
+      await endEvent(tester);
+    });
+  });
+
+  group('the tabs, the cards and the bottom bar', () {
+    testWidgets('Movimientos | Presupuestos are the web\'s tabs, Movimientos first', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpHome(tester, monthWithBudgets());
+      expect(find.text('Movimientos'), findsOneWidget);
+      expect(find.text('Presupuestos'), findsOneWidget);
+      expect(find.bySemanticsLabel('Vista'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Movimientos')).dx,
+        lessThan(tester.getTopLeft(find.text('Presupuestos')).dx),
+      );
+      expect(find.text('Café'), findsOneWidget);
+
+      // Until Presupuestos is built it has the web's own loading look: room, and no rows.
+      await tester.tap(find.text('Presupuestos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Café'), findsNothing);
+      await tester.tap(find.text('Movimientos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Café'), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('an account without budgets gets the web\'s card, which can be put away', (
+      tester,
+    ) async {
+      final repo = monthWithBudgets()..budgetTotal = 0;
+      await pumpHome(tester, repo);
+      expect(find.text('Ponle presupuesto a tus categorías'), findsOneWidget);
+      expect(find.text('IR A CATEGORÍAS'), findsOneWidget);
+
+      await tester.tap(find.text('AHORA NO'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ponle presupuesto a tus categorías'), findsNothing);
+      await leave(tester);
+    });
+
+    testWidgets('no card once a category has a budget', (tester) async {
+      final repo = FakeHomeRepository(
+        categoryList: [category('cat-groceries', 'Supermercado', budget: 100000)],
+        budgetTotal: 100000,
+        items: [tx('a', '2026-10-22', -100)],
+      );
+      await pumpHome(tester, repo);
+      expect(find.text('Ponle presupuesto a tus categorías'), findsNothing);
+    });
+
+    testWidgets('the card\'s button goes to Presupuestos', (tester) async {
+      await pumpHome(tester, monthWithBudgets()..budgetTotal = 0);
+      await tester.tap(find.text('IR A CATEGORÍAS'));
+      await tester.pumpAndSettle();
+      expect(find.text('Café'), findsNothing, reason: 'the list of movements is not showing');
+    });
+
+    testWidgets('the bottom bar has Inicio, ＋, the 🎤 and Análisis', (tester) async {
+      await pumpHome(tester, monthWithBudgets());
+      expect(find.text('Inicio'), findsOneWidget);
+      expect(find.text('Análisis'), findsOneWidget);
+      expect(find.byKey(const Key('home.add')), findsOneWidget);
+      expect(find.byKey(const Key('home.capture')), findsOneWidget);
+      // Análisis has no route yet: it does nothing (and does not fail).
+      await tester.tap(find.text('Análisis'));
+      await tester.pumpAndSettle();
+      expect(find.text('Te quedan este mes'), findsOneWidget);
+    });
+
+    testWidgets('the list ends above the bar: the last row can be scrolled clear of it', (
+      tester,
+    ) async {
+      final repo = FakeHomeRepository(
+        items: [
+          for (var i = 20; i >= 1; i--)
+            tx('t$i', '2026-10-${i.toString().padLeft(2, '0')}', -100, name: 'Gasto $i'),
+        ],
+      );
+      await pumpHome(tester, repo);
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+      final last = tester.getBottomLeft(find.text('Gasto 1')).dy;
+      final bar = tester.getTopLeft(find.text('Inicio')).dy;
+      expect(last, lessThan(bar), reason: 'the last row is above the bar');
+    });
+  });
+
+  group('a big font and long text', () {
+    testWidgets('at text scale 1.3 home has no overflow', (tester) async {
+      final repo = FakeHomeRepository(
+        budgetTotal: 200000000,
+        categoryList: [
+          category('cat-groceries', 'Supermercado y todo lo que se compra en el mercado'),
+        ],
+        items: [
+          tx(
+            'rent',
+            '2026-10-25',
+            -50000000,
+            name: 'Arriendo de la casa grande del mes',
+            status: 'pending',
+          ),
+          tx('coffee', '2026-10-22', -450000, name: 'Café'),
+          tx(
+            'big',
+            '2026-10-21',
+            -150000000000,
+            name: 'Una compra con un nombre muy largo que no cabe en una línea',
+          ),
+        ],
+      );
+      await pumpHome(tester, repo, size: const Size(360, 640), textScale: 1.3);
+      expect(tester.takeException(), isNull);
+      // The header, the hero and the first row are all there.
+      expect(find.text('Lukitas'), findsOneWidget);
+      expect(find.textContaining('Te pasaste'), findsOneWidget);
+      expect(find.text('Café'), findsOneWidget);
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -2000));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      // The ＋ and the 🎤 are on screen and not covered by anything but the bar.
+      expect(tester.getRect(find.byKey(const Key('home.add'))).bottom, lessThanOrEqualTo(640));
+      expect(tester.getRect(find.byKey(const Key('home.capture'))).bottom, lessThanOrEqualTo(640));
+    });
+
+    testWidgets('a budget of \$1.500.000.000 fits at 360 px and 130%', (tester) async {
+      final repo = FakeHomeRepository(
+        budgetTotal: 150000000000,
+        items: [tx('a', '2026-10-22', -150000000000, name: 'Todo')],
+      );
+      await pumpHome(tester, repo, size: const Size(360, 640), textScale: 1.3);
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining(r'$1.500.000.000'), findsWidgets);
+    });
+
+    testWidgets('a narrow phone (under 400px) puts the month on a row of its own', (tester) async {
+      await pumpHome(tester, monthWithBudgets(), size: const Size(360, 740));
+      expect(tester.takeException(), isNull);
+      final month = tester.getCenter(find.text('Octubre'));
+      final face = tester.getCenter(find.byKey(const Key('home.account')));
+      expect(month.dy, greaterThan(face.dy), reason: 'under the wordmark and the face');
+      expect(month.dx, closeTo(360 / 2, 1), reason: 'centred');
+    });
+  });
+
   group('offline and errors', () {
     testWidgets('a cold start with no network shows the last good month, with the offline note', (
       tester,
@@ -431,7 +793,7 @@ void main() {
       expect(find.text('Te quedan este mes'), findsOneWidget);
       expect(find.text('Café'), findsOneWidget);
       expect(find.text('Sin conexión. Te mostramos lo último que cargó.'), findsOneWidget);
-      expect(find.text('Reintentar'), findsNothing);
+      expect(find.text('REINTENTAR'), findsNothing);
       await leave(tester);
     });
 
@@ -538,7 +900,7 @@ void main() {
       await pumpHome(tester, offline, cacheStore: store, token: 't2');
       expect(find.text('Café'), findsNothing);
       expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
-      expect(find.text('Reintentar'), findsOneWidget);
+      expect(find.text('REINTENTAR'), findsOneWidget);
       await leave(tester);
     });
 
@@ -548,10 +910,10 @@ void main() {
       final repo = monthWithBudgets()..failures['profile'] = const HomeFailure(0);
       await pumpHome(tester, repo);
       expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
-      await tester.tap(find.text('Reintentar'));
+      await tester.tap(find.text('REINTENTAR'));
       await tester.pumpAndSettle();
       expect(find.text('Te quedan este mes'), findsOneWidget);
-      expect(find.text('Reintentar'), findsNothing);
+      expect(find.text('REINTENTAR'), findsNothing);
     });
 
     testWidgets('pulling down refreshes; offline, the last figures stay with a note', (

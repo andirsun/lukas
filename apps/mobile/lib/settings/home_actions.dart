@@ -3,40 +3,43 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../api/session.dart';
+import '../home/home_header.dart';
 import '../l10n/app_localizations.dart';
-import '../theme/theme.dart';
+import '../theme/tokens.g.dart';
 
-/// What sits beside the month on home: "Guarda tu progreso" for a guest, and the gear that opens
-/// Settings.
-class HomeActions extends ConsumerWidget {
-  const HomeActions({super.key});
+/// What the face button's menu on home holds: Ajustes (Settings), and, for a guest, "Guarda tu
+/// progreso". Each closes the menu and goes there.
+class HomeMenuLinks extends ConsumerWidget {
+  const HomeMenuLinks({super.key, required this.close});
+
+  /// Closes the menu.
+  final VoidCallback close;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     final guest = ref.watch(sessionProvider.select((s) => s.isGuest));
-    return Row(
+    return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: LukitasTokens.space1,
       children: [
         if (guest)
-          Flexible(
-            child: TextButton.icon(
-              key: const Key('home.saveProgress'),
-              style: TextButton.styleFrom(
-                foregroundColor: colors.brand,
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800),
-              ),
-              onPressed: () => context.push('/progress'),
-              icon: const Icon(Icons.bookmark_add_outlined, size: 18),
-              label: Text(l10n.progressTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
+          HomeMenuLink(
+            key: const Key('home.saveProgress'),
+            label: l10n.progressTitle,
+            onPressed: () {
+              close();
+              context.push('/progress');
+            },
           ),
-        IconButton(
+        HomeMenuLink(
           key: const Key('home.settings'),
-          tooltip: l10n.settingsOpenLabel,
-          onPressed: () => context.push('/settings'),
-          icon: const Icon(Icons.settings_outlined),
+          label: l10n.settingsOpenLabel,
+          onPressed: () {
+            close();
+            context.push('/settings');
+          },
         ),
       ],
     );

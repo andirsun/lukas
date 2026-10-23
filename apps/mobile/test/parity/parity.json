@@ -805,5 +805,47 @@
     "storyId": "ui-bottombar--insights-day-english",
     "theme": "day",
     "appTest": "test/parity/bottom_bar_parity_test.dart"
+  },
+  {
+    "id": "home-in-pesos",
+    "storyId": "demo-screens--home-in-pesos",
+    "theme": "night",
+    "appTest": "test/parity/home_parity_test.dart"
+  },
+  {
+    "id": "home-in-pesos",
+    "storyId": "demo-screens--home-in-pesos",
+    "theme": "day",
+    "appTest": "test/parity/home_parity_test.dart"
+  },
+  {
+    "id": "home-transactions",
+    "storyId": "home-home--transactions",
+    "theme": "night",
+    "appTest": "test/parity/home_parity_test.dart"
+  },
+  {
+    "id": "home-transactions",
+    "storyId": "home-home--transactions",
+    "theme": "day",
+    "appTest": "test/parity/home_parity_test.dart"
+  },
+  {
+    "id": "home-empty-month",
+    "storyId": "home-home--empty-month",
+    "theme": "night",
+    "appTest": "test/parity/home_parity_test.dart"
+  },
+  {
+    "id": "home-empty-month",
+    "storyId": "home-home--empty-month",
+    "theme": "day",
+    "appTest": "test/parity/home_parity_test.dart"
+  },
+  {
+    "id": "home-day-theme",
+    "storyId": "home-home--day-theme",
+    "theme": "day",
+    "appTest": "test/parity/home_parity_test.dart"
   }
 ]

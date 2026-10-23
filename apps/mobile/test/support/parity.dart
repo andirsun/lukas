@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
@@ -249,6 +250,9 @@ ThemeData parityTheme(String theme) {
 /// keys), once the screen has settled; the picture is taken after it has settled again. Do the
 /// taps first and the keys last: a key puts the app in keyboard mode, where the focused control
 /// shows its focus ring, and a tap puts it back.
+///
+/// [overrides] are the providers a screen reads (the story's API, as a repository) on top of the
+/// clock.
 Future<void> parityGolden(
   WidgetTester t,
   String id,
@@ -256,6 +260,7 @@ Future<void> parityGolden(
   required String theme,
   Locale locale = const Locale('es'),
   Future<void> Function(WidgetTester t)? act,
+  List<Override> overrides = const [],
 }) async {
   final pair = parityPairs().where((p) => p.id == id && p.theme == theme).firstOrNull;
   if (pair == null) fail('$id-$theme is not a pair in test/parity/parity.json');
@@ -270,7 +275,7 @@ Future<void> parityGolden(
   // glow under a primary button is a 24px blur, so the parity pictures draw it blurred.
   debugDisableShadows = false;
   try {
-    await _pumpAndCompare(t, id, screen, pair, locale, act);
+    await _pumpAndCompare(t, id, screen, pair, locale, act, overrides);
   } finally {
     // The test framework checks it is back as it set it, before it runs the tear-downs.
     debugDisableShadows = true;
@@ -284,13 +289,14 @@ Future<void> _pumpAndCompare(
   ParityPair pair,
   Locale locale,
   Future<void> Function(WidgetTester t)? act,
+  List<Override> overrides,
 ) async {
   final fixture = ParityFixtures.load(pair.storyId);
   final theme = pair.theme;
 
   await t.pumpWidget(
     ProviderScope(
-      overrides: [clockProvider.overrideWithValue(() => fixture.now)],
+      overrides: [clockProvider.overrideWithValue(() => fixture.now), ...overrides],
       child: MaterialApp(
         theme: parityTheme(theme),
         locale: locale,

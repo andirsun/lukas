@@ -158,6 +158,18 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - `test/parity/emoji_font_test.dart` checks that `sbixFromCbdt` converts the committed file. It
     also fails when an emoji in any fixture, or anywhere in the web's and the app's code, has no
     picture in it, so a missing emoji is reported rather than drawn as a box.
+- **Randomness.** Home's Lukitas picks one of three phrasings of a line at random. The shots pin
+  `Math.random` to 0 (`RANDOM_SCRIPT` in `apps/web/scripts/parity-storybook.ts`), so every picture shows
+  the first phrasing, and the home pairs ask the app for it too (`lukasVariantProvider`).
+- **The story's page.** Storybook pads every story by 16px (`.storybook/preview.tsx`) while the bottom bar
+  stays fixed to the viewport, and the web's background gradient is as tall as its page (a long list
+  stretches it). A screen pair puts the app's screen in a `ShellFrame` (`lib/ui/app_shell.dart`) with that
+  padding, the page's height (`screenHeight`, measured from the story's `.lk-screen`), no 🎤 (`showMic`) and,
+  for the demo, a stand-in of the banner (`banner`). In the app itself the frame is zero and the gradient
+  is as tall as the screen.
+- **Stories that end with a sheet open.** `home-home--empty-month` opens the add sheet and closes it again
+  (the story's play function was changed to close it), so its picture is the empty month. The add sheet has
+  its own pairs (Task 8).
 - **Shadows.** `flutter test` draws every shadow hard-edged, to keep goldens from flaking. The web's
   glow under a primary button is a 24px blur, so `parityGolden` turns `debugDisableShadows` off for
   the picture and back on before the test ends.
@@ -225,6 +237,14 @@ when the app's picture changes. The web shots are regenerated only when the web 
     `PressSurface`) paints a box that way, and `snappedColumns` lays out equal columns (the keypad's
     102.67px keys) with their edges on whole pixels, the text staying where the unrounded box puts it.
     Without it every fractional edge is anti-aliased across two pixels and counts as a difference.
+  - Chrome adds line boxes up as CSS gives them (19.5px for one line of 13px at 1.5), while Flutter rounds every
+    line up to whole pixels (20px), so a screen of such lines drifts further from the web's with each one.
+    `CssLines` takes the rounding back for the lines home is made of (the hero, a day's heading, a row's
+    status line).
+  - Chrome paints a box's edges, and an outline's, on whole device pixels wherever the page's fractional
+    lines put them: the hero card, the budget bar and the focus ring use `SnappedDecoratedBox`.
+  - A dashed border is each straight side on its own, dashes three widths long and gaps two, from where
+    Chrome starts each side (`_DashedBorder`, the nudge card).
   - A `Container` insets its child by its border; a `DecoratedBox` does not (a 2px border is padding
     in the web's box model, so add it).
   - A box that holds another focusable (a transaction row and its badge) is focused while the one

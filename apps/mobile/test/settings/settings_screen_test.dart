@@ -32,21 +32,25 @@ void main() {
   setUpAll(registerExtraLicenses);
 
   group('opening Settings', () {
-    testWidgets('home has a gear that opens it; a guest also sees Guarda tu progreso', (
-      tester,
-    ) async {
-      await pumpSettingsApp(tester, guest: true);
-      expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.byKey(const Key('home.saveProgress')), findsOneWidget);
+    testWidgets(
+      'home\'s face button opens a menu with Ajustes; a guest also sees Guarda tu progreso',
+      (tester) async {
+        await pumpSettingsApp(tester, guest: true);
+        expect(find.byType(HomeScreen), findsOneWidget);
+        expect(find.byKey(const Key('home.settings')), findsNothing, reason: 'the menu is closed');
+        await openAccountMenu(tester);
+        expect(find.byKey(const Key('home.saveProgress')), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('home.settings')));
-      await tester.pumpAndSettle();
-      expect(find.text('Ajustes'), findsWidgets);
-      expect(find.byKey(const Key('settings.sound')), findsOneWidget);
-    });
+        await tester.tap(find.byKey(const Key('home.settings')));
+        await tester.pumpAndSettle();
+        expect(find.text('Ajustes'), findsWidgets);
+        expect(find.byKey(const Key('settings.sound')), findsOneWidget);
+      },
+    );
 
     testWidgets('someone with an email sees no Guarda tu progreso anywhere', (tester) async {
       await pumpSettingsApp(tester);
+      await openAccountMenu(tester);
       expect(find.byKey(const Key('home.settings')), findsOneWidget);
       expect(find.byKey(const Key('home.saveProgress')), findsNothing);
 

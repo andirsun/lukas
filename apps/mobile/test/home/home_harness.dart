@@ -3,14 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/add/add_repository.dart';
+import 'package:lukitas/feedback/stored_flag.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_controller.dart';
+import 'package:lukitas/home/home_header.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/theme/theme.dart';
 
+import '../settings/fakes.dart' show FakeFlagStore;
 import 'fakes.dart';
 import 'fixtures.dart';
 
@@ -49,14 +52,21 @@ Future<HomeHarness> pumpHome(
   DateTime Function()? clock,
   AddRepository? addRepo,
   List<Override> overrides = const [],
+  double textScale = 1,
+  String? initialMonth,
+  bool withMenu = false,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final snapshots = <WrittenSnapshot>[];
   final edited = <Transaction>[];
+  final flags = <String, FakeFlagStore>{};
   final container = ProviderContainer(
     overrides: [
+      // What a person put away ("Ahora no") is kept in memory, unless the test keeps flags itself.
+      if (!overrides.any((o) => '${o.origin}'.contains('FlagStore')))
+        flagStoreProvider.overrideWith((ref, key) => flags.putIfAbsent(key, FakeFlagStore.new)),
       homeRepositoryProvider.overrideWithValue(repo),
       if (addRepo != null) addRepositoryProvider.overrideWithValue(addRepo),
       homeCacheProvider.overrideWithValue(HomeCache(cacheStore ?? FakeCacheStore(), token: token)),
@@ -81,7 +91,20 @@ Future<HomeHarness> pumpHome(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         debugShowCheckedModeBanner: false,
-        home: HomeScreen(onEdit: withEdit ? edited.add : null),
+        builder: textScale == 1
+            ? null
+            : (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+                child: child!,
+              ),
+        home: HomeScreen(
+          onEdit: withEdit ? edited.add : null,
+          initialMonth: initialMonth,
+          menu: withMenu
+              ? (context, close) =>
+                    HomeMenuLink(key: const Key('menu.entry'), label: 'Ajustes', onPressed: close)
+              : null,
+        ),
       ),
     ),
   );

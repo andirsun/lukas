@@ -6,11 +6,11 @@ import '../theme/tokens.g.dart';
 /// How Lukitas feels about the month (the web's `moodFor`): celebrating right after a save or a
 /// payment, worried while any category is near or over its limit, happy otherwise.
 enum LukitasMood {
-  happy('assets/lukas/wave.webp', Duration(milliseconds: 1200), 2),
-  worried('assets/lukas/worried.webp', LukitasTokens.durationShiver, 1),
-  celebrating('assets/lukas/celebrate.webp', LukitasTokens.durationCelebrate, 2);
+  happy('assets/lukas/wave.webp', Duration(milliseconds: 1200), 2, 0),
+  worried('assets/lukas/worried.webp', LukitasTokens.durationShiver, 1, 3),
+  celebrating('assets/lukas/celebrate.webp', LukitasTokens.durationCelebrate, 2, 4);
 
-  const LukitasMood(this.sheet, this.loop, this.loops);
+  const LukitasMood(this.sheet, this.loop, this.loops, this.stillFrame);
 
   /// The web's own sprite sheet: 4x2 frames of 500 px.
   final String sheet;
@@ -20,11 +20,16 @@ enum LukitasMood {
 
   /// How many passes it plays before it rests on the first frame.
   final int loops;
+
+  /// The frame shown under "remove animations" (0-based, in reading order), as the web's
+  /// `LUKAS_ART[mood].stillFrame` (apps/web/app/lukas/Lukas.tsx): happy the first, a soft smile;
+  /// worried frame 3, hands clasped and a sweat drop; celebrating frame 4, fists up among sparkles.
+  final int stillFrame;
 }
 
 /// Lukitas' face for a [mood], from the web's sprite sheets. It plays its loop a couple of times
 /// when the mood arrives, then rests on the first frame; with the system's "remove animations" it
-/// stands still.
+/// stands still on the mood's [LukitasMood.stillFrame].
 class LukitasFace extends StatefulWidget {
   const LukitasFace({super.key, required this.mood, this.size = 72, this.decorative = false});
 
@@ -86,7 +91,9 @@ class _LukitasFaceState extends State<LukitasFace> with SingleTickerProviderStat
         child: AnimatedBuilder(
           animation: _controller,
           builder: (context, child) {
-            final frame = (_controller.value * _frames).floor() % _frames;
+            final frame = _animate
+                ? (_controller.value * _frames).floor() % _frames
+                : widget.mood.stillFrame;
             final column = frame % _columns;
             final row = frame ~/ _columns;
             return OverflowBox(

@@ -293,6 +293,72 @@ abstract final class LkText {
     leadingDistribution: TextLeadingDistribution.even,
   );
 
+  /// The wordmark: app.css `.lk-logo`, Fredoka 22px 700, line height 1. The web paints it with a
+  /// gold to candy gradient clipped to the text (`LkWordmark` in home_header.dart does that).
+  static const logo = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 22,
+    fontWeight: FontWeight.w700,
+    height: 1,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The hero's label: Home.tsx `<h1 className="lk-hero-label m-0 text-[13px]">`: `.lk-hero-label`
+  /// says 12px 800, and the `text-[13px]` utility wins, so Nunito 13px 800.
+  static const heroLabel = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The line under the hero's bar: app.css `.lk-hero-meta`, Nunito 11px 800.
+  static const meta = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 11,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A card's or a menu entry's own words, and a list's empty message: Home.tsx and HomeHeader.tsx
+  /// `text-[14px] font-bold`, Nunito 14px 700.
+  static const bodySm = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A nudge card's title: Home.tsx `text-[14px] font-extrabold`, Nunito 14px 800.
+  static const cardTitle = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A nudge card's lead: Home.tsx `text-[12px] font-bold`, Nunito 12px 700.
+  static const cardLead = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The face on the avatar button: app.css `.lk-avatar`, 20px.
+  static const avatarGlyph = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
   /// `text-transform: uppercase`, for [eyebrow], [button], [buttonSm] and [badge].
   static String upperCase(String text) => text.toUpperCase();
 }

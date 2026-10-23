@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 /// One line of text laid out the way Blink adds it up. Blink shapes a line word by word (and every
@@ -87,5 +88,82 @@ class CssText extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+final _lineUnits = <(String?, double?, FontWeight?, double?, double), double>{};
+
+/// How tall Flutter makes one line of [style] at [scale]: a whole number of pixels (a 13px font at
+/// a line height of 1.5 is 19.5px in CSS and 20px here).
+double _flutterLine(TextStyle style, double scale) {
+  final key = (style.fontFamily, style.fontSize, style.fontWeight, style.height, scale);
+  return _lineUnits.putIfAbsent(key, () {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: 'x',
+        style: style.copyWith(fontFeatures: const []),
+      ),
+      textDirection: TextDirection.ltr,
+      textScaler: TextScaler.linear(scale),
+    )..layout();
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  });
+}
+
+/// A text as tall as CSS makes it. CSS adds line boxes up as they are (19.5px for one line of 13px
+/// at 1.5), while Flutter rounds every line up to whole pixels (20px), so a screen of such lines
+/// drifts further from the web's with each one. This takes the rounding back: [child] (a `Text`
+/// in [style]) keeps its lines, and the box is [style]'s real line height times their number, with
+/// the text centred in it (which is where half-leading puts the glyphs).
+class CssLines extends SingleChildRenderObjectWidget {
+  const CssLines({super.key, required this.style, required Widget super.child});
+
+  /// The text style of [child]: its size and line height are the CSS line height.
+  final TextStyle style;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderCssLines(_lines(context), _flutterLine(style, _scale(context)));
+
+  @override
+  void updateRenderObject(BuildContext context, covariant RenderObject renderObject) {
+    (renderObject as _RenderCssLines)
+      ..cssLine = _lines(context)
+      ..flutterLine = _flutterLine(style, _scale(context));
+  }
+
+  double _scale(BuildContext context) => MediaQuery.textScalerOf(context).scale(1);
+
+  double _lines(BuildContext context) => style.fontSize! * _scale(context) * style.height!;
+}
+
+class _RenderCssLines extends RenderShiftedBox {
+  _RenderCssLines(this._cssLine, this._flutterLine) : super(null);
+
+  double _cssLine;
+  double _flutterLine;
+
+  set cssLine(double value) {
+    if (value == _cssLine) return;
+    _cssLine = value;
+    markNeedsLayout();
+  }
+
+  set flutterLine(double value) {
+    if (value == _flutterLine) return;
+    _flutterLine = value;
+    markNeedsLayout();
+  }
+
+  @override
+  void performLayout() {
+    final child = this.child!;
+    child.layout(constraints, parentUsesSize: true);
+    final lines = (child.size.height / _flutterLine).round().clamp(1, 1000);
+    final height = lines * _cssLine;
+    size = constraints.constrain(Size(child.size.width, height));
+    (child.parentData! as BoxParentData).offset = Offset(0, (size.height - child.size.height) / 2);
   }
 }

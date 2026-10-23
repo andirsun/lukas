@@ -33,6 +33,7 @@ void main() {
   group('Guarda tu progreso', () {
     testWidgets('a guest sees it from home, with the honest copy', (tester) async {
       await pumpSettingsApp(tester, guest: true);
+      await openAccountMenu(tester);
       await tester.tap(find.byKey(const Key('home.saveProgress')));
       await tester.pumpAndSettle();
 

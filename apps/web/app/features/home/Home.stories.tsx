@@ -497,7 +497,11 @@ export const EmptyMonth: Story = {
     const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));
     await expect(panel.getByText(/Aún no hay movimientos/)).toBeVisible();
     await userEvent.click(panel.getByRole("button", { name: "Agregar gasto" }));
-    await expect(await screen.findByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
+    const sheet = await screen.findByRole("dialog", { name: "Nuevo gasto" });
+    await expect(sheet).toBeVisible();
+    // Closed again: the story rests on the empty month itself (the mobile parity picture of it).
+    await userEvent.click(within(sheet).getByRole("button", { name: "Cerrar" }));
+    await dialogGone();
   },
 };
 

@@ -12,6 +12,8 @@ import '../support/fonts.dart';
 const _appCss = '../web/app/styles/app.css';
 const _sheetTsx = '../web/app/ui/Sheet.tsx';
 const _confirmSheetTsx = '../web/app/ui/ConfirmSheet.tsx';
+const _homeTsx = '../web/app/features/home/Home.tsx';
+const _homeHeaderTsx = '../web/app/features/home/HomeHeader.tsx';
 const _tokensCss = '../web/app/styles/tokens.css';
 
 /// The declarations of `selector { ... }` in app.css, the first rule with exactly that selector.
@@ -181,6 +183,76 @@ void main() {
       expect(LkText.eyebrow.letterSpacing, closeTo(0.07 * 11, 1e-9));
       expect(LkText.eyebrow.height, 1.5);
       expect(LkText.upperCase('hoy · mar 21'), 'HOY · MAR 21');
+    });
+
+    test('logo: the wordmark, Fredoka 22px 700, line height 1', () {
+      // app.css:87-96 .lk-logo
+      final css = _rule('.lk-logo');
+      expect(css['font-family'], 'var(--font-display)');
+      expect(css['font-size'], '22px');
+      expect(css['font-weight'], '700');
+      expect(css['line-height'], '1');
+      expect(LkText.logo.fontFamily, 'Fredoka');
+      expect(LkText.logo.fontSize, 22);
+      expect(LkText.logo.fontWeight, FontWeight.w700);
+      expect(LkText.logo.height, 1);
+    });
+
+    test('heroLabel: Nunito 13px 800 (the utility\'s 13px over the class\'s 12px)', () {
+      // Home.tsx: <h1 id={labelId} className="lk-hero-label m-0 text-[13px]">; app.css:180-184
+      expect(
+        File(_homeTsx).readAsStringSync(),
+        contains('className="lk-hero-label m-0 text-[13px]"'),
+      );
+      final css = _rule('.lk-hero-label');
+      expect(css['font-size'], '12px');
+      expect(css['font-weight'], '800');
+      expect(LkText.heroLabel.fontFamily, 'Nunito');
+      expect(LkText.heroLabel.fontSize, 13);
+      expect(LkText.heroLabel.fontWeight, FontWeight.w800);
+      expect(LkText.heroLabel.height, 1.5);
+    });
+
+    test('meta: the line under the hero\'s bar, Nunito 11px 800', () {
+      // app.css:193-200 .lk-hero-meta
+      final css = _rule('.lk-hero-meta');
+      expect(css['font-size'], '11px');
+      expect(css['font-weight'], '800');
+      expect(css['margin-top'], '6px');
+      expect(LkText.meta.fontFamily, 'Nunito');
+      expect(LkText.meta.fontSize, 11);
+      expect(LkText.meta.fontWeight, FontWeight.w800);
+      expect(LkText.meta.height, 1.5);
+    });
+
+    test(
+      'bodySm, cardTitle, cardLead: the home cards and menu, as Home.tsx and HomeHeader.tsx',
+      () {
+        final home = File(_homeTsx).readAsStringSync();
+        // Home.tsx: Transactions' empty message and NoCategories' lead, the menu's entries.
+        expect(home, contains('className="m-0 text-[14px] font-bold text-ink-muted"'));
+        expect(File(_homeHeaderTsx).readAsStringSync(), contains('text-[14px] font-bold text-ink'));
+        expect(LkText.bodySm.fontSize, 14);
+        expect(LkText.bodySm.fontWeight, FontWeight.w700);
+        // Home.tsx: the nudge's h2 `text-[14px] font-extrabold text-ink`, its p `text-[12px] font-bold`.
+        expect(home, contains('text-[14px] font-extrabold text-ink'));
+        expect(home, contains('className="m-0 text-[12px] font-bold text-ink-muted"'));
+        expect(LkText.cardTitle.fontSize, 14);
+        expect(LkText.cardTitle.fontWeight, FontWeight.w800);
+        expect(LkText.cardLead.fontSize, 12);
+        expect(LkText.cardLead.fontWeight, FontWeight.w700);
+        for (final style in [LkText.bodySm, LkText.cardTitle, LkText.cardLead]) {
+          expect(style.fontFamily, 'Nunito');
+          expect(style.height, 1.5);
+        }
+      },
+    );
+
+    test('avatarGlyph: the face on the avatar button, 20px', () {
+      // app.css:1048-1063 .lk-avatar
+      final css = _rule('.lk-avatar');
+      expect(css['font-size'], '20px');
+      expect(LkText.avatarGlyph.fontSize, 20);
     });
 
     test('the CSS sizes are read in px: sanity of the parser', () {

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/tokens.g.dart';
 import 'lk_theme.dart';
+import 'pixel_snap.dart';
 
 /// How the API rates a category this month (`MonthSummary.categories[].state`): the bar never
 /// recomputes it.
@@ -67,13 +68,12 @@ class BudgetBar extends StatelessWidget {
     final bar = SizedBox(
       width: double.infinity,
       height: height,
-      child: DecoratedBox(
+      child: SnappedDecoratedBox(
         decoration: BoxDecoration(
           color: colors.surfaceSunken,
           borderRadius: BorderRadius.circular(LukitasTokens.radiusPill),
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(LukitasTokens.radiusPill),
+        child: ClipRect(
           child: TweenAnimationBuilder<double>(
             tween: Tween(end: budget == null ? 0.0 : fillFraction(spent, budget)),
             duration: duration,
@@ -83,7 +83,7 @@ class BudgetBar extends StatelessWidget {
               child: FractionallySizedBox(
                 widthFactor: fraction,
                 heightFactor: 1,
-                child: DecoratedBox(
+                child: SnappedDecoratedBox(
                   decoration: BoxDecoration(
                     color: fill,
                     borderRadius: BorderRadius.circular(LukitasTokens.radiusPill),

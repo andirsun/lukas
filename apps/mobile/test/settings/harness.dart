@@ -152,3 +152,9 @@ Future<SettingsEnv> pumpSettingsApp(
   }
   return env;
 }
+
+/// Opens the menu of home's face button, where Ajustes and a guest's "Guarda tu progreso" are.
+Future<void> openAccountMenu(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('home.account')));
+  await tester.pumpAndSettle();
+}

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -316,6 +317,22 @@ void main() {
     expect(state.event, isNull);
   });
 
+  testWidgets('when an event line ends the quiet key changes, so going back is not announced', (
+    tester,
+  ) async {
+    final (container, _, _) = setup(FakeHomeRepository());
+    container.listen(homeProvider, (_, _) {});
+    final controller = container.read(homeProvider.notifier);
+    final before = container.read(homeProvider).quietKey;
+    controller.report(
+      const LukasEvent(kind: LukasEventKind.saved, categoryId: 'c', amount: -100, name: 'one'),
+    );
+    expect(container.read(homeProvider).quietKey, before, reason: 'the line itself is announced');
+    await tester.pump(const Duration(seconds: 11));
+    expect(container.read(homeProvider).event, isNull);
+    expect(container.read(homeProvider).quietKey, isNot(before));
+  });
+
   testWidgets('an event lasts 10 s, a newer one restarts the clock', (tester) async {
     final (container, _, _) = setup(FakeHomeRepository());
     container.listen(homeProvider, (_, _) {});
@@ -446,6 +463,225 @@ void main() {
       await settle();
       expect(container.read(homeProvider).data, isNull);
       expect(container.read(homeProvider).failure!.offline, isTrue);
+    });
+  });
+
+  group('months', () {
+    FakeHomeRepository twoMonths() => FakeHomeRepository(
+      budgetTotal: 100000,
+      items: [
+        tx('oct', '2026-10-22', -1000),
+        tx('sep1', '2026-09-15', -5000, name: 'Septiembre'),
+        tx('sep2', '2026-09-02', -2000),
+        tx('aug', '2026-08-10', -9000),
+      ],
+    );
+
+    Future<(ProviderContainer, FakeHomeRepository, List<Snapshot>, FakeCacheStore)> loaded() async {
+      final store = FakeCacheStore();
+      final (container, repo, snapshots) = setup(twoMonths(), cacheStore: store);
+      container.listen(homeProvider, (_, _) {});
+      await settleAll();
+      return (container, repo, snapshots, store);
+    }
+
+    Future<String> cachedMonth(FakeCacheStore store) async =>
+        (jsonDecode(store.value!) as Map<String, Object?>)['month']! as String;
+
+    test('showMonth moves to the month and loads its summary and movements', () async {
+      final (container, repo, _, _) = await loaded();
+      expect(container.read(homeProvider).month, '2026-10');
+
+      await container.read(homeProvider.notifier).showMonth('2026-09');
+      final state = container.read(homeProvider);
+      expect(state.month, '2026-09');
+      expect(state.shown!.month, '2026-09');
+      expect(state.shown!.items.map((t) => t.id), ['sep1', 'sep2']);
+      expect(state.shown!.summary.month, '2026-09');
+      expect(state.shown!.summary.spent, 7000);
+      expect(state.loading, isFalse);
+      expect(repo.calls, containsAll(['summary 2026-09', 'transactions 2026-09']));
+    });
+
+    test('a month after the current one is the current one', () async {
+      final (container, _, _, _) = await loaded();
+      await container.read(homeProvider.notifier).showMonth('2026-12');
+      expect(container.read(homeProvider).month, '2026-10');
+      expect(container.read(homeProvider).shown!.items.map((t) => t.id), ['oct']);
+    });
+
+    test(
+      'an earlier month never reaches the widget or the cache, which hold the current one',
+      () async {
+        final (container, _, snapshots, store) = await loaded();
+        expect(snapshots, hasLength(1));
+        await container.read(homeProvider.notifier).showMonth('2026-09');
+        await settleAll();
+        expect(snapshots, hasLength(1), reason: 'the widget keeps the current month');
+        expect(snapshots.single.summary.month, '2026-10');
+        expect(await cachedMonth(store), '2026-10');
+      },
+    );
+
+    test('the latest month asked for wins, however late an older answer lands', () async {
+      final (container, repo, _, _) = await loaded();
+      final controller = container.read(homeProvider.notifier);
+      final september = Completer<void>();
+      final august = Completer<void>();
+      repo.summaryGates.addAll([september, august]);
+
+      final first = controller.showMonth('2026-09');
+      final second = controller.showMonth('2026-08');
+      expect(container.read(homeProvider).month, '2026-08');
+      august.complete();
+      await second;
+      expect(container.read(homeProvider).shown!.month, '2026-08');
+
+      september.complete();
+      await first;
+      await settleAll();
+      final state = container.read(homeProvider);
+      expect(state.month, '2026-08');
+      expect(state.shown!.items.map((t) => t.id), ['aug'], reason: 'September was dropped');
+    });
+
+    test('while it loads, no other month is on screen as this one', () async {
+      final (container, repo, _, _) = await loaded();
+      final gate = Completer<void>();
+      repo.summaryGates.add(gate);
+      final moving = container.read(homeProvider.notifier).showMonth('2026-09');
+      final state = container.read(homeProvider);
+      expect(state.month, '2026-09');
+      expect(state.loading, isTrue);
+      expect(state.shown, isNull, reason: 'October is still in data, but it is not September');
+      gate.complete();
+      await moving;
+      expect(container.read(homeProvider).shown!.month, '2026-09');
+    });
+
+    test('offline, another month says so and never shows the cache as that month', () async {
+      final (container, repo, _, store) = await loaded();
+      expect(await cachedMonth(store), '2026-10');
+      repo.failures['summary'] = const HomeFailure(0);
+
+      await container.read(homeProvider.notifier).showMonth('2026-09');
+      final state = container.read(homeProvider);
+      expect(state.month, '2026-09');
+      expect(state.shown, isNull, reason: 'no figures: not October\'s, not a cache of September');
+      expect(state.failure!.offline, isTrue);
+      expect(state.loading, isFalse);
+
+      // Back online, a retry brings the month.
+      await container.read(homeProvider.notifier).refresh();
+      expect(container.read(homeProvider).failure, isNull);
+      expect(container.read(homeProvider).shown!.month, '2026-09');
+    });
+
+    test(
+      'back to the current month with no network, the cache of the current month shows',
+      () async {
+        final (container, repo, _, _) = await loaded();
+        final controller = container.read(homeProvider.notifier);
+        await controller.showMonth('2026-09');
+        repo.failures['summary'] = const HomeFailure(0);
+
+        await controller.showMonth('2026-10');
+        final state = container.read(homeProvider);
+        expect(state.shown!.month, '2026-10');
+        expect(state.stale, isTrue);
+        expect(state.staleOffline, isTrue);
+        expect(state.shown!.items.map((t) => t.id), ['oct']);
+      },
+    );
+
+    test(
+      'refreshing on an earlier month reloads it, and tells the widget the current one',
+      () async {
+        final (container, repo, snapshots, _) = await loaded();
+        final controller = container.read(homeProvider.notifier);
+        await controller.showMonth('2026-09');
+        snapshots.clear();
+        repo.calls.clear();
+
+        await controller.refresh();
+        await settleAll();
+        expect(
+          container.read(homeProvider).shown!.month,
+          '2026-09',
+          reason: 'it stays on September',
+        );
+        expect(repo.calls, contains('summary 2026-09'));
+        expect(snapshots.map((s) => s.summary.month), ['2026-10']);
+      },
+    );
+
+    test('a save while on an earlier month updates the widget with the current month', () async {
+      final (container, repo, snapshots, store) = await loaded();
+      final controller = container.read(homeProvider.notifier);
+      await controller.showMonth('2026-09');
+      snapshots.clear();
+
+      final saved = tx('new', '2026-10-22', -500, name: 'Café');
+      repo.items.add(saved);
+      await controller.saved(saved);
+      await settleAll();
+      final state = container.read(homeProvider);
+      expect(state.shown!.items.map((t) => t.id), ['sep1', 'sep2'], reason: 'not a September row');
+      expect(snapshots, isNotEmpty);
+      expect(snapshots.map((s) => s.summary.month), everyElement('2026-10'));
+      expect(snapshots.last.summary.spent, 1500);
+      expect(await cachedMonth(store), '2026-10');
+      expect(state.event!.month, '2026-10', reason: 'Lukitas says it in October, not September');
+    });
+
+    test(
+      'opening on an earlier month (a ?month= link) loads it, and the widget the current one',
+      () async {
+        final store = FakeCacheStore();
+        final (container, repo, snapshots) = setup(twoMonths(), cacheStore: store);
+        container.listen(homeProvider, (_, _) {});
+        final moving = container.read(homeProvider.notifier).showMonth('2026-09');
+        await moving;
+        await settleAll();
+        final state = container.read(homeProvider);
+        expect(state.shown!.month, '2026-09');
+        expect(repo.calls.where((c) => c.startsWith('transactions')), ['transactions 2026-09']);
+        expect(snapshots.map((s) => s.summary.month), ['2026-10']);
+        expect(store.value, isNull, reason: 'the cache keeps only the current month');
+      },
+    );
+
+    test('the month follows the clock while it is the current one', () async {
+      var now = DateTime.utc(2026, 10, 31, 20);
+      final repo = twoMonths();
+      final container = ProviderContainer(
+        overrides: [
+          homeRepositoryProvider.overrideWithValue(repo),
+          homeCacheProvider.overrideWithValue(HomeCache(FakeCacheStore(), token: 't1')),
+          clockProvider.overrideWithValue(() => now),
+          widgetSnapshotWriterProvider.overrideWithValue(
+            (s, {required currency, required locale, required timezone}) async {},
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.listen(homeProvider, (_, _) {});
+      await settleAll();
+      expect(container.read(homeProvider).month, '2026-10');
+
+      now = DateTime.utc(2026, 11, 1, 12);
+      await container.read(homeProvider.notifier).refresh();
+      expect(container.read(homeProvider).month, '2026-11');
+    });
+
+    test('an event knows its month', () async {
+      final (container, _, _, _) = await loaded();
+      final controller = container.read(homeProvider.notifier);
+      controller.report(
+        const LukasEvent(kind: LukasEventKind.saved, categoryId: 'c', amount: -100),
+        month: '2026-09',
+      );
+      expect(container.read(homeProvider).event!.month, '2026-09');
     });
   });
 

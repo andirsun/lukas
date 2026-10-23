@@ -46,7 +46,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        builder: (context, state) => const HomeScreen(trailing: HomeActions()),
+        builder: (context, state) => HomeScreen(
+          // The month to open on, when a link carries one (`/?month=2026-09`).
+          initialMonth: state.uri.queryParameters['month'],
+          menu: (context, close) => HomeMenuLinks(close: close),
+        ),
       ),
       GoRoute(path: '/progress', builder: (context, state) => const ProgressScreen()),
       GoRoute(

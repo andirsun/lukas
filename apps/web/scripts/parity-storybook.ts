@@ -222,6 +222,14 @@ export function clockScript(now: string): string {
 })();`;
 }
 
+/**
+ * Runs in the page before anything else: `Math.random` always says 0. Home's Lukitas picks one of
+ * three phrasings of a line at random (`1 + Math.floor(Math.random() * 3)`), and a picture that
+ * changes with every run could not be a reference: the parity pictures always show the first one
+ * (the app's tests ask for it too, `lukasVariantProvider`).
+ */
+export const RANDOM_SCRIPT = "Math.random = () => 0;";
+
 /** A phone-sized page: 412 × 915 at 2×, touch, in Madrid, at the parity "now". */
 export async function phoneContext(browser: Browser): Promise<BrowserContext> {
   const context = await browser.newContext({
@@ -235,6 +243,7 @@ export async function phoneContext(browser: Browser): Promise<BrowserContext> {
     reducedMotion: "no-preference",
   });
   await context.addInitScript({ content: clockScript(PARITY_NOW) });
+  await context.addInitScript({ content: RANDOM_SCRIPT });
   return context;
 }
 

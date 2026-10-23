@@ -1,16 +1,25 @@
+// The parts of home (apps/web/app/features/home/Home.tsx), put together from the web's components in
+// lib/ui and the CSS Home.tsx uses: app.css `.lk-hero`, `.lk-hero-label`, `.lk-hero-meta`,
+// `.lk-overline`, `.lk-nudge`, `.lk-tabs-sticky`.
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../api/gen/lukitas_api.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
-import '../theme/theme.dart';
+import '../theme/surfaces.dart';
+import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
-import 'lukitas_face.dart';
+import '../ui/budget_bar.dart';
+import '../ui/css_text.dart';
+import '../ui/lk_theme.dart';
+import '../ui/money.dart';
+import '../ui/pixel_snap.dart';
+import '../ui/press_button.dart';
 
-/// Where a spent amount stands against its budget: near from 80 % of it, over past it (core's
-/// `NEAR_LIMIT_RATIO`, the web's `overallState`).
-enum BudgetState { ok, near, over }
-
+/// The whole month's state against its total budget, as each category's is computed (the web's
+/// `overallState`): near from 80 % of it (core's `NEAR_LIMIT_RATIO`), over past it.
 BudgetState overallState(int budgetTotal, int spent) {
   if (budgetTotal <= 0) return spent > 0 ? BudgetState.over : BudgetState.ok;
   final ratio = spent / budgetTotal;
@@ -21,185 +30,24 @@ BudgetState overallState(int budgetTotal, int spent) {
       : BudgetState.ok;
 }
 
-/// Lukitas beside his speech bubble. The line carries the meaning, so Lukitas is decorative; the
-/// bubble is a polite live region, so a new line after a payment is read out. A new line fades in
-/// (`--fade`), from faint, never from nothing; with "remove animations" it just shows.
-class LukitasBubble extends StatelessWidget {
-  const LukitasBubble({
-    super.key,
-    required this.message,
-    required this.mood,
-    required this.announce,
-  });
-
-  final String message;
-  final LukitasMood mood;
-
-  /// Whether a screen reader reads the line out when it changes: true for a line about a save or a
-  /// payment, false for the month's line, so going back to it after an event is not announced a
-  /// second time.
-  final bool announce;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
-    final reduce = MediaQuery.disableAnimationsOf(context);
-    return Row(
-      children: [
-        ExcludeSemantics(child: LukitasFace(mood: mood, size: 72)),
-        const SizedBox(width: LukitasTokens.space3),
-        Expanded(
-          child: Semantics(
-            liveRegion: announce,
-            child: TweenAnimationBuilder<double>(
-              key: ValueKey(message),
-              tween: Tween(begin: reduce ? 1 : 0.25, end: 1),
-              duration: reduce ? Duration.zero : LukitasTokens.durationFade,
-              curve: Curves.easeOut,
-              builder: (context, opacity, child) => Opacity(opacity: opacity, child: child),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                decoration: BoxDecoration(
-                  color: colors.surfaceRow,
-                  border: Border.all(color: colors.stroke, width: 2),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  message,
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.35,
-                    fontWeight: FontWeight.w800,
-                    color: colors.ink,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// A month's money against its budget: a pill bar that fills with what was spent.
-class BudgetBar extends StatelessWidget {
-  const BudgetBar({
-    super.key,
-    required this.spent,
-    required this.budget,
-    required this.state,
-    required this.semanticsLabel,
-  });
-
-  final int spent;
-  final int budget;
-  final BudgetState state;
-  final String semanticsLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
-    final reduce = MediaQuery.disableAnimationsOf(context);
-    final fill = budget <= 0 ? 1.0 : (spent / budget).clamp(0.0, 1.0);
-    final color = switch (state) {
-      BudgetState.ok => colors.good,
-      BudgetState.near => colors.near,
-      BudgetState.over => colors.over,
-    };
-    return Semantics(
-      label: semanticsLabel,
-      child: ExcludeSemantics(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(LukitasTokens.radiusPill),
-          child: Container(
-            height: 12,
-            color: colors.surfaceSunken,
-            alignment: Alignment.centerLeft,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(end: fill),
-              duration: reduce ? Duration.zero : LukitasTokens.durationCountUp,
-              curve: Curves.easeOut,
-              builder: (context, value, _) => FractionallySizedBox(
-                widthFactor: value,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(LukitasTokens.radiusPill),
-                  ),
-                  child: const SizedBox.expand(),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// An amount in the person's currency that counts from the previous value to the new one over
-/// `--count-up` whenever it changes (not on first show). The counting figure is hidden from
-/// assistive technology, which reads the final amount right away. With "remove animations" the
-/// value just changes.
-class CountUpMoney extends StatelessWidget {
-  const CountUpMoney({
-    super.key,
-    required this.cents,
-    required this.currency,
-    required this.locale,
-    required this.style,
-  });
-
-  final int cents;
-  final String currency;
-  final String locale;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    final reduce = MediaQuery.disableAnimationsOf(context);
-    return Semantics(
-      label: formatMoney(cents, currency, locale),
-      child: ExcludeSemantics(
-        child: TweenAnimationBuilder<int>(
-          tween: IntTween(end: cents),
-          duration: reduce ? Duration.zero : LukitasTokens.durationCountUp,
-          curve: Curves.easeOut,
-          builder: (context, value, _) => Text(
-            formatMoney(value, currency, locale),
-            maxLines: 1,
-            style: style.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// What is left of the month (or, without budgets, what was spent), in large type: the label, the
-/// amount, and a bar with what was spent against the budgets. The web's `Hero`.
-class MonthHero extends StatelessWidget {
-  const MonthHero({
-    super.key,
-    required this.summary,
-    required this.currency,
-    required this.locale,
-    this.pastMonth,
-  });
+/// amount and a bar with what was spent against the budgets (the web's `Hero`, a `.lk-hero`).
+class HomeHero extends StatelessWidget {
+  const HomeHero({super.key, required this.summary, required this.currency, this.pastMonth});
 
   final Summary summary;
   final String currency;
-  final String locale;
 
-  /// The month's name (mid-sentence) when the figures are not this month's, so the labels never
+  /// The month's name (mid-sentence) when the figures are of an earlier month, so the labels never
   /// say "este mes" about another one. Null: this month.
   final String? pastMonth;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    final lk = context.lk;
+    final colors = lk.colors;
+    final locale = l10n.localeName;
     final past = pastMonth;
     String money(int cents) => formatMoney(cents, currency, locale);
     final hasBudget = summary.budgetTotal > 0;
@@ -209,81 +57,82 @@ class MonthHero extends StatelessWidget {
         : over
         ? (past == null ? l10n.homeOverLabel : l10n.homeOverLabelPast(past))
         : (past == null ? l10n.homeRemainingLabel : l10n.homeRemainingLabelPast(past));
+    // `.lk-hero-amount` is `good`; `text-over` when over, `text-ink` without budgets.
     final amountColor = over ? colors.over : (hasBudget ? colors.good : colors.ink);
-    final meta = TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: colors.inkMuted);
+    final meta = LkText.meta.copyWith(color: colors.inkMuted);
 
     return Semantics(
       container: true,
-      child: Container(
+      label: label,
+      child: _Card(
         padding: const EdgeInsets.fromLTRB(
           LukitasTokens.space4,
           LukitasTokens.space3,
           LukitasTokens.space4,
           LukitasTokens.space4,
         ),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          borderRadius: BorderRadius.circular(LukitasTokens.radiusXl),
-          boxShadow: [BoxShadow(color: colors.surfaceEdge, offset: const Offset(0, 5))],
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Semantics(
               header: true,
-              child: Text(
-                label,
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: colors.inkMuted),
+              child: CssLines(
+                style: LkText.heroLabel,
+                child: Text(label, style: LkText.heroLabel.copyWith(color: colors.inkMuted)),
               ),
             ),
-            const SizedBox(height: 2),
-            CountUpMoney(
-              cents: hasBudget ? summary.remaining.abs() : summary.spent,
-              currency: currency,
-              locale: locale,
-              style: TextStyle(
-                fontSize: 38,
-                height: 1.05,
-                fontWeight: FontWeight.w700,
-                color: amountColor,
+            CssLines(
+              style: LkText.amountXl,
+              child: Money(
+                cents: hasBudget ? summary.remaining.abs() : summary.spent,
+                currency: currency,
+                animate: true,
+                style: LkText.amountXl.copyWith(color: amountColor),
               ),
             ),
             if (hasBudget) ...[
-              const SizedBox(height: LukitasTokens.space2),
-              BudgetBar(
-                spent: summary.spent,
-                budget: summary.budgetTotal,
-                state: overallState(summary.budgetTotal, summary.spent),
-                semanticsLabel: l10n.homeSpentMeter(
-                  money(summary.spent),
-                  money(summary.budgetTotal),
+              Padding(
+                padding: const EdgeInsets.only(top: LukitasTokens.space2),
+                child: BudgetBar(
+                  spent: summary.spent,
+                  budget: summary.budgetTotal,
+                  state: overallState(summary.budgetTotal, summary.spent),
+                  label: l10n.homeSpentMeter(money(summary.spent), money(summary.budgetTotal)),
                 ),
               ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      l10n.homeSpent(money(summary.spent)),
-                      style: meta,
-                      overflow: TextOverflow.ellipsis,
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Flexible(
+                      child: CssLines(
+                        style: LkText.meta,
+                        child: Text(l10n.homeSpent(money(summary.spent)), style: meta),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: LukitasTokens.space2),
-                  Flexible(
-                    child: Text(
-                      l10n.homeOfBudget(money(summary.budgetTotal)),
-                      style: meta,
-                      overflow: TextOverflow.ellipsis,
+                    Flexible(
+                      child: CssLines(
+                        style: LkText.meta,
+                        child: Text(
+                          l10n.homeOfBudget(money(summary.budgetTotal)),
+                          style: meta,
+                          textAlign: TextAlign.end,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ] else ...[
-              const SizedBox(height: 6),
-              Text(l10n.homeNoBudgetMeta, style: meta),
-            ],
+            ] else
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: CssLines(
+                  style: LkText.meta,
+                  child: Text(l10n.homeNoBudgetMeta, style: meta),
+                ),
+              ),
           ],
         ),
       ),
@@ -291,31 +140,53 @@ class MonthHero extends StatelessWidget {
   }
 }
 
-/// The month's name in a small pill, at the top.
-class MonthPill extends StatelessWidget {
-  const MonthPill({super.key, required this.name});
+/// The hero's place while the month loads: `lk-hero min-h-[140px]`, busy.
+class HomeHeroPlaceholder extends StatelessWidget {
+  const HomeHeroPlaceholder({super.key, this.label});
 
-  final String name;
+  /// What a screen reader says while it is empty.
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    label: label,
+    child: const _Card(
+      padding: EdgeInsets.fromLTRB(
+        LukitasTokens.space4,
+        LukitasTokens.space3,
+        LukitasTokens.space4,
+        LukitasTokens.space4,
+      ),
+      child: SizedBox(width: double.infinity, height: 140 - 12 - 16),
+    ),
+  );
+}
+
+/// `.lk-hero`: the `surface` card, radius `xl`, on `edge-md`.
+class _Card extends StatelessWidget {
+  const _Card({required this.padding, required this.child});
+
+  final EdgeInsetsGeometry padding;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    final lk = context.lk;
+    // Chrome paints the card's edges on whole device pixels, wherever the page's lines put it.
+    return SnappedDecoratedBox(
       decoration: BoxDecoration(
-        color: colors.surfaceRow,
-        borderRadius: BorderRadius.circular(LukitasTokens.radiusPill),
-        boxShadow: [BoxShadow(color: colors.surfaceEdge, offset: const Offset(0, 3))],
+        color: lk.colors.surface,
+        borderRadius: LkSurface.radius(LkRadius.xl),
+        boxShadow: LkSurface.edgeShadow(lk, LkEdge.md),
       ),
-      child: Text(
-        name,
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: colors.ink),
-      ),
+      child: Padding(padding: padding, child: child),
     );
   }
 }
 
-/// The day's heading above its rows: "Hoy · mié 21" and the day's total.
+/// A day's heading above its rows (`.lk-overline`, with `mt-1`): "Hoy · mié 21" and the day's
+/// total, in `ink-muted`, upper case.
 class DayHeading extends StatelessWidget {
   const DayHeading({super.key, required this.label, required this.total});
 
@@ -324,22 +195,29 @@ class DayHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
-    final style = TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w900,
-      letterSpacing: 0.77,
-      color: colors.inkMuted,
-    );
+    final colors = context.lkColors;
+    final style = LkText.eyebrow.copyWith(color: colors.inkMuted);
     return Semantics(
       header: true,
       child: Padding(
         padding: const EdgeInsets.only(top: LukitasTokens.space1, bottom: LukitasTokens.space2),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Flexible(child: Text(label.toUpperCase(), style: style)),
-            Text(total, style: style.copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+            Flexible(
+              child: CssLines(
+                style: LkText.eyebrow,
+                child: Text(LkText.upperCase(label), style: style),
+              ),
+            ),
+            CssLines(
+              style: LkText.eyebrow,
+              child: Text(
+                total,
+                style: style.copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+              ),
+            ),
           ],
         ),
       ),
@@ -347,56 +225,162 @@ class DayHeading extends StatelessWidget {
   }
 }
 
-/// The "Movimientos" tab, stuck under the top of the screen once the summary scrolls away. The
-/// background hides the list scrolling under it.
-class MovementsTabHeader extends SliverPersistentHeaderDelegate {
-  const MovementsTabHeader({required this.label, required this.background, required this.inset});
+/// A card for an account that skipped the setup (`.lk-nudge`): a dashed outline, the title, what it
+/// is for, the button it leads to, and "Ahora no" to put it away.
+class NudgeCard extends StatelessWidget {
+  const NudgeCard({
+    super.key,
+    required this.title,
+    required this.lead,
+    required this.actionLabel,
+    required this.onAction,
+    required this.onDismiss,
+  });
 
-  final String label;
-  final Color background;
-
-  /// The side padding, so the tab lines up with the content below it.
-  final double inset;
-
-  static const _height = 44.0;
+  final String title;
+  final String lead;
+  final String actionLabel;
+  final VoidCallback onAction;
+  final VoidCallback onDismiss;
 
   @override
-  double get minExtent => _height;
-
-  @override
-  double get maxExtent => _height;
-
-  @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
-    return Container(
-      color: background,
-      padding: EdgeInsets.symmetric(horizontal: inset, vertical: LukitasTokens.space2),
-      child: Container(
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: colors.surfaceSunken,
-          borderRadius: BorderRadius.circular(LukitasTokens.radiusMd),
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = context.lkColors;
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      label: title,
+      child: CustomPaint(
+        foregroundPainter: _DashedBorder(
+          color: colors.stroke,
+          radius: LukitasTokens.radiusLg,
+          width: 2,
         ),
-        child: Semantics(
-          header: true,
-          selected: true,
-          child: Container(
-            alignment: Alignment.center,
-            decoration: BoxDecoration(color: colors.brand, borderRadius: BorderRadius.circular(11)),
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: colors.onBrand),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surfaceRow,
+            borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
+          ),
+          child: Padding(
+            // `padding: var(--space-3)` inside the 2px border.
+            padding: const EdgeInsets.all(LukitasTokens.space3 + 2),
+            child: Row(
+              spacing: LukitasTokens.space3,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: LukitasTokens.space1,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(title, style: LkText.cardTitle.copyWith(color: colors.ink)),
+                      ),
+                      Text(lead, style: LkText.cardLead.copyWith(color: colors.inkMuted)),
+                      PressButton.text(
+                        actionLabel,
+                        tone: PressTone.secondary,
+                        size: PressSize.sm,
+                        link: true,
+                        onPressed: onAction,
+                      ),
+                    ],
+                  ),
+                ),
+                PressButton.text(
+                  l10n.notNow,
+                  tone: PressTone.ghost,
+                  size: PressSize.sm,
+                  semanticLabel: l10n.homeNudgeDismiss(title),
+                  onPressed: onDismiss,
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+}
+
+/// A dashed border as Blink draws one: each straight side is its own dashed line, starting with a
+/// dash near where the side starts, dashes three widths long and gaps two (for borders under
+/// 3px); the corners are drawn unbroken.
+class _DashedBorder extends CustomPainter {
+  const _DashedBorder({required this.color, required this.radius, required this.width});
+
+  final Color color;
+  final double radius;
+  final double width;
 
   @override
-  bool shouldRebuild(MovementsTabHeader old) =>
-      old.label != label || old.background != background || old.inset != inset;
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = width;
+    final half = width / 2;
+    final left = half;
+    final top = half;
+    final right = size.width - half;
+    final bottom = size.height - half;
+    final r = radius - half;
+    // The corners.
+    final corners = Path()
+      ..addArc(Rect.fromLTWH(left, top, 2 * r, 2 * r), math.pi, math.pi / 2)
+      ..addArc(Rect.fromLTWH(right - 2 * r, top, 2 * r, 2 * r), -math.pi / 2, math.pi / 2)
+      ..addArc(Rect.fromLTWH(right - 2 * r, bottom - 2 * r, 2 * r, 2 * r), 0, math.pi / 2)
+      ..addArc(Rect.fromLTWH(left, bottom - 2 * r, 2 * r, 2 * r), math.pi / 2, math.pi / 2);
+    canvas.drawPath(corners, paint);
+    // The sides.
+    void side(Offset from, Offset to) {
+      final length = (to - from).distance;
+      final direction = (to - from) / length;
+      final dash = width * 3;
+      final gap = width * 2;
+      for (var at = 0.0; at < length - 0.01; at += dash + gap) {
+        final end = math.min(at + dash, length);
+        canvas.drawLine(from + direction * at, from + direction * end, paint);
+      }
+    }
+
+    // Where Chrome starts each side (measured on its picture of a 18px radius): the top and the
+    // right and bottom sides read left to right and top to bottom, the left side too.
+    side(Offset(left + r, top), Offset(right - r, top));
+    side(Offset(right, top + r + 1.5), Offset(right, bottom - r));
+    side(Offset(left + r + 1.5, bottom), Offset(right - r, bottom));
+    side(Offset(left, top + r - 2), Offset(left, bottom - r));
+  }
+
+  @override
+  bool shouldRepaint(_DashedBorder old) =>
+      old.color != color || old.radius != radius || old.width != width;
+}
+
+/// The Movimientos | Presupuestos tabs, stuck under the top of the screen once the summary scrolls
+/// away (`.lk-tabs-sticky`: 8px above and 4px below the control, with `bg` behind them so the list
+/// scrolling under is hidden). [inset] is the side padding of the content, which the strip
+/// bleeds past.
+class HomeTabsStrip extends StatelessWidget {
+  const HomeTabsStrip({super.key, required this.child, this.bleed = LukitasTokens.space4});
+
+  final Widget child;
+
+  /// How far the strip's background reaches past the content on each side (`-mx-4`).
+  final double bleed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lkColors;
+    return ColoredBox(
+      color: colors.bg,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(bleed, LukitasTokens.space2, bleed, LukitasTokens.space1),
+        child: child,
+      ),
+    );
+  }
 }
 
 /// A spinner that does not move under "remove animations".

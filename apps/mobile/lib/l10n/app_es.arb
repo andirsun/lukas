@@ -299,6 +299,47 @@
   "@homeMovements": {
     "description": "Home: the sticky heading of the movements list."
   },
+  "homeAccount": "Tu cuenta",
+  "@homeAccount": {
+    "description": "Screen-reader name of the face button at the top of home, which opens the account menu."
+  },
+  "homeViewLabel": "Vista",
+  "@homeViewLabel": {
+    "description": "Screen-reader name of the Movimientos | Presupuestos tab list on home."
+  },
+  "homeBudgetsTab": "Presupuestos",
+  "@homeBudgetsTab": {
+    "description": "Home: the second tab, one row per spending category."
+  },
+  "homeNudgesLabel": "Para empezar",
+  "@homeNudgesLabel": {
+    "description": "Screen-reader name of the cards that help an account without budgets get started."
+  },
+  "homeNudgeBudgetsTitle": "Ponle presupuesto a tus categorías",
+  "@homeNudgeBudgetsTitle": {
+    "description": "Home: title of the card for an account without budgets."
+  },
+  "homeNudgeBudgetsLead": "Así Lukitas te avisa antes de que te pases. Toca una categoría y ponle un monto.",
+  "@homeNudgeBudgetsLead": {
+    "description": "Home: the card's explanation."
+  },
+  "homeNudgeBudgetsAction": "Ir a Categorías",
+  "@homeNudgeBudgetsAction": {
+    "description": "Home: the card's button, which opens the budgets tab."
+  },
+  "homeNudgeDismiss": "Ahora no: {title}",
+  "@homeNudgeDismiss": {
+    "description": "Screen-reader name of a card's \"Ahora no\" button. {title} is the card's title.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "notNow": "Ahora no",
+  "@notNow": {
+    "description": "A button that puts a suggestion away for good."
+  },
   "homeDayToday": "Hoy · {day}",
   "@homeDayToday": {
     "description": "Home: a day's heading for today. {day} is like 'mié 21'.",

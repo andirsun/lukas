@@ -28,6 +28,8 @@ class BottomBar extends StatelessWidget {
     required this.onMic,
     required this.onNavigate,
     this.showMic = true,
+    this.addKey,
+    this.micKey,
   });
 
   final String current;
@@ -43,6 +45,10 @@ class BottomBar extends StatelessWidget {
   /// Whether the 🎤 shows. The parity pair with the web hides it (the web has none; the 🎤 has a
   /// picture of its own to review).
   final bool showMic;
+
+  /// Keys for the ＋ and the 🎤 (home's tests and the emulator tests find them by key).
+  final Key? addKey;
+  final Key? micKey;
 
   /// How far the ＋ rises above the bar's drawn box.
   static const _rise = 4.0;
@@ -130,6 +136,7 @@ class BottomBar extends StatelessWidget {
                   height: 58,
                   child: Center(
                     child: _RaisedButton(
+                      key: addKey,
                       size: 58,
                       glyph: '＋',
                       style: LkText.plus,
@@ -149,6 +156,7 @@ class BottomBar extends StatelessWidget {
                       child: Transform.translate(
                         offset: Offset(29 + micGap + mic / 2, 0),
                         child: _RaisedButton(
+                          key: micKey,
                           size: 44,
                           glyph: '🎤',
                           style: LkText.tabIcon,
@@ -231,6 +239,7 @@ class _Tab extends StatelessWidget {
 /// sinks 5px into its edge while pressed. The 🎤 is the same, smaller.
 class _RaisedButton extends StatelessWidget {
   const _RaisedButton({
+    super.key,
     required this.size,
     required this.glyph,
     required this.style,

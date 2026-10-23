@@ -41,6 +41,7 @@ String languageOfTag(String tag) => tag.toLowerCase().startsWith('en') ? 'en' : 
 /// The month on screen: its summary and movements.
 class HomeData {
   const HomeData({
+    this.userId = '',
     required this.month,
     required this.timezone,
     required this.currency,
@@ -49,6 +50,9 @@ class HomeData {
     required this.items,
     required this.nextCursor,
   });
+
+  /// The person these figures are of.
+  final String userId;
 
   /// `YYYY-MM`.
   final String month;
@@ -78,6 +82,7 @@ class HomeData {
     List<Transaction>? items,
     String? Function()? nextCursor,
   }) => HomeData(
+    userId: userId,
     month: month,
     timezone: timezone,
     currency: currency,
@@ -90,16 +95,21 @@ class HomeData {
 
 /// The save or payment Lukitas is talking about.
 class HomeEvent {
-  const HomeEvent(this.id, this.event);
+  const HomeEvent(this.id, this.event, this.month);
 
   /// Grows with each event, so the same kind of event twice still counts as new.
   final int id;
   final LukasEvent event;
+
+  /// The month (`YYYY-MM`) the movement belongs to: Lukitas talks about it only while that month is
+  /// on screen (the web's `fresh.event.month === summary.month`).
+  final String month;
 }
 
 class HomeState {
   const HomeState({
     this.data,
+    this.month,
     this.loading = true,
     this.failure,
     this.stale = false,
@@ -108,15 +118,29 @@ class HomeState {
     this.event,
     this.restored = const {},
     this.paidHere = const {},
+    this.quietKey = 0,
   });
 
   /// The last month loaded. Kept while a refresh fails: offline, it stays on screen (spec 6.3).
+  /// It is of [month] only when [shown] says so: while another month loads (or cannot), it is still
+  /// the month before.
   final HomeData? data;
 
-  /// The first load is under way (nothing to show yet).
+  /// The month the screen is on (`YYYY-MM`), which the person asked for or which loaded last; null
+  /// before anything did.
+  final String? month;
+
+  /// [data] when it is of [month]: what the screen may show as that month. Never another month's
+  /// figures, and never the cache of a month that is not the one asked for.
+  HomeData? get shown {
+    final data = this.data;
+    return data != null && (month == null || data.month == month) ? data : null;
+  }
+
+  /// A load is under way and nothing of it is on screen yet: the first one, or another month.
   final bool loading;
 
-  /// Why the first load failed, with nothing to show.
+  /// Why the load failed with nothing to show: the first one, or another month's.
   final HomeFailure? failure;
 
   /// The last refresh failed: [data] is from an earlier load.
@@ -135,8 +159,13 @@ class HomeState {
   /// Pending rows paid from home: their badge says "Pagado" although the row is already paid.
   final Set<String> paidHere;
 
+  /// Changes whenever a line about an event ends (Lukitas goes back to the month's line): the
+  /// bubble takes it as a new live region, so the month's line is not read out a second time.
+  final int quietKey;
+
   HomeState copyWith({
     HomeData? data,
+    String? month,
     bool? loading,
     HomeFailure? Function()? failure,
     bool? stale,
@@ -145,8 +174,10 @@ class HomeState {
     HomeEvent? Function()? event,
     Set<String>? restored,
     Set<String>? paidHere,
+    int? quietKey,
   }) => HomeState(
     data: data ?? this.data,
+    month: month ?? this.month,
     loading: loading ?? this.loading,
     failure: failure == null ? this.failure : failure(),
     stale: stale ?? this.stale,
@@ -155,6 +186,7 @@ class HomeState {
     event: event == null ? this.event : event(),
     restored: restored ?? this.restored,
     paidHere: paidHere ?? this.paidHere,
+    quietKey: quietKey ?? this.quietKey,
   );
 }
 
@@ -182,7 +214,17 @@ class HomeController extends Notifier<HomeState> {
   /// Counts the summary requests: only the latest one may touch the screen, the cache and the
   /// widget, so an old answer that lands late cannot undo a newer one.
   var _summarySeq = 0;
+
+  /// Counts the loads of a month (the first, a refresh, another month asked for): only the latest
+  /// one may put its month on screen.
+  var _monthSeq = 0;
+
+  /// Counts the widget's own summary requests (see [_refreshWidget]).
+  var _widgetSeq = 0;
   HomeProfile? _profile;
+
+  /// The month the person asked for with [showMonth]; null while they follow the current one.
+  String? _wanted;
 
   @override
   HomeState build() {
@@ -192,7 +234,10 @@ class HomeController extends Notifier<HomeState> {
     _alive = true;
     _loading = null;
     _summarySeq = 0;
+    _monthSeq = 0;
+    _widgetSeq = 0;
     _profile = null;
+    _wanted = null;
     _eventTimer?.cancel();
     ref.onDispose(() {
       _alive = false;
@@ -220,30 +265,79 @@ class HomeController extends Notifier<HomeState> {
     return error is HomeFailure ? error : const HomeFailure(0);
   }
 
-  /// Loads the month again: the profile, the summary, the categories and the first page. Offline
-  /// (or on any failure) what is on screen stays, marked stale.
+  /// The current month (`YYYY-MM`) in the profile's time zone, asked of the clock. Null before the
+  /// profile is known.
+  String? get _currentMonth {
+    final profile = _profile;
+    if (profile == null) return null;
+    return todayIn(profile.timezone, ref.read(clockProvider)().toUtc()).substring(0, 7);
+  }
+
+  /// Whether [month] is the current one: the only month the widget and the cache hold.
+  bool _isCurrent(String month) => month == _currentMonth;
+
+  /// The month a load is of: the one asked for (never past the current one), or the current one.
+  String _target(String current) {
+    final wanted = _wanted;
+    return wanted == null || wanted.compareTo(current) >= 0 ? current : wanted;
+  }
+
+  /// Moves to [month] (`YYYY-MM`): its summary and movements load and replace what is on screen.
+  /// A month after the current one is the current one. Only the latest month asked for may arrive,
+  /// however late an older answer lands. Offline it says so ([HomeState.failure]) and shows no
+  /// figures: the cache holds the current month only, and is never shown as another month. Moving
+  /// to an earlier month leaves the widget and the cache as they are (they read the current month);
+  /// moving to the current month follows the clock again.
+  Future<void> showMonth(String month) {
+    final current = _currentMonth;
+    // Following the current month again (or asking beyond it).
+    _wanted = current != null && month.compareTo(current) >= 0 ? null : month;
+    if (current == null) {
+      // The profile is not known yet (a link opened home on a month): the first load takes it.
+      _set(state.copyWith(month: month));
+      return refresh();
+    }
+    final target = _target(current);
+    if (state.month == target && state.shown != null) return refresh();
+    _set(state.copyWith(month: target, loading: true, failure: () => null));
+    // The widget already has the current month: moving around the calendar does not touch it.
+    return _load(tellWidget: false);
+  }
+
+  /// Follows the current month again (the route's `?month=` went away).
+  Future<void> showCurrentMonth() => showMonth(_currentMonth ?? '9999-12');
+
+  /// Loads the month on screen again: the profile, the summary, the categories and the first page.
+  /// Offline (or on any failure) what is on screen stays, marked stale. On an earlier month it
+  /// reloads that one, and tells the widget the current one.
   Future<void> refresh() => _loading ??= _load().whenComplete(() => _loading = null);
 
-  Future<void> _load() async {
+  /// [tellWidget]: an earlier month on screen also tells the widget the current one (a refresh, or
+  /// the first load); moving to a month by hand does not.
+  Future<void> _load({bool tellWidget = true}) async {
+    final seq = ++_monthSeq;
     if (state.data == null && !state.loading) {
       _set(const HomeState());
     }
+    String? month;
     try {
       final profile = _profile ??= await _repo.profile();
       if (!_alive) return;
-      final today = todayIn(profile.timezone, ref.read(clockProvider)().toUtc());
-      final month = today.substring(0, 7);
+      final current = _currentMonth!;
+      month = _target(current);
+      final target = month;
       final (summary, categories, page) = await (
-        _repo.summary(month),
+        _repo.summary(target),
         _repo.categories(),
-        _repo.transactions(month),
+        _repo.transactions(target),
       ).wait;
       // Home was left (signed out, say) while this was on its way: nobody is waiting for it.
-      if (!_alive) return;
+      if (!_alive || seq != _monthSeq) return;
       // This load is the latest word: an older summary still on its way is dropped.
       _summarySeq++;
       final data = HomeData(
-        month: month,
+        userId: profile.id,
+        month: target,
         timezone: profile.timezone,
         currency: profile.currency,
         summary: summary,
@@ -254,14 +348,21 @@ class HomeController extends Notifier<HomeState> {
       _set(
         HomeState(
           data: data,
+          month: target,
           loading: false,
           event: state.event,
           restored: state.restored,
           paidHere: state.paidHere,
+          quietKey: state.quietKey,
         ),
       );
-      unawaited(_writeSnapshot(summary, data.currency, data.timezone));
-      unawaited(_persist());
+      if (_isCurrent(target)) {
+        unawaited(_writeSnapshot(summary, data.currency, data.timezone));
+        unawaited(_persist());
+      } else {
+        // An earlier month: the widget reads the current one.
+        if (tellWidget) unawaited(_refreshWidget());
+      }
     } on ParallelWaitError<dynamic, dynamic> catch (error) {
       // What each of the three failed with (a record of dart:async AsyncError, null for the ones that
       // worked; not Riverpod's AsyncError, which shares the name).
@@ -276,29 +377,50 @@ class HomeController extends Notifier<HomeState> {
           (e) => e is HomeFailure && e.unauthorized,
           orElse: () => errors.firstOrNull ?? const HomeFailure(0),
         ),
+        seq,
+        month,
       );
     } on Object catch (error) {
-      await _loadFailed(error);
+      await _loadFailed(error, seq, month);
     }
   }
 
-  /// A load failed. What is on screen stays, stale; with nothing on screen (a cold start with no
-  /// network) the last good month saved on this phone shows instead, stale; and with neither, the
-  /// failure.
-  Future<void> _loadFailed(Object error) async {
-    if (!_alive) return;
+  /// A load of [month] (null: not known yet, the profile did not come) failed. What is on screen of
+  /// that month stays, stale. When another month is on screen, the current month's cache shows if
+  /// it holds that month; any other month has no cache, so it says why it is not there. With
+  /// nothing on screen (a cold start with no network) the last good month saved on this phone shows
+  /// instead, stale; and with neither, the failure.
+  Future<void> _loadFailed(Object error, int seq, String? month) async {
     final failure = _failure(error);
-    if (state.data != null) {
+    if (!_alive || seq != _monthSeq) return;
+    // The month on screen failed to refresh (the clock may have moved on to the next one: what was
+    // on screen stays, and says which month it is).
+    if (state.shown != null) {
       _set(state.copyWith(loading: false, stale: true, staleOffline: failure.offline));
       return;
     }
-    // A refused session shows nothing: signing out wipes the cache.
-    final cached = failure.unauthorized ? null : await _cache.read();
-    if (!_alive) return;
+    // A refused session shows nothing: signing out wipes the cache. And only the current month is
+    // cached: never another month's figures under this month's name.
+    final cacheable = !failure.unauthorized && (month == null || _isCurrent(month));
+    final cached = cacheable ? await _cache.read() : null;
+    if (!_alive || seq != _monthSeq) return;
     // Never another user's month (the cache is also bound to the session that wrote it).
     final known = _profile?.id;
-    if (cached == null || (known != null && known != cached.userId)) {
-      _set(HomeState(loading: false, failure: failure));
+    if (cached == null ||
+        (known != null && known != cached.userId) ||
+        (month != null && cached.month != month)) {
+      _set(
+        HomeState(
+          data: state.data,
+          month: month ?? state.month,
+          loading: false,
+          failure: failure,
+          event: state.event,
+          restored: state.restored,
+          paidHere: state.paidHere,
+          quietKey: state.quietKey,
+        ),
+      );
       return;
     }
     _set(
@@ -306,7 +428,10 @@ class HomeController extends Notifier<HomeState> {
         loading: false,
         stale: true,
         staleOffline: failure.offline,
+        month: cached.month,
+        quietKey: state.quietKey,
         data: HomeData(
+          userId: cached.userId,
           month: cached.month,
           timezone: cached.timezone,
           currency: cached.currency,
@@ -320,12 +445,12 @@ class HomeController extends Notifier<HomeState> {
   }
 
   /// Saves what is on screen (its first page of movements) for a start with no network. Best
-  /// effort, and never after home was left.
+  /// effort, never after home was left, and only for the current month: that is all the cache holds.
   Future<void> _persist() async {
     if (!_alive) return;
     final data = state.data;
     final profile = _profile;
-    if (data == null || profile == null) return;
+    if (data == null || profile == null || !_isCurrent(data.month)) return;
     await _cache.write(
       CachedHome(
         userId: profile.id,
@@ -354,6 +479,24 @@ class HomeController extends Notifier<HomeState> {
     }
   }
 
+  /// Tells the widget the current month's figures while an earlier month is on screen (a refresh,
+  /// a save, a payment): the widget and the notices read the current month only. Best effort, and
+  /// only the latest request writes.
+  Future<void> _refreshWidget() async {
+    final profile = _profile;
+    final current = _currentMonth;
+    if (!_alive || profile == null || current == null) return;
+    final request = ++_widgetSeq;
+    try {
+      final summary = await _repo.summary(current);
+      if (!_alive || request != _widgetSeq) return;
+      await _writeSnapshot(summary, profile.currency, profile.timezone);
+    } on Object catch (error) {
+      // A refused session still ends the session; anything else leaves the widget as it was.
+      _checkSession(error);
+    }
+  }
+
   /// Brings the next page ("Ver más movimientos") below the rows shown. Throws a [HomeFailure] and
   /// keeps the list as it is when it fails.
   Future<void> loadMore() async {
@@ -379,21 +522,26 @@ class HomeController extends Notifier<HomeState> {
     }
   }
 
-  /// The summary again, after a change (silently: the rows already show the change).
+  /// The summary again, after a change (silently: the rows already show the change). On an earlier
+  /// month the widget is told the current one meanwhile.
   Future<void> _refreshSummary() async {
     if (!_alive) return;
     final data = state.data;
     if (data == null) return;
+    if (!_isCurrent(data.month)) unawaited(_refreshWidget());
     final request = ++_summarySeq;
     try {
       final summary = await _repo.summary(data.month);
       // Dropped when it is not the latest request (see [_summarySeq]).
       if (!_alive || request != _summarySeq) return;
       final current = state.data;
-      if (current == null) return;
+      // The month on screen changed while this was on its way: its figures are another month's.
+      if (current == null || current.month != data.month) return;
       _set(state.copyWith(data: current.copyWith(summary: summary)));
-      unawaited(_writeSnapshot(summary, current.currency, current.timezone));
-      unawaited(_persist());
+      if (_isCurrent(current.month)) {
+        unawaited(_writeSnapshot(summary, current.currency, current.timezone));
+        unawaited(_persist());
+      }
     } on Object catch (error) {
       if (!_alive) return;
       // One mapping of an error to what it means, as in a load; and a refused session ends the
@@ -493,6 +641,7 @@ class HomeController extends Notifier<HomeState> {
         amount: tx.amount,
         name: tx.name,
       ),
+      month: tx.date.substring(0, 7),
     );
   }
 
@@ -531,6 +680,7 @@ class HomeController extends Notifier<HomeState> {
         amount: tx.amount,
         name: tx.name,
       ),
+      month: tx.date.substring(0, 7),
     );
   }
 
@@ -569,14 +719,19 @@ class HomeController extends Notifier<HomeState> {
     await _refreshSummary();
   }
 
-  /// Lukitas talks about [event] for [eventLineDuration], then goes back to the month's line.
-  /// Also for a save (the add sheet reports it).
-  void report(LukasEvent event) {
+  /// Lukitas talks about [event] for [eventLineDuration], then goes back to the month's line. Also
+  /// for a save (the add sheet reports it). [month] is the month the movement belongs to (the
+  /// month on screen when not given): Lukitas speaks of it only while that month is shown.
+  void report(LukasEvent event, {String? month}) {
     _eventTimer?.cancel();
     final id = ++_eventId;
-    _set(state.copyWith(event: () => HomeEvent(id, event)));
+    _set(
+      state.copyWith(
+        event: () => HomeEvent(id, event, month ?? state.data?.month ?? _currentMonth ?? ''),
+      ),
+    );
     _eventTimer = Timer(eventLineDuration, () {
-      if (_eventId == id) _set(state.copyWith(event: () => null));
+      if (_eventId == id) _set(state.copyWith(event: () => null, quietKey: state.quietKey + 1));
     });
   }
 }

@@ -202,12 +202,15 @@ class _TransactionRowState extends State<TransactionRow> {
                                 ExcludeSemantics(
                                   child: BlinkLine(
                                     style: statusStyle,
-                                    child: CssText(
-                                      TextSpan(
-                                        text: categoryName,
-                                        style: statusStyle.copyWith(
-                                          color: colors.inkMuted,
-                                          leadingDistribution: TextLeadingDistribution.even,
+                                    child: CssLines(
+                                      style: statusStyle,
+                                      child: _CategoryName(
+                                        TextSpan(
+                                          text: categoryName,
+                                          style: statusStyle.copyWith(
+                                            color: colors.inkMuted,
+                                            leadingDistribution: TextLeadingDistribution.even,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -229,6 +232,21 @@ class _TransactionRowState extends State<TransactionRow> {
       ),
     );
   }
+}
+
+/// The category's name in a row's status line: laid out word by word as Blink does (so it lands on
+/// the web's pixels) while it fits on a line; a name too long for the line wraps, as the `<span>`
+/// does on the web (a 40-character category name is on two lines, never an overflow).
+class _CategoryName extends StatelessWidget {
+  const _CategoryName(this.span);
+
+  final TextSpan span;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) =>
+        CssText.widthOf(context, span) <= constraints.maxWidth ? CssText(span) : Text.rich(span),
+  );
 }
 
 /// A pending transaction that cannot be paid from here: the badge's look without its button

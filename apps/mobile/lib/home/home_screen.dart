@@ -10,18 +10,27 @@ import '../capture/capture_sheet.dart';
 import '../feedback/feedback.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
+import '../theme/surfaces.dart';
+import '../theme/text_styles.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.g.dart';
+import '../ui/app_shell.dart';
+import '../ui/lk_theme.dart';
+import '../ui/lukas_bubble.dart';
+import '../ui/press_button.dart';
+import '../ui/segmented_control.dart';
 import '../ui/swipe_row.dart';
 import '../ui/transaction_row.dart';
 import 'category_look.dart';
 import 'day_groups.dart';
 import 'home_controller.dart';
 import 'home_format.dart';
+import 'home_header.dart';
 import 'home_repository.dart';
 import 'home_widgets.dart';
 import 'lukas_line.dart';
 import 'lukitas_face.dart';
+import 'nudges.dart';
 import 'toast.dart';
 
 /// Picks which of Lukitas' three phrasings a line uses (1 to 3). Replaced in tests.
@@ -33,33 +42,41 @@ final lukasVariantProvider = Provider<int Function()>((ref) {
 /// How long Lukitas celebrates a save or a payment (the web's `CELEBRATE_MS`).
 const _celebrateFor = Duration(milliseconds: 2500);
 
-/// Space under the list so the 🎤 and the ＋ never cover the last row.
-const _addButtonRoom = 144.0;
-
-/// The widest the content grows on a big screen.
+/// The widest the content grows on a big screen (the web's `max-w-[480px]`, padding included).
 const _maxContentWidth = 480.0;
 
-/// Home (spec section 6.1.2): the month, Lukitas' line, and "Te quedan" (or, without budgets,
-/// "Gastado este mes") in large type; then the movements list, by day, with the web's gestures:
-/// swipe left deletes (with an 8 s Deshacer), swipe right edits, or marks a pending row paid, under
-/// a sticky "Movimientos" tab. Lukitas names a save or a payment for 10 s, then goes back to the
-/// month's line. The last figures stay on screen while offline.
-class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key, this.onEdit, this.trailing});
+/// The two lists under the hero: Movimientos first.
+enum HomeView { transactions, budgets }
 
-  /// Shown at the end of the month's row: the gear for Settings, and a guest's "Guarda tu
-  /// progreso". Null (tests, goldens): nothing there.
-  final Widget? trailing;
+/// Home (spec section 6.1.2), as the web draws it (apps/web/app/features/home/Home.tsx): the
+/// header (the wordmark, the month with ‹ ›, the face button), Lukitas' line, "Te quedan" (or,
+/// without budgets, "Gastado este mes") in large type, a card or two for an account that skipped
+/// the setup, and under the Movimientos | Presupuestos tabs the movements by day, with the web's
+/// gestures: swipe left deletes (with an 8 s Deshacer), swipe right edits, or marks a pending row
+/// paid. Lukitas names a save or a payment for 10 s, then goes back to the month's line. The last
+/// figures stay on screen while offline. The bottom bar has Inicio, ＋ (the add sheet), the 🎤
+/// (quick capture, listening) and Análisis.
+class HomeScreen extends ConsumerStatefulWidget {
+  const HomeScreen({super.key, this.onEdit, this.menu, this.initialMonth});
+
+  /// What the face button's menu holds, as [HomeMenuLink]s: Ajustes, and a guest's "Guarda tu
+  /// progreso". Null (tests, goldens): no menu.
+  final Widget Function(BuildContext context, VoidCallback close)? menu;
 
   /// Opens a movement to edit (a tap on its row, or a swipe right on a paid one). Null: the edit
   /// sheet. Tests pass their own to see what was asked for.
   final void Function(Transaction transaction)? onEdit;
 
+  /// The month to open on (`YYYY-MM`, the route's `?month=`); null: the current one. A new value
+  /// moves home to that month.
+  final String? initialMonth;
+
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   /// Events up to this one happened before home opened: they are old news.
   late final int _since = ref.read(homeProvider).event?.id ?? 0;
 
@@ -70,18 +87,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   bool _celebrating = false;
   Timer? _celebrateTimer;
 
+  var _view = HomeView.transactions;
+
+  /// Where the tabs' thumb is, in tabs: 0 Movimientos, 1 Presupuestos.
+  late final AnimationController _thumb = AnimationController(
+    vsync: this,
+    duration: LukitasTokens.durationSheet,
+  );
+
   HomeController get _controller => ref.read(homeProvider.notifier);
+
+  static final _monthFormat = RegExp(r'^\d{4}-(0[1-9]|1[0-2])$');
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    final month = widget.initialMonth;
+    if (month != null && _monthFormat.hasMatch(month)) {
+      // Not while the tree builds: the controller changes state.
+      scheduleMicrotask(() {
+        if (mounted) unawaited(_controller.showMonth(month));
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(HomeScreen old) {
+    super.didUpdateWidget(old);
+    if (old.initialMonth == widget.initialMonth) return;
+    final month = widget.initialMonth;
+    if (month == null) {
+      unawaited(_controller.showCurrentMonth());
+    } else if (_monthFormat.hasMatch(month)) {
+      unawaited(_controller.showMonth(month));
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _celebrateTimer?.cancel();
+    _thumb.dispose();
     super.dispose();
   }
 
@@ -89,6 +136,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Back in the app: the figures (and the widget) catch up.
     if (state == AppLifecycleState.resumed) unawaited(_controller.refresh());
+  }
+
+  void _selectView(HomeView view) {
+    if (view == _view) return;
+    setState(() => _view = view);
+    final target = view.index.toDouble();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _thumb.value = target;
+    } else {
+      unawaited(_thumb.animateTo(target, curve: Curves.easeOut));
+    }
   }
 
   // -- messages ------------------------------------------------------------------------------
@@ -197,27 +255,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     });
   }
 
-  ({String message, LukitasMood mood, bool announce}) _lukitas(
+  ({String message, LukitasMood mood}) _lukitas(
     AppLocalizations l10n,
+    HomeState home,
     HomeData data,
-    HomeEvent? fresh,
     String today,
   ) {
     final locale = l10n.localeName;
+    final current = today.substring(0, 7);
     String money(int cents) => formatMoney(cents, data.currency, locale);
-    final worriedMood = data.summary.categories.any(
+    final worried = data.summary.categories.any(
       (c) => c.state != SummaryCategoriesInnerStateEnum.ok,
     );
-    // Figures of an earlier month (a cache opened after the month changed): Lukitas says so, and
-    // never talks about "this month" or a month that just closed as if it were live.
-    if (data.month != today.substring(0, 7)) {
+    // Figures of an earlier month that could not be brought up to date (a cache opened after the
+    // month changed): Lukitas says so, and never talks about "this month" or a month that just
+    // closed as if it were live.
+    if (home.stale && data.month != current) {
       return (
         message: l10n.lukasOtherMonth(monthInSentence(data.month, locale)),
-        mood: worriedMood ? LukitasMood.worried : LukitasMood.happy,
-        announce: false,
+        mood: worried ? LukitasMood.worried : LukitasMood.happy,
       );
     }
-    final event = fresh != null && fresh.event.categoryId.isNotEmpty ? fresh : null;
+    // The event is about its own month: Lukitas speaks of it only while that month is on screen.
+    final fresh = home.event;
+    final event = fresh != null && fresh.month == data.month && fresh.event.categoryId.isNotEmpty
+        ? fresh
+        : null;
     final line = lukasLine(
       summary: data.summary,
       today: today,
@@ -231,15 +294,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       _variantFor = situation;
       _variant = ref.read(lukasVariantProvider)();
     }
-    final worried = data.summary.categories.any(
-      (c) => c.state != SummaryCategoriesInnerStateEnum.ok,
-    );
+    // A month closed in green gets a celebration of its own (the web's `closedGreen`).
+    final closedGreen =
+        data.month.compareTo(current) < 0 &&
+        data.summary.budgetTotal > 0 &&
+        data.summary.remaining >= 0;
     return (
       message: lukasLineText(l10n, line, _variant, money),
-      mood: _celebrating
+      mood: _celebrating || closedGreen
           ? LukitasMood.celebrating
           : (worried ? LukitasMood.worried : LukitasMood.happy),
-      announce: event != null,
     );
   }
 
@@ -255,83 +319,49 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final l10n = AppLocalizations.of(context);
     final data = home.data;
 
-    final Widget body;
+    // Nothing to add to until the categories are known: no bar, and the screen alone.
     if (data == null) {
-      body = home.failure != null
-          ? _FailedView(
-              message: _failureMessage(l10n, home.failure!),
-              retryLabel: l10n.retry,
-              onRetry: () => unawaited(_controller.refresh()),
-            )
-          : _LoadingView(label: l10n.homeLoading);
-    } else {
-      body = _content(context, home, data, l10n, colors);
-    }
-
-    return Scaffold(
-      // Nothing to add to until the categories are known.
-      floatingActionButton: data == null
-          ? null
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 🎤: say (or type) a sentence, and save its movements at once.
-                FloatingActionButton.small(
-                  key: const Key('home.capture'),
-                  heroTag: 'home.capture',
-                  tooltip: l10n.captureFabLabel,
-                  backgroundColor: colors.surface,
-                  foregroundColor: colors.brand,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(LukitasTokens.radiusMd),
-                    side: BorderSide(color: colors.brand, width: 2),
-                  ),
-                  onPressed: () => unawaited(openCapture(context)),
-                  child: const Icon(Icons.mic),
-                ),
-                const SizedBox(height: LukitasTokens.space2),
-                FloatingActionButton(
-                  key: const Key('home.add'),
-                  heroTag: 'home.add',
-                  tooltip: l10n.addFabLabel,
-                  backgroundColor: colors.brand,
-                  foregroundColor: colors.onBrand,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
-                  ),
-                  onPressed: () => unawaited(openAddSheet(context)),
-                  child: const Icon(Icons.add, size: 30),
-                ),
-              ],
-            ),
-      body: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topCenter,
-            radius: 1.3,
-            colors: [colors.bgGlow, colors.bg],
-            stops: const [0, 0.55],
+      return DecoratedBox(
+        decoration: BoxDecoration(gradient: LkSurface.background(colors)),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: home.failure != null
+                ? _FailedView(
+                    message: _failureMessage(l10n, home.failure!),
+                    retryLabel: l10n.retry,
+                    onRetry: () => unawaited(_controller.refresh()),
+                  )
+                : _LoadingView(label: l10n.homeLoading),
           ),
         ),
-        child: SafeArea(child: body),
-      ),
+      );
+    }
+
+    return AppShell(
+      current: 'home',
+      addKey: const Key('home.add'),
+      micKey: const Key('home.capture'),
+      onAdd: () => unawaited(openAddSheet(context)),
+      // The same path the widget's 🎤 takes: quick capture, listening.
+      onMic: () => unawaited(openCapture(context, listen: true)),
+      // Análisis comes with its own route (a later task): until then the tab leads nowhere.
+      onNavigate: (_) {},
+      child: SafeArea(bottom: false, child: _content(context, home, data, l10n)),
     );
   }
 
-  Widget _content(
-    BuildContext context,
-    HomeState home,
-    HomeData data,
-    AppLocalizations l10n,
-    LukitasColors colors,
-  ) {
+  Widget _content(BuildContext context, HomeState home, HomeData data, AppLocalizations l10n) {
     final locale = l10n.localeName;
     // Asked of the clock on every build: after a night in the background, what was this month is
     // last month, whether or not the refresh worked.
     final today = data.todayAt(ref.read(clockProvider)());
-    final lukitas = _lukitas(l10n, data, home.event, today);
-    final monthName = formatMonthName(data.month, locale);
-    final entries = _entries(home, data, l10n, today);
+    final current = today.substring(0, 7);
+    final shown = home.shown;
+    final lukitas = shown == null ? null : _lukitas(l10n, home, shown, today);
+    final entries = shown == null ? const <_Entry>[] : _entries(home, shown, l10n, today);
+    final room = ShellRoom.of(context);
+    final colors = context.lkColors;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -346,98 +376,129 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverPadding(
-                  padding: EdgeInsets.fromLTRB(inset, LukitasTokens.space3, inset, 0),
+                  // `px-4 pt-3`; the tabs' strip reaches 8px up into the gap above it, so the
+                  // gap is 12 - 8.
+                  padding: EdgeInsets.fromLTRB(inset, LukitasTokens.space3, inset, 4),
                   sliver: SliverToBoxAdapter(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: LukitasTokens.space3,
                       children: [
-                        if (widget.trailing == null)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: MonthPill(name: monthName),
-                          )
-                        else
-                          Row(
-                            children: [
-                              MonthPill(name: monthName),
-                              // Whatever room the month leaves; a long label shortens, never overflows.
-                              Expanded(
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: widget.trailing!,
-                                ),
-                              ),
-                            ],
-                          ),
-                        if (home.stale)
-                          Padding(
-                            padding: const EdgeInsets.only(top: LukitasTokens.space2),
-                            child: Semantics(
+                        HomeHeader(
+                          month: home.month ?? data.month,
+                          onMonth: (month) => unawaited(_controller.showMonth(month)),
+                          max: current,
+                          menu: widget.menu,
+                        ),
+                        if (shown != null) ...[
+                          if (home.stale)
+                            Semantics(
                               liveRegion: true,
                               child: Text(
-                                _staleNote(l10n, home, data, today),
-                                style: TextStyle(
-                                  fontSize: 12,
+                                _staleNote(l10n, home, shown, today),
+                                style: LkText.caption.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: colors.near,
                                 ),
                               ),
                             ),
+                          LukasBubble(
+                            message: lukitas!.message,
+                            mood: lukitas.mood,
+                            quietKey: home.quietKey,
                           ),
-                        const SizedBox(height: LukitasTokens.space3),
-                        LukitasBubble(
-                          message: lukitas.message,
-                          mood: lukitas.mood,
-                          announce: lukitas.announce,
-                        ),
-                        const SizedBox(height: LukitasTokens.space3),
-                        MonthHero(
-                          summary: data.summary,
-                          currency: data.currency,
-                          locale: locale,
-                          pastMonth: data.month == today.substring(0, 7)
-                              ? null
-                              : monthInSentence(data.month, locale),
-                        ),
-                        const SizedBox(height: LukitasTokens.space3),
+                          HomeHero(
+                            summary: shown.summary,
+                            currency: shown.currency,
+                            pastMonth: shown.month.compareTo(current) < 0
+                                ? monthInSentence(shown.month, locale)
+                                : null,
+                          ),
+                          ?_nudges(shown, l10n),
+                        ] else
+                          const HomeHeroPlaceholder(),
                       ],
                     ),
                   ),
                 ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: MovementsTabHeader(
-                    label: l10n.homeMovements,
-                    background: colors.bg,
-                    inset: inset,
-                  ),
-                ),
-                SliverPadding(
-                  padding: EdgeInsets.fromLTRB(
-                    inset,
-                    LukitasTokens.space1,
-                    inset,
-                    // Room under the last row for the ＋.
-                    _addButtonRoom,
-                  ),
-                  sliver: SliverList.builder(
-                    itemCount: entries.length,
-                    findChildIndexCallback: (key) {
-                      if (key is! ValueKey<String>) return null;
-                      final index = entries.indexWhere((e) => e.key == key.value);
-                      return index < 0 ? null : index;
-                    },
-                    itemBuilder: (context, index) => KeyedSubtree(
-                      key: ValueKey(entries[index].key),
-                      child: entries[index].build(),
+                PinnedHeaderSliver(
+                  child: HomeTabsStrip(
+                    bleed: inset,
+                    child: SegmentedControl<HomeView>(
+                      label: l10n.homeViewLabel,
+                      value: _view,
+                      position: _thumb,
+                      options: [
+                        SegmentOption(HomeView.transactions, l10n.homeMovements),
+                        SegmentOption(HomeView.budgets, l10n.homeBudgetsTab),
+                      ],
+                      onChanged: _selectView,
                     ),
                   ),
                 ),
+                if (shown == null)
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(inset, LukitasTokens.space2, inset, room),
+                    sliver: SliverToBoxAdapter(
+                      child: _MonthUnavailable(
+                        failure: home.failure,
+                        message: home.failure == null ? null : _failureMessage(l10n, home.failure!),
+                        retryLabel: l10n.retry,
+                        onRetry: () => unawaited(_controller.refresh()),
+                      ),
+                    ),
+                  )
+                else if (_view == HomeView.budgets)
+                  // Presupuestos has the web's own look while it loads (a later task fills it).
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(inset, LukitasTokens.space2, inset, room),
+                    sliver: const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                  )
+                else
+                  SliverPadding(
+                    padding: EdgeInsets.fromLTRB(inset, LukitasTokens.space2, inset, room),
+                    sliver: SliverList.builder(
+                      itemCount: entries.length,
+                      findChildIndexCallback: (key) {
+                        if (key is! ValueKey<String>) return null;
+                        final index = entries.indexWhere((e) => e.key == key.value);
+                        return index < 0 ? null : index;
+                      },
+                      itemBuilder: (context, index) => KeyedSubtree(
+                        key: ValueKey(entries[index].key),
+                        child: entries[index].build(),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  /// The cards for an account without budgets (the web's `Nudges`): not for an account with a
+  /// budget on any category, nor one put away.
+  Widget? _nudges(HomeData data, AppLocalizations l10n) {
+    final categories = data.categories.values.where((c) => !c.archived).toList();
+    final noBudgets =
+        data.summary.budgetTotal == 0 &&
+        categories.any((c) => c.kind == CategoryKindEnum.expense) &&
+        categories.every((c) => c.currentBudget == null);
+    final key = nudgeKey(data.userId, Nudge.budgets);
+    if (!noBudgets || ref.watch(nudgeDismissedProvider(key)) != false) return null;
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      label: l10n.homeNudgesLabel,
+      child: NudgeCard(
+        title: l10n.homeNudgeBudgetsTitle,
+        lead: l10n.homeNudgeBudgetsLead,
+        actionLabel: l10n.homeNudgeBudgetsAction,
+        onAction: () => _selectView(HomeView.budgets),
+        onDismiss: () => unawaited(ref.read(nudgeDismissedProvider(key).notifier).dismiss()),
+      ),
     );
   }
 
@@ -454,17 +515,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   /// movimientos" (or the empty state).
   List<_Entry> _entries(HomeState home, HomeData data, AppLocalizations l10n, String today) {
     final locale = l10n.localeName;
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    final colors = context.lkColors;
     if (data.items.isEmpty) {
       return [
         _Entry(
           'empty',
-          () => Padding(
-            padding: const EdgeInsets.symmetric(vertical: LukitasTokens.space2),
-            child: Text(
-              l10n.homeEmptyTransactions(formatMonthName(data.month, locale)),
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: colors.inkMuted),
-            ),
+          () => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: LukitasTokens.space3,
+            children: [
+              Text(
+                l10n.homeEmptyTransactions(formatMonthName(data.month, locale)),
+                style: LkText.bodySm.copyWith(color: colors.inkMuted),
+              ),
+              PressButton.text(
+                l10n.addFabLabel,
+                tone: PressTone.secondary,
+                onPressed: () => unawaited(openAddSheet(context)),
+              ),
+            ],
           ),
         ),
       ];
@@ -501,21 +570,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         _Entry(
           'more',
           () => Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: LukitasTokens.space2),
-              child: OutlinedButton(
-                onPressed: home.loadingMore ? null : _loadMore,
-                child: home.loadingMore
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const QuietSpinner(),
-                          const SizedBox(width: LukitasTokens.space2),
-                          Text(l10n.homeMoreTransactions),
-                        ],
-                      )
-                    : Text(l10n.homeMoreTransactions),
-              ),
+            child: PressButton.text(
+              l10n.homeMoreTransactions,
+              tone: PressTone.secondary,
+              onPressed: home.loadingMore ? null : _loadMore,
             ),
           ),
         ),
@@ -591,6 +649,40 @@ class _Entry {
   final Widget Function() build;
 }
 
+/// What the lists show while another month loads (the web's `min-h-[120px]`, busy), or why it is not
+/// there: never another month's figures.
+class _MonthUnavailable extends StatelessWidget {
+  const _MonthUnavailable({
+    required this.failure,
+    required this.message,
+    required this.retryLabel,
+    required this.onRetry,
+  });
+
+  final HomeFailure? failure;
+  final String? message;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lkColors;
+    final message = this.message;
+    if (message == null) return const SizedBox(height: 120);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: LukitasTokens.space3,
+      children: [
+        Semantics(
+          liveRegion: true,
+          child: Text(message, style: LkText.bodySm.copyWith(color: colors.inkMuted)),
+        ),
+        PressButton.text(retryLabel, tone: PressTone.secondary, onPressed: onRetry),
+      ],
+    );
+  }
+}
+
 class _LoadingView extends StatelessWidget {
   const _LoadingView({required this.label});
 
@@ -619,6 +711,8 @@ class _LoadingView extends StatelessWidget {
   }
 }
 
+/// What the screen shows when its first load fails (the web's `ScreenError`): Lukitas worried,
+/// what went wrong, and a retry.
 class _FailedView extends StatelessWidget {
   const _FailedView({required this.message, required this.retryLabel, required this.onRetry});
 
@@ -628,23 +722,27 @@ class _FailedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    final colors = context.lkColors;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(LukitasTokens.space5),
+        padding: const EdgeInsets.all(LukitasTokens.space4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          spacing: LukitasTokens.space4,
           children: [
-            Semantics(
-              liveRegion: true,
-              child: Text(
-                message,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
+            const LukitasFace(mood: LukitasMood.worried, size: 96),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 360),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: LkText.body.copyWith(fontSize: 16, color: colors.ink),
+                ),
               ),
             ),
-            const SizedBox(height: LukitasTokens.space4),
-            FilledButton(onPressed: onRetry, child: Text(retryLabel)),
+            PressButton.text(retryLabel, onPressed: onRetry),
           ],
         ),
       ),

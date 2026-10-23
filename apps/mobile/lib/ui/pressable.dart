@@ -258,7 +258,8 @@ class RingBox extends StatelessWidget {
             right: -out,
             bottom: -out,
             child: IgnorePointer(
-              child: DecoratedBox(
+              // Chrome draws an outline on whole device pixels, wherever its box sits.
+              child: SnappedDecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.only(
                     topLeft: grow(radius.topLeft),
