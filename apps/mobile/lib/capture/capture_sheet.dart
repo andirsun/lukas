@@ -9,6 +9,7 @@ import '../add/add_sheet.dart' show canRetrySave;
 import '../add/idempotency_key.dart';
 import '../api/gen/lukitas_api.dart';
 import '../api/session.dart';
+import '../feedback/feedback.dart';
 import '../home/home_controller.dart';
 import '../home/home_repository.dart';
 import '../home/home_widgets.dart' show QuietSpinner;
@@ -24,11 +25,14 @@ import 'parser/parse.dart' as p;
 import 'preview/capture_cards.dart';
 import 'preview/capture_preview.dart';
 
-/// Told about every batch saved, with its rows, once the sheet closes: the hook for Task 13's
-/// `feedback(FeedbackEvent.saved)` (Lukitas celebrating, the sound and the haptic). Until then it
-/// does nothing; the celebration line and Deshacer are the toast's.
+/// Told about every batch saved, with its rows, as the sheet closes. By default the batch feels
+/// like any save (the saved sound and haptic) and Lukitas celebrates on home; the celebration line
+/// and Deshacer are the toast's. Tests replace it to see what was saved.
 final batchSavedFeedbackProvider = Provider<void Function(List<Transaction> saved)>(
-  (ref) => (_) {},
+  (ref) => (_) {
+    ref.read(feedbackProvider)(FeedbackEvent.saved);
+    ref.read(celebrationProvider.notifier).celebrate();
+  },
 );
 
 /// Opens quick capture (spec section 6.1.4): 🎤 listens with "¿En qué gastaste?" (or, with
@@ -853,6 +857,7 @@ void _celebrate({
         return;
       }
       unawaited(container.read(homeProvider.notifier).forget(ids));
+      container.read(feedbackProvider)(FeedbackEvent.undo);
       showToast(messenger, colors, l10n.captureUndone(ids.length));
     }()),
   );

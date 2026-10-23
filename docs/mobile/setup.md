@@ -142,6 +142,11 @@ flutter test integration_test/voice_engine_test.dart -d emulator-5554 \
   --dart-define=VOICE_MODELS_URL=http://10.0.2.2:8765
 ```
 
+`integration_test/feedback_test.dart` needs no dev stack: it checks that the sound files are found in
+the APK and load into the `SoundPool`, and that the motor channel answers. How a haptic *feels* is
+for a real phone (an emulator has no motor): tap through the add sheet, a swipe and a quick capture
+there.
+
 The first Gradle build also installs `platforms;android-35` and `cmake;3.22.1` into the SDK: the
 `jni` plugin (pulled in through `flutter_secure_storage`'s dependencies) builds against them.
 

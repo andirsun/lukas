@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../api/gen/lukitas_api.dart';
 import '../api/session.dart';
+import '../feedback/feedback.dart';
 import '../home/home_controller.dart';
 import '../home/home_format.dart';
 import '../home/home_repository.dart';
@@ -219,6 +220,7 @@ class _AddSheetState extends ConsumerState<AddSheet> {
           : await repo.update(editing.id, patch!);
       final home = container.read(homeProvider.notifier);
       if (editing == null) {
+        container.read(feedbackProvider)(FeedbackEvent.saved);
         unawaited(home.saved(saved));
       } else {
         unawaited(home.updated(saved));
@@ -606,6 +608,7 @@ Future<void> _undoCreated(
     );
     return;
   }
+  container.read(feedbackProvider)(FeedbackEvent.undo);
   showToast(messenger, colors, l10n.addUndone(created.name));
 }
 

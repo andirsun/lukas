@@ -61,3 +61,12 @@ flutter:
     - assets/lukas/wave.webp
     - assets/lukas/celebrate.webp
     - assets/lukas/worried.webp
+    # The web's feedback sounds (apps/web/app/feedback/sounds), original work; see assets/sounds/README.md.
+    # SoundChannel.kt plays them with Android's SoundPool.
+    - assets/sounds/expense-saved.mp3
+    - assets/sounds/income-saved.mp3
+    - assets/sounds/near-limit.mp3
+    - assets/sounds/over-budget.mp3
+    - assets/sounds/paid.mp3
+    - assets/sounds/tap.mp3
+    - assets/sounds/undo.mp3

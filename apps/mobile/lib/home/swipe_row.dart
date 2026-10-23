@@ -4,8 +4,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/semantics.dart';
-import 'package:flutter/services.dart';
 
+import '../feedback/feedback.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.g.dart';
 import 'swipe_rules.dart';
@@ -485,7 +485,7 @@ class _SwipeRowState extends State<SwipeRow> with TickerProviderStateMixin {
     if (next != _armed) {
       _armed = next;
       // A tick at the threshold, each way.
-      unawaited(HapticFeedback.selectionClick().catchError((Object _) {}));
+      context.feedback(FeedbackEvent.thresholdCrossed);
       setState(() {});
     }
   }

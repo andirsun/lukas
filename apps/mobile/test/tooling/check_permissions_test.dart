@@ -19,20 +19,20 @@ uses-permission: name='com.andersonlaverde.lukitas.DYNAMIC_RECEIVER_NOT_EXPORTED
 /// The microphone, for quick capture's on-phone speech engine (Task 12).
 const _mic = "uses-permission: name='android.permission.RECORD_AUDIO'\n";
 
+/// The motor, for the haptics (Task 13). A normal permission: nothing is asked of the person.
+const _vibrate = "uses-permission: name='android.permission.VIBRATE'\n";
+
 void main() {
-  test(
-    'release permissions: INTERNET, RECORD_AUDIO and the AndroidX receiver permission pass',
-    () async {
-      final result = await _check(
-        'package: com.andersonlaverde.lukitas\n'
-        "uses-permission: name='android.permission.INTERNET'\n$_mic$_receiver",
-      );
-      expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
-    },
-  );
+  test('release permissions: INTERNET, RECORD_AUDIO, VIBRATE and the AndroidX receiver permission pass', () async {
+    final result = await _check(
+      'package: com.andersonlaverde.lukitas\n'
+      "uses-permission: name='android.permission.INTERNET'\n$_mic$_vibrate$_receiver",
+    );
+    expect(result.exitCode, 0, reason: '${result.stdout}${result.stderr}');
+  });
 
   test('release permissions: no INTERNET fails (the app could not reach its server)', () async {
-    final result = await _check('package: com.andersonlaverde.lukitas\n$_mic$_receiver');
+    final result = await _check('package: com.andersonlaverde.lukitas\n$_mic$_vibrate$_receiver');
     expect(result.exitCode, 1);
     expect(result.stdout, contains('android.permission.INTERNET'));
   });
@@ -40,17 +40,26 @@ void main() {
   test('release permissions: no RECORD_AUDIO fails (quick capture could never listen)', () async {
     final result = await _check(
       'package: com.andersonlaverde.lukitas\n'
-      "uses-permission: name='android.permission.INTERNET'\n$_receiver",
+      "uses-permission: name='android.permission.INTERNET'\n$_vibrate$_receiver",
     );
     expect(result.exitCode, 1);
     expect(result.stdout, contains('android.permission.RECORD_AUDIO'));
+  });
+
+  test('release permissions: no VIBRATE fails (the haptics would be silent)', () async {
+    final result = await _check(
+      'package: com.andersonlaverde.lukitas\n'
+      "uses-permission: name='android.permission.INTERNET'\n$_mic$_receiver",
+    );
+    expect(result.exitCode, 1);
+    expect(result.stdout, contains('android.permission.VIBRATE'));
   });
 
   test('release permissions: an unexpected permission fails with its name', () async {
     final result = await _check(
       'package: com.andersonlaverde.lukitas\n'
       "uses-permission: name='android.permission.INTERNET'\n"
-      "uses-permission: name='com.google.android.gms.permission.AD_ID'\n$_mic$_receiver",
+      "uses-permission: name='com.google.android.gms.permission.AD_ID'\n$_mic$_vibrate$_receiver",
     );
     expect(result.exitCode, 1);
     expect(result.stdout, contains('com.google.android.gms.permission.AD_ID'));

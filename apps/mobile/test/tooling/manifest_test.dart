@@ -21,4 +21,20 @@ void main() {
     // Android's SpeechRecognizer sends audio to whichever service the phone has: Google's, mostly.
     expect(kotlin, isNot(contains('SpeechRecognizer')));
   });
+
+  test('the motor is asked for (the haptics), and sounds play without Play Services', () {
+    expect(manifest, contains('android.permission.VIBRATE'));
+    final kotlin = Directory('android/app/src/main/kotlin')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.kt'))
+        .map((f) => f.readAsStringSync())
+        .join('\n');
+    // Composition primitives on Android 11 and up, a waveform below (spec section 6.2).
+    expect(kotlin, contains('VibrationEffect.startComposition'));
+    expect(kotlin, contains('areAllPrimitivesSupported'));
+    expect(kotlin, contains('createWaveform'));
+    // The platform's own SoundPool: no audio plugin, nothing from Google.
+    expect(kotlin, contains('SoundPool'));
+  });
 }

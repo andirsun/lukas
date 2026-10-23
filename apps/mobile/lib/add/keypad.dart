@@ -1,8 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
+import '../feedback/feedback.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.g.dart';
@@ -130,7 +128,7 @@ class _KeyState extends State<_Key> {
         onTapCancel: () => _press(false),
         onTapUp: (_) => _press(false),
         onTap: () {
-          unawaited(HapticFeedback.selectionClick().catchError((Object _) {}));
+          context.feedback(FeedbackEvent.keyPressed);
           widget.onTap();
         },
         child: SizedBox(

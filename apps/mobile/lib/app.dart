@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'feedback/feedback.dart';
 import 'l10n/app_localizations.dart';
 import 'router.dart';
 import 'theme/theme.dart';
@@ -11,6 +12,8 @@ class LukitasApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Loads the sounds and reads the sound setting at the start, so the first save is not late.
+    ref.watch(feedbackProvider);
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appName,
       theme: dayTheme,

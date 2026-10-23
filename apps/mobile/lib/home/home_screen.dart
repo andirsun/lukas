@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../add/add_sheet.dart';
 import '../api/gen/lukitas_api.dart';
 import '../capture/capture_sheet.dart';
+import '../feedback/feedback.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../theme/theme.dart';
@@ -110,6 +111,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    // At the gesture, not at the server's answer: the row is already gone (the web does the same).
+    ref.read(feedbackProvider)(FeedbackEvent.deleted);
     try {
       await _controller.remove(tx);
     } on HomeFailure catch (failure) {
@@ -137,6 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       _toast(messenger, colors, _failureMessage(l10n, failure), error: true);
       return;
     }
+    if (mounted) ref.read(feedbackProvider)(FeedbackEvent.undo);
     _toast(messenger, colors, l10n.transactionRestored(tx.name));
   }
 
@@ -152,6 +156,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       _toast(messenger, colors, _failureMessage(l10n, failure), error: true);
       rethrow;
     }
+    if (mounted) ref.read(feedbackProvider)(FeedbackEvent.paid);
     if (data != null) {
       _toast(
         messenger,
@@ -175,6 +180,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         state == SummaryCategoriesInnerStateEnum.over) {
       return;
     }
+    _celebrate();
+  }
+
+  /// Lukitas celebrates for a moment, then goes back to his mood.
+  void _celebrate() {
     _celebrateTimer?.cancel();
     setState(() => _celebrating = true);
     _celebrateTimer = Timer(_celebrateFor, () {
@@ -233,6 +243,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     ref.listen(homeProvider.select((s) => s.event), (_, next) => _onEvent(next));
+    // A batch from quick capture has no event of its own to talk about: he just celebrates.
+    ref.listen(celebrationProvider, (_, _) => _celebrate());
     final home = ref.watch(homeProvider);
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     final l10n = AppLocalizations.of(context);
