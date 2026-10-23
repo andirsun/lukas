@@ -47,8 +47,18 @@ Future<void> _pumpUntilGone(
   throw TestFailure('Timed out waiting for $finder to go');
 }
 
+Future<void> _reveal(WidgetTester tester, Finder finder) async {
+  // On a short phone a row or button can sit under the bottom bar: scroll it well into view first.
+  final element = tester.element(finder.first);
+  if (Scrollable.maybeOf(element) != null) {
+    await Scrollable.ensureVisible(element, alignment: 0.3);
+    await tester.pumpAndSettle();
+  }
+}
+
 Future<void> _tap(WidgetTester tester, String key) async {
   await _pumpUntil(tester, find.byKey(Key(key)));
+  await _reveal(tester, find.byKey(Key(key)));
   await tester.tap(find.byKey(Key(key)));
   await tester.pump();
 }
@@ -116,6 +126,7 @@ void main() {
 
     // A tap on the row opens it to edit: drop the last digit, Guardar cambios.
     await tester.pump(const Duration(seconds: 9));
+    await _reveal(tester, find.text(name));
     await tester.tap(find.text(name).first);
     await _pumpUntil(tester, find.byKey(const Key('add.sheet')));
     await _tap(tester, 'keypad.backspace');
