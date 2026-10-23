@@ -19,7 +19,8 @@ import 'package:lukitas/main.dart' as app;
 const _server = String.fromEnvironment('LUKITAS_SERVER', defaultValue: 'http://10.0.2.2:3000');
 const _mailpit = String.fromEnvironment('MAILPIT_URL', defaultValue: 'http://10.0.2.2:8025');
 
-/// The host App Links are declared for in the manifest.
+/// The host App Links are declared for in the manifest: a link there is dropped while the app talks
+/// to another server (the dev stack), since only the configured server's links are taken.
 const _appLinkHost = 'app-lukas.andersonlaverde.com';
 
 final _http = Dio(BaseOptions(validateStatus: (_) => true));
@@ -138,15 +139,34 @@ void main() {
     await _sendCodeTo(tester, email);
     await _pumpUntil(tester, find.byKey(const Key('entry.code')));
 
-    // The dev stack writes links to its web origin; the app's App Links are for the install's
-    // host, so the same query is opened there, as Android delivers it: an ACTION_VIEW intent.
+    // The dev stack writes links to its web origin; the app takes only links for the server it
+    // talks to, so the same query is opened on the dev server's host (debug builds declare it,
+    // src/debug/AndroidManifest.xml), as Android delivers it: an ACTION_VIEW intent.
     final mail = await _mailTo(email);
     final link = Uri.parse(
       RegExp(r'https?://\S+/auth/verify\?\S+').firstMatch(mail.text)!.group(0)!,
     );
-    final appLink = Uri(
+    // First on a host that is not the server the app talks to (the install's own App Link host,
+    // while the app talks to the dev stack): another app could send that. It only opens the app,
+    // and the code is still unused.
+    final foreign = Uri(
       scheme: 'https',
       host: _appLinkHost,
+      path: '/auth/verify',
+      query: link.query,
+    );
+    await const MethodChannel('lukitas/test').invokeMethod<void>('openLink', foreign.toString());
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(HomeScreen), findsNothing);
+    expect(await SessionStore().read(), isNull);
+
+    final server = Uri.parse(_server);
+    final appLink = Uri(
+      scheme: server.scheme,
+      host: server.host,
+      port: server.port,
       path: '/auth/verify',
       query: link.query,
     );

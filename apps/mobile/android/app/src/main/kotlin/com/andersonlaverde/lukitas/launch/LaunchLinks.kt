@@ -3,6 +3,7 @@ package com.andersonlaverde.lukitas.launch
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import com.andersonlaverde.lukitas.widget.ServerSetting
 
 /**
  * The app's own links (spec sections 7.1 and 7.2): `lukitas://add` opens the add sheet with the
@@ -49,5 +50,33 @@ object LaunchLinks {
         val path = data.path.orEmpty()
         if (path.isNotEmpty() && path != "/") return null
         return data.toString()
+    }
+
+    /**
+     * Whether [intent] is a web link (the sign-in email's magic link) for a host other than
+     * [serverHost], the configured server's. `MainActivity` is exported, and Flutter routes an
+     * opened link by its path alone, so without this any app could send `https://<any
+     * host>/auth/verify?email=…&code=…` and sign the person into the sender's account. Such a link
+     * is dropped and only opens the app. A null [serverHost] (the setting can't be read) matches
+     * nothing.
+     */
+    fun isForeignWebLink(intent: Intent?, serverHost: String?): Boolean {
+        if (!isWebLink(intent)) return false
+        val host = intent?.data?.host
+        return host.isNullOrEmpty() || serverHost == null || !host.equals(serverHost, ignoreCase = true)
+    }
+
+    /** Whether [intent] opens a link that is not one of the app's own `lukitas://` ones. */
+    fun isWebLink(intent: Intent?): Boolean {
+        if (intent == null || intent.action != Intent.ACTION_VIEW) return false
+        val data = intent.data ?: return false
+        return data.scheme != SCHEME
+    }
+
+    /** The host of the server the app talks to: the one chosen in Settings, else [defaultServer]. */
+    fun serverHost(setting: ServerSetting, defaultServer: String): String? = when (setting) {
+        ServerSetting.Default -> Uri.parse(defaultServer).host
+        is ServerSetting.Chosen -> Uri.parse(setting.url).host
+        ServerSetting.Unreadable -> null
     }
 }

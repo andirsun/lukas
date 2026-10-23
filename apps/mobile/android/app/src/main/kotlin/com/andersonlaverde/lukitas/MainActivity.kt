@@ -23,6 +23,7 @@ import com.andersonlaverde.lukitas.sounds.SoundChannel
 import com.andersonlaverde.lukitas.voice.VoiceChannel
 import com.andersonlaverde.lukitas.widget.RefreshScheduler
 import com.andersonlaverde.lukitas.widget.RefreshWorker
+import com.andersonlaverde.lukitas.widget.SecureStorageSession
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -55,15 +56,25 @@ class MainActivity : FlutterActivity() {
     /**
      * Keeps [intent]'s `lukitas://` link for Dart (when [act]) and strips it from the intent. A
      * `lukitas://` link that did not come through the app's own entry (another app starting this
-     * exported activity with one) is stripped too, and only opens the app.
+     * exported activity with one) is stripped too, and only opens the app. So is a web link for a
+     * host other than the configured server's ([LaunchLinks.isForeignWebLink]).
      */
     private fun takeLink(intent: Intent?, act: Boolean): Boolean {
         val link = LaunchLinks.linkOf(intent)
         if (intent?.data?.scheme == LaunchLinks.SCHEME) intent.data = null
+        // Read only for a web link (a magic link, rarely): the setting's decrypt stays off every
+        // other start.
+        if (LaunchLinks.isWebLink(intent) && LaunchLinks.isForeignWebLink(intent, configuredServerHost())) {
+            intent?.data = null
+        }
         if (link == null || !act) return false
         pendingLink = link
         return true
     }
+
+    /** The host of the server the app talks to (Settings, else the build's default); null when unreadable. */
+    private fun configuredServerHost(): String? =
+        LaunchLinks.serverHost(SecureStorageSession(this).server(), getString(R.string.default_server))
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
