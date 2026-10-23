@@ -601,6 +601,34 @@ void main() {
       expect(find.text('Zapatos'), findsOneWidget);
     });
 
+    testWidgets(
+      'Deshacer after moving to another month brings the row back to its own month only',
+      (tester) async {
+        final repo = threeMonths();
+        await pumpHome(tester, repo);
+        await tester.tap(find.text('‹'));
+        await tester.pumpAndSettle();
+        expect(find.text('Septiembre'), findsOneWidget);
+        await swipe(tester, find.text('Zapatos'), -250);
+        expect(find.text('Eliminado: Zapatos'), findsOneWidget);
+
+        // The toast outlives the month: go on to August, and press Deshacer there.
+        await tester.tap(find.text('‹'));
+        await tester.pumpAndSettle();
+        expect(find.text('Agosto'), findsOneWidget);
+        await tester.tap(find.text('Deshacer'));
+        await tester.pumpAndSettle();
+        expect(repo.calls, contains('restore sept'));
+        expect(find.text('Zapatos'), findsNothing, reason: 'not a September row in August');
+        expect(find.textContaining('Aún no hay movimientos en Agosto'), findsOneWidget);
+
+        await tester.tap(find.text('›'));
+        await tester.pumpAndSettle();
+        expect(find.text('Septiembre'), findsOneWidget);
+        expect(find.text('Zapatos'), findsOneWidget);
+      },
+    );
+
     testWidgets('?month= opens home on that month', (tester) async {
       final repo = threeMonths();
       await pumpHome(tester, repo, initialMonth: '2026-09');

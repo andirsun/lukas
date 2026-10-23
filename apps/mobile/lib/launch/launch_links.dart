@@ -130,9 +130,12 @@ class LaunchLinks {
         unawaited(openCapture(context, listen: true));
       case LaunchAction.due:
       case LaunchAction.home:
-        // Home is the destination: today's payments sit at the top of its list. A home that was
-        // already loaded is brought up to date, so the payment that fell due overnight is there.
-        if (_ref.exists(homeProvider)) unawaited(_ref.read(homeProvider.notifier).refresh());
+        // Home is the destination: today's payments sit at the top of its list, so it is the
+        // current month, even when it was left on an earlier one. A home that was already loaded
+        // is brought up to date, so the payment that fell due overnight is there.
+        if (_ref.exists(homeProvider)) {
+          unawaited(_ref.read(homeProvider.notifier).showCurrentMonth());
+        }
       case LaunchAction.progress:
         // Only a guest has a progress to save; an account that has since claimed an email is on
         // home already.

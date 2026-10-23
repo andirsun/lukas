@@ -53,6 +53,13 @@ class FakeHomeRepository implements HomeRepository {
   /// followed by faster ones.
   final summaryGates = <Completer<void>>[];
 
+  /// While set, a next page ("Ver más movimientos": a call with a cursor) waits for it.
+  Completer<void>? holdPage;
+
+  /// While set, [delete] waits for it, and then fails with [deleteFailure] when that is set.
+  Completer<void>? holdDelete;
+  Object? deleteFailure;
+
   /// What the next call of that name throws (then cleared).
   final failures = <String, Object>{};
 
@@ -108,12 +115,15 @@ class FakeHomeRepository implements HomeRepository {
     final live = items.where((t) => t.date.startsWith(month)).toList();
     final start = cursor == null ? 0 : int.parse(cursor);
     final end = (start + pageSize).clamp(0, live.length);
+    if (cursor != null) await holdPage?.future;
     return TransactionsPage(live.sublist(start, end), end < live.length ? '$end' : null);
   }
 
   @override
   Future<void> delete(String id) async {
     _call('delete $id');
+    await holdDelete?.future;
+    if (deleteFailure != null) throw deleteFailure!;
     final tx = items.firstWhere((t) => t.id == id);
     items.remove(tx);
     deleted.add(tx);

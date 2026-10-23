@@ -674,6 +674,100 @@ void main() {
       expect(container.read(homeProvider).month, '2026-11');
     });
 
+    test('a page that lands after another month was chosen is dropped, rows and cursor', () async {
+      final repo = FakeHomeRepository(
+        pageSize: 2,
+        items: [
+          for (var i = 5; i >= 1; i--) tx('oct$i', '2026-10-0$i', -100, name: 'Octubre $i'),
+          tx('sep', '2026-09-15', -200, name: 'Septiembre'),
+        ],
+      );
+      final (container, _, _) = setup(repo);
+      container.listen(homeProvider, (_, _) {});
+      await settleAll();
+      final controller = container.read(homeProvider.notifier);
+      expect(container.read(homeProvider).data!.nextCursor, isNotNull);
+
+      final gate = Completer<void>();
+      repo.holdPage = gate;
+      final more = controller.loadMore();
+      await controller.showMonth('2026-09');
+      gate.complete();
+      await more;
+      await settleAll();
+
+      final state = container.read(homeProvider);
+      expect(state.shown!.month, '2026-09');
+      expect(state.shown!.items.map((t) => t.id), [
+        'sep',
+      ], reason: 'no October row under September');
+      expect(state.shown!.nextCursor, isNull, reason: 'not October\'s cursor');
+      expect(state.loadingMore, isFalse);
+    });
+
+    test(
+      'Deshacer after moving to another month puts the row nowhere visible, and back where it was',
+      () async {
+        final repo = FakeHomeRepository(
+          items: [
+            tx('oct', '2026-10-22', -1000),
+            tx('sep', '2026-09-15', -5000, name: 'Zapatos'),
+            tx('aug', '2026-08-10', -9000),
+          ],
+        );
+        final (container, _, _) = setup(repo);
+        container.listen(homeProvider, (_, _) {});
+        await settleAll();
+        final controller = container.read(homeProvider.notifier);
+        await controller.showMonth('2026-09');
+        final zapatos = container.read(homeProvider).shown!.items.single;
+        await controller.remove(zapatos);
+        await settleAll();
+        await controller.showMonth('2026-08');
+
+        await controller.restore(zapatos);
+        await settleAll();
+        var state = container.read(homeProvider);
+        expect(state.shown!.items.map((t) => t.id), [
+          'aug',
+        ], reason: 'not a September row in August');
+        expect(state.restored, isEmpty);
+        expect(repo.deleted, isEmpty, reason: 'the server did bring it back');
+
+        await controller.showMonth('2026-09');
+        state = container.read(homeProvider);
+        expect(state.shown!.items.map((t) => t.id), ['sep']);
+      },
+    );
+
+    test(
+      'a delete the server refuses after another month was chosen puts nothing in that month',
+      () async {
+        final repo = FakeHomeRepository(
+          items: [
+            tx('sep', '2026-09-15', -5000, name: 'Zapatos'),
+            tx('aug', '2026-08-10', -9000),
+          ],
+        );
+        final (container, _, _) = setup(repo);
+        container.listen(homeProvider, (_, _) {});
+        await settleAll();
+        final controller = container.read(homeProvider.notifier);
+        await controller.showMonth('2026-09');
+        final zapatos = container.read(homeProvider).shown!.items.single;
+
+        final gate = Completer<void>();
+        repo.holdDelete = gate;
+        repo.deleteFailure = const HomeFailure(500);
+        final deleting = controller.remove(zapatos);
+        await controller.showMonth('2026-08');
+        gate.complete();
+        await expectLater(deleting, throwsA(isA<HomeFailure>()));
+        await settleAll();
+        expect(container.read(homeProvider).shown!.items.map((t) => t.id), ['aug']);
+      },
+    );
+
     test('an event knows its month', () async {
       final (container, _, _, _) = await loaded();
       final controller = container.read(homeProvider.notifier);

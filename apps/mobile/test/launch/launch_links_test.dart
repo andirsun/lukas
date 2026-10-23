@@ -7,6 +7,7 @@ import 'package:lukitas/add/add_sheet.dart';
 import 'package:lukitas/capture/capture_sheet.dart';
 import 'package:lukitas/capture/engine/speech_engine.dart';
 import 'package:lukitas/entry/entry_screen.dart';
+import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/progress/progress_screen.dart';
@@ -15,6 +16,7 @@ import 'package:lukitas/router.dart';
 
 import '../capture/fakes.dart';
 import '../home/fakes.dart';
+import '../home/fixtures.dart';
 import '../settings/harness.dart';
 
 /// The links Android hands the app: one it was started with, and later ones.
@@ -99,7 +101,9 @@ void main() {
     expect(find.byType(AddSheet), findsOneWidget);
   });
 
-  testWidgets('the "Hoy vence…" notice opens home from any screen, with no sheet over it', (tester) async {
+  testWidgets('the "Hoy vence…" notice opens home from any screen, with no sheet over it', (
+    tester,
+  ) async {
     final links = FakeLaunchLinks();
     final env = await pumpSettingsApp(
       tester,
@@ -114,7 +118,9 @@ void main() {
     expect(find.byType(CaptureSheet), findsNothing);
   });
 
-  testWidgets('the notice at a cold start opens home, and a sheet already open gives way', (tester) async {
+  testWidgets('the notice at a cold start opens home, and a sheet already open gives way', (
+    tester,
+  ) async {
     final links = FakeLaunchLinks();
     await pumpSettingsApp(tester, overrides: [launchLinkSourceProvider.overrideWithValue(links)]);
     links.open('lukitas://add');
@@ -139,6 +145,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.calls.where((c) => c.startsWith('summary')).length, before + 1);
   });
+
+  for (final link in ['lukitas://due', 'lukitas://home']) {
+    testWidgets('$link opens the current month, even from home left on an earlier one', (
+      tester,
+    ) async {
+      final links = FakeLaunchLinks();
+      final repo = FakeHomeRepository(
+        items: [
+          tx('now', '2026-10-22', -1000, name: 'Hoy vence'),
+          tx('sep', '2026-09-15', -5000, name: 'Zapatos'),
+        ],
+      );
+      await pumpSettingsApp(
+        tester,
+        homeRepo: repo,
+        overrides: [
+          launchLinkSourceProvider.overrideWithValue(links),
+          clockProvider.overrideWithValue(() => DateTime.utc(2026, 10, 22, 15)),
+        ],
+      );
+      await tester.tap(find.text('‹'));
+      await tester.pumpAndSettle();
+      expect(find.text('Septiembre'), findsOneWidget);
+      expect(find.text('Zapatos'), findsOneWidget);
+
+      links.open(link);
+      await tester.pumpAndSettle();
+      expect(find.text('Octubre'), findsOneWidget);
+      expect(find.text('Hoy vence'), findsOneWidget);
+      expect(find.text('Zapatos'), findsNothing);
+    });
+  }
 
   testWidgets('the guest warning opens Guarda tu progreso, over home', (tester) async {
     final links = FakeLaunchLinks();
@@ -219,11 +257,19 @@ void main() {
       return links;
     }
 
-    for (final link in ['lukitas://capture', 'lukitas://add', 'lukitas://due', 'lukitas://progress']) {
+    for (final link in [
+      'lukitas://capture',
+      'lukitas://add',
+      'lukitas://due',
+      'lukitas://progress',
+    ]) {
       testWidgets('$link leaves it as it is', (tester) async {
         final engine = FakeSpeechEngine()..hold = true;
         final links = await typedInSheet(tester, engine);
-        final typed = find.descendant(of: find.byType(AddSheet), matching: find.textContaining('42'));
+        final typed = find.descendant(
+          of: find.byType(AddSheet),
+          matching: find.textContaining('42'),
+        );
         expect(typed, findsWidgets);
 
         links.open(link);

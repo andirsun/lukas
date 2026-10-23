@@ -505,7 +505,13 @@ class HomeController extends Notifier<HomeState> {
     _set(state.copyWith(loadingMore: true));
     try {
       final page = await _repo.transactions(data.month, cursor: data.nextCursor);
-      final current = state.data ?? data;
+      final current = state.data;
+      // Another month was chosen while the page was on its way: its rows and its cursor are that
+      // month's, never to be put under this one's name.
+      if (!_alive || current == null || current.month != data.month) {
+        if (_alive) _set(state.copyWith(loadingMore: false));
+        return;
+      }
       final known = {for (final tx in current.items) tx.id};
       _set(
         state.copyWith(
@@ -576,9 +582,8 @@ class HomeController extends Notifier<HomeState> {
       await _repo.delete(tx.id);
     } on Object catch (error) {
       final current = state.data;
-      if (current != null && !current.items.any((t) => t.id == tx.id)) {
-        _replaceItems([...current.items, tx]..sort(_newestFirst));
-      }
+      // Back where it was, unless another month is on screen by now (its rule: `_place`).
+      if (current != null && !current.items.any((t) => t.id == tx.id)) _place(tx);
       throw _failure(error);
     }
     // The row is already gone: what is saved for a start with no network follows it at once, and
@@ -595,18 +600,12 @@ class HomeController extends Notifier<HomeState> {
       if (!_alive) return;
       final data = state.data;
       if (data == null) return;
-      _set(
-        state.copyWith(
-          restored: {...state.restored, back.id},
-          data: data.copyWith(
-            items: [
-              for (final t in data.items)
-                if (t.id != back.id) t,
-              back,
-            ]..sort(_newestFirst),
-          ),
-        ),
-      );
+      // The server has it back. It shows only where it belongs: Deshacer outlives a change of
+      // month, and a September row never appears in August's list (it is there when September is).
+      if (back.date.startsWith(data.month)) {
+        _set(state.copyWith(restored: {...state.restored, back.id}));
+        _place(back);
+      }
     } on Object catch (error) {
       throw _failure(error);
     }

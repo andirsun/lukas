@@ -92,6 +92,7 @@ Future<SettingsEnv> pumpSettingsApp(
   bool signedIn = true,
   List<Override> overrides = const [],
   bool settle = true,
+  FakeHomeRepository? homeRepo,
 }) async {
   final token = guest ? 'guest-token-0' : 'email-token-0';
   mockStorage(token: signedIn ? token : null, guest: guest);
@@ -116,7 +117,7 @@ Future<SettingsEnv> pumpSettingsApp(
       urlOpenerProvider.overrideWithValue(opener),
       modelStoreProvider.overrideWithValue(models),
       feedbackPlatformProvider.overrideWithValue(FakeFeedbackPlatform()),
-      homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
+      homeRepositoryProvider.overrideWithValue(homeRepo ?? FakeHomeRepository()),
       widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
       homeCacheStoreProvider.overrideWithValue(FakeCacheStore()),
       widgetSnapshotWriterProvider.overrideWithValue(
