@@ -87,6 +87,8 @@
                 <data android:scheme="lukitas" android:host="capture"/>
                 <!-- The "Hoy vence…" notice (notices/NoticePoster.kt): home, with the payments in view. -->
                 <data android:scheme="lukitas" android:host="due"/>
+                <!-- The guest warning (notices/NoticePoster.kt): "Guarda tu progreso". -->
+                <data android:scheme="lukitas" android:host="progress"/>
             </intent-filter>
         </activity-alias>
         <!-- The home-screen widget, small (2×1) and medium (4×2), drawn with Jetpack Glance

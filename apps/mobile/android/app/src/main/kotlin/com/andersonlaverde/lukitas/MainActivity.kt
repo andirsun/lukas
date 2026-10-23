@@ -15,6 +15,7 @@ import com.andersonlaverde.lukitas.haptics.HapticsChannel
 import com.andersonlaverde.lukitas.launch.LaunchLinks
 import com.andersonlaverde.lukitas.notices.DueWorker
 import com.andersonlaverde.lukitas.notices.GuestWorker
+import com.andersonlaverde.lukitas.notices.NOTICE_OUTCOME
 import com.andersonlaverde.lukitas.notices.NoticePoster
 import com.andersonlaverde.lukitas.notices.NoticesChannel
 import com.andersonlaverde.lukitas.passkeys.PasskeyChannel
@@ -159,8 +160,8 @@ class MainActivity : FlutterActivity() {
                     "refreshWidget" -> runOnce(OneTimeWorkRequestBuilder<RefreshWorker>().build(), RefreshWorker.OUTCOME, result)
                     // The same for the two notices' jobs (notices/NoticeWorkers.kt), as they run at
                     // 9:00 and 45 days on; they post only when the person allowed notifications.
-                    "runDueNotice" -> runOnce(OneTimeWorkRequestBuilder<DueWorker>().build(), DueWorker.OUTCOME, result)
-                    "runGuestNotice" -> runOnce(OneTimeWorkRequestBuilder<GuestWorker>().build(), DueWorker.OUTCOME, result)
+                    "runDueNotice" -> runOnce(OneTimeWorkRequestBuilder<DueWorker>().build(), NOTICE_OUTCOME, result)
+                    "runGuestNotice" -> runOnce(OneTimeWorkRequestBuilder<GuestWorker>().build(), NOTICE_OUTCOME, result)
                     // The text of each notice this app has on the shade.
                     "activeNotices" -> result.success(
                         getSystemService(NotificationManager::class.java).activeNotifications.map {

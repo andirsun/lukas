@@ -16,7 +16,6 @@ import com.andersonlaverde.lukitas.widget.TinyRequest
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -31,6 +30,10 @@ import java.time.Instant
 private class FakeSession(var stored: String?, var serverUrl: String?) : SessionSource {
     var serverUnreadable = false
 
+    /** The "session.guest" flag the app keeps next to the token; null when not stored. */
+    var guestFlag: Boolean? = null
+
+    override fun guest(): Boolean? = guestFlag
     override fun token(): String? = stored
     override fun mark(): String? = stored?.let { "mark:$it" }
     override fun server(): ServerSetting = when {
@@ -300,12 +303,124 @@ class NoticeWorkersTest {
     }
 
     @Test
-    fun `without the notification permission nothing is posted, and nothing is asked of the person`() {
+    fun `without the notification permission nothing is asked of the server at all, and tomorrow is still scheduled`() {
         shadowOf(notifications()).setNotificationsEnabled(false)
         pages[""] = page(item("Arriendo", "2026-10-22"))
         runDue()
         assertTrue(posted().isEmpty())
-        assertEquals("tomorrow is still scheduled", 1, enqueued(NoticeScheduler.DUE).size)
+        assertTrue("no request, so nothing counts as activity", requests.isEmpty())
+        assertEquals(1, enqueued(NoticeScheduler.DUE).size)
+    }
+
+    @Test
+    fun `every request a job makes says it is a background one, so none slides the session`() {
+        pages[""] = page(item("Arriendo", "2026-10-22"), next = "p2")
+        pages["p2"] = page(item("Spotify", "2026-10-22"))
+        runDue()
+        assertEquals(3, requests.size)
+        assertEquals(listOf("1", "1", "1"), requests.map { it.headers["x-lukas-background"] })
+    }
+
+    @Test
+    fun `a dozen payments are one notice, with every name`() {
+        val names = listOf(
+            "Arriendo", "Spotify", "Netflix", "Luz", "Agua", "Gas", "Internet", "Celular", "Gimnasio",
+            "Seguro", "Colegio", "Hipoteca",
+        )
+        pages[""] = page(*names.mapIndexed { i, n ->
+            item(n, "2026-10-22", createdAt = "2026-10-01T10:%02d:00.000Z".format(i))
+        }.toTypedArray())
+        runDue()
+
+        val notice = posted().single()
+        val expected = "Hoy vencen " + names.dropLast(1).joinToString(", ") + " e " + names.last()
+        assertEquals(expected, text(notice))
+        assertEquals(expected, notice.extras.getCharSequence(Notification.EXTRA_BIG_TEXT).toString())
+    }
+
+    @Test
+    fun `before 9 in the profile's zone nothing is posted, and it is aimed at 9 today`() {
+        now = Instant.parse("2026-10-22T13:30:00Z") // 08:30 in Bogota
+        pages[""] = page(item("Arriendo", "2026-10-22"))
+        runDue()
+
+        assertTrue(posted().isEmpty())
+        assertEquals(listOf("/api/v1/me"), requests.map { it.path })
+        assertEquals(Duration.ofMinutes(30).toMillis(), enqueued(NoticeScheduler.DUE).single().initialDelayMillis)
+    }
+
+    @Test
+    fun `just after midnight is before 9 too`() {
+        now = Instant.parse("2026-10-23T05:20:00Z") // 00:20 in Bogota on the 23rd
+        pages[""] = page(item("Arriendo", "2026-10-23"))
+        runDue()
+        assertTrue(posted().isEmpty())
+        assertEquals(Duration.ofMinutes(520).toMillis(), enqueued(NoticeScheduler.DUE).single().initialDelayMillis)
+    }
+
+    @Test
+    fun `one due notice per local day, whatever the runs`() {
+        pages[""] = page(item("Arriendo", "2026-10-22"))
+        runDue()
+        assertEquals(1, posted().size)
+        assertEquals("2026-10-22", settings.lastDueDay)
+
+        // Another run the same day (a retry, the person turning the switch off and on) is silent.
+        notifications().cancelAll()
+        requests.clear()
+        now = Instant.parse("2026-10-22T20:00:00Z")
+        runDue()
+        assertTrue(posted().isEmpty())
+        assertTrue("it does not even ask for the payments", requests.none { it.path.endsWith("/transactions") })
+
+        // The next day is a new one.
+        now = Instant.parse("2026-10-23T14:00:00Z")
+        pages[""] = page(item("Arriendo", "2026-10-23"))
+        runDue()
+        assertEquals("Hoy vence Arriendo", text(posted().single()))
+        assertEquals("2026-10-23", settings.lastDueDay)
+    }
+
+    @Test
+    fun `a day with nothing due records nothing, so a payment added later that day is still announced`() {
+        runDue()
+        assertNull(settings.lastDueDay)
+    }
+
+    @Test
+    fun `a notice that could not be posted does not count as the day's`() {
+        shadowOf(notifications()).setNotificationsEnabled(false)
+        pages[""] = page(item("Arriendo", "2026-10-22"))
+        runDue()
+        assertNull(settings.lastDueDay)
+    }
+
+    @Test
+    fun `a session refused on the payments call stops the chain too`() {
+        transactionsStatus = 401
+        runDue()
+        assertTrue(posted().isEmpty())
+        assertTrue(work(NoticeScheduler.DUE).none { !it.state.isFinished })
+    }
+
+    @Test
+    fun `the job re-enqueues its own unique job, through WorkManager itself`() {
+        pages[""] = page(item("Arriendo", "2026-10-22"))
+        NoticeScheduler.scheduleDue(context, "America/Bogota", "es", Instant.parse("2026-10-22T11:00:00Z"))
+        val first = enqueued(NoticeScheduler.DUE).single()
+        val driver = WorkManagerTestInitHelper.getTestDriver(context)!!
+        driver.setAllConstraintsMet(first.id)
+        driver.setInitialDelayMet(first.id)
+
+        val end = System.currentTimeMillis() + 10_000
+        while (System.currentTimeMillis() < end && posted().isEmpty()) Thread.sleep(50)
+        assertEquals("Hoy vence Arriendo", text(posted().single()))
+        while (System.currentTimeMillis() < end && enqueued(NoticeScheduler.DUE).none { it.id != first.id }) Thread.sleep(50)
+
+        // The run replaced itself: one job is waiting for tomorrow's 9:00, and it is a new one.
+        val next = enqueued(NoticeScheduler.DUE).single()
+        assertTrue(next.id != first.id)
+        assertEquals(Duration.ofHours(24).toMillis(), next.initialDelayMillis)
     }
 
     @Test
@@ -323,7 +438,6 @@ class NoticeWorkersTest {
     fun `each notice has its own channel, named in the phone's language`() {
         pages[""] = page(item("Arriendo", "2026-10-22"))
         runDue()
-        anonymous = true
         runGuest()
         val channels = notifications().notificationChannels.associate { it.id to it.name.toString() }
         assertEquals(setOf(NoticeChannels.DUE, NoticeChannels.GUEST), channels.keys)
@@ -335,32 +449,34 @@ class NoticeWorkersTest {
     // --- The guest warning ---------------------------------------------------------------------
 
     @Test
-    fun `a guest not opening the app for 45 days gets the warning`() {
-        anonymous = true
+    fun `a guest not opening the app for 45 days gets the warning, with no call to the server`() {
         runGuest()
-        val notice = posted().single()
-        assertEquals("Tus datos se borrarán en 15 días si no agregas tu correo", text(notice))
-        assertEquals(listOf("/api/v1/me"), requests.map { it.path })
-        assertEquals("Bearer token-1", requests[0].headers["authorization"])
-    }
-
-    @Test
-    fun `an account that has an email by then gets nothing`() {
-        anonymous = false
-        runGuest()
-        assertTrue(posted().isEmpty())
-    }
-
-    @Test
-    fun `signed out or unknown to the server, the guest warning is not posted`() {
-        session.stored = null
-        runGuest()
+        assertEquals("Tus datos se borrarán en 15 días si no agregas tu correo", text(posted().single()))
+        // A request would count as activity and move the deletion 60 days on: it makes none.
         assertTrue(requests.isEmpty())
-        assertTrue(posted().isEmpty())
+    }
 
-        session.stored = "token-1"
-        anonymous = true
-        meStatus = 401
+    @Test
+    fun `an account the app knows has an email gets nothing`() {
+        session.guestFlag = false
+        runGuest()
+        assertTrue(posted().isEmpty())
+    }
+
+    @Test
+    fun `a guest flag that is stored as guest, or missing, is a guest`() {
+        session.guestFlag = true
+        runGuest()
+        assertEquals(1, posted().size)
+        notifications().cancelAll()
+        session.guestFlag = null
+        runGuest()
+        assertEquals(1, posted().size)
+    }
+
+    @Test
+    fun `signed out, the guest warning is not posted`() {
+        session.stored = null
         runGuest()
         assertTrue(posted().isEmpty())
     }
@@ -368,44 +484,23 @@ class NoticeWorkersTest {
     @Test
     fun `the guest switch off, nothing is posted`() {
         settings.guestEnabled = false
-        anonymous = true
-        runGuest()
-        assertTrue(posted().isEmpty())
-        assertTrue(requests.isEmpty())
-    }
-
-    @Test
-    fun `offline the warning waits for a network, and never guesses`() {
-        anonymous = true
-        meStatus = 503
-        assertEquals(ListenableWorker.Result.retry(), runGuest(attempt = 1))
-        assertTrue(posted().isEmpty())
-    }
-
-    @Test
-    fun `a sign-out during the check drops the warning`() {
-        anonymous = true
-        whileAnswering = { session.stored = null }
         runGuest()
         assertTrue(posted().isEmpty())
     }
 
     @Test
-    fun `the guest warning opens the app, and is not announced twice`() {
-        anonymous = true
-        runGuest()
-        runGuest()
-        val notice = posted().single()
-        val tap = shadowOf(notice.contentIntent).savedIntent
-        assertNull(tap.data)
-        assertNotNull(tap.component ?: tap.`package`)
-    }
-
-    @Test
-    fun `a guest account with the permission refused posts nothing`() {
+    fun `without the notification permission the guest warning is not posted`() {
         shadowOf(notifications()).setNotificationsEnabled(false)
-        anonymous = true
         runGuest()
         assertTrue(posted().isEmpty())
+    }
+
+    @Test
+    fun `tapping the guest warning opens Guarda tu progreso, and it is not announced twice`() {
+        runGuest()
+        runGuest()
+        val tap = shadowOf(posted().single().contentIntent).savedIntent
+        assertEquals("lukitas://progress", tap.dataString)
+        assertEquals("com.andersonlaverde.lukitas.LaunchLinkAlias", tap.component?.className)
     }
 }

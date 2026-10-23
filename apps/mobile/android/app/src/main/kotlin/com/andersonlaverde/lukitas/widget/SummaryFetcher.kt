@@ -55,6 +55,9 @@ class SummaryFetcher(
             connection.instanceFollowRedirects = false
             connection.setRequestProperty("Authorization", "Bearer $token")
             connection.setRequestProperty("Accept", "application/json")
+            // Not activity: the API reads the session without sliding it, so a phone that only runs
+            // this job does not keep a guest from the 60-day cleanup.
+            connection.setRequestProperty("x-lukas-background", "1")
             connection.setRequestProperty("x-lukas-timezone", ZoneId.systemDefault().id)
             connection.setRequestProperty("x-lukas-locale", Locale.getDefault().toLanguageTag())
             when (connection.responseCode) {

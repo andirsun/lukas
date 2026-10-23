@@ -58,7 +58,10 @@ object NoticeScheduler {
     }
 
     fun cancelDue(context: Context) {
-        NoticeSettings(context).dueEnabled = false
+        val settings = NoticeSettings(context)
+        settings.dueEnabled = false
+        // Another person, or the switch on again later, starts with no day recorded.
+        settings.lastDueDay = null
         WorkManager.getInstance(context).cancelUniqueWork(DUE)
     }
 

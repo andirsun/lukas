@@ -83,18 +83,27 @@ Future<void> _tap(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
 }
 
+/// Notifications already allowed on the phone.
+FakeNoticePlatform allowed() => FakeNoticePlatform(permissionState: NoticePermission.granted);
+
+/// An account with a recurring payment still running: the case "Hoy vence…" is scheduled for.
+FakeNoticeBackend withRule({String timezone = 'America/Bogota'}) =>
+    FakeNoticeBackend(timezone: timezone, hasRecurring: true);
+
 void main() {
   group('Hoy vence… at 9:00', () {
-    testWidgets('opening the app signed in schedules it for the profile\'s zone, in the app\'s language', (
+    testWidgets('it is scheduled for the profile\'s zone, in the app\'s language, for someone with a recurring payment who allowed notices', (
       tester,
     ) async {
-      final env = await _pump(tester);
+      final env = await _pump(tester, platform: allowed(), backend: withRule());
       expect(env.platform.callsNamed('scheduleDue'), ['scheduleDue America/Bogota es']);
     });
 
     testWidgets('English when the phone is in English', (tester) async {
       final env = await _pump(
         tester,
+        platform: allowed(),
+        backend: withRule(),
         locale: const Locale('en'),
         overrides: [
           deviceHintsProvider.overrideWithValue(
@@ -106,19 +115,56 @@ void main() {
     });
 
     testWidgets('the zone is the profile\'s: the server\'s answer, not the phone\'s', (tester) async {
-      final env = await _pump(tester, backend: FakeNoticeBackend(timezone: 'Asia/Tokyo'));
+      final env = await _pump(tester, platform: allowed(), backend: withRule(timezone: 'Asia/Tokyo'));
       expect(env.platform.callsNamed('scheduleDue'), ['scheduleDue Asia/Tokyo es']);
     });
 
-    testWidgets('without an answer from the server it still schedules, and the job keeps the zone it knows', (
+    testWidgets('a guest with a recurring payment is scheduled too', (tester) async {
+      final env = await _pump(tester, guest: true, platform: allowed(), backend: withRule());
+      expect(env.platform.callsNamed('scheduleDue'), hasLength(1));
+    });
+
+    testWidgets('no recurring payment, no job: it is cancelled, and never wakes the phone for nothing', (
       tester,
     ) async {
-      final env = await _pump(tester, backend: FakeNoticeBackend()..failure = Exception('offline'));
-      expect(env.platform.callsNamed('scheduleDue'), ['scheduleDue null es']);
+      final env = await _pump(tester, platform: allowed(), backend: FakeNoticeBackend());
+      expect(env.platform.callsNamed('scheduleDue'), isEmpty);
+      expect(env.platform.callsNamed('cancelDue'), isNotEmpty);
+    });
+
+    for (final state in [NoticePermission.askable, NoticePermission.blocked]) {
+      testWidgets('without the notification permission ($state) there is no job either', (tester) async {
+        final env = await _pump(
+          tester,
+          platform: FakeNoticePlatform(permissionState: state, systemAnswer: false),
+          backend: withRule(),
+        );
+        expect(env.platform.callsNamed('scheduleDue'), isEmpty);
+        expect(env.platform.callsNamed('cancelDue'), isNotEmpty);
+      });
+    }
+
+    testWidgets('once the person allows the notices, the job is scheduled', (tester) async {
+      final env = await _pump(tester, platform: FakeNoticePlatform(), backend: withRule());
+      expect(env.prompt.reasons, [NoticeReason.due]);
+      expect(env.platform.callsNamed('requestPermission'), hasLength(1));
+      expect(env.platform.callsNamed('scheduleDue'), ['scheduleDue America/Bogota es']);
+    });
+
+    testWidgets('without an answer from the server the job is left as it is: neither scheduled nor cancelled', (
+      tester,
+    ) async {
+      final env = await _pump(
+        tester,
+        platform: allowed(),
+        backend: FakeNoticeBackend(hasRecurring: true)..failure = Exception('offline'),
+      );
+      expect(env.platform.callsNamed('scheduleDue'), isEmpty);
+      expect(env.platform.callsNamed('cancelDue'), isEmpty);
     });
 
     testWidgets('the switch in settings stops it, and turning it on again brings it back', (tester) async {
-      final env = await _pump(tester, location: '/settings');
+      final env = await _pump(tester, platform: allowed(), backend: withRule(), location: '/settings');
       env.platform.clear();
 
       await _tap(tester, 'settings.dueNotice');
@@ -144,7 +190,7 @@ void main() {
     });
 
     testWidgets('signing out cancels both notices', (tester) async {
-      final env = await _pump(tester);
+      final env = await _pump(tester, platform: allowed(), backend: withRule());
       env.platform.clear();
       await env.container.read(sessionProvider.notifier).signOut();
       await env.idle();

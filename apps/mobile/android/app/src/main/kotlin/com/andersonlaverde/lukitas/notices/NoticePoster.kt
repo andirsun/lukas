@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import com.andersonlaverde.lukitas.MainActivity
 import com.andersonlaverde.lukitas.R
 import com.andersonlaverde.lukitas.launch.LaunchLinks
 
@@ -15,6 +14,10 @@ import com.andersonlaverde.lukitas.launch.LaunchLinks
  * nothing is posted.
  */
 class NoticePoster(private val context: Context) {
+    /** Whether notices can be posted now (the permission, and the phone's own switch). */
+    fun canPost(): Boolean = context.getSystemService(NotificationManager::class.java)
+        ?.areNotificationsEnabled() == true
+
     /** "Hoy vence…" for [names]; false when notifications are not allowed. */
     fun postDue(names: List<String>, language: String?): Boolean = post(
         channel = NoticeChannels.DUE,
@@ -32,10 +35,8 @@ class NoticePoster(private val context: Context) {
         id = GUEST_ID,
         text = NoticeText.guestWarning(context, language),
         language = language,
-        tap = Intent(Intent.ACTION_MAIN)
-            .addCategory(Intent.CATEGORY_LAUNCHER)
-            .setClassName(context, MainActivity::class.java.name)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED),
+        // "Guarda tu progreso", the screen that adds the email the warning is about.
+        tap = LaunchLinks.intent(context, LaunchLinks.PROGRESS),
         category = Notification.CATEGORY_STATUS,
     )
 

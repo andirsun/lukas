@@ -31,6 +31,11 @@ class NoticeSettings(context: Context) {
         get() = preferences.getString(LANGUAGE, null)
         set(value) = put { if (value == null) remove(LANGUAGE) else putString(LANGUAGE, value) }
 
+    /** The local day (`YYYY-MM-DD`, in the profile's zone) "Hoy vence…" was last posted for. */
+    var lastDueDay: String?
+        get() = preferences.getString(LAST_DUE_DAY, null)
+        set(value) = put { if (value == null) remove(LAST_DUE_DAY) else putString(LAST_DUE_DAY, value) }
+
     fun clear() {
         preferences.edit().clear().commit()
     }
@@ -46,5 +51,6 @@ class NoticeSettings(context: Context) {
         const val GUEST = "guest"
         const val ZONE = "zone"
         const val LANGUAGE = "language"
+        const val LAST_DUE_DAY = "lastDueDay"
     }
 }

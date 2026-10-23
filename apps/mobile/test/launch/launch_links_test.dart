@@ -5,11 +5,14 @@ import 'package:lukitas/add/add_sheet.dart';
 import 'package:lukitas/capture/capture_sheet.dart';
 import 'package:lukitas/capture/engine/speech_engine.dart';
 import 'package:lukitas/entry/entry_screen.dart';
+import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
+import 'package:lukitas/progress/progress_screen.dart';
 import 'package:lukitas/launch/launch_links.dart';
 import 'package:lukitas/router.dart';
 
 import '../capture/fakes.dart';
+import '../home/fakes.dart';
 import '../settings/harness.dart';
 
 /// The links Android hands the app: one it was started with, and later ones.
@@ -39,6 +42,7 @@ void main() {
       expect(launchActionOf('lukitas://capture'), LaunchAction.capture);
       expect(launchActionOf('lukitas://capture/'), LaunchAction.capture);
       expect(launchActionOf('lukitas://due'), LaunchAction.due);
+      expect(launchActionOf('lukitas://progress'), LaunchAction.progress);
       expect(launchActionOf('lukitas://settings'), isNull);
       expect(launchActionOf('https://add'), isNull);
       expect(launchActionOf('https://app-lukas.andersonlaverde.com/auth/verify?code=1'), isNull);
@@ -117,6 +121,49 @@ void main() {
     links.open('lukitas://due');
     await tester.pumpAndSettle();
     expect(find.byType(AddSheet), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('the notice brings a home that was already loaded up to date', (tester) async {
+    final links = FakeLaunchLinks();
+    final env = await pumpSettingsApp(
+      tester,
+      overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+    );
+    final repo = env.container.read(homeRepositoryProvider) as FakeHomeRepository;
+    final before = repo.calls.where((c) => c.startsWith('summary')).length;
+    links.open('lukitas://due');
+    await tester.pumpAndSettle();
+    expect(repo.calls.where((c) => c.startsWith('summary')).length, before + 1);
+  });
+
+  testWidgets('the guest warning opens Guarda tu progreso, over home', (tester) async {
+    final links = FakeLaunchLinks();
+    final env = await pumpSettingsApp(
+      tester,
+      guest: true,
+      location: '/settings',
+      overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+    );
+    links.open('lukitas://progress');
+    await tester.pumpAndSettle();
+    expect(env.router.state.uri.path, '/progress');
+    expect(find.byType(ProgressScreen), findsOneWidget);
+    // Back is home.
+    env.router.pop();
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('once the account has an email, the guest warning just opens home', (tester) async {
+    final links = FakeLaunchLinks();
+    final env = await pumpSettingsApp(
+      tester,
+      overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+    );
+    links.open('lukitas://progress');
+    await tester.pumpAndSettle();
+    expect(env.router.state.uri.path, '/');
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 

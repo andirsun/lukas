@@ -34,6 +34,13 @@ interface SessionSource {
     fun mark(): String?
 
     fun server(): ServerSetting
+
+    /**
+     * The "session.guest" flag the app keeps next to the token (lib/api/session.dart): true for a
+     * guest, false for an account with an email, null when it is not stored or cannot be read. The
+     * app keeps it right (a claim writes it), so a job can know without asking the server.
+     */
+    fun guest(): Boolean? = null
 }
 
 /** Whether the Android Keystore holds [alias] (a read: nothing is created). */
@@ -74,6 +81,12 @@ class SecureStorageSession(
     override fun mark(): String? = raw(TOKEN_KEY)
 
     override fun token(): String? = read(TOKEN_KEY)?.takeIf { it.isNotEmpty() }
+
+    override fun guest(): Boolean? = when (read(GUEST_KEY)) {
+        "true" -> true
+        "false" -> false
+        else -> null
+    }
 
     override fun server(): ServerSetting {
         if (raw(SERVER_KEY) == null) return ServerSetting.Default
@@ -131,6 +144,9 @@ class SecureStorageSession(
     companion object {
         /** lib/api/session.dart's `SessionStore.tokenKey`. */
         const val TOKEN_KEY = "session.token"
+
+        /** lib/api/session.dart's `SessionStore.guestKey`. */
+        const val GUEST_KEY = "session.guest"
 
         /** lib/settings/settings_store.dart's `serverUrlKey`. */
         const val SERVER_KEY = "setting.server"

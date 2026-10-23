@@ -49,14 +49,21 @@ internal fun serverOf(context: Context, session: SessionSource): String? = when 
 /** Tries a job gets on a network that fails before it gives up on today. */
 private const val DUE_TRIES = 3
 
-private const val GUEST_TRIES = 30
+/** The output key of what a job did, for the logs and the tests. */
+const val NOTICE_OUTCOME = "outcome"
 
 /**
  * "Hoy vence…" (spec section 7.2): at 9:00 in the profile's zone, one notice for the recurring
  * payments still pending today, joined naturally ("Arriendo y Spotify"); none when there are none.
- * Then it schedules tomorrow's 9:00, unless the switch is off or the session is gone. It reads the
- * session where the app keeps it and only reads the server; the notification permission is the
- * app's to ask, in the app.
+ * Then it schedules tomorrow's 9:00, unless the switch is off or the session is gone.
+ *
+ *  * The app schedules it only for someone with an active recurring rule who allowed notifications;
+ *    if the permission is gone by the time it runs, it asks the server nothing.
+ *  * Its requests carry `x-lukas-background: 1`, so they never count as activity on the server.
+ *  * One notice per local day: the day is recorded, and a run before 9:00 (a phone that was off
+ *    overnight) posts nothing and aims at 9:00 instead.
+ *  * It reads the session where the app keeps it and only reads the server; the notification
+ *    permission is the app's to ask, in the app.
  */
 class DueWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
@@ -70,6 +77,9 @@ class DueWorker(context: Context, params: WorkerParameters) : CoroutineWorker(co
             val mark = dependencies.session.mark()
             if (mark == null) {
                 outcome = "signed out"
+            } else if (!NoticePoster(context).canPost()) {
+                // Nothing could be said: nothing is asked of the server either.
+                outcome = "not allowed"
             } else {
                 val attempt = withContext(Dispatchers.IO) { attempt(context, dependencies, settings, mark, zone) }
                 if (attempt == null) {
@@ -82,11 +92,12 @@ class DueWorker(context: Context, params: WorkerParameters) : CoroutineWorker(co
                 }
             }
         }
-        // Tomorrow's 9:00, as the last step: only while the switch is on and someone is signed in.
+        // Tomorrow's 9:00 (or today's, when this run came before it), as the last step: only while
+        // the switch is on and someone is signed in.
         if (keepGoing && settings.dueEnabled && dependencies.session.mark() != null) {
             NoticeScheduler.enqueueNextDue(context, zone, dependencies.clock())
         }
-        return Result.success(workDataOf(OUTCOME to outcome))
+        return Result.success(workDataOf(NOTICE_OUTCOME to outcome))
     }
 
     private class Run(val outcome: String, val zone: ZoneId, val keepGoing: Boolean = true)
@@ -108,7 +119,11 @@ class DueWorker(context: Context, params: WorkerParameters) : CoroutineWorker(co
         }
         val zone = NoticeTimes.zoneOr(profile.timezone, known)
         if (settings.zone != zone.id) settings.zone = zone.id
-        val today = LocalDate.ofInstant(dependencies.clock(), zone)
+        val now = dependencies.clock()
+        // Before 9:00 there, never: the next run is aimed at 9:00 today.
+        if (now.atZone(zone).toLocalTime().isBefore(NoticeTimes.DUE_AT)) return Run("before 9", zone)
+        val today = LocalDate.ofInstant(now, zone)
+        if (settings.lastDueDay == today.toString()) return Run("already today", zone)
         val names = when (val answer = dependencies.api.dueToday(server, token, today)) {
             is ApiResult.Ok -> answer.value
             ApiResult.Unauthorized -> return Run("session refused", zone, keepGoing = false)
@@ -117,48 +132,35 @@ class DueWorker(context: Context, params: WorkerParameters) : CoroutineWorker(co
         // Signed out, or the switch turned off, while the request was on its way: nothing is said.
         if (dependencies.session.mark() != mark || !settings.dueEnabled) return Run("dropped", zone)
         if (names.isEmpty()) return Run("nothing due today", zone)
-        val posted = NoticePoster(context).postDue(names, settings.language)
-        return Run(if (posted) "posted" else "not allowed", zone)
-    }
-
-    companion object {
-        /** The output key of what a run did, for the logs and the tests. */
-        const val OUTCOME = "outcome"
+        if (!NoticePoster(context).postDue(names, settings.language)) return Run("not allowed", zone)
+        settings.lastDueDay = today.toString()
+        return Run("posted", zone)
     }
 }
 
 /**
  * The guest warning (spec section 7.2): it fires 45 days after the app was last opened on a guest
- * account (the app replaces the job at every open). If the account is still a guest, it posts
- * "Tus datos se borrarán en 15 días si no agregas tu correo": the server deletes an inactive guest
- * at 60 days. It asks the server rather than trusting a flag that only the app updates.
+ * account (the app replaces the job at every open) and posts "Tus datos se borrarán en 15 días si
+ * no agregas tu correo": the server deletes an inactive guest at 60 days.
+ *
+ * It makes **no call to the server**: any authenticated request is activity there and would move
+ * the deletion 60 days on, making the warning false. It decides from what is on the phone: the
+ * switch, a session that is still stored, and the guest flag the app keeps next to the token. The
+ * app cancels the job when the account claims an email and when the person signs out.
  */
 class GuestWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val context = applicationContext
         val dependencies = NoticeHooks.of(context)
         val settings = NoticeSettings(context)
-        if (!settings.guestEnabled) return done("off")
-        val mark = dependencies.session.mark() ?: return done("signed out")
-        val outcome = withContext(Dispatchers.IO) {
-            val server = serverOf(context, dependencies.session) ?: return@withContext "server unreadable"
-            val token = dependencies.session.token() ?: return@withContext "token unreadable"
-            val profile = when (val answer = dependencies.api.profile(server, token)) {
-                is ApiResult.Ok -> answer.value
-                ApiResult.Unauthorized -> return@withContext "session refused"
-                // Not knowing is not a reason to say it: wait for a better moment.
-                ApiResult.Failed -> return@withContext null
-            }
-            when {
-                !profile.anonymous -> "has an email"
-                dependencies.session.mark() != mark || !settings.guestEnabled -> "dropped"
-                NoticePoster(context).postGuestWarning(settings.language) -> "posted"
-                else -> "not allowed"
-            }
+        val outcome = when {
+            !settings.guestEnabled -> "off"
+            dependencies.session.mark() == null -> "signed out"
+            // A flag that is missing reads as a guest, as in the app: the safe side is to warn.
+            dependencies.session.guest() == false -> "has an email"
+            NoticePoster(context).postGuestWarning(settings.language) -> "posted"
+            else -> "not allowed"
         }
-        if (outcome == null) return if (runAttemptCount < GUEST_TRIES) Result.retry() else done("gave up")
-        return done(outcome)
+        return Result.success(workDataOf(NOTICE_OUTCOME to outcome))
     }
-
-    private fun done(outcome: String) = Result.success(workDataOf(DueWorker.OUTCOME to outcome))
 }

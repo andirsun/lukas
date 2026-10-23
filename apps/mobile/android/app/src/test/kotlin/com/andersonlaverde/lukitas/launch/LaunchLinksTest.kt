@@ -34,6 +34,8 @@ class LaunchLinksTest {
         assertEquals("lukitas://capture", LaunchLinks.linkOf(viaAlias("lukitas://capture")))
         // The "Hoy vence…" notice opens home through the same entry.
         assertEquals("lukitas://due", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.DUE)))
+        // And the guest warning opens "Guarda tu progreso".
+        assertEquals("lukitas://progress", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.PROGRESS)))
         assertNull(LaunchLinks.linkOf(viaAlias("lukitas://settings")))
         assertNull(LaunchLinks.linkOf(viaAlias("https://app-lukas.andersonlaverde.com/auth/verify")))
         assertNull(LaunchLinks.linkOf(Intent(Intent.ACTION_MAIN)))

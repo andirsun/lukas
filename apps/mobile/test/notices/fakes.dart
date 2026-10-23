@@ -19,8 +19,8 @@ class FakeNoticePlatform implements NoticePlatform {
   void clear() => calls.clear();
 
   @override
-  Future<void> scheduleDue({String? zone, required String language}) async =>
-      calls.add('scheduleDue ${zone ?? 'null'} $language');
+  Future<void> scheduleDue({required String zone, required String language}) async =>
+      calls.add('scheduleDue $zone $language');
 
   @override
   Future<void> cancelDue() async => calls.add('cancelDue');

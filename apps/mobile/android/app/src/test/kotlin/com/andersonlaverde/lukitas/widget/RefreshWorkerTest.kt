@@ -67,6 +67,7 @@ class RefreshWorkerTest {
                 "authorization" to request.headers["authorization"],
                 "timezone" to request.headers["x-lukas-timezone"],
                 "locale" to request.headers["x-lukas-locale"],
+                "background" to request.headers["x-lukas-background"],
             )
             whileAnswering?.invoke()
             status to body
@@ -123,6 +124,9 @@ class RefreshWorkerTest {
         assertEquals("Bearer token-1", headers[0]["authorization"])
         assertEquals(ZoneId.systemDefault().id, headers[0]["timezone"])
         assertTrue(headers[0]["locale"]!!.isNotEmpty())
+        // A job the person did not start is not activity: the API reads the session without
+        // sliding it (x-lukas-background), so the widget never keeps a guest from being cleaned up.
+        assertEquals("1", headers[0]["background"])
         assertEquals(
             earlier.copy(
                 remaining = 120000000,

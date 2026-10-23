@@ -16,62 +16,83 @@ enum NoticeReason {
 }
 
 /// Asks the person, in the app, whether notices may be posted, with one sentence on why. True:
-/// "Permitir avisos"; false: "Ahora no"; null: there was no screen to ask on (nothing was asked).
+/// "Permitir avisos"; false: "Ahora no"; null: nothing was answered (no screen to ask on, or the
+/// question was closed by something other than the person, such as a link opening a sheet), so it
+/// is asked again at the next chance.
 typedef NoticePrompt = Future<bool?> Function(NoticeReason reason);
 
-/// The question, on whatever screen the app is on (replaced in tests).
+/// The question, on home and only there (replaced in tests). Only its two buttons (and the back
+/// button, as "Ahora no") answer it: tapping outside does nothing.
 final noticePromptProvider = Provider<NoticePrompt>((ref) {
   return (reason) async {
-    final context = await _navigatorContext(ref);
+    final context = await _homeContext(ref);
     if (context == null || !context.mounted) return null;
     final l10n = AppLocalizations.of(context);
-    final answer = await showDialog<bool>(
+    return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        key: const Key('notices.ask'),
-        title: Text(l10n.noticeAskTitle),
-        content: Text(
-          key: const Key('notices.askWhy'),
-          switch (reason) {
-            NoticeReason.due => l10n.noticeAskDue,
-            NoticeReason.guest => l10n.noticeAskGuest,
-          },
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        // The back button is "Ahora no"; a pop from the app itself (a link closing every sheet)
+        // does not come here and leaves the dialog's result null.
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) Navigator.of(context).pop(false);
+        },
+        child: AlertDialog(
+          key: const Key('notices.ask'),
+          title: Text(l10n.noticeAskTitle),
+          content: Text(
+            key: const Key('notices.askWhy'),
+            switch (reason) {
+              NoticeReason.due => l10n.noticeAskDue,
+              NoticeReason.guest => l10n.noticeAskGuest,
+            },
+          ),
+          actions: [
+            TextButton(
+              key: const Key('notices.askLater'),
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.noticeAskLater),
+            ),
+            FilledButton(
+              key: const Key('notices.askAllow'),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.noticeAskAllow),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            key: const Key('notices.askLater'),
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.noticeAskLater),
-          ),
-          FilledButton(
-            key: const Key('notices.askAllow'),
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.noticeAskAllow),
-          ),
-        ],
       ),
     );
-    // Dismissed by tapping outside or going back: an answer, "not now".
-    return answer ?? false;
   };
 });
 
-/// The screen to ask on: the router's navigator once the person is on a screen of their own, not
-/// the loading screen or the entry (a question put over a page that goes away goes with it). It
-/// takes a few frames at a cold start. Null if it never comes.
-Future<BuildContext?> _navigatorContext(Ref ref) async {
+/// How long the question waits for home to be free, and how often it looks.
+const _waitForHome = Duration(minutes: 5);
+const _lookEvery = Duration(milliseconds: 250);
+
+/// The screen to ask on: the router's navigator while the person is on home with nothing over it
+/// (no sheet, no dialog, no other screen). It waits for that for a few minutes (a sheet the person
+/// is using is theirs), and takes one more frame once there, since the navigator is still showing
+/// the page that home replaces. Null when home never frees up: nothing is asked.
+Future<BuildContext?> _homeContext(Ref ref) async {
   final router = ref.read(routerProvider);
   final navigator = router.routerDelegate.navigatorKey;
-  for (var frame = 0; frame < 60; frame++) {
+
+  bool free() {
     final context = navigator.currentContext;
-    final path = router.state.uri.path;
-    final settled = path != '/loading' && path != '/entry' && path != '/entry/email';
-    if (settled && context != null && context.mounted) {
-      // One more frame: the navigator is still showing the old page, which the screen replaces.
+    return router.state.uri.path == '/' &&
+        context != null &&
+        context.mounted &&
+        !Navigator.of(context).canPop();
+  }
+
+  final end = DateTime.now().add(_waitForHome);
+  while (DateTime.now().isBefore(end)) {
+    if (free()) {
       await WidgetsBinding.instance.endOfFrame;
-      return navigator.currentContext;
+      if (free()) return navigator.currentContext;
     }
-    await WidgetsBinding.instance.endOfFrame;
+    await Future<void>.delayed(_lookEvery);
   }
   return null;
 }

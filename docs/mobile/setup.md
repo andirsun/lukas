@@ -158,7 +158,7 @@ Central on the first run.
 notification permission not yet given (a fresh install), the second needs it given: install with
 `adb -s emulator-5554 install -r -g build/app/outputs/flutter-apk/app-debug.apk` and
 `adb -s emulator-5554 shell pm grant com.andersonlaverde.lukitas android.permission.POST_NOTIFICATIONS`
-right before it. It makes two recurring payments due today through the API, runs the "Hoy vence…" job
+right before it. It gives the profile a zone where it is about noon ("Hoy vence…" never goes out before 9:00 there), makes two recurring payments due today through the API, brings the app back to the foreground so it schedules the job, runs the "Hoy vence…" job
 once through WorkManager, checks the notice's text, and taps it (the same PendingIntent the shade
 sends) from Settings, expecting home. With `--dart-define=TAP_BY_HAND=true` it waits for you to tap
 the real notification on the shade (`adb shell cmd statusbar expand-notifications`).

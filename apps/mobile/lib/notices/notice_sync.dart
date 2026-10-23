@@ -13,8 +13,11 @@ import 'notice_prompt.dart';
 
 /// Keeps the app's two local notices (spec section 7.2) in step with the person, on the phone:
 ///
-///  * **"Hoy vence…"** is scheduled for 9:00 in the profile's zone while someone is signed in and
-///    its switch is on, and cancelled when either stops being true.
+///  * **"Hoy vence…"** is scheduled for 9:00 in the profile's zone only while someone is signed in,
+///    its switch is on, they have a recurring payment still running **and** notifications are
+///    allowed (a guest included); otherwise it is cancelled, so the phone never wakes up, nor
+///    asks the server anything, for a notice that cannot be posted. Offline, with nothing known,
+///    the job is left as it is.
 ///  * **The guest warning** is set 45 days ahead, again at every opening of the app on a guest
 ///    account (so it only fires after 45 days without opening it), and cancelled when the account
 ///    stops being a guest (a claimed email, a sign-out) or its switch goes off.
@@ -66,7 +69,8 @@ class NoticeSync with WidgetsBindingObserver {
     await session.ready;
     if (_ref.read(sessionProvider).status == SessionStatus.loading) return;
     // Android's answer first: where there is none, there is nothing to schedule or ask.
-    if (await platform.permission() == NoticePermission.unavailable) return;
+    final permission = await platform.permission();
+    if (permission == NoticePermission.unavailable) return;
 
     if (_ref.read(sessionProvider).status != SessionStatus.signedIn) {
       _facts = null;
@@ -93,8 +97,7 @@ class NoticeSync with WidgetsBindingObserver {
 
     var recurringRelevant = false;
     if (dueOn) {
-      // The zone and the recurring payments are the server's word. Offline, the job keeps the
-      // zone it knows, and nothing is asked of the person without knowing there is something.
+      // The zone and the recurring payments are the server's word.
       var facts = _facts;
       if (facts == null || !facts.hasRecurring) {
         try {
@@ -103,8 +106,18 @@ class NoticeSync with WidgetsBindingObserver {
           // Keep the earlier facts, if any.
         }
       }
-      await platform.scheduleDue(zone: facts?.timezone, language: language);
-      recurringRelevant = facts?.hasRecurring ?? false;
+      if (facts == null) {
+        // Nothing known (offline): the job stays as it is.
+      } else if (!facts.hasRecurring) {
+        await platform.cancelDue();
+      } else {
+        recurringRelevant = true;
+        if (permission == NoticePermission.granted) {
+          await platform.scheduleDue(zone: facts.timezone, language: language);
+        } else {
+          await platform.cancelDue();
+        }
+      }
     } else {
       await platform.cancelDue();
     }
@@ -121,6 +134,10 @@ class NoticeSync with WidgetsBindingObserver {
     if (_askingNow) return;
     _askingNow = true;
     _asking = _askOnce(reason)
+        .then((allowed) {
+          // Allowed just now: "Hoy vence…", which was waiting for it, can be scheduled.
+          if (allowed && reason == NoticeReason.due) request();
+        })
         .catchError((Object _) {
           // Nothing asked: the notices just do not post.
         })
@@ -128,20 +145,22 @@ class NoticeSync with WidgetsBindingObserver {
   }
 
   /// The permission, once: with a sentence on why in the app, then Android's own prompt.
-  Future<void> _askOnce(NoticeReason reason) async {
+  Future<bool> _askOnce(NoticeReason reason) async {
     final asked = _ref.read(flagStoreProvider('notice.permission.asked'));
-    if (await asked.read() == true) return;
+    if (await asked.read() == true) return false;
     // Allowed already, or switched off where the app cannot change it: nothing to ask.
-    if (await _platform.permission() != NoticePermission.askable) return;
+    if (await _platform.permission() != NoticePermission.askable) return false;
     final answer = await _ref.read(noticePromptProvider)(reason);
-    if (answer == null) return;
-    // Counted as soon as the person has seen the question, whatever they answer.
+    // No screen to ask on, or the question was closed by something other than the person (a link
+    // opening a sheet): not an answer, it is asked at the next chance.
+    if (answer == null) return false;
+    // Counted as soon as the person has answered, whatever they answer.
     try {
       await asked.write(true);
     } on Object {
       // Not kept: it may be asked once more after a restart.
     }
-    if (answer) await _platform.requestPermission();
+    return answer && await _platform.requestPermission();
   }
 }
 

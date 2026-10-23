@@ -97,9 +97,20 @@ void main() {
     await _startAsGuest(tester);
     final token = (await SessionStore().read())!.token;
 
-    // The profile's zone is the server's word, and "today" is read in it.
-    final me = await _http.get<Map<String, dynamic>>('$_server/api/v1/me', options: _auth(token));
-    final today = todayIn(me.data!['timezone'] as String, DateTime.now().toUtc());
+    // The profile's zone is the server's word, and "today" is read in it. "Hoy vence…" never goes
+    // out before 9:00 there, so the profile gets a zone where it is about noon right now.
+    final offset = () {
+      final hours = 12 - DateTime.now().toUtc().hour;
+      return hours > 12 ? hours - 24 : (hours < -12 ? hours + 24 : hours);
+    }();
+    final zone = offset == 0 ? 'Etc/GMT' : (offset > 0 ? 'Etc/GMT-$offset' : 'Etc/GMT+${-offset}');
+    final patched = await _http.patch<Map<String, dynamic>>(
+      '$_server/api/v1/me',
+      data: {'timezone': zone},
+      options: _auth(token),
+    );
+    expect(patched.statusCode, 200, reason: '${patched.data}');
+    final today = todayIn(zone, DateTime.now().toUtc());
     final category = await _http.post<Map<String, dynamic>>(
       '$_server/api/v1/categories',
       data: {'name': 'Avisos', 'kind': 'expense', 'icon': '🏠', 'color': '#2fd388'},
@@ -122,6 +133,14 @@ void main() {
       expect(made.statusCode, 201, reason: '${made.data}');
       // Created seconds apart, so the notice lists them in the order they were made.
       await Future<void>.delayed(const Duration(milliseconds: 1200));
+    }
+
+    // The app comes back to the foreground: it now sees a recurring payment and notices allowed,
+    // so it schedules "Hoy vence…" (it is not scheduled for someone with nothing to announce).
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
     }
 
     expect(await _test.invokeMethod<String>('runDueNotice'), 'posted');

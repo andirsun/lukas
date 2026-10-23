@@ -25,14 +25,14 @@ void main() {
   test('scheduling and cancelling go to Android by name, with the zone and the language', () async {
     const platform = ChannelNoticePlatform();
     await platform.scheduleDue(zone: 'America/Bogota', language: 'es');
-    await platform.scheduleDue(language: 'en');
+    await platform.scheduleDue(zone: 'Asia/Tokyo', language: 'en');
     await platform.cancelDue();
     await platform.scheduleGuest(language: 'en');
     await platform.cancelGuest();
 
     expect(calls.map((c) => c.method), ['scheduleDue', 'scheduleDue', 'cancelDue', 'scheduleGuest', 'cancelGuest']);
     expect(calls[0].arguments, {'zone': 'America/Bogota', 'language': 'es'});
-    expect(calls[1].arguments, {'zone': null, 'language': 'en'});
+    expect(calls[1].arguments, {'zone': 'Asia/Tokyo', 'language': 'en'});
     expect(calls[3].arguments, {'language': 'en'});
   });
 

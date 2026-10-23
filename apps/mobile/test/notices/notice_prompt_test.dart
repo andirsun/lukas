@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/add/add_sheet.dart';
+import 'package:lukitas/launch/launch_links.dart';
 import 'package:lukitas/notices/notice_backend.dart';
 import 'package:lukitas/notices/notice_platform.dart';
 
+import '../launch/launch_links_test.dart' show FakeLaunchLinks;
 import '../settings/harness.dart';
 import 'fakes.dart';
 
@@ -26,6 +29,7 @@ void main() {
       ],
     );
     // The question stays on screen until it is answered, so no waiting for the sync to be idle.
+    await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();
     return (env, platform);
   }
@@ -70,5 +74,88 @@ void main() {
     );
     expect(find.text('Not now'), findsOneWidget);
     expect(find.text('Allow notices'), findsOneWidget);
+  });
+
+  testWidgets('the question waits for home, with no sheet over it, and does not appear over Settings', (
+    tester,
+  ) async {
+    final links = FakeLaunchLinks('lukitas://add');
+    final platform = FakeNoticePlatform();
+    final env = await pumpSettingsApp(
+      tester,
+      overrides: [
+        launchLinkSourceProvider.overrideWithValue(links),
+        noticePlatformProvider.overrideWithValue(platform),
+        noticeBackendProvider.overrideWithValue(FakeNoticeBackend(hasRecurring: true)),
+      ],
+    );
+    await tester.pump(const Duration(seconds: 2));
+    // The add sheet is open over home: no question over it.
+    expect(find.byType(AddSheet), findsOneWidget);
+    expect(find.byKey(const Key('notices.ask')), findsNothing);
+
+    // The sheet closed: now home is free, and the question comes.
+    Navigator.of(env.router.routerDelegate.navigatorKey.currentContext!).pop();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('notices.ask')), findsOneWidget);
+  });
+
+  testWidgets('not over Settings: it waits until the person is back on home', (tester) async {
+    final platform = FakeNoticePlatform();
+    final env = await pumpSettingsApp(
+      tester,
+      location: '/settings',
+      overrides: [
+        noticePlatformProvider.overrideWithValue(platform),
+        noticeBackendProvider.overrideWithValue(FakeNoticeBackend(hasRecurring: true)),
+      ],
+    );
+    // The pass that started on home found the person elsewhere; the next one (the app coming back)
+    // finds them on Settings and waits.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.byKey(const Key('notices.ask')), findsNothing);
+    env.router.go('/');
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('notices.ask')), findsOneWidget);
+  });
+
+  testWidgets('a link that arrives while it is up closes it without counting it as "Ahora no"', (tester) async {
+    final links = FakeLaunchLinks();
+    final platform = FakeNoticePlatform();
+    final env = await pumpSettingsApp(
+      tester,
+      overrides: [
+        launchLinkSourceProvider.overrideWithValue(links),
+        noticePlatformProvider.overrideWithValue(platform),
+        noticeBackendProvider.overrideWithValue(FakeNoticeBackend(hasRecurring: true)),
+      ],
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('notices.ask')), findsOneWidget);
+
+    links.open('lukitas://due');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('notices.ask')), findsNothing);
+    expect(platform.callsNamed('requestPermission'), isEmpty);
+    expect(env.flags['notice.permission.asked']?.value, isNot(true), reason: 'not an answer');
+
+    // Asked again at the next chance (the app coming back), on home.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('notices.ask')), findsOneWidget);
+  });
+
+  testWidgets('tapping outside the question does not answer it', (tester) async {
+    await pump(tester);
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('notices.ask')), findsOneWidget);
   });
 }

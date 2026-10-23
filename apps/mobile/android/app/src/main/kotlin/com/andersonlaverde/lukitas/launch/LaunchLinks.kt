@@ -8,7 +8,7 @@ import android.net.Uri
  * The app's own links (spec sections 7.1 and 7.2): `lukitas://add` opens the add sheet with the
  * keypad ready (the widget's ＋), `lukitas://capture` opens quick capture listening (the widget's 🎤
  * and the Quick Settings tile), `lukitas://due` opens home with the payments due today (the "Hoy
- * vence…" notice). MainActivity keeps them from Flutter's router and hands them to Dart
+ * vence…" notice), `lukitas://progress` opens "Guarda tu progreso" (the guest warning). MainActivity keeps them from Flutter's router and hands them to Dart
  * (lib/launch/launch_links.dart), which opens them once the session has loaded.
  *
  * They reach the app only through [ALIAS], an activity-alias of `MainActivity` that is not exported
@@ -22,7 +22,10 @@ object LaunchLinks {
 
     /** The "Hoy vence…" notice (spec section 7.2): home, with the payments due today in view. */
     val DUE: Uri = Uri.parse("lukitas://due")
-    private val HOSTS = setOf("add", "capture", "due")
+
+    /** The guest warning (spec section 7.2): "Guarda tu progreso". */
+    val PROGRESS: Uri = Uri.parse("lukitas://progress")
+    private val HOSTS = setOf("add", "capture", "due", "progress")
 
     /** The not-exported entry the links come through (an alias of `MainActivity`). */
     const val ALIAS = "com.andersonlaverde.lukitas.LaunchLinkAlias"
@@ -34,7 +37,7 @@ object LaunchLinks {
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
 
     /**
-     * The `lukitas://add`, `lukitas://capture` or `lukitas://due` link [intent] carries, or null. An activity
+     * The `lukitas://add`, `capture`, `due` or `progress` link [intent] carries, or null. An activity
      * reopened from recents gets its first intent again: that one is not acted on twice.
      */
     fun linkOf(intent: Intent?): String? {

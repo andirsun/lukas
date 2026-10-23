@@ -19,9 +19,9 @@ enum NoticePermission {
 /// Android's side of the two local notices (spec section 7.2), `android/.../notices/`: the jobs on
 /// WorkManager that post them, and the notification permission. Tests replace it.
 abstract interface class NoticePlatform {
-  /// Schedules "Hoy vence…" for the next 9:00 in [zone] (the profile's IANA zone; null keeps the
-  /// one Android knows). Scheduling again keeps the job already waiting for the same zone.
-  Future<void> scheduleDue({String? zone, required String language});
+  /// Schedules "Hoy vence…" for the next 9:00 in [zone] (the profile's IANA zone). Scheduling
+  /// again keeps the job already waiting for the same zone.
+  Future<void> scheduleDue({required String zone, required String language});
 
   Future<void> cancelDue();
 
@@ -55,7 +55,7 @@ class ChannelNoticePlatform implements NoticePlatform {
   }
 
   @override
-  Future<void> scheduleDue({String? zone, required String language}) =>
+  Future<void> scheduleDue({required String zone, required String language}) =>
       _call<void>('scheduleDue', {'zone': zone, 'language': language});
 
   @override
