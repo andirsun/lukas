@@ -66,7 +66,7 @@ void main() {
       await tester.tap(find.byKey(const Key('home.add')));
       await tester.pumpAndSettle();
       await typeAmount(tester, '5000');
-      await tester.enterText(find.byType(TextField).first, 'Café');
+      await tester.enterText(find.byKey(const Key('add.name')), 'Café');
       await tester.tap(find.byKey(const Key('category.cat-groceries')));
       await tester.pump();
       await tester.tap(find.byKey(const Key('add.save')));
@@ -100,7 +100,7 @@ void main() {
         await tester.tap(find.text('AGREGAR GASTO'));
         await tester.pumpAndSettle();
         await typeAmount(tester, '4000');
-        await tester.enterText(find.byType(TextField).first, 'Pienso');
+        await tester.enterText(find.byKey(const Key('add.name')), 'Pienso');
         await tester.tap(find.byKey(const Key('add.save')));
         await tester.pumpAndSettle();
 

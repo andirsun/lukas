@@ -13,10 +13,13 @@ import 'pressable.dart';
 
 /// One option of a [SegmentedControl].
 class SegmentOption<T> {
-  const SegmentOption(this.value, this.label);
+  const SegmentOption(this.value, this.label, {this.key});
 
   final T value;
   final String label;
+
+  /// Finds this option's tab (tests).
+  final Key? key;
 }
 
 /// Switches between views, as tabs: the selected option sits raised on its edge, only it is in
@@ -95,6 +98,7 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>> {
         for (final option in options)
           Expanded(
             child: _Tab(
+              key: option.key,
               label: option.label,
               selected: option.value == widget.value,
               hasThumb: position != null,
@@ -182,6 +186,7 @@ class _Thumb extends StatelessWidget {
 
 class _Tab extends StatelessWidget {
   const _Tab({
+    super.key,
     required this.label,
     required this.selected,
     required this.hasThumb,

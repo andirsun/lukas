@@ -43,6 +43,8 @@ class Pressable extends StatefulWidget {
     this.label,
     this.link = false,
     this.selected,
+    this.expanded,
+    this.checked,
     this.liveRegion = false,
     this.role,
     this.onFocusChange,
@@ -66,6 +68,12 @@ class Pressable extends StatefulWidget {
 
   /// A toggle's state (the web's `aria-pressed` / `aria-selected`); null for a plain button.
   final bool? selected;
+
+  /// A checkbox's state (the web's `checked`); null for what is not one.
+  final bool? checked;
+
+  /// A disclosure's state (the web's `aria-expanded`); null when it does not open anything.
+  final bool? expanded;
 
   /// Announces changes of its name politely (the web's `aria-live="polite"`).
   final bool liveRegion;
@@ -193,7 +201,7 @@ class _PressableState extends State<Pressable> {
       ),
     );
     final semantics = Semantics(
-      button: !widget.link,
+      button: !widget.link && widget.checked == null,
       link: widget.link,
       enabled: _enabled,
       // `Focus` says so for a control whose content names it; a label drops the content (and
@@ -204,6 +212,8 @@ class _PressableState extends State<Pressable> {
       label: widget.label,
       hint: widget.hint,
       selected: widget.selected,
+      expanded: widget.expanded,
+      checked: widget.checked,
       liveRegion: widget.liveRegion,
       role: widget.role,
       onTap: widget.onPressed,

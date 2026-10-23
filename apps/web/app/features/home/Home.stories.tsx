@@ -400,8 +400,34 @@ export const AddIncome: Story = {
   },
 };
 
-/** "Más opciones": another date and pending, kept in what is sent. */
+/**
+ * "Más opciones": opened, it shows the date (today) and pending, with the note under them. The
+ * story rests with the sheet open on them (the mobile parity picture of it); `MoreOptionsSent`
+ * saves.
+ */
 export const MoreOptions: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "39,9");
+    await pickCategory(sheet, "Supermercado");
+
+    const more = sheet.getByRole("button", { name: /^Más opciones/ });
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(more);
+    await expect(more).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(sheet.getByRole("checkbox", { name: "Pendiente (aún no lo pagas)" }));
+    await expect(sheet.getByLabelText("Fecha")).toHaveValue(
+      new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date()),
+    );
+    await expect(sheet.getByRole("textbox", { name: "Nota (opcional)" })).toBeVisible();
+  },
+};
+
+/** "Más opciones": another date and pending, kept in what is sent. */
+export const MoreOptionsSent: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);

@@ -21,6 +21,7 @@ class CategoryChip extends StatelessWidget {
     this.note,
     required this.selected,
     required this.onSelect,
+    this.expanded,
   });
 
   /// The category's emoji.
@@ -33,6 +34,9 @@ class CategoryChip extends StatelessWidget {
   final bool selected;
   final VoidCallback onSelect;
 
+  /// The chip opens or closes more chips ("Más"/"Menos"): the web's `aria-expanded`.
+  final bool? expanded;
+
   @override
   Widget build(BuildContext context) {
     final lk = context.lk;
@@ -42,7 +46,8 @@ class CategoryChip extends StatelessWidget {
 
     return Pressable(
       onPressed: onSelect,
-      selected: selected,
+      selected: expanded == null ? selected : null,
+      expanded: expanded,
       builder: (context, state) {
         final pressed = state.pressed;
         // The tile carries the edge and sinks: `translateY(3px)` and a 1px edge.

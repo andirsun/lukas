@@ -27,6 +27,7 @@ class Keypad extends StatelessWidget {
     required this.locale,
     this.currency,
     this.compact = false,
+    this.currentValue,
   });
 
   /// The raw text typed so far (`6,08` in es, `6.08` in en).
@@ -44,10 +45,15 @@ class Keypad extends StatelessWidget {
   /// 4px gap): still 44px targets, so the whole sheet fits.
   final bool compact;
 
+  /// What the text is right now, for a key pressed before the screen has caught up with the last
+  /// one (two taps within a frame): without it [value], as of the last build.
+  final ValueGetter<String>? currentValue;
+
   void _press(BuildContext context, KeypadKey key) {
     context.feedback(FeedbackEvent.keyPressed);
-    final next = pressKey(value, key, AmountFormat(locale, currency));
-    if (next != value) onChange(next);
+    final now = currentValue?.call() ?? value;
+    final next = pressKey(now, key, AmountFormat(locale, currency));
+    if (next != now) onChange(next);
   }
 
   @override

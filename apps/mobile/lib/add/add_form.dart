@@ -200,6 +200,13 @@ class AddForm extends ChangeNotifier {
     _changed();
   }
 
+  /// The keypad (or a keyboard, or a paste) made the amount [next], as raw text.
+  void setRaw(String next) {
+    if (next == raw) return;
+    raw = next;
+    _changed();
+  }
+
   void setKind(Kind next) {
     final target = next == Kind.income ? CategoryKindEnum.income : CategoryKindEnum.expense;
     // The category chosen under the old kind does not carry over: the new kind starts at its first.

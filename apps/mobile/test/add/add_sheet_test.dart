@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/add/add_sheet.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
+import 'package:lukitas/ui/press_button.dart';
 
 import '../home/fakes.dart';
 import '../home/fixtures.dart';
@@ -56,12 +58,14 @@ Future<void> tapKeys(WidgetTester tester, String keys) async {
   }
 }
 
+/// What the amount says: the figure, then the lukas hint (which sits in a line of its own text, as
+/// the web's `align-middle` span does).
 String amountShown(WidgetTester tester) => tester
-    .widget<RichText>(
+    .widgetList<RichText>(
       find.descendant(of: find.byKey(const Key('add.amount')), matching: find.byType(RichText)),
     )
-    .text
-    .toPlainText();
+    .map((text) => text.text.toPlainText())
+    .join(' ');
 
 /// The one create call the fake server got (the sheet's other calls are the suggestions').
 String createCall(FakeAddRepository add) => add.calls.singleWhere((c) => c.startsWith('create'));
@@ -118,7 +122,7 @@ void main() {
     testWidgets('Guardar waits for an amount; Borrar takes the last digit away', (tester) async {
       await pump(tester);
       await openSheet(tester);
-      FilledButton save() => tester.widget<FilledButton>(find.byKey(const Key('add.save')));
+      PressButton save() => tester.widget<PressButton>(find.byKey(const Key('add.save')));
       expect(save().onPressed, isNull);
       await tapKeys(tester, '12');
       expect(save().onPressed, isNotNull);
@@ -132,7 +136,7 @@ void main() {
       // Eight names, used 8, 7, ... 1 times.
       for (var n = 0; n < 8; n++)
         for (var i = 0; i <= 7 - n; i++)
-          tx('n$n-$i', '2026-10-${10 + (i % 10)}', -1000, name: 'Nombre${n + 1}'),
+          tx('n$n-$i', '2026-10-${10 + (i % 10)}', -1000, name: 'Comercio largo ${n + 1}'),
     ];
 
     testWidgets('suggestions show at most two rows, the most used first', (tester) async {
@@ -140,18 +144,18 @@ void main() {
       await openSheet(tester);
       final shown = [
         for (var n = 1; n <= 8; n++)
-          if (find.byKey(Key('shortcut.Nombre$n')).evaluate().isNotEmpty) n,
+          if (find.byKey(Key('shortcut.Comercio largo $n')).evaluate().isNotEmpty) n,
       ];
       // Whatever shows is a prefix of the most used first, and not all eight fit in two rows.
       expect(shown, [for (var i = 1; i <= shown.length; i++) i]);
       expect(shown.length, inInclusiveRange(2, 7));
       final tops = {
-        for (final n in shown) tester.getTopLeft(find.byKey(Key('shortcut.Nombre$n'))).dy,
+        for (final n in shown) tester.getTopLeft(find.byKey(Key('shortcut.Comercio largo $n'))).dy,
       };
       expect(tops.length, lessThanOrEqualTo(2));
       // Most used first reads left to right, then down.
       final positions = [
-        for (final n in shown) tester.getTopLeft(find.byKey(Key('shortcut.Nombre$n'))),
+        for (final n in shown) tester.getTopLeft(find.byKey(Key('shortcut.Comercio largo $n'))),
       ];
       for (var i = 1; i < positions.length; i++) {
         final before = positions[i - 1];
@@ -168,7 +172,10 @@ void main() {
       await openSheet(tester);
       await tester.tap(find.byKey(const Key('shortcut.Cine')));
       await tester.pumpAndSettle();
-      expect(tester.widget<TextField>(find.byKey(const Key('add.name'))).controller!.text, 'Cine');
+      expect(
+        tester.widget<EditableText>(find.byKey(const Key('add.name'))).controller.text,
+        'Cine',
+      );
       await tapKeys(tester, '5');
       await tester.tap(find.byKey(const Key('add.save')));
       await tester.pumpAndSettle();
@@ -267,10 +274,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Editar movimiento'), findsOneWidget);
       expect(
-        tester.widget<TextField>(find.byKey(const Key('add.name'))).focusNode!.hasFocus,
+        tester.widget<EditableText>(find.byKey(const Key('add.name'))).focusNode.hasFocus,
         isTrue,
       );
-      await tester.tap(find.byKey(const Key('add.close')));
+      await tester.tap(find.text('CERRAR'));
       await tester.pumpAndSettle();
       await letTimersEnd(tester);
     });
@@ -368,7 +375,7 @@ void main() {
       expect(find.byKey(const Key('add.retry')), findsNothing);
       expect(amountShown(tester), contains(r'$25.000'));
       // Guardar is there to try again.
-      expect(tester.widget<FilledButton>(find.byKey(const Key('add.save'))).onPressed, isNotNull);
+      expect(tester.widget<PressButton>(find.byKey(const Key('add.save'))).onPressed, isNotNull);
     });
 
     testWidgets('a second tap while saving sends nothing more', (tester) async {
@@ -400,7 +407,7 @@ void main() {
       expect(find.text('Editar movimiento'), findsOneWidget);
       expect(amountShown(tester), contains(r'$28.000'));
       expect(
-        tester.widget<TextField>(find.byKey(const Key('add.name'))).controller!.text,
+        tester.widget<EditableText>(find.byKey(const Key('add.name'))).controller.text,
         'Almuerzo',
       );
 
@@ -428,7 +435,7 @@ void main() {
       await tester.tap(find.text('Supermercado').first);
       await tester.pumpAndSettle();
       String shown() =>
-          tester.widget<TextField>(find.byKey(const Key('add.name'))).controller!.text;
+          tester.widget<EditableText>(find.byKey(const Key('add.name'))).controller.text;
       expect(shown(), '');
       // The name passes through the category's own on the way to the longer one.
       await tester.enterText(find.byKey(const Key('add.name')), 'Supermercado');
@@ -489,7 +496,7 @@ void main() {
       expect(find.byKey(const Key('keypad.5')), findsNothing);
 
       // Reintentar loads home; the sheet then shows its form.
-      await tester.tap(find.text('Reintentar').last);
+      await tester.tap(find.text('REINTENTAR').last);
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('keypad.5')), findsOneWidget);
     });
@@ -582,7 +589,7 @@ void main() {
       final env = await pump(tester);
       await openSheet(tester);
       await tapKeys(tester, '5');
-      await tester.tap(find.byKey(const Key('add.close')));
+      await tester.tap(find.text('CERRAR'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('add.sheet')), findsNothing);
       expect(env.add.calls.where((c) => c.startsWith('create')), isEmpty);
@@ -602,7 +609,7 @@ void main() {
       await pump(tester, currency: 'EUR', locale: const Locale('en'));
       await openSheet(tester);
       expect(find.text('New expense'), findsOneWidget);
-      expect(find.text('Save'), findsOneWidget);
+      expect(find.text('SAVE'), findsOneWidget);
       await tapKeys(tester, '6.5');
       expect(amountShown(tester), contains('€6.5'));
     });
@@ -612,7 +619,7 @@ void main() {
       await openSheet(tester);
       expect(find.text('Aún no tienes categorías de gasto.'), findsOneWidget);
       await tapKeys(tester, '5');
-      expect(tester.widget<FilledButton>(find.byKey(const Key('add.save'))).onPressed, isNull);
+      expect(tester.widget<PressButton>(find.byKey(const Key('add.save'))).onPressed, isNull);
     });
 
     testWidgets('categories fold behind Más, and the chosen one stays in view', (tester) async {
@@ -632,6 +639,197 @@ void main() {
       await tester.tap(find.byKey(const Key('add.moreCategories')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('category.c11')), findsOneWidget);
+    });
+  });
+
+  group('as the web\'s sheet', () {
+    void bigText(WidgetTester tester) {
+      tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    }
+
+    testWidgets('at text scale 1.3 on 360x640 every key and Guardar are visible', (tester) async {
+      bigText(tester);
+      final env = await pump(tester, size: const Size(360, 640));
+      await openSheet(tester);
+      final screen = const Offset(0, 0) & const Size(360, 640);
+      for (final name in [
+        for (var d = 0; d <= 9; d++) 'keypad.$d',
+        'keypad.backspace',
+        'add.save',
+      ]) {
+        final rect = tester.getRect(find.byKey(Key(name)));
+        expect(
+          screen.contains(rect.topLeft) && screen.contains(rect.bottomRight),
+          isTrue,
+          reason: '$name at $rect',
+        );
+      }
+      // No overflow stripes, and the keys still type.
+      expect(tester.takeException(), isNull);
+      await tapKeys(tester, '1234');
+      expect(amountShown(tester), contains(r'$1.234'));
+      await tester.tap(find.byKey(const Key('add.save')));
+      await tester.pumpAndSettle();
+      expect(env.add.keys.length, 1);
+      await letTimersEnd(tester);
+    });
+
+    testWidgets('the same in English with Más opciones open', (tester) async {
+      bigText(tester);
+      await pump(tester, size: const Size(360, 640), locale: const Locale('en'));
+      await openSheet(tester);
+      await tester.ensureVisible(find.byKey(const Key('add.more')));
+      await tester.tap(find.byKey(const Key('add.more')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      final save = tester.getRect(find.byKey(const Key('add.save')));
+      expect(save.bottom, lessThanOrEqualTo(640));
+      expect(tester.getRect(find.byKey(const Key('keypad.0'))).bottom, lessThanOrEqualTo(640));
+    });
+
+    testWidgets('a drag down on the scrolling middle, at its top, closes the sheet', (
+      tester,
+    ) async {
+      final env = await pump(tester, size: const Size(360, 640));
+      await openSheet(tester);
+      // The finger goes down on a category (in the scrolling middle) and drags down.
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('category.cat-fun'))),
+      );
+      await tester.pump(const Duration(milliseconds: 150));
+      await gesture.moveBy(const Offset(0, 120));
+      await tester.pump();
+      await gesture.moveBy(const Offset(0, 400));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add.sheet')), findsNothing);
+      expect(env.add.calls.where((c) => c.startsWith('create')), isEmpty);
+    });
+
+    testWidgets('a drag down on the name field closes it too, and picks nothing', (tester) async {
+      await pump(tester);
+      await openSheet(tester);
+      await tester.fling(find.byKey(const Key('add.name')), const Offset(0, 500), 2000);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add.sheet')), findsNothing);
+    });
+
+    testWidgets('a middle scrolled away from its top scrolls back before the sheet moves', (
+      tester,
+    ) async {
+      await pump(tester, size: const Size(360, 640));
+      await openSheet(tester);
+      // Opened, Más opciones is longer than the room: the middle scrolls.
+      await tester.ensureVisible(find.byKey(const Key('add.more')));
+      await tester.tap(find.byKey(const Key('add.more')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('add.pending')));
+      await tester.drag(find.byKey(const Key('add.pending')), const Offset(0, -150));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byKey(const Key('add.pending')), const Offset(0, 60));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add.sheet')), findsOneWidget);
+    });
+
+    testWidgets('a physical keyboard types the amount, and Backspace takes a digit away', (
+      tester,
+    ) async {
+      await pump(tester);
+      await openSheet(tester);
+      for (final (key, character) in [
+        (LogicalKeyboardKey.digit1, '1'),
+        (LogicalKeyboardKey.digit5, '5'),
+        (LogicalKeyboardKey.digit0, '0'),
+        (LogicalKeyboardKey.digit0, '0'),
+        (LogicalKeyboardKey.digit0, '0'),
+      ]) {
+        await tester.sendKeyEvent(key, character: character);
+        await tester.pump();
+      }
+      expect(amountShown(tester), contains(r'$15.000'));
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.pump();
+      expect(amountShown(tester), contains(r'$1.500'));
+    });
+
+    testWidgets('Eliminar removes the movement at once, and Deshacer brings it back', (
+      tester,
+    ) async {
+      final env = await pump(
+        tester,
+        items: [tx('lunch', '2026-10-22', -2800000, name: 'Almuerzo')],
+      );
+      await tester.tap(find.text('Almuerzo'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('add.delete')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add.sheet')), findsNothing);
+      expect(env.server.items, isEmpty);
+      expect(find.text('Eliminado: Almuerzo'), findsOneWidget);
+      await tester.tap(find.text('Deshacer'));
+      await tester.pumpAndSettle();
+      expect(env.server.items.length, 1);
+      expect(find.text('De vuelta: Almuerzo'), findsOneWidget);
+      await letTimersEnd(tester);
+    });
+
+    testWidgets('adding has no Eliminar', (tester) async {
+      await pump(tester);
+      await openSheet(tester);
+      expect(find.byKey(const Key('add.delete')), findsNothing);
+    });
+
+    testWidgets('the date shows as the language writes it, and the picker changes it', (
+      tester,
+    ) async {
+      final env = await pump(tester);
+      await openSheet(tester);
+      await tester.ensureVisible(find.byKey(const Key('add.more')));
+      await tester.tap(find.byKey(const Key('add.more')));
+      await tester.pumpAndSettle();
+      expect(find.text('22/10/2026'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('add.date')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('20'));
+      await tester.tap(find.byType(TextButton).last);
+      await tester.pumpAndSettle();
+      expect(find.text('20/10/2026'), findsOneWidget);
+      await tapKeys(tester, '5');
+      await tester.tap(find.byKey(const Key('add.save')));
+      await tester.pumpAndSettle();
+      expect(env.server.items.firstWhere((t) => t.id == 'new-1').date, '2026-10-20');
+      await letTimersEnd(tester);
+    });
+
+    testWidgets('the checkbox is a checkbox to assistive technology, and the row toggles it', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pump(tester);
+      await openSheet(tester);
+      await tester.ensureVisible(find.byKey(const Key('add.more')));
+      await tester.tap(find.byKey(const Key('add.more')));
+      await tester.pumpAndSettle();
+      final label = find.bySemanticsLabel('Pendiente (aún no lo pagas)');
+      expect(
+        tester.getSemantics(label),
+        isSemantics(hasCheckedState: true, isChecked: false),
+      );
+      await tester.tap(label);
+      await tester.pump();
+      expect(tester.getSemantics(label), isSemantics(hasCheckedState: true, isChecked: true));
+      handle.dispose();
+    });
+
+    testWidgets('the title follows the kind', (tester) async {
+      await pump(tester);
+      await openSheet(tester);
+      expect(find.text('Nuevo gasto'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('add.kind.income')));
+      await tester.pumpAndSettle();
+      expect(find.text('Nuevo ingreso'), findsOneWidget);
+      expect(find.text('Nuevo gasto'), findsNothing);
     });
   });
 }

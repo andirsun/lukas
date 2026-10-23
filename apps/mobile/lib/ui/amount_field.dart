@@ -106,14 +106,24 @@ class _AmountDisplayState extends State<AmountDisplay> {
                   TextSpan(text: text),
                   if (hint != null) ...[
                     const TextSpan(text: ' '),
-                    TextSpan(
-                      text: hint,
-                      style: LkText.body.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        height: null,
-                        color: colors.inkMuted,
-                        fontFeatures: const [],
+                    // `align-middle`: the hint's middle sits on the figure's x-height middle, which
+                    // for Fredoka at 36px and Nunito at 14px is its baseline 4.5px above the figure's
+                    // (measured against the web's picture).
+                    WidgetSpan(
+                      alignment: PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic,
+                      child: Transform.translate(
+                        offset: const Offset(0, -4.5),
+                        child: Text(
+                          hint,
+                          style: LkText.body.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            height: null,
+                            color: colors.inkMuted,
+                            fontFeatures: const [],
+                          ),
+                        ),
                       ),
                     ),
                   ],

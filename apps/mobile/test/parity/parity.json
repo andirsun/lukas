@@ -1015,5 +1015,47 @@
     "storyId": "insights-insights--english",
     "theme": "day",
     "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "add-sheet-more-options",
+    "storyId": "home-home--more-options",
+    "theme": "night",
+    "appTest": "test/parity/add_sheet_parity_test.dart"
+  },
+  {
+    "id": "add-sheet-more-options",
+    "storyId": "home-home--more-options",
+    "theme": "day",
+    "appTest": "test/parity/add_sheet_parity_test.dart"
+  },
+  {
+    "id": "add-sheet-shortcut",
+    "storyId": "home-home--shortcut-picks-category",
+    "theme": "night",
+    "appTest": "test/parity/add_sheet_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
+  },
+  {
+    "id": "add-sheet-shortcut",
+    "storyId": "home-home--shortcut-picks-category",
+    "theme": "day",
+    "appTest": "test/parity/add_sheet_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
+  },
+  {
+    "id": "add-sheet-pesos",
+    "storyId": "home-home--sheet-day-theme",
+    "theme": "day",
+    "appTest": "test/parity/add_sheet_parity_test.dart"
+  },
+  {
+    "id": "add-sheet-edit",
+    "storyId": "home-home--edit-sheet-day-theme",
+    "theme": "day",
+    "appTest": "test/parity/add_sheet_parity_test.dart"
   }
 ]

@@ -12,6 +12,7 @@ import '../support/fonts.dart';
 const _appCss = '../web/app/styles/app.css';
 const _sheetTsx = '../web/app/ui/Sheet.tsx';
 const _confirmSheetTsx = '../web/app/ui/ConfirmSheet.tsx';
+const _addSheetTsx = '../web/app/features/add-transaction/AddTransactionSheet.tsx';
 const _homeTsx = '../web/app/features/home/Home.tsx';
 const _homeHeaderTsx = '../web/app/features/home/HomeHeader.tsx';
 const _tokensCss = '../web/app/styles/tokens.css';
@@ -245,6 +246,22 @@ void main() {
           expect(style.fontFamily, 'Nunito');
           expect(style.height, 1.5);
         }
+      },
+    );
+
+    test(
+      'fieldLabel: the captions of the add sheet\'s date and note, as AddTransactionSheet.tsx',
+      () {
+        final sheet = File(_addSheetTsx).readAsStringSync();
+        // The date's and the note's `<label>`: `text-[13px] font-bold text-ink-muted`.
+        expect(
+          'text-[13px] font-bold text-ink-muted'.allMatches(sheet).length,
+          greaterThanOrEqualTo(2),
+        );
+        expect(LkText.fieldLabel.fontFamily, 'Nunito');
+        expect(LkText.fieldLabel.fontSize, 13);
+        expect(LkText.fieldLabel.fontWeight, FontWeight.w700);
+        expect(LkText.fieldLabel.height, 1.5);
       },
     );
 

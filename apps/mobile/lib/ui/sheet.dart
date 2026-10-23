@@ -33,6 +33,12 @@ import 'toast.dart';
 abstract final class LkSheet {
   /// Opens a sheet and returns what it is popped with.
   ///
+  /// A sheet whose parts share state (the add sheet's amount, keypad and Guardar) puts that state
+  /// in [wrap]: it gets the whole sheet (its header, parts and backdrop) and returns it inside
+  /// whatever holds the state, so every part under it can read it. [titleOf] then names the sheet
+  /// from there (the add sheet's title follows the kind), in the header and for assistive
+  /// technology; [title] is what it says without one.
+  ///
   /// [children] sit under the title, [pinned] and [footer] make the add sheet's layout: with a
   /// [footer] the sheet may take all but a strip of the screen, [pinned] stays under the header,
   /// the [children] scroll between them, and the footer is always in view. Without one the whole
@@ -46,11 +52,15 @@ abstract final class LkSheet {
     List<Widget>? footer,
     List<Widget>? stuck,
     bool useRootNavigator = true,
+    String Function(BuildContext context)? titleOf,
+    Widget Function(Widget sheet)? wrap,
   }) {
     final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
     return navigator.push(
       _LkSheetRoute<T>(
         title: title,
+        titleOf: titleOf,
+        wrap: wrap,
         children: children,
         pinned: pinned,
         footer: footer,
@@ -78,6 +88,9 @@ class LkSheetScope extends InheritedWidget {
   bool updateShouldNotify(LkSheetScope old) => old.hasFooter != hasFooter;
 }
 
+/// Phones up to 844 px tall (`@media (max-height: 859.98px)`) get the tighter footer and keys.
+const compactFooterBelow = 860.0;
+
 /// How far a stuck footer's bottom edge sits above the sheet's: the sheet's padding the web's
 /// `.lk-sheet-footer` leaves uncovered (calibrated against the budget sheet's picture).
 const _stuckBottomGap = 16.0;
@@ -88,6 +101,8 @@ const _sheetEase = Cubic(0.32, 0.72, 0, 1);
 class _LkSheetRoute<T> extends PopupRoute<T> {
   _LkSheetRoute({
     required this.title,
+    required this.titleOf,
+    required this.wrap,
     required this.children,
     required this.pinned,
     required this.footer,
@@ -97,6 +112,8 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
   });
 
   final String title;
+  final String Function(BuildContext context)? titleOf;
+  final Widget Function(Widget sheet)? wrap;
   final List<Widget> children;
   final List<Widget> pinned;
   final List<Widget>? footer;
@@ -129,6 +146,8 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
       route: this,
       animation: animation,
       title: title,
+      titleOf: titleOf,
+      wrap: wrap,
       pinned: pinned,
       footer: footer,
       stuck: stuck,
@@ -142,6 +161,8 @@ class _SheetPage extends StatefulWidget {
     required this.route,
     required this.animation,
     required this.title,
+    required this.titleOf,
+    required this.wrap,
     required this.children,
     required this.pinned,
     required this.footer,
@@ -151,6 +172,8 @@ class _SheetPage extends StatefulWidget {
   final Route<dynamic> route;
   final Animation<double> animation;
   final String title;
+  final String Function(BuildContext context)? titleOf;
+  final Widget Function(Widget sheet)? wrap;
   final List<Widget> children;
   final List<Widget> pinned;
   final List<Widget>? footer;
@@ -317,9 +340,15 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
             Flexible(
               child: Semantics(
                 header: true,
-                child: BlinkLine(
-                  style: LkText.title,
-                  child: Text(widget.title, style: LkText.title.copyWith(color: colors.ink)),
+                // Under whatever the sheet is wrapped in: its title may follow its state.
+                child: Builder(
+                  builder: (context) => BlinkLine(
+                    style: LkText.title,
+                    child: Text(
+                      widget.titleOf?.call(context) ?? widget.title,
+                      style: LkText.title.copyWith(color: colors.ink),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -407,7 +436,11 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
                 ),
               ),
             Flexible(child: _body(context, physics, toasts)),
-            _SheetFooter(safeBottom: safe, children: footer),
+            _SheetFooter(
+              safeBottom: safe,
+              compact: screen.height < compactFooterBelow,
+              children: footer,
+            ),
           ],
         ),
       );
@@ -495,56 +528,68 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
             child: panel,
           );
 
-    return LkSheetScope(
+    final page = LkSheetScope(
       hasFooter: widget.footer != null,
-      child: Semantics(
-        scopesRoute: true,
-        namesRoute: true,
-        explicitChildNodes: true,
-        label: widget.title,
-        child: CallbackShortcuts(
-          bindings: {const SingleActivator(LogicalKeyboardKey.escape): _close},
-          child: Focus(
-            autofocus: true,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ExcludeSemantics(
-                  child: FadeTransition(
-                    opacity: backdrop,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: _close,
-                      child: ColoredBox(color: scrim),
+      child: Builder(
+        builder: (context) => Semantics(
+          scopesRoute: true,
+          namesRoute: true,
+          explicitChildNodes: true,
+          label: widget.titleOf?.call(context) ?? widget.title,
+          child: CallbackShortcuts(
+            bindings: {const SingleActivator(LogicalKeyboardKey.escape): _close},
+            child: Focus(
+              autofocus: true,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ExcludeSemantics(
+                    child: FadeTransition(
+                      opacity: backdrop,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _close,
+                        child: ColoredBox(color: scrim),
+                      ),
                     ),
                   ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: inset),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 480),
-                      child: Transform.translate(offset: Offset(0, _dragY.value), child: panel),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: inset),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 480),
+                        child: Transform.translate(offset: Offset(0, _dragY.value), child: panel),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+    return widget.wrap?.call(page) ?? page;
   }
 }
 
 /// `.lk-sheet-footer` in a sheet with a pinned footer: full width under the scrolling body, a
 /// 2px `stroke` line above it, the keypad's and the save button's place.
 class _SheetFooter extends StatelessWidget {
-  const _SheetFooter({required this.children, required this.safeBottom, this.bottomGap = 0});
+  const _SheetFooter({
+    required this.children,
+    required this.safeBottom,
+    this.bottomGap = 0,
+    this.compact = false,
+  });
 
   final List<Widget> children;
   final double safeBottom;
+
+  /// A phone up to 844 px tall: `.lk-sheet.has-footer .lk-sheet-footer { gap: var(--space-1);
+  /// padding-top: var(--space-1) }`.
+  final bool compact;
 
   /// Room under the footer's own padding (a stuck footer sits above the sheet's bottom padding).
   final double bottomGap;
@@ -555,7 +600,7 @@ class _SheetFooter extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(
         LukitasTokens.space3,
-        LukitasTokens.space2,
+        compact ? LukitasTokens.space1 : LukitasTokens.space2,
         LukitasTokens.space3,
         (safeBottom > LukitasTokens.space3 ? safeBottom : LukitasTokens.space3) + bottomGap,
       ),
@@ -566,7 +611,7 @@ class _SheetFooter extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: LukitasTokens.space2,
+        spacing: compact ? LukitasTokens.space1 : LukitasTokens.space2,
         children: children,
       ),
     );

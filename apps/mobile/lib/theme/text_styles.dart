@@ -257,6 +257,16 @@ abstract final class LkText {
     leadingDistribution: TextLeadingDistribution.even,
   );
 
+  /// A field's caption: AddTransactionSheet.tsx `text-[13px] font-bold text-ink-muted` on the
+  /// labels of the date and the note, Nunito 13px 700.
+  static const fieldLabel = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
   /// A name shortcut: app.css `.lk-shortcut`, Nunito 11px 800.
   static const shortcut = TextStyle(
     fontFamily: textFamily,

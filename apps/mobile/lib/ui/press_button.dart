@@ -32,6 +32,7 @@ class PressButton extends StatelessWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.link = false,
+    this.horizontalPadding,
   });
 
   /// A button whose label is [label], in upper case as the web shows it.
@@ -45,6 +46,7 @@ class PressButton extends StatelessWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.link = false,
+    this.horizontalPadding,
   }) : child = Text(LkText.upperCase(label));
 
   final Widget child;
@@ -63,6 +65,10 @@ class PressButton extends StatelessWidget {
   /// A link, not a button, to assistive technology: for [PressLink].
   final bool link;
 
+  /// Replaces the sides' padding: a sheet's footer takes 16px (`.lk-sheet-footer .lk-btn {
+  /// padding-inline: var(--space-4) }`), so two buttons side by side fit a narrow phone.
+  final double? horizontalPadding;
+
   @override
   Widget build(BuildContext context) {
     final lk = context.lk;
@@ -74,11 +80,14 @@ class PressButton extends StatelessWidget {
       decoration: tone == PressTone.ghost ? TextDecoration.underline : null,
       decorationColor: colors.ink,
     );
-    final padding = switch ((tone, sm)) {
+    final basePadding = switch ((tone, sm)) {
       (PressTone.ghost, false) => const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       (_, false) => const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
       (_, true) => const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     };
+    final padding = horizontalPadding == null
+        ? basePadding
+        : EdgeInsets.symmetric(horizontal: horizontalPadding!, vertical: basePadding.vertical / 2);
 
     return Pressable(
       onPressed: onPressed,

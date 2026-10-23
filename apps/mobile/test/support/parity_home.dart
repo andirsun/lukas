@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' show Scaffold;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/add/add_repository.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/feedback/stored_flag.dart';
 import 'package:lukitas/home/home_cache.dart';
@@ -89,8 +90,9 @@ class NoCacheStore implements HomeCacheStore {
   Future<void> clear() async {}
 }
 
-List<Override> parityHomeOverrides(HomeRepository repo) => [
+List<Override> parityHomeOverrides(HomeRepository repo, {AddRepository? add}) => [
   homeRepositoryProvider.overrideWithValue(repo),
+  if (add != null) addRepositoryProvider.overrideWithValue(add),
   // Signed out as far as the cache goes: nothing is read or kept.
   homeCacheProvider.overrideWithValue(HomeCache(NoCacheStore(), token: null)),
   widgetSnapshotWriterProvider.overrideWithValue(
@@ -111,4 +113,28 @@ Future<void> precacheLukitas(WidgetTester t) async {
     }
   });
   await t.pumpAndSettle();
+}
+
+/// The story's API as an [AddRepository]: the names it suggested when the sheet opened (the answer
+/// to `GET /v1/transactions/suggestions?q=`). The pairs never save, so create and update are not
+/// there.
+class FixtureAddRepository implements AddRepository {
+  FixtureAddRepository(this.fixture);
+
+  final ParityFixture fixture;
+
+  @override
+  Future<List<TransactionSuggestion>> suggestions(String query) async {
+    final body = fixtureJson(fixture, '/v1/transactions/suggestions?q=$query')! as Map;
+    return [
+      for (final item in body['items']! as List) readBuilt(TransactionSuggestion.serializer, item),
+    ];
+  }
+
+  @override
+  Future<Transaction> create(CreateTransaction input, {required String idempotencyKey}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<Transaction> update(String id, TransactionPatch patch) => throw UnimplementedError();
 }

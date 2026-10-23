@@ -692,6 +692,10 @@
   "@addSaveChanges": {
     "description": "Add sheet: saves an edited movement."
   },
+  "addDelete": "Delete",
+  "@addDelete": {
+    "description": "Edit sheet: deletes the movement (the web's transaction.delete)."
+  },
   "addSaving": "Saving…",
   "@addSaving": {
     "description": "Add sheet: while the save is under way."

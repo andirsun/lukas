@@ -170,8 +170,18 @@ when the app's picture changes. The web shots are regenerated only when the web 
   pairs: the shell paints it as tall as its screen's scroll content (at least the screen) and moves it with
   the scrolling (`PageGradientPainter`, from the scroll notifications). In the app itself the frame is zero.
 - **Stories that end with a sheet open.** `home-home--empty-month` opens the add sheet and closes it again
-  (the story's play function was changed to close it), so its picture is the empty month. The add sheet has
-  its own pairs (Task 8).
+  (the story's play function was changed to close it), so its picture is the empty month.
+- **The add and edit sheet (`add-sheet-*`).** Four stories leave the sheet open: `home-home--more-options` (Más
+  opciones opened, pending ticked; its old tail, which saves, is now `MoreOptionsSent`),
+  `home-home--shortcut-picks-category`, `home-home--sheet-day-theme` (pesos, with the lukas hint) and
+  `home-home--edit-sheet-day-theme`. The sheet opens over home, as in the stories, and the app reads the names the
+  story's API suggested through `FixtureAddRepository`. A story's `userEvent` click leaves the focus on what it
+  clicked; the test asks for it after a key (`_clickFocus`).
+  - **The date field is the browser's own.** The web's `<input type="date">` is drawn by Chrome: here as
+    `21.10.2026` with a black calendar. The app writes the date as the language does (`21/10/2026`, `10/21/2026` in
+    English), so the `more-options` pairs differ in those two separators, and draws Chrome's calendar after it.
+  - **The pending checkbox is Chrome's too:** 20px, the brand as its accent, and, with the keyboard on it, Chrome's
+    blue and white focus ring; the app paints the same.
 - **Shadows.** `flutter test` draws every shadow hard-edged, to keep goldens from flaking. The web's
   glow under a primary button is a 24px blur, so `parityGolden` turns `debugDisableShadows` off for
   the picture and back on before the test ends.

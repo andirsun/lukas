@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lukitas/add/name_field.dart';
+import 'package:lukitas/ui/name_field.dart';
 
 void main() {
   group('shortcutsThatFit: wrapped rows, the first ones kept', () {
