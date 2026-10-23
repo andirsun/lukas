@@ -19,6 +19,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.net.InetAddress
+import java.net.ServerSocket
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDateTime
@@ -110,6 +112,9 @@ class RefreshWorkerTest {
         hideAmount = true,
         theme = "light",
     )
+
+    /** A loopback port that was free a moment ago and has no listener: connecting is refused. */
+    private fun closedPort(): Int = ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { it.localPort }
 
     private fun runWorker() = runBlocking {
         TestListenableWorkerBuilder<RefreshWorker>(context).build().doWork()
@@ -269,7 +274,10 @@ class RefreshWorkerTest {
     @Test
     fun `offline, the last figure stays, marked as a failed refresh`() {
         store(earlier)
-        server.stop()
+        // A port nobody listens on, not a stopped server: closing a listening socket that another
+        // thread is blocked in accept() on can leave it accepting for a moment on Linux (the
+        // blocked call holds the socket), so the request could still be answered there.
+        session.serverUrl = "http://127.0.0.1:${closedPort()}"
         runWorker()
         assertEquals(earlier.copy(refreshFailedAt = now), stored())
     }
