@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_remaining">Left</string>
+    <string name="widget_over">Over</string>
+    <string name="widget_spent">Spent this month</string>
+    <string name="widget_remaining_past">Left in %1$s</string>
+    <string name="widget_over_past">Over in %1$s</string>
+    <string name="widget_spent_past">Spent in %1$s</string>
+    <string name="widget_signed_out">Open Lukitas to get started</string>
+    <string name="widget_stale">a while ago</string>
+    <string name="widget_add">Add expense</string>
+    <string name="widget_capture">Say or type a movement</string>
+    <string name="widget_lukitas">Lukitas</string>
+    <string name="widget_small_description">What\'s left this month, and ＋ to note an expense.</string>
+    <string name="widget_medium_description">Lukitas, what\'s left this month, ＋ and 🎤 to note it.</string>
+    <string name="tile_capture">Say an expense</string>
+</resources>

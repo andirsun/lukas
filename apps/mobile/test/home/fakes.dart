@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/home/home_cache.dart';
@@ -144,6 +145,9 @@ class FakeWidgetStore implements WidgetStore {
   final saved = <String, String>{};
   Object? failure;
 
+  /// How many times the widgets were told to redraw.
+  var updates = 0;
+
   @override
   Future<void> save(String key, String value) async {
     if (failure != null) throw failure!;
@@ -151,10 +155,31 @@ class FakeWidgetStore implements WidgetStore {
   }
 
   @override
-  Future<void> clear(String key) async {
+  Future<String?> read(String key) async {
     if (failure != null) throw failure!;
-    saved.remove(key);
+    return saved[key];
   }
+
+  @override
+  Future<void> updateWidgets() async {
+    if (failure != null) throw failure!;
+    updates++;
+  }
+}
+
+/// Whether [store] holds the signed-out snapshot: "Abre Lukitas para empezar" and no figure of
+/// anyone (Review Focus 4).
+bool widgetSignedOut(FakeWidgetStore store) {
+  final json = store.saved[widgetSnapshotKey];
+  if (json == null) return false;
+  final doc = jsonDecode(json) as Map<String, Object?>;
+  return doc['v'] == 2 &&
+      doc['signedIn'] == false &&
+      !doc.containsKey('remaining') &&
+      !doc.containsKey('spent') &&
+      !doc.containsKey('budgetTotal') &&
+      !doc.containsKey('currency') &&
+      !doc.containsKey('month');
 }
 
 /// The home cache's storage in memory: one JSON string.

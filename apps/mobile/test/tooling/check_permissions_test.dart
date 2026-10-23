@@ -20,7 +20,12 @@ uses-permission: name='com.andersonlaverde.lukitas.DYNAMIC_RECEIVER_NOT_EXPORTED
 const _mic = "uses-permission: name='android.permission.RECORD_AUDIO'\n";
 
 /// The motor, for the haptics (Task 13). A normal permission: nothing is asked of the person.
-const _vibrate = "uses-permission: name='android.permission.VIBRATE'\n";
+/// With it, the two WorkManager needs for the widget's refresh job (Task 15): waiting for a
+/// network, and scheduling again after a restart. Normal permissions too.
+const _vibrate =
+    "uses-permission: name='android.permission.VIBRATE'\n"
+    "uses-permission: name='android.permission.ACCESS_NETWORK_STATE'\n"
+    "uses-permission: name='android.permission.RECEIVE_BOOT_COMPLETED'\n";
 
 void main() {
   test('release permissions: INTERNET, RECORD_AUDIO, VIBRATE and the AndroidX receiver permission pass', () async {
@@ -54,6 +59,30 @@ void main() {
     expect(result.exitCode, 1);
     expect(result.stdout, contains('android.permission.VIBRATE'));
   });
+
+  for (final needed in ['ACCESS_NETWORK_STATE', 'RECEIVE_BOOT_COMPLETED']) {
+    test('release permissions: no $needed fails (the widget refresh job needs it)', () async {
+      final without = _vibrate.split('\n').where((line) => !line.contains(needed)).join('\n');
+      final result = await _check(
+        'package: com.andersonlaverde.lukitas\n'
+        "uses-permission: name='android.permission.INTERNET'\n$_mic$without\n$_receiver",
+      );
+      expect(result.exitCode, 1);
+      expect(result.stdout, contains('android.permission.$needed'));
+    });
+  }
+
+  for (final unwanted in ['WAKE_LOCK', 'FOREGROUND_SERVICE']) {
+    test("release permissions: WorkManager's $unwanted stays out", () async {
+      final result = await _check(
+        'package: com.andersonlaverde.lukitas\n'
+        "uses-permission: name='android.permission.INTERNET'\n"
+        "uses-permission: name='android.permission.$unwanted'\n$_mic$_vibrate$_receiver",
+      );
+      expect(result.exitCode, 1);
+      expect(result.stdout, contains('Unexpected permission: android.permission.$unwanted'));
+    });
+  }
 
   test('release permissions: an unexpected permission fails with its name', () async {
     final result = await _check(

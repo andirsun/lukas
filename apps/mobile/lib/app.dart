@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'feedback/feedback.dart';
+import 'home/widget_sync.dart';
+import 'launch/launch_links.dart';
 import 'l10n/app_localizations.dart';
 import 'router.dart';
 import 'settings/preferences.dart';
@@ -15,6 +17,10 @@ class LukitasApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Loads the sounds and reads the sound setting at the start, so the first save is not late.
     ref.watch(feedbackProvider);
+    // Copies the hide-amount and theme choices into the home-screen widget's snapshot as they change.
+    ref.watch(widgetSyncProvider);
+    // Opens the add sheet or quick capture for the widget's ＋ and 🎤 and the Quick Settings tile.
+    ref.watch(launchLinksProvider);
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appName,
       theme: dayTheme,

@@ -124,7 +124,7 @@ void main() {
       expect(container.read(serverUrlProvider).toString(), 'https://my.server.org');
       expect(container.read(sessionProvider).status, SessionStatus.signedOut);
       expect(await SessionStore().read(), isNull);
-      expect(widget.saved, isEmpty);
+      expect(widgetSignedOut(widget), isTrue);
       expect(homeCache.value, isNull);
       // The API client, and the auth calls, now go to the new server.
       expect(container.read(apiClientProvider).baseUrl, 'https://my.server.org/api');
@@ -158,7 +158,7 @@ void main() {
         expect(container.read(serverUrlProvider).toString(), 'https://my.server.org');
         expect(container.read(sessionProvider).status, SessionStatus.signedOut);
         expect(await SessionStore().read(), isNull);
-        expect(widget.saved, isEmpty);
+        expect(widgetSignedOut(widget), isTrue);
         expect(homeCache.value, isNull);
         expect(settings.values[serverUrlKey], 'https://my.server.org');
       },

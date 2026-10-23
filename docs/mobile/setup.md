@@ -142,6 +142,18 @@ flutter test integration_test/voice_engine_test.dart -d emulator-5554 \
   --dart-define=VOICE_MODELS_URL=http://10.0.2.2:8765
 ```
 
+`integration_test/widget_test.dart` covers the home-screen widget (Task 15): it presses the
+widget's ＋ and 🎤 the way the widget does (the very intent `launch/LaunchLinks.kt` builds, started
+through the debug-only `lukitas/test` channel) and runs the refresh job once through WorkManager,
+which reads the session where the app keeps it and asks the dev stack for the summary; then it
+signs out and checks the widget keeps no figure. To look at the widgets themselves, long-press the
+emulator's home screen, open Widgets and drag a Lukitas one out; the Quick Settings tile is added
+with `adb -s emulator-5554 shell cmd statusbar add-tile com.andersonlaverde.lukitas/.tile.CaptureTileService`.
+
+The Android JVM tests (`cd apps/mobile/android && ./gradlew :app:testDebugUnitTest`) include the
+widget's Glance rendering tests on Robolectric, which downloads its Android image from Maven
+Central on the first run.
+
 `integration_test/feedback_test.dart` needs no dev stack: it checks that the sound files are found in
 the APK and load into the `SoundPool`, and that the motor channel answers. How a haptic *feels* is
 for a real phone (an emulator has no motor): tap through the add sheet, a swipe and a quick capture

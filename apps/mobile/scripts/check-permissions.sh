@@ -3,9 +3,10 @@
 #
 # The release build is what F-Droid ships, and Android merges the INTERNET permission into debug
 # and profile builds only (src/debug, src/profile), so a release APK without it cannot reach its
-# server. This fails when INTERNET, RECORD_AUDIO (quick capture's microphone, Task 12) or VIBRATE
-# (the haptics, Task 13) is missing, and when the APK asks for any permission not in ALLOWED below:
-# a new permission is a decision, made here on purpose.
+# server. This fails when INTERNET, RECORD_AUDIO (quick capture's microphone, Task 12), VIBRATE
+# (the haptics, Task 13), ACCESS_NETWORK_STATE or RECEIVE_BOOT_COMPLETED (the widget's refresh job
+# on WorkManager, Task 15) is missing, and when the APK asks for any permission not in ALLOWED
+# below: a new permission is a decision, made here on purpose.
 #
 # Usage, from anywhere (after `flutter build apk --release`):
 #   apps/mobile/scripts/check-permissions.sh [--apk <path>]
@@ -14,13 +15,24 @@
 set -euo pipefail
 
 PACKAGE="com.andersonlaverde.lukitas"
-REQUIRED=("android.permission.INTERNET" "android.permission.RECORD_AUDIO" "android.permission.VIBRATE")
+REQUIRED=(
+  "android.permission.INTERNET"
+  "android.permission.RECORD_AUDIO"
+  "android.permission.VIBRATE"
+  "android.permission.ACCESS_NETWORK_STATE"
+  "android.permission.RECEIVE_BOOT_COMPLETED"
+)
 ALLOWED=(
   "android.permission.INTERNET"
   # Quick capture listens on the phone (Vosk); the audio never leaves it. Asked at first 🎤 use.
   "android.permission.RECORD_AUDIO"
   # The haptics (haptics/HapticsChannel.kt). A normal permission: the person is asked nothing.
   "android.permission.VIBRATE"
+  # The widget's refresh job (widget/RefreshWorker.kt) on WorkManager: wait for a network, and be
+  # scheduled again after a restart. Normal permissions. WorkManager's WAKE_LOCK and
+  # FOREGROUND_SERVICE stay out (the manifest removes them): the app never needs them.
+  "android.permission.ACCESS_NETWORK_STATE"
+  "android.permission.RECEIVE_BOOT_COMPLETED"
   # androidx.core's own signature permission for receivers registered as not exported.
   "${PACKAGE}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
 )

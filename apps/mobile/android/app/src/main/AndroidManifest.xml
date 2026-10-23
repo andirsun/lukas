@@ -13,14 +13,17 @@
          Manager, and the person's passkey provider checks the fingerprint in its own process. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove"/>
     <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove"/>
-    <!-- home_widget, which hands the month's figures to the home-screen widget (Task 10), brings
-         WorkManager, whose manifest asks for these four. Nothing in the app schedules work yet, so
-         nobody chose them. The widget's refresh job and the local notices (spec sections 7.1 and
-         7.2, WorkManager) will need some: whoever adds them deletes the matching line here and
-         allows the permission in scripts/check-permissions.sh, on purpose. -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
+    <!-- The widget's refresh job (widget/RefreshWorker.kt) runs on WorkManager, which asks for
+         these two. Normal permissions, granted at install: nothing is asked of the person.
+         ACCESS_NETWORK_STATE lets the job wait for a network; RECEIVE_BOOT_COMPLETED lets
+         WorkManager schedule it again after the phone restarts. scripts/check-permissions.sh
+         expects exactly these. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- WorkManager's manifest also asks for these two, for work this app never does: long work in
+         a foreground service, and alarms below Android 6 (the app needs Android 8). Removed on
+         purpose; whoever needs one deletes its line and allows it in scripts/check-permissions.sh. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" tools:node="remove"/>
     <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove"/>
     <!-- No backup: the session token is encrypted with a Keystore key, which never leaves this phone, so it cannot be restored on another device. -->
     <application
@@ -60,9 +63,53 @@
                 <data android:host="app-lukas.andersonlaverde.com"/>
                 <data android:path="/auth/verify"/>
             </intent-filter>
+            <!-- The widget's ＋ (lukitas://add) and 🎤 and the Quick Settings tile
+                 (lukitas://capture), spec section 7.1. MainActivity hands them to Dart
+                 (launch/LaunchLinks.kt). Not BROWSABLE: a web page cannot open the microphone
+                 sheet with a link; apps on the phone (the widget, the tile) can. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="lukitas" android:host="add"/>
+                <data android:scheme="lukitas" android:host="capture"/>
+            </intent-filter>
             <!-- Flutter hands an opened link to the router (go_router reads /auth/verify?...). -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
         </activity>
+        <!-- The home-screen widget, small (2×1) and medium (4×2), drawn with Jetpack Glance
+             (widget/). The app and the refresh job ask them to redraw. -->
+        <receiver
+            android:name=".widget.LukitasSmallWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/lukitas_small_widget"/>
+        </receiver>
+        <receiver
+            android:name=".widget.LukitasMediumWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/lukitas_medium_widget"/>
+        </receiver>
+        <!-- The Quick Settings tile: quick capture, listening (tile/CaptureTileService.kt). Only the
+             system's Quick Settings may bind it. -->
+        <service
+            android:name=".tile.CaptureTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_widget_mic"
+            android:label="@string/tile_capture"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

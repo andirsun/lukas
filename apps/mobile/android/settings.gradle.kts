@@ -21,6 +21,9 @@ plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     id("com.android.application") version "9.1.0" apply false
     id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+    // The Compose compiler, for the home-screen widget's Jetpack Glance code (widget/). A compiler
+    // plugin of Kotlin itself (Apache-2.0); it adds nothing to the APK.
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.0" apply false
 }
 
 include(":app")

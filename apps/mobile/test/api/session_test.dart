@@ -163,7 +163,7 @@ void main() {
 
         expect(container.read(sessionProvider).stored?.token, 'email-token-1');
         expect(homeCache.value, isNull);
-        expect(widget.saved, isEmpty);
+        expect(widgetSignedOut(widget), isTrue);
       });
 
       test('claiming an email keeps the same token, so the cache stays', () async {
@@ -277,7 +277,7 @@ void main() {
       expect(container.read(sessionProvider).status, SessionStatus.signedOut);
       expect(await SessionStore().read(), isNull);
       expect(auth.calls.last, 'signOut guest-token-0');
-      expect(widget.saved, isEmpty);
+      expect(widgetSignedOut(widget), isTrue);
       expect(homeCache.value, isNull);
     });
 
@@ -296,7 +296,7 @@ void main() {
         expect(auth.calls, contains('signOut email-token-0'));
         expect(container.read(sessionProvider).status, SessionStatus.signedOut);
         expect(await SessionStore().read(), isNull);
-        expect(widget.saved, isEmpty);
+        expect(widgetSignedOut(widget), isTrue);
         expect(homeCache.value, isNull);
       },
     );
@@ -320,7 +320,7 @@ void main() {
 
         expect(container.read(sessionProvider).status, SessionStatus.signedOut, reason: entry.key);
         expect(await SessionStore().read(), isNull, reason: entry.key);
-        expect(widget.saved, isEmpty, reason: entry.key);
+        expect(widgetSignedOut(widget), isTrue, reason: entry.key);
         expect(homeCache.value, isNull, reason: entry.key);
       }
     });
@@ -334,7 +334,7 @@ void main() {
       final controller = await ready(container);
       await controller.signOut();
       expect(container.read(sessionProvider).status, SessionStatus.signedOut);
-      expect(widget.saved, isEmpty);
+      expect(widgetSignedOut(widget), isTrue);
       expect(homeCache.value, isNull);
     });
 
@@ -355,7 +355,7 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       expect(done, isTrue);
       expect(container.read(sessionProvider).status, SessionStatus.signedOut);
-      expect(widget.saved, isEmpty);
+      expect(widgetSignedOut(widget), isTrue);
       expect(homeCache.value, isNull);
     });
 
@@ -366,7 +366,10 @@ void main() {
       final controller = await ready(container);
       await controller.signOut();
 
-      expect(widget.saved, isEmpty);
+      expect(widgetSignedOut(widget), isTrue);
+      // And the widgets on the home screen are redrawn with it.
+      await Future<void>.delayed(Duration.zero);
+      expect(widget.updates, greaterThan(0));
     });
 
     test('signOut also wipes the home cache: the next person must never see it', () async {
@@ -399,7 +402,7 @@ void main() {
       await controller.refreshed;
 
       expect(container.read(sessionProvider).status, SessionStatus.signedOut);
-      expect(widget.saved, isEmpty);
+      expect(widgetSignedOut(widget), isTrue);
     });
   });
 

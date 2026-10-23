@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lukitas/api/session.dart';
@@ -88,9 +89,12 @@ Future<SettingsEnv> pumpSettingsApp(
   String? location,
   FakeAuthApi? auth,
   FakeSettingsStore? settings,
+  bool signedIn = true,
+  List<Override> overrides = const [],
+  bool settle = true,
 }) async {
   final token = guest ? 'guest-token-0' : 'email-token-0';
-  mockStorage(token: token, guest: guest);
+  mockStorage(token: signedIn ? token : null, guest: guest);
   final fakeAuth = auth ?? FakeAuthApi();
   fakeAuth.guests[token] = guest;
   final fakeSettings = settings ?? FakeSettingsStore();
@@ -118,13 +122,21 @@ Future<SettingsEnv> pumpSettingsApp(
       widgetSnapshotWriterProvider.overrideWithValue(
         (summary, {required currency, required locale}) async {},
       ),
+      ...overrides,
     ],
   );
   addTearDown(container.dispose);
   await tester.pumpWidget(
     UncontrolledProviderScope(container: container, child: const LukitasApp()),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    // Something on screen never settles (quick capture listening): frames for two seconds.
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
   final env = SettingsEnv(
     container: container,
     auth: fakeAuth,

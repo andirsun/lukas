@@ -3,14 +3,13 @@ import 'dart:async' as dart_async show AsyncError;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../api/device.dart';
 import '../api/gen/lukitas_api.dart';
 import '../api/session.dart';
 import '../capture/parser/dates.dart';
 import 'home_cache.dart';
 import 'home_repository.dart';
 import 'lukas_line.dart';
-import 'widget_snapshot.dart';
+import 'widget_sync.dart';
 
 /// How long Lukitas talks about a save or a payment before going back to the month's line (the
 /// web's `EVENT_LINE_MS`, founder feedback 2026-10-22: a line that stayed for ages).
@@ -25,12 +24,8 @@ final widgetSnapshotWriterProvider =
       Future<void> Function(Summary summary, {required String currency, required String locale})
     >(
       (ref) =>
-          (summary, {required currency, required locale}) => writeWidgetSnapshot(
-            summary,
-            currency: currency,
-            locale: locale,
-            store: ref.read(widgetStoreProvider),
-          ),
+          (summary, {required currency, required locale}) =>
+              ref.read(widgetSyncProvider).summaryLoaded(summary, currency: currency, locale: locale),
     );
 
 /// The language amounts and dates are written in: English when the phone asks for it, Spanish
@@ -341,7 +336,7 @@ class HomeController extends Notifier<HomeState> {
   Future<void> _writeSnapshot(Summary summary, String currency) async {
     if (!_alive) return;
     try {
-      final locale = languageOfTag(ref.read(deviceHintsProvider).locale);
+      final locale = widgetLanguage(ref);
       await ref.read(widgetSnapshotWriterProvider)(summary, currency: currency, locale: locale);
     } catch (_) {
       // The widget keeps its last figure; this never breaks home (nor, after home was left, the app).

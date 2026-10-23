@@ -1,0 +1,253 @@
+package com.andersonlaverde.lukitas.widget
+
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.work.NetworkType
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.testing.TestListenableWorkerBuilder
+import androidx.work.testing.WorkManagerTestInitHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import java.time.Duration
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+
+/** A stored session in memory, which the test can sign out. */
+private class FakeSession(var stored: String?, var serverUrl: String?) : SessionSource {
+    override fun token(): String? = stored
+    override fun mark(): String? = stored?.let { "mark:$it" }
+    override fun server(): String? = serverUrl
+}
+
+@RunWith(RobolectricTestRunner::class)
+class RefreshWorkerTest {
+    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val now = Instant.parse("2026-10-22T20:00:00Z")
+    private lateinit var server: TinyHttpServer
+    private val requests = mutableListOf<TinyRequest>()
+    private val headers = mutableListOf<Map<String, String?>>()
+    private var status = 200
+    private var body = """
+        {"month":"2026-10","budgetTotal":200000000,"spent":80000000,"remaining":120000000,
+         "income":0,"balance":-80000000,
+         "categories":[{"categoryId":"c","budget":1000,"spent":950,"remaining":50,"ratio":0.95,"state":"near"}]}
+    """.trimIndent()
+
+    /** Called while the server holds the answer (a request in flight). */
+    private var whileAnswering: (() -> Unit)? = null
+
+    private lateinit var session: FakeSession
+
+    @Before
+    fun setUp() {
+        server = TinyHttpServer { request ->
+            requests += request
+            headers += mapOf(
+                "path" to request.path,
+                "authorization" to request.headers["authorization"],
+                "timezone" to request.headers["x-lukas-timezone"],
+                "locale" to request.headers["x-lukas-locale"],
+            )
+            whileAnswering?.invoke()
+            status to body
+        }
+        session = FakeSession("token-1", "http://127.0.0.1:${server.port}")
+        RefreshWorker.dependencies = {
+            RefreshDependencies(
+                session = session,
+                fetcher = SummaryFetcher(),
+                clock = { now },
+                writeContext = Dispatchers.Unconfined,
+            )
+        }
+    }
+
+    @After
+    fun tearDown() {
+        RefreshWorker.dependencies = null
+        server.stop()
+        WidgetSnapshot.preferences(context).edit().clear().commit()
+    }
+
+    private fun store(snapshot: WidgetSnapshot) {
+        WidgetSnapshot.preferences(context).edit().putString(WidgetSnapshot.KEY, snapshot.toJson()).commit()
+    }
+
+    private fun stored(): WidgetSnapshot? = WidgetSnapshot.read(context)
+
+    private val earlier = WidgetSnapshot(
+        signedIn = true,
+        remaining = 150000000,
+        spent = 50000000,
+        budgetTotal = 200000000,
+        currency = "COP",
+        locale = "es",
+        month = "2026-10",
+        mood = "happy",
+        updatedAt = now.minus(Duration.ofHours(3)),
+        hideAmount = true,
+        theme = "light",
+    )
+
+    private fun runWorker() = runBlocking {
+        TestListenableWorkerBuilder<RefreshWorker>(context).build().doWork()
+    }
+
+    @Test
+    fun `RefreshWorker updates the snapshot from GET v1 summary, with the stored session`() {
+        store(earlier)
+        runWorker()
+
+        assertEquals(1, requests.size)
+        assertEquals("/api/v1/summary", headers[0]["path"])
+        assertEquals("Bearer token-1", headers[0]["authorization"])
+        assertEquals(ZoneId.systemDefault().id, headers[0]["timezone"])
+        assertTrue(headers[0]["locale"]!!.isNotEmpty())
+        assertEquals(
+            earlier.copy(
+                remaining = 120000000,
+                spent = 80000000,
+                mood = "worried",
+                updatedAt = now,
+            ),
+            stored(),
+        )
+    }
+
+    @Test
+    fun `the server chosen in Settings is used, with any path it has`() {
+        session.serverUrl = "http://127.0.0.1:${server.port}/lukitas/"
+        store(earlier)
+        runWorker()
+        assertEquals("/lukitas/api/v1/summary", headers[0]["path"])
+    }
+
+    @Test
+    fun `RefreshWorker is scheduled about every 3 h, on a network, and at midnight`() {
+        WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        val at = LocalDateTime.of(2026, 10, 22, 21, 30).atZone(ZoneId.of("America/Bogota"))
+        RefreshScheduler.schedule(context, at)
+
+        val workManager = WorkManager.getInstance(context)
+        val periodic = workManager.getWorkInfosForUniqueWork(RefreshScheduler.PERIODIC).get().single()
+        assertEquals(WorkInfo.State.ENQUEUED, periodic.state)
+        assertEquals(Duration.ofHours(3).toMillis(), periodic.periodicityInfo!!.repeatIntervalMillis)
+        assertEquals(NetworkType.CONNECTED, periodic.constraints.requiredNetworkType)
+
+        val midnight = workManager.getWorkInfosForUniqueWork(RefreshScheduler.MIDNIGHT).get().single()
+        // 21:30 to one minute past midnight.
+        assertEquals(Duration.ofMinutes(151).toMillis(), midnight.initialDelayMillis)
+
+        // Scheduling again (every app start) keeps the same periodic job.
+        RefreshScheduler.schedule(context, at)
+        assertEquals(periodic.id, workManager.getWorkInfosForUniqueWork(RefreshScheduler.PERIODIC).get().single().id)
+    }
+
+    @Test
+    fun `signed out, nothing is asked and the widget says Abre Lukitas`() {
+        store(earlier)
+        session.stored = null
+        runWorker()
+        assertTrue(requests.isEmpty())
+        val now = stored()!!
+        assertFalse(now.signedIn)
+        assertEquals("light", now.theme)
+    }
+
+    @Test
+    fun `a session the server no longer knows shows Abre Lukitas, never the old figure`() {
+        store(earlier)
+        status = 401
+        body = """{"type":"about:blank","status":401}"""
+        runWorker()
+        assertFalse(stored()!!.signedIn)
+    }
+
+    @Test
+    fun `offline, the last figure stays`() {
+        store(earlier)
+        server.stop()
+        runWorker()
+        assertEquals(earlier, stored())
+    }
+
+    @Test
+    fun `a server error keeps the last figure`() {
+        store(earlier)
+        status = 503
+        body = "{}"
+        runWorker()
+        assertEquals(earlier, stored())
+    }
+
+    @Test
+    fun `after sign out the widget never shows the previous figure, even with a refresh in flight`() {
+        store(earlier)
+        // The person signs out while the request is on its way: the app forgets the token and
+        // writes the signed-out snapshot (lib/home/widget_sync.dart).
+        whileAnswering = {
+            session.stored = null
+            store(WidgetSnapshot(signedIn = false, theme = "light", hideAmount = true, locale = "es"))
+        }
+        runWorker()
+        val after = stored()!!
+        assertFalse(after.signedIn)
+        assertEquals(0L, after.remaining)
+    }
+
+    @Test
+    fun `signed in again as someone else meanwhile, the first session's figures are dropped`() {
+        store(earlier)
+        whileAnswering = {
+            session.stored = "token-2"
+            store(earlier.copy(remaining = 7, updatedAt = now.minus(Duration.ofHours(5))))
+        }
+        runWorker()
+        assertEquals(7L, stored()!!.remaining)
+    }
+
+    @Test
+    fun `figures the app wrote while the request was on its way are newer, and stay`() {
+        store(earlier)
+        val fresher = earlier.copy(remaining = 99, updatedAt = now.plusSeconds(1))
+        whileAnswering = { store(fresher) }
+        RefreshWorker.dependencies = {
+            RefreshDependencies(session, SummaryFetcher(), clock = { now }, writeContext = Dispatchers.Unconfined)
+        }
+        runWorker()
+        assertEquals(fresher, stored())
+    }
+
+    @Test
+    fun `nothing from the app yet (no currency known), nothing is written`() {
+        runWorker()
+        assertNull(stored())
+    }
+
+    @Test
+    fun `a hung server is given up on`() {
+        store(earlier)
+        val release = CountDownLatch(1)
+        whileAnswering = { release.await(30, TimeUnit.SECONDS) }
+        val fetcher = SummaryFetcher(connectTimeoutMillis = 500, readTimeoutMillis = 500)
+        RefreshWorker.dependencies = {
+            RefreshDependencies(session, fetcher, clock = { now }, writeContext = Dispatchers.Unconfined)
+        }
+        runWorker()
+        release.countDown()
+        assertEquals(earlier, stored())
+    }
+}

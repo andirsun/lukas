@@ -1,0 +1,142 @@
+import 'dart:async';
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/add/add_sheet.dart';
+import 'package:lukitas/capture/capture_sheet.dart';
+import 'package:lukitas/capture/engine/speech_engine.dart';
+import 'package:lukitas/entry/entry_screen.dart';
+import 'package:lukitas/home/home_screen.dart';
+import 'package:lukitas/launch/launch_links.dart';
+import 'package:lukitas/router.dart';
+
+import '../capture/fakes.dart';
+import '../settings/harness.dart';
+
+/// The links Android hands the app: one it was started with, and later ones.
+class FakeLaunchLinks implements LaunchLinkSource {
+  FakeLaunchLinks([this.initial]);
+
+  String? initial;
+  final _later = StreamController<String>.broadcast();
+
+  @override
+  Future<String?> takeInitial() async {
+    final link = initial;
+    initial = null;
+    return link;
+  }
+
+  @override
+  Stream<String> get links => _later.stream;
+
+  void open(String link) => _later.add(link);
+}
+
+void main() {
+  group('reading a link', () {
+    test('lukitas://add and lukitas://capture, nothing else', () {
+      expect(launchActionOf('lukitas://add'), LaunchAction.add);
+      expect(launchActionOf('lukitas://capture'), LaunchAction.capture);
+      expect(launchActionOf('lukitas://capture/'), LaunchAction.capture);
+      expect(launchActionOf('lukitas://settings'), isNull);
+      expect(launchActionOf('https://add'), isNull);
+      expect(launchActionOf('https://app-lukas.andersonlaverde.com/auth/verify?code=1'), isNull);
+      expect(launchActionOf(''), isNull);
+      expect(launchActionOf(null), isNull);
+    });
+  });
+
+  testWidgets('＋ at a cold start: the add sheet opens on home once the session has loaded', (
+    tester,
+  ) async {
+    final env = await pumpSettingsApp(
+      tester,
+      overrides: [launchLinkSourceProvider.overrideWithValue(FakeLaunchLinks('lukitas://add'))],
+    );
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AddSheet), findsOneWidget);
+    expect(env.router.state.uri.path, '/');
+  });
+
+  testWidgets('🎤 at a cold start: capture opens, listening', (tester) async {
+    final engine = FakeSpeechEngine()..hold = true;
+    await pumpSettingsApp(
+      tester,
+      settle: false,
+      overrides: [
+        launchLinkSourceProvider.overrideWithValue(FakeLaunchLinks('lukitas://capture')),
+        speechEngineProvider.overrideWithValue(engine),
+      ],
+    );
+    expect(find.byType(CaptureSheet), findsOneWidget);
+    expect(tester.widget<CaptureSheet>(find.byType(CaptureSheet)).listen, isTrue);
+    expect(engine.listens, 1, reason: 'listening, not waiting for a tap');
+    await engine.held!.close();
+  });
+
+  testWidgets('a link while the app runs goes back to home from any screen and opens there', (
+    tester,
+  ) async {
+    final links = FakeLaunchLinks();
+    final env = await pumpSettingsApp(
+      tester,
+      location: '/settings',
+      overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+    );
+    expect(find.byType(AddSheet), findsNothing);
+
+    links.open('lukitas://add');
+    await tester.pumpAndSettle();
+    expect(env.router.state.uri.path, '/');
+    expect(find.byType(AddSheet), findsOneWidget);
+  });
+
+  testWidgets('a second link replaces the sheet the first one opened', (tester) async {
+    final links = FakeLaunchLinks('lukitas://add');
+    final engine = FakeSpeechEngine()..hold = true;
+    await pumpSettingsApp(
+      tester,
+      overrides: [
+        launchLinkSourceProvider.overrideWithValue(links),
+        speechEngineProvider.overrideWithValue(engine),
+      ],
+    );
+    expect(find.byType(AddSheet), findsOneWidget);
+
+    links.open('lukitas://capture');
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(AddSheet), findsNothing);
+    expect(find.byType(CaptureSheet), findsOneWidget);
+    expect(engine.listens, 1);
+    await engine.held!.close();
+  });
+
+  testWidgets('signed out, a link lands on the entry screen and opens nothing', (tester) async {
+    final links = FakeLaunchLinks('lukitas://capture');
+    final env = await pumpSettingsApp(
+      tester,
+      signedIn: false,
+      overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+    );
+    expect(find.byType(EntryScreen), findsOneWidget);
+    expect(find.byType(CaptureSheet), findsNothing);
+
+    links.open('lukitas://add');
+    await tester.pumpAndSettle();
+    expect(find.byType(EntryScreen), findsOneWidget);
+    expect(find.byType(AddSheet), findsNothing);
+    expect(env.container.read(routerProvider).state.uri.path, '/entry');
+  });
+
+  testWidgets('a link that is not one of the two does nothing', (tester) async {
+    final links = FakeLaunchLinks('lukitas://somewhere');
+    await pumpSettingsApp(tester, overrides: [launchLinkSourceProvider.overrideWithValue(links)]);
+    links.open('https://example.com/add');
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AddSheet), findsNothing);
+    expect(find.byType(CaptureSheet), findsNothing);
+  });
+}

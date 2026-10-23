@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../home/home_cache.dart';
-import '../home/widget_snapshot.dart';
+import '../home/widget_sync.dart';
 import 'auth_api.dart';
 import 'client.dart';
 import 'device.dart';
@@ -236,10 +236,11 @@ class SessionController extends Notifier<SessionState> {
   }
 
   /// The widget on the home screen and the home cache hold the signed-in person's figures: signed
-  /// out, neither may show them to the next person. Not waited for: signing out never hangs on
-  /// their storage.
+  /// out, neither may show them to the next person. The widget gets its signed-out snapshot
+  /// ("Abre Lukitas para empezar", no figure) and is redrawn (Review Focus 4). Not waited for:
+  /// signing out never hangs on their storage.
   void _forgetWidget() {
-    unawaited(clearWidgetSnapshot(store: ref.read(widgetStoreProvider)));
+    unawaited(ref.read(widgetSyncProvider).signedOut());
     unawaited(clearHomeCache(ref.read(homeCacheStoreProvider)));
   }
 }

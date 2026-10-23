@@ -13,88 +13,109 @@ Map<String, Object?> written(FakeWidgetStore store) =>
 void main() {
   final now = DateTime.utc(2026, 10, 22, 15, 30);
 
-  test('with budgets it keeps what is left, formatted, with the month and its progress', () async {
-    final store = FakeWidgetStore();
-    await writeWidgetSnapshot(
-      summary(budgetTotal: 200000000, spent: 50000000),
-      currency: 'COP',
-      locale: 'es',
-      store: store,
-      now: now,
+  group('signed in', () {
+    test('keeps the month figures as cents, with the currency, language and choices', () {
+      final doc = signedInSnapshot(
+        summary(budgetTotal: 200000000, spent: 50000000),
+        currency: 'COP',
+        locale: 'es',
+        hideAmount: false,
+        theme: 'dark',
+        updatedAt: now,
+      );
+      expect(doc, {
+        'v': 2,
+        'signedIn': true,
+        'remaining': 150000000,
+        'spent': 50000000,
+        'budgetTotal': 200000000,
+        'currency': 'COP',
+        'locale': 'es',
+        'month': '2026-10',
+        'mood': 'happy',
+        'updatedAt': '2026-10-22T15:30:00.000Z',
+        'hideAmount': false,
+        'theme': 'dark',
+      });
+    });
+
+    test(
+      'over the budgets the remaining is negative, and a category near its limit is worried',
+      () {
+        final doc = signedInSnapshot(
+          summary(
+            budgetTotal: 100000,
+            spent: 150000,
+            categories: [categorySummary('c', budget: 100000, spent: 150000, state: 'over')],
+          ),
+          currency: 'EUR',
+          locale: 'en',
+          hideAmount: true,
+          theme: 'light',
+          updatedAt: now,
+        );
+        expect(doc['remaining'], -50000);
+        expect(doc['mood'], 'worried');
+        expect(doc['hideAmount'], true);
+        expect(doc['theme'], 'light');
+      },
     );
-    expect(written(store), {
-      'v': 1,
-      'kind': 'remaining',
-      'amount': r'$1.500.000',
-      'currency': 'COP',
-      'month': '2026-10',
-      'progress': 0.25,
-      'mood': 'happy',
-      'updatedAt': '2026-10-22T15:30:00.000Z',
+
+    test('without budgets the budget total is 0 and the spending is kept', () {
+      final doc = signedInSnapshot(
+        summary(spent: 4200000),
+        currency: 'COP',
+        locale: 'es',
+        hideAmount: false,
+        theme: 'system',
+        updatedAt: now,
+      );
+      expect(doc['budgetTotal'], 0);
+      expect(doc['spent'], 4200000);
     });
   });
 
-  test(
-    'over the budgets it keeps the overspend, and a category near its limit is worried',
-    () async {
-      final store = FakeWidgetStore();
-      await writeWidgetSnapshot(
-        summary(
-          budgetTotal: 100000,
-          spent: 150000,
-          categories: [categorySummary('c', budget: 100000, spent: 150000, state: 'over')],
-        ),
-        currency: 'EUR',
-        locale: 'en',
-        store: store,
-        now: now,
+  test('signed out it says so and carries no figure, no currency and no month', () {
+    final doc = signedOutSnapshot(hideAmount: true, theme: 'light', locale: 'en');
+    expect(doc, {'v': 2, 'signedIn': false, 'hideAmount': true, 'theme': 'light', 'locale': 'en'});
+  });
+
+  group('choices changed', () {
+    test('a signed-in snapshot keeps its figures and its time, with the new choices', () {
+      final before = signedInSnapshot(
+        summary(budgetTotal: 200000000, spent: 50000000),
+        currency: 'COP',
+        locale: 'es',
+        hideAmount: false,
+        theme: 'dark',
+        updatedAt: now,
       );
-      expect(written(store)['kind'], 'over');
-      expect(written(store)['amount'], '€500.00');
-      expect(written(store)['progress'], 1.0);
-      expect(written(store)['mood'], 'worried');
-    },
-  );
+      final after = withChoices(jsonEncode(before), hideAmount: true, theme: 'light')!;
+      expect(after, {...before, 'hideAmount': true, 'theme': 'light'});
+    });
 
-  test('without budgets it keeps what was spent and no progress', () async {
-    final store = FakeWidgetStore();
-    await writeWidgetSnapshot(
-      summary(spent: 4200000),
-      currency: 'COP',
-      locale: 'es',
-      store: store,
-      now: now,
-    );
-    expect(written(store)['kind'], 'spent');
-    expect(written(store)['amount'], r'$42.000');
-    expect(written(store)['progress'], isNull);
+    test('nothing written yet, or an older version, gives nothing to patch', () {
+      expect(withChoices(null, hideAmount: true, theme: 'dark'), isNull);
+      expect(withChoices('{"v":1,"amount":"\$1"}', hideAmount: true, theme: 'dark'), isNull);
+      expect(withChoices('not json', hideAmount: true, theme: 'dark'), isNull);
+    });
   });
 
-  test('is one JSON document under one key, nothing else', () async {
-    final store = FakeWidgetStore();
-    await writeWidgetSnapshot(summary(), currency: 'COP', locale: 'es', store: store, now: now);
-    expect(store.saved.keys, ['lukitas.widget.snapshot']);
-  });
-
-  test('a store that cannot be reached never breaks home', () async {
-    final store = FakeWidgetStore()..failure = MissingPluginException();
-    await writeWidgetSnapshot(summary(), currency: 'COP', locale: 'es', store: store, now: now);
-    store.failure = PlatformException(code: 'x');
-    await writeWidgetSnapshot(summary(), currency: 'COP', locale: 'es', store: store, now: now);
-  });
-
-  test(
-    'clearing forgets it, and a store that cannot be reached never breaks that either',
-    () async {
+  group('saving', () {
+    test('is one JSON document under one key, and both widgets are told to redraw', () async {
       final store = FakeWidgetStore();
-      await writeWidgetSnapshot(summary(), currency: 'COP', locale: 'es', store: store, now: now);
-      await clearWidgetSnapshot(store: store);
-      expect(store.saved, isEmpty);
+      await saveWidgetSnapshot(store, signedOutSnapshot(hideAmount: false, theme: 'dark'));
+      expect(store.saved.keys, ['lukitas.widget.snapshot']);
+      expect(written(store)['signedIn'], false);
+      expect(store.updates, 1);
+    });
 
-      store.failure = MissingPluginException();
-      await clearWidgetSnapshot(store: store);
+    test('a store that cannot be reached never breaks the app', () async {
+      final store = FakeWidgetStore()..failure = MissingPluginException();
+      await saveWidgetSnapshot(store, signedOutSnapshot(hideAmount: false, theme: 'dark'));
       store.failure = PlatformException(code: 'x');
-      await clearWidgetSnapshot(store: store);
-    },
-  );
+      await saveWidgetSnapshot(store, signedOutSnapshot(hideAmount: false, theme: 'dark'));
+      expect(store.saved, isEmpty);
+    });
+  });
 }
