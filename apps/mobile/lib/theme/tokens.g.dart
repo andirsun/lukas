@@ -254,6 +254,35 @@ class LukitasColors {
   );
 }
 
+/// The shadow tokens of one theme: a solid bottom edge, not a blur.
+class LukitasShadows {
+  const LukitasShadows({
+    required this.edgeSm,
+    required this.edgeMd,
+    required this.edgeBrand,
+  });
+
+  /// Rows, chips, the month pill. Pressed: translateY(3px), edge 0 1px 0.
+  final List<BoxShadow> edgeSm;
+
+  /// Hero card, keypad keys, option cards.
+  final List<BoxShadow> edgeMd;
+
+  /// Primary buttons and the ＋ button. Pressed: translateY(5px), 0 1px 0 brand-edge.
+  final List<BoxShadow> edgeBrand;
+
+  static const night = LukitasShadows(
+    edgeSm: [BoxShadow(color: Color(0xFF0F0C22), offset: Offset(0, 3))],
+    edgeMd: [BoxShadow(color: Color(0xFF0F0C22), offset: Offset(0, 5))],
+    edgeBrand: [BoxShadow(color: Color(0xFF3F22A3), offset: Offset(0, 6)), BoxShadow(color: Color(0x738B5CFF), offset: Offset(0, 10), blurRadius: 24)],
+  );
+  static const day = LukitasShadows(
+    edgeSm: [BoxShadow(color: Color(0xFFD6CCF5), offset: Offset(0, 3))],
+    edgeMd: [BoxShadow(color: Color(0xFFD6CCF5), offset: Offset(0, 5))],
+    edgeBrand: [BoxShadow(color: Color(0xFF4A2BBF), offset: Offset(0, 6)), BoxShadow(color: Color(0x477B3DF0), offset: Offset(0, 10), blurRadius: 24)],
+  );
+}
+
 /// The design system tokens: colours per theme, spacing, radii and durations.
 abstract final class LukitasTokens {
   /// The default theme.

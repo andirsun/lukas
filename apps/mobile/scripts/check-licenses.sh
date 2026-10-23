@@ -7,7 +7,10 @@
 # in pubspec.yaml has no entry. (The app's own extras, the voice models, the speech engine with
 # what its native library carries (OpenBLAS, CLAPACK and libf2c), JNA with libffi, the Android
 # libraries and the sounds, are added in code: lib/settings/licenses.dart, and a widget test
-# checks them.) It then checks that the Android libraries About lists
+# checks them.) It checks the same for the bundled fonts (pubspec.yaml `fonts:`): each font file
+# must exist and have an OFL.txt beside it (assets/fonts/Nunito-Variable.ttf needs
+# assets/fonts/Nunito-OFL.txt, a SIL Open Font License 1.1 text), that text must be listed under
+# `assets:` so About can show it, and when the APK is read, both files must be inside it. It then checks that the Android libraries About lists
 # (assets/licenses/android-libraries.json) are exactly the release classpath's, each with the
 # licence its POM declares: scripts/gen-android-licenses.dart --check, which fails when the file
 # is stale. That part needs Gradle and the POMs it cached while building.
@@ -23,6 +26,7 @@ set -euo pipefail
 MOBILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 apk="$MOBILE/build/app/outputs/flutter-apk/app-release.apk"
 notices=""
+from_apk=0
 pubspec="$MOBILE/pubspec.yaml"
 android=1
 while [ $# -gt 0 ]; do
@@ -40,6 +44,7 @@ if [ -z "$notices" ]; then
     echo "No APK at $apk: run 'flutter build apk --release' first." >&2
     exit 2
   fi
+  from_apk=1
   notices="$(mktemp)"
   trap 'rm -f "$notices"' EXIT
   unzip -p "$apk" assets/flutter_assets/NOTICES.Z 2>/dev/null | gunzip >"$notices" 2>/dev/null ||
@@ -74,6 +79,48 @@ done <<<"$packages"
 
 if [ "$failed" -ne 0 ]; then exit 1; fi
 echo "A licence for each of the $count direct dependencies."
+
+# The bundled fonts: "        - asset: assets/fonts/Nunito-Variable.ttf" under `fonts:`.
+root="$(cd "$(dirname "$pubspec")" && pwd)"
+fonts="$(grep -E '^ *- asset: *.*\.(ttf|otf) *$' "$pubspec" | sed -E 's/^ *- asset: *//; s/ *$//' || true)"
+font_count=0
+if [ -n "$fonts" ]; then
+  apk_files=""
+  if [ "$from_apk" -eq 1 ]; then apk_files="$(unzip -Z1 "$apk")"; fi
+  while IFS= read -r font; do
+    font_count=$((font_count + 1))
+    dir="$(dirname "$font")"
+    base="$(basename "$font")"
+    licence="$dir/${base%%-*}-OFL.txt"
+    if [ ! -f "$root/$font" ]; then
+      echo "The font $font is in pubspec.yaml but not on disk." >&2
+      exit 2
+    fi
+    if [ ! -f "$root/$licence" ]; then
+      echo "No licence for the font $font: $licence is missing."
+      failed=1
+      continue
+    fi
+    if ! grep -q 'SIL OPEN FONT LICENSE' "$root/$licence"; then
+      echo "$licence is not the SIL Open Font License text."
+      failed=1
+    fi
+    if ! grep -qxE " *- ${licence//./\\.} *" "$pubspec"; then
+      echo "$licence is not listed under assets: in pubspec.yaml, so About cannot show it."
+      failed=1
+    fi
+    if [ "$from_apk" -eq 1 ]; then
+      for file in "$font" "$licence"; do
+        if ! grep -qxF "assets/flutter_assets/$file" <<<"$apk_files"; then
+          echo "$file is not inside the APK."
+          failed=1
+        fi
+      done
+    fi
+  done <<<"$fonts"
+  if [ "$failed" -ne 0 ]; then exit 1; fi
+  echo "An OFL licence beside each of the $font_count bundled font$([ "$font_count" -eq 1 ] || echo s)."
+fi
 
 if [ "$android" -eq 1 ]; then
   cd "$MOBILE"

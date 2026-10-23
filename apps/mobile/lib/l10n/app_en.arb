@@ -862,6 +862,22 @@
     }
   },
   "licenseNoticeBsd": "An Android library under the BSD 3-Clause licence, with the text published alongside it. It sits inside AndroidX Glance, which the widget uses.",
+  "licenseNoticeFont": "{font} ({source}), the font Lukitas uses for {role}, as the web app does. It is bundled in the app, never downloaded, under the SIL Open Font License 1.1, whose text follows as the font ships it.",
+  "@licenseNoticeFont": {
+    "placeholders": {
+      "font": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeFontRoleDisplay": "titles and amounts",
+  "licenseNoticeFontRoleText": "the rest of the text",
   "licenseNoticeSounds": "The sounds Lukitas plays when you add, pay, undo, or come near a limit are original work made for Lukitas: a few plain tones, with no third-party samples. They are released under the licence of the app itself, the GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
   "licenseNoticeApp": "Lukitas is free software, under the GNU Affero General Public License 3.0. Its source code is at https://github.com/andirsun/lukas.",
   "aboutLegalese": "Free software, AGPL-3.0"

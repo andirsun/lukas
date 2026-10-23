@@ -31,6 +31,11 @@ const _clapack = 'assets/licenses/clapack-bsd.txt';
 const _libf2c = 'assets/licenses/libf2c-notice.txt';
 const _libffi = 'assets/licenses/libffi-mit.txt';
 
+// The fonts and the licence file each ships (assets/fonts, pubspec.yaml; scripts/check-licenses.sh
+// checks every font has one). Both are SIL OFL 1.1, from Google Fonts' repository.
+const _fredokaOfl = 'assets/fonts/Fredoka-OFL.txt';
+const _nunitoOfl = 'assets/fonts/Nunito-OFL.txt';
+
 const _vosk = 'com.alphacephei:vosk-android';
 const _jna = 'net.java.dev.jna:jna';
 
@@ -95,6 +100,20 @@ Stream<LicenseEntry> extraLicenseEntries(AssetBundle bundle, AppLocalizations l1
     yield LicenseEntryWithLineBreaks([
       for (final l in group) name(l),
     ], '$notice\n\n${await load(asset)}');
+  }
+
+  for (final (name, source, role, asset) in [
+    (
+      'Fredoka',
+      'https://github.com/hafontia/Fredoka-One',
+      l10n.licenseNoticeFontRoleDisplay,
+      _fredokaOfl,
+    ),
+    ('Nunito', 'https://github.com/googlefonts/nunito', l10n.licenseNoticeFontRoleText, _nunitoOfl),
+  ]) {
+    yield LicenseEntryWithLineBreaks([
+      name,
+    ], '${l10n.licenseNoticeFont(name, source, role)}\n\n${await load(asset)}');
   }
 
   final agpl = await load(_agpl);

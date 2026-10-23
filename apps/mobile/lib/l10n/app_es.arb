@@ -1226,6 +1226,22 @@
     }
   },
   "licenseNoticeBsd": "Una biblioteca de Android con licencia BSD de 3 cláusulas, con el texto que se publica junto a ella. Va dentro de AndroidX Glance, que se usa para el widget.",
+  "licenseNoticeFont": "{font} ({source}), la tipografía que Lukitas usa para {role}, igual que la web. Va incluida en la app, nunca se descarga, bajo la SIL Open Font License 1.1, cuyo texto sigue tal como lo trae la tipografía.",
+  "@licenseNoticeFont": {
+    "placeholders": {
+      "font": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeFontRoleDisplay": "los títulos y las cifras",
+  "licenseNoticeFontRoleText": "el resto del texto",
   "licenseNoticeSounds": "Los sonidos de Lukitas al anotar, pagar, deshacer o acercarte a un límite son obra original hecha para Lukitas: unos pocos tonos simples, sin muestras de terceros. Se publican con la licencia de la propia app, la GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
   "licenseNoticeApp": "Lukitas es software libre, bajo la GNU Affero General Public License 3.0. Su código está en https://github.com/andirsun/lukas.",
   "aboutLegalese": "Software libre, AGPL-3.0"

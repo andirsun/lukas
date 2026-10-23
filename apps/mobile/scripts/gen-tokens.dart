@@ -3,6 +3,10 @@
 /// Generates lib/theme/tokens.g.dart from the design system's tokens.json, the source the web's
 /// tokens.css is generated from (apps/web/scripts/gen-tokens.ts).
 ///
+/// The design system's shadows (`edge-sm`, `edge-md`, `edge-brand`) become `LukitasShadows`, the
+/// Dart form of the `--edge-*` variables the web's tokens.css has: the web's `shadow-edge-*`
+/// utilities read them (apps/web/app/styles/app.css, `@theme inline`).
+///
 /// Names follow the design system's, in lowerCamelCase: the colour `bg-glow` becomes
 /// `LukitasTokens.night.bgGlow`, `space-4` becomes `LukitasTokens.space4`, `radius-sm` becomes
 /// `LukitasTokens.radiusSm` and the duration `press` becomes `LukitasTokens.durationPress`. The
@@ -76,6 +80,46 @@ String _duration(String css, String where) {
   return 'Duration(milliseconds: ${ms.round()})';
 }
 
+/// A number of a CSS shadow, `0` or `3px`, as a Dart double literal.
+String _shadowNumber(String css, String where) {
+  final match = RegExp(r'^(-?\d+(?:\.\d+)?)(?:px)?$').firstMatch(css);
+  if (match == null) throw FormatException('$where: expected a px length, got "$css"');
+  final value = double.parse(match.group(1)!);
+  return value == value.roundToDouble() ? '${value.round()}' : '$value';
+}
+
+/// A CSS `box-shadow` (`0 3px 0 #0f0c22`, or several separated by commas, each
+/// `x y blur [spread] colour`) as a Dart list of `BoxShadow`s. CSS and Flutter blur radii mean the
+/// same (twice the Gaussian's sigma).
+String _shadows(String css, String where) {
+  final layers = <String>[];
+  var depth = 0;
+  var start = 0;
+  for (var i = 0; i < css.length; i++) {
+    if (css[i] == '(') depth++;
+    if (css[i] == ')') depth--;
+    if (css[i] == ',' && depth == 0) {
+      layers.add(css.substring(start, i).trim());
+      start = i + 1;
+    }
+  }
+  layers.add(css.substring(start).trim());
+  final parts = layers.map((layer) {
+    final match = RegExp(
+      r'^(\S+)\s+(\S+)\s+(\S+)\s+(?:(-?\d+(?:\.\d+)?px)\s+)?(#\w+|rgba?\([^)]*\))$',
+    ).firstMatch(layer);
+    if (match == null) throw FormatException('$where: unsupported shadow "$layer"');
+    final x = _shadowNumber(match.group(1)!, where);
+    final y = _shadowNumber(match.group(2)!, where);
+    final blur = _shadowNumber(match.group(3)!, where);
+    final spread = match.group(4) == null ? '0' : _shadowNumber(match.group(4)!, where);
+    return 'BoxShadow(color: ${_color(match.group(5)!, where)}, offset: Offset($x, $y)'
+        '${blur == '0' ? '' : ', blurRadius: $blur'}'
+        '${spread == '0' ? '' : ', spreadRadius: $spread'})';
+  });
+  return '[${parts.join(', ')}]';
+}
+
 String _doc(Object? usage, String indent) {
   if (usage is! String || usage.trim().isEmpty) return '';
   return '$indent/// ${usage.trim()}\n';
@@ -131,6 +175,7 @@ String generateTokensDart(Map<String, dynamic> json) {
   out
     ..writeln('}')
     ..writeln()
+    ..writeln(_shadowClass(json, themes))
     ..writeln('/// The design system tokens: colours per theme, spacing, radii and durations.')
     ..writeln('abstract final class LukitasTokens {')
     ..writeln('  /// The default theme.')
@@ -158,6 +203,39 @@ String generateTokensDart(Map<String, dynamic> json) {
         ..write(_doc(token['usage'], '  '))
         ..writeln('  static const $dartName = ${literal(token['value'] as String, name)};');
     }
+  }
+  out.writeln('}');
+  return out.toString();
+}
+
+/// `LukitasShadows`, the shadow tokens of every theme.
+String _shadowClass(Map<String, dynamic> json, List<String> themes) {
+  final shadows = _tokens(json, 'shadow');
+  final out = StringBuffer()
+    ..writeln('/// The shadow tokens of one theme: a solid bottom edge, not a blur.')
+    ..writeln('class LukitasShadows {')
+    ..writeln('  const LukitasShadows({');
+  for (final token in shadows) {
+    out.writeln('    required this.${_camel(token['name'] as String)},');
+  }
+  out
+    ..writeln('  });')
+    ..writeln();
+  for (final token in shadows) {
+    out
+      ..write(_doc(token['usage'], '  '))
+      ..writeln('  final List<BoxShadow> ${_camel(token['name'] as String)};')
+      ..writeln();
+  }
+  for (final theme in themes) {
+    out.writeln('  static const $theme = LukitasShadows(');
+    for (final token in shadows) {
+      final name = token['name'] as String;
+      final value = (token['value'] as Map<String, dynamic>)[theme];
+      if (value is! String) throw FormatException('Token "$name" has no value for theme "$theme"');
+      out.writeln('    ${_camel(name)}: ${_shadows(value, name)},');
+    }
+    out.writeln('  );');
   }
   out.writeln('}');
   return out.toString();

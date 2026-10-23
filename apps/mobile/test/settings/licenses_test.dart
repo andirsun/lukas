@@ -143,9 +143,8 @@ void main() {
 
     test('the speech engine names Kaldi and OpenFST, which libvosk.so is built from', () async {
       for (final language in ['es', 'en']) {
-        final vosk = (await _extras(language)).singleWhere(
-          (e) => e.packages.any((p) => p.startsWith('vosk-android ')),
-        );
+        final vosk = (await _extras(language))
+            .singleWhere((e) => e.packages.any((p) => p.startsWith('vosk-android ')));
         expect(_text(vosk), contains('Kaldi'), reason: language);
         expect(_text(vosk), contains('OpenFST'), reason: language);
       }
@@ -192,6 +191,8 @@ void main() {
         'OpenBLAS 0.3.20',
         'CLAPACK 3.2.1',
         'libffi 3.4.4',
+        'Fredoka',
+        'Nunito',
         'Lukitas feedback sounds',
         'Lukitas',
       ]) {
@@ -227,6 +228,49 @@ void main() {
       final shown = [for (final e in await _extras()) _text(e)].join('\n');
       for (final name in texts) {
         final text = await rootBundle.loadString('assets/licenses/$name');
+        final firstLine = text.split('\n').firstWhere((l) => l.trim().isNotEmpty).trim();
+        expect(shown, contains(firstLine), reason: '$name is not shown in About');
+      }
+    });
+
+    // Fredoka and Nunito, the web's two fonts, are bundled in assets/fonts with the OFL.txt each
+    // project publishes (Google Fonts, google/fonts ofl/fredoka and ofl/nunito).
+    for (final (name, copyright, file) in [
+      ('Fredoka', 'Copyright 2016 The Fredoka Project Authors', 'Fredoka-OFL.txt'),
+      ('Nunito', 'Copyright 2014 The Nunito Project Authors', 'Nunito-OFL.txt'),
+    ]) {
+      test('About lists $name under the SIL Open Font License 1.1', () async {
+        for (final language in ['es', 'en']) {
+          final entry = (await _extras(language)).singleWhere((e) => e.packages.contains(name));
+          expect(entry.packages, [name]);
+          expect(_text(entry), contains(copyright), reason: language);
+          expect(_text(entry), contains('SIL OPEN FONT LICENSE Version 1.1'), reason: language);
+          expect(_text(entry), contains(name), reason: language);
+          expect(_text(entry), isNot(contains('Apache License')), reason: language);
+          // The text is the one the font ships, whole.
+          expect(
+            _text(entry),
+            contains((await rootBundle.loadString('assets/fonts/$file')).trim().split('\n').last),
+            reason: language,
+          );
+        }
+      });
+    }
+
+    test('the font notices come from the catalog and say the fonts are inside the app', () async {
+      final es = _text((await _extras('es')).singleWhere((e) => e.packages.contains('Nunito')));
+      final en = _text((await _extras('en')).singleWhere((e) => e.packages.contains('Nunito')));
+      expect(es.split('\n\n').first, isNot(en.split('\n\n').first));
+      expect(en, contains('bundled'));
+    });
+
+    test('every OFL text in assets/fonts is bundled and shown, next to a font file', () async {
+      final files = Directory('assets/fonts').listSync().whereType<File>().toList();
+      final names = [for (final f in files) f.uri.pathSegments.last];
+      expect(names, containsAll(['Fredoka-Variable.ttf', 'Nunito-Variable.ttf']));
+      final shown = [for (final e in await _extras()) _text(e)].join('\n');
+      for (final name in names.where((n) => n.endsWith('-OFL.txt'))) {
+        final text = await rootBundle.loadString('assets/fonts/$name');
         final firstLine = text.split('\n').firstWhere((l) => l.trim().isNotEmpty).trim();
         expect(shown, contains(firstLine), reason: '$name is not shown in About');
       }

@@ -11,11 +11,13 @@ import 'package:lukitas/home/home_screen.dart';
 import '../home/fakes.dart';
 import '../home/fixtures.dart';
 import '../home/home_harness.dart';
+import '../support/fonts.dart';
 import 'fakes.dart';
 
 /// The add sheet as a phone shows it, in the night theme (the default) and in the day theme, with
 /// 25.000 typed and a few recent names. Golden images are pixels from the machine that made them,
-/// so they are tagged `golden` and CI (Linux) skips them (dart_test.yaml). Update with
+/// so they are tagged `golden` and CI (Linux) skips them (dart_test.yaml). Text is drawn with the
+/// app's bundled Fredoka and Nunito (loadAppFonts), not the test font. Update with
 /// `flutter test --update-goldens --tags golden`.
 Future<void> pumpSheet(WidgetTester tester, ThemeMode mode) async {
   final server = FakeHomeRepository(
@@ -41,6 +43,8 @@ Future<void> pumpSheet(WidgetTester tester, ThemeMode mode) async {
 }
 
 void main() {
+  setUpAll(loadAppFonts);
+
   testWidgets('the add sheet at night', (tester) async {
     await pumpSheet(tester, ThemeMode.dark);
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/add_night.png'));

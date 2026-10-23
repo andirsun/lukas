@@ -1,25 +1,63 @@
 import 'package:flutter/material.dart';
 
+import 'text_styles.dart';
 import 'tokens.g.dart';
 
-/// The design system's colours for the current theme, as a [ThemeExtension]:
+/// The design system's colours and shadows for the current theme, as a [ThemeExtension]:
 /// `Theme.of(context).extension<LukitasTheme>()!.colors.bgGlow`.
 @immutable
 class LukitasTheme extends ThemeExtension<LukitasTheme> {
-  const LukitasTheme(this.colors);
+  const LukitasTheme(this.colors, this.shadows);
+
+  /// Night, the default theme.
+  static const night = LukitasTheme(LukitasColors.night, LukitasShadows.night);
+
+  /// Day.
+  static const day = LukitasTheme(LukitasColors.day, LukitasShadows.day);
 
   final LukitasColors colors;
 
+  /// The `shadow-edge-*` tokens of the theme (see lib/theme/surfaces.dart).
+  final LukitasShadows shadows;
+
   @override
-  LukitasTheme copyWith({LukitasColors? colors}) => LukitasTheme(colors ?? this.colors);
+  LukitasTheme copyWith({LukitasColors? colors, LukitasShadows? shadows}) =>
+      LukitasTheme(colors ?? this.colors, shadows ?? this.shadows);
 
   // Tokens are discrete per theme: the switch happens halfway through the animation.
   @override
   LukitasTheme lerp(LukitasTheme? other, double t) => t < 0.5 || other == null ? this : other;
 }
 
+/// Material's text styles in Nunito at the weight of the web's body, 700 (app.css:50-56: the body
+/// is `font-family: var(--font-text); font-weight: 700`), so text the app does not style itself
+/// reads as the web's does. Sizes stay Material's: screens set theirs with [LkText].
+TextTheme _webTextTheme(Brightness brightness) {
+  final base = Typography.material2021().black;
+  TextStyle? web(TextStyle? style) =>
+      style?.copyWith(fontFamily: LkText.textFamily, fontWeight: FontWeight.w700);
+  return TextTheme(
+    displayLarge: web(base.displayLarge),
+    displayMedium: web(base.displayMedium),
+    displaySmall: web(base.displaySmall),
+    headlineLarge: web(base.headlineLarge),
+    headlineMedium: web(base.headlineMedium),
+    headlineSmall: web(base.headlineSmall),
+    titleLarge: web(base.titleLarge),
+    titleMedium: web(base.titleMedium),
+    titleSmall: web(base.titleSmall),
+    bodyLarge: web(base.bodyLarge),
+    bodyMedium: web(base.bodyMedium),
+    bodySmall: web(base.bodySmall),
+    labelLarge: web(base.labelLarge),
+    labelMedium: web(base.labelMedium),
+    labelSmall: web(base.labelSmall),
+  );
+}
+
 /// Material [ThemeData] built from the tokens of one theme.
-ThemeData lukitasThemeData(LukitasColors c, Brightness brightness) {
+ThemeData lukitasThemeData(LukitasTheme tokens, Brightness brightness) {
+  final c = tokens.colors;
   final scheme = ColorScheme(
     brightness: brightness,
     primary: c.brand,
@@ -46,6 +84,8 @@ ThemeData lukitasThemeData(LukitasColors c, Brightness brightness) {
     colorScheme: scheme,
     scaffoldBackgroundColor: c.bg,
     canvasColor: c.bg,
+    fontFamily: LkText.textFamily,
+    textTheme: _webTextTheme(brightness),
     focusColor: c.focus,
     appBarTheme: AppBarTheme(
       backgroundColor: c.bg,
@@ -53,12 +93,12 @@ ThemeData lukitasThemeData(LukitasColors c, Brightness brightness) {
       elevation: 0,
       scrolledUnderElevation: 0,
     ),
-    extensions: [LukitasTheme(c)],
+    extensions: [tokens],
   );
 }
 
 /// Night, the default theme.
-final ThemeData nightTheme = lukitasThemeData(LukitasTokens.night, Brightness.dark);
+final ThemeData nightTheme = lukitasThemeData(LukitasTheme.night, Brightness.dark);
 
 /// Day.
-final ThemeData dayTheme = lukitasThemeData(LukitasTokens.day, Brightness.light);
+final ThemeData dayTheme = lukitasThemeData(LukitasTheme.day, Brightness.light);
