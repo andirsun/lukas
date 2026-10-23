@@ -187,7 +187,11 @@ there.
 `integration_test/settings_test.dart` needs no dev stack either: it checks that the licences About adds
 (the voice models, the speech engine, the sounds) are registered at start, and that "Más en la web"
 refuses anything but http and https. `integration_test/entry_test.dart` includes the claim: a guest
-with a movement saves their progress to an email from Mailpit and keeps the movement.
+with a movement saves their progress to an email from Mailpit and keeps the movement. It also checks
+that a sign-in started in the app writes its link with `from=app` (the app sends `x-lukas-client:
+android`), and that the `intent://` form the web page's "Abrir en Lukitas" offers (scheme `http` here,
+`https` in the product) starts the app and signs in. The emulator has no passkey provider, so the
+passkey on the email screen is covered by the widget tests, and by hand with Proton Pass on a phone.
 
 Why the permission matters: a fresh install has not been given the notification permission, so the question a guest is asked about notices (Task 16) covers the screen and the other files' taps miss. `flutter test` uninstalls the app when it ends, so each file needs the app installed by hand first: `adb install -r -t -g build/app/outputs/flutter-apk/app-debug.apk` and `adb shell pm grant com.andersonlaverde.lukitas android.permission.POST_NOTIFICATIONS` (the notices file's two tests are run separately, with `--plain-name`, one with the permission revoked and one with it granted).
 

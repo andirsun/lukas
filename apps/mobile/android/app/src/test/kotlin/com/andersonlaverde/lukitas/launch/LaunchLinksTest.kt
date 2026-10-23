@@ -134,4 +134,53 @@ class LaunchLinksTest {
         assertFalse(LaunchLinks.routerMayRead(Intent(Intent.ACTION_MAIN), host))
         assertFalse(LaunchLinks.routerMayRead(null, host))
     }
+
+    // --- The page's "Abrir en Lukitas" (apps/web/app/features/sign-in/open-in-app.ts) ----------------
+
+    /** What the web page's button links to, character for character (open-in-app.test.ts). */
+    private val intentLink =
+        "intent://app-lukas.andersonlaverde.com/auth/verify" +
+            "?email=ana%40example.com&code=424242&lang=es&next=%2Fapp%2Finsights&from=app" +
+            "#Intent;scheme=https;package=com.andersonlaverde.lukitas;" +
+            "S.browser_fallback_url=https%3A%2F%2Fapp-lukas.andersonlaverde.com%2Fauth%2Fverify" +
+            "%3Femail%3Dana%2540example.com%26code%3D424242%26lang%3Des%26next%3D%252Fapp%252Finsights;end"
+
+    /** The intent Chrome starts for [intentLink]: it parses it, and may start only a browsable view. */
+    private fun fromBrowser(): Intent =
+        Intent.parseUri(intentLink, Intent.URI_INTENT_SCHEME).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            component = null
+            selector = null
+        }
+
+    @Test
+    fun `the page's intent link starts this app on the same https magic link`() {
+        val intent = fromBrowser()
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals("com.andersonlaverde.lukitas", intent.`package`)
+        assertEquals(
+            "https://app-lukas.andersonlaverde.com/auth/verify" +
+                "?email=ana%40example.com&code=424242&lang=es&next=%2Fapp%2Finsights&from=app",
+            intent.dataString,
+        )
+        assertEquals(
+            "https://app-lukas.andersonlaverde.com/auth/verify?email=ana%40example.com&code=424242&lang=es&next=%2Fapp%2Finsights",
+            intent.getStringExtra("browser_fallback_url"),
+        )
+    }
+
+    @Test
+    fun `MainActivity keeps that intent's link for the router, and takes no lukitas link from it`() {
+        val intent = fromBrowser()
+        assertTrue(LaunchLinks.routerMayRead(intent, "app-lukas.andersonlaverde.com"))
+        assertNull(LaunchLinks.linkOf(intent))
+        // On another server the same link is dropped, as any web link is.
+        assertFalse(LaunchLinks.routerMayRead(intent, "lukitas.example.org"))
+    }
+
+    @Test
+    fun `Android resolves that intent to MainActivity through the manifest's App Link filter`() {
+        val resolved = context.packageManager.resolveActivity(fromBrowser(), 0)
+        assertEquals(MainActivity::class.java.name, resolved?.activityInfo?.name)
+    }
 }

@@ -179,6 +179,46 @@ void main() {
     expect(me['email'], email);
   });
 
+  testWidgets('a sign-in started in the app marks its link from=app, and the web page\'s '
+      'intent:// form of it opens the app and signs in', (tester) async {
+    final email = _freshEmail('mobile-intent');
+    await _startApp(tester);
+    await _sendCodeTo(tester, email);
+    await _pumpUntil(tester, find.byKey(const Key('entry.code')));
+
+    final mail = await _mailTo(email);
+    final link = Uri.parse(
+      RegExp(r'https?://\S+/auth/verify\?\S+').firstMatch(mail.text)!.group(0)!,
+    );
+    // The app sent x-lukas-client: android, so the API wrote from=app.
+    expect(link.queryParameters['from'], 'app');
+
+    // What apps/web/app/features/sign-in/open-in-app.ts builds for this page (the dev stack is
+    // plain http, so scheme=http here; the product's is https): the same path and query, the app's
+    // package, and the page without from=app as the fallback.
+    final server = Uri.parse(_server);
+    final query = link.query;
+    final fallback = Uri(
+      scheme: server.scheme,
+      host: server.host,
+      port: server.port,
+      path: '/auth/verify',
+      query: link.queryParameters.entries
+          .where((e) => e.key != 'from')
+          .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}')
+          .join('&'),
+    );
+    final intentUri =
+        'intent://${server.host}:${server.port}/auth/verify?$query'
+        '#Intent;scheme=${server.scheme};package=com.andersonlaverde.lukitas;'
+        'S.browser_fallback_url=${Uri.encodeComponent(fallback.toString())};end';
+    await const MethodChannel('lukitas/test').invokeMethod<void>('openIntentUri', intentUri);
+    await _pumpUntil(tester, find.byType(HomeScreen));
+
+    final me = await _me();
+    expect(me['email'], email);
+  });
+
   testWidgets(
     'a guest sees Guarda tu progreso; claiming an allowlisted email keeps every movement',
     (tester) async {

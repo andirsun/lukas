@@ -106,6 +106,8 @@ export interface SignInStageProps {
   profileUser?: AuthUser;
   onPatchMe?: (body: unknown) => void;
   resendDelayMs?: number;
+  /** The browser's user agent, for the screens that differ on Android; the real one by default. */
+  userAgent?: string;
 }
 
 /**
@@ -119,6 +121,7 @@ export function SignInStage({
   profileUser = NEW_USER,
   onPatchMe = () => {},
   resendDelayMs,
+  userAgent,
 }: SignInStageProps) {
   const [fetchImpl] = useState(() => exposeStoryFetch(profileFetch(profileUser, onPatchMe)));
   const [fallbackOffer] = useState(() => fakeOffer());
@@ -133,7 +136,10 @@ export function SignInStage({
                 <SignIn auth={auth} {...(resendDelayMs !== undefined ? { resendDelayMs } : {})} />
               }
             />
-            <Route path="/auth/verify" element={<Verify auth={auth} />} />
+            <Route
+              path="/auth/verify"
+              element={<Verify auth={auth} {...(userAgent !== undefined ? { userAgent } : {})} />}
+            />
             <Route
               path="/passkey-offer"
               element={<PasskeyOffer offer={offer ?? fallbackOffer} userId={profileUser.id} />}

@@ -51,6 +51,103 @@ export const AsksFirst: Story = {
   },
 };
 
+/** A phone's Chrome, as the user agent of an Android browser. */
+const ANDROID_CHROME =
+  "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36";
+
+/** The link of a sign-in started in the Android app, as the API writes it. */
+const APP_SEARCH = `?email=ana%40example.com&code=${GOOD_CODE}&lang=es&from=app`;
+
+/**
+ * The sign-in was started in the Android app and the link opened in a browser (a mail app's own,
+ * say) that never asked Android for the app: the page offers the app, with an `intent://` link to
+ * this same address, or the web. It spends nothing until the person picks the web.
+ */
+export const OffersTheApp: Story = {
+  args: {
+    auth: fakeAuth(),
+    initialEntry: `/auth/verify${APP_SEARCH}`,
+    userAgent: ANDROID_CHROME,
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(
+      canvas.getByRole("heading", { level: 1, name: "Continuar como ana@example.com" }),
+    ).toBeVisible();
+    const open = canvas.getByRole("link", { name: "Abrir en Lukitas" });
+    await expectTarget(open);
+    const { origin, host } = window.location;
+    await expect(open).toHaveAttribute(
+      "href",
+      `intent://${host}/auth/verify${APP_SEARCH}` +
+        "#Intent;scheme=https;package=com.andersonlaverde.lukitas;" +
+        `S.browser_fallback_url=${encodeURIComponent(
+          `${origin}/auth/verify?email=ana%40example.com&code=${GOOD_CODE}&lang=es`,
+        )};end`,
+    );
+    await expectTarget(canvas.getByRole("button", { name: "Seguir en la web" }));
+    await expect(canvas.queryByRole("button", { name: "Continuar" })).toBeNull();
+    await expect(canvas.getByRole("link", { name: "No soy yo" })).toBeVisible();
+    // Some time passes, as for a scanner or a slow tap: still nothing spent.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await expect(args.auth.verifyCode).not.toHaveBeenCalled();
+  },
+};
+
+/** "Seguir en la web" spends the code on the web, as the plain page does. */
+export const FollowsOnTheWeb: Story = {
+  args: { ...OffersTheApp.args, auth: fakeAuth() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Seguir en la web" }));
+    await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
+    await expect(args.auth.verifyCode).toHaveBeenCalledTimes(1);
+    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", GOOD_CODE);
+  },
+};
+
+/** The same offer in English. */
+export const OffersTheAppInEnglish: Story = {
+  args: {
+    ...OffersTheApp.args,
+    auth: fakeAuth(),
+    initialEntry: `/auth/verify${APP_SEARCH.replace("lang=es", "lang=en")}`,
+  },
+  globals: { locale: "en" },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("link", { name: "Open in Lukitas" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Stay on the web" })).toBeVisible();
+    await expect(args.auth.verifyCode).not.toHaveBeenCalled();
+  },
+};
+
+/** `from=app` in a browser that is not Android's: the page is the plain one. */
+export const FromAppOffAndroid: Story = {
+  args: {
+    auth: fakeAuth(),
+    initialEntry: `/auth/verify${APP_SEARCH}`,
+    userAgent:
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("button", { name: "Continuar" })).toBeVisible();
+    await expect(canvas.queryByRole("link", { name: "Abrir en Lukitas" })).toBeNull();
+    await expect(canvas.queryByRole("button", { name: "Seguir en la web" })).toBeNull();
+  },
+};
+
+/** An Android browser without `from=app` (a link from the web): the plain page. */
+export const AndroidWithoutMarker: Story = {
+  args: { auth: fakeAuth(), userAgent: ANDROID_CHROME },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByRole("button", { name: "Continuar" })).toBeVisible();
+    await expect(canvas.queryByRole("link", { name: "Abrir en Lukitas" })).toBeNull();
+  },
+};
+
 /** One tap signs in with the email and code from the link, then on to onboarding. */
 export const SignsIn: Story = {
   args: { auth: fakeAuth() },

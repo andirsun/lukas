@@ -143,6 +143,17 @@ class MainActivity : FlutterActivity() {
                         startActivity(intent)
                         result.success(null)
                     }
+                    // What a browser does with the web page's "Abrir en Lukitas": it parses the
+                    // `intent://` address and starts the intent as a browsable view, with no
+                    // component of its own, so Android resolves it through the manifest's filters.
+                    "openIntentUri" -> {
+                        val intent = Intent.parseUri(call.arguments as String, Intent.URI_INTENT_SCHEME)
+                            .addCategory(Intent.CATEGORY_BROWSABLE)
+                        intent.component = null
+                        intent.selector = null
+                        startActivity(intent)
+                        result.success(null)
+                    }
                     // What the widget's ＋ ("add"), 🎤 ("capture") and body ("home") start, exactly.
                     "openWidgetButton" -> {
                         val link = when (call.arguments) {
