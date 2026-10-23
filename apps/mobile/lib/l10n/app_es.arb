@@ -1556,5 +1556,269 @@
   "budgetErrorNotExpense": "Solo las categorías de gasto pueden tener presupuesto.",
   "@budgetErrorNotExpense": {
     "description": "Budget sheet: only spending categories have a budget."
+  },
+  "insightsTitle": "Análisis",
+  "@insightsTitle": {
+    "description": "Análisis: the screen's title."
+  },
+  "insightsPeriodLabel": "Periodo",
+  "@insightsPeriodLabel": {
+    "description": "Análisis: names the 1 mes / 3 meses / 6 meses / 1 año control (screen readers)."
+  },
+  "insightsSpan1": "1 mes",
+  "@insightsSpan1": {
+    "description": "Análisis: the 1-month option of the period control."
+  },
+  "insightsSpan3": "3 meses",
+  "@insightsSpan3": {
+    "description": "Análisis: the 3-month option of the period control."
+  },
+  "insightsSpan6": "6 meses",
+  "@insightsSpan6": {
+    "description": "Análisis: the 6-month option of the period control."
+  },
+  "insightsSpan12": "1 año",
+  "@insightsSpan12": {
+    "description": "Análisis: the 12-month option of the period control."
+  },
+  "insightsPeriodOne": "en {month}",
+  "@insightsPeriodOne": {
+    "description": "Análisis: one month in a sentence (\"en octubre\"). {month} is the month mid-sentence.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsPeriodRange": "de {from} a {to}",
+  "@insightsPeriodRange": {
+    "description": "Análisis: a run of months in a sentence (\"de agosto a octubre\").",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsLukasTop": "{name} fue lo que más lukas se llevó {period}: {amount}.",
+  "@insightsLukasTop": {
+    "description": "Análisis: Lukitas says which category took the biggest bite. {period} is insightsPeriodOne or insightsPeriodRange.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsLukasEmpty": "No veo gastos {period}. Cuando los anotes, aquí te muestro en qué se van tus lukas.",
+  "@insightsLukasEmpty": {
+    "description": "Análisis: Lukitas when the period has no spending.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutTitle": "Por categoría",
+  "@insightsDonutTitle": {
+    "description": "Por categoría: the card's title."
+  },
+  "insightsDonutKindLabel": "Qué mostrar",
+  "@insightsDonutKindLabel": {
+    "description": "Por categoría: names the Gastos / Ingresos control."
+  },
+  "insightsDonutExpense": "Gastos",
+  "@insightsDonutExpense": {
+    "description": "Por categoría: the spending option."
+  },
+  "insightsDonutIncome": "Ingresos",
+  "@insightsDonutIncome": {
+    "description": "Por categoría: the income option."
+  },
+  "insightsDonutStatusLabel": "Estado",
+  "@insightsDonutStatusLabel": {
+    "description": "Por categoría: names the Todos / Pagados / Pendientes control."
+  },
+  "insightsDonutAll": "Todos",
+  "@insightsDonutAll": {
+    "description": "Por categoría: every status."
+  },
+  "insightsDonutPaid": "Pagados",
+  "@insightsDonutPaid": {
+    "description": "Por categoría: paid ones."
+  },
+  "insightsDonutPending": "Pendientes",
+  "@insightsDonutPending": {
+    "description": "Por categoría: pending ones."
+  },
+  "insightsDonutCenterExpense": "Gastado",
+  "@insightsDonutCenterExpense": {
+    "description": "Por categoría: the label above the total in the donut's hole, for spending."
+  },
+  "insightsDonutCenterIncome": "Recibido",
+  "@insightsDonutCenterIncome": {
+    "description": "Por categoría: the same, for income."
+  },
+  "insightsDonutCaption": "{what} por categoría {period}",
+  "@insightsDonutCaption": {
+    "description": "Por categoría: what the chart shows, for screen readers. {what} is insightsDonutWhat..., {period} the period in a sentence.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutWhatExpenseAll": "Gastos",
+  "@insightsDonutWhatExpenseAll": {
+    "description": "Por categoría: what the figures are (expense, all), at the start of a sentence."
+  },
+  "insightsDonutWhatExpensePaid": "Gastos pagados",
+  "@insightsDonutWhatExpensePaid": {
+    "description": "Por categoría: what the figures are (expense, paid), at the start of a sentence."
+  },
+  "insightsDonutWhatExpensePending": "Gastos pendientes",
+  "@insightsDonutWhatExpensePending": {
+    "description": "Por categoría: what the figures are (expense, pending), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomeAll": "Ingresos",
+  "@insightsDonutWhatIncomeAll": {
+    "description": "Por categoría: what the figures are (income, all), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomePaid": "Ingresos recibidos",
+  "@insightsDonutWhatIncomePaid": {
+    "description": "Por categoría: what the figures are (income, paid), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomePending": "Ingresos pendientes",
+  "@insightsDonutWhatIncomePending": {
+    "description": "Por categoría: what the figures are (income, pending), at the start of a sentence."
+  },
+  "insightsDonutEmpty": "No hay {what} {period}.",
+  "@insightsDonutEmpty": {
+    "description": "Por categoría: nothing to show. {what} is lower case.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutTotal": "Total",
+  "@insightsDonutTotal": {
+    "description": "Por categoría: the total, in the chart's description for screen readers."
+  },
+  "insightsTrendTitle": "Mes a mes",
+  "@insightsTrendTitle": {
+    "description": "Mes a mes: the card's title."
+  },
+  "insightsTrendIncome": "Ingresos",
+  "@insightsTrendIncome": {
+    "description": "Mes a mes: income (legend)."
+  },
+  "insightsTrendExpenses": "Gastos",
+  "@insightsTrendExpenses": {
+    "description": "Mes a mes: spending (legend)."
+  },
+  "insightsTrendBudget": "Presupuesto",
+  "@insightsTrendBudget": {
+    "description": "Mes a mes: the budget (legend)."
+  },
+  "insightsTrendCaption": "Ingresos, gastos y presupuesto por mes, {period}",
+  "@insightsTrendCaption": {
+    "description": "Mes a mes: what the chart shows, for screen readers.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsTrendEmpty": "Aún no hay movimientos {period}.",
+  "@insightsTrendEmpty": {
+    "description": "Mes a mes: nothing logged in the period.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsTrendNoBudget": "Sin presupuesto",
+  "@insightsTrendNoBudget": {
+    "description": "Mes a mes: a month without a budget."
+  },
+  "insightsTrendPrevious": "Ver el mes anterior en el gráfico",
+  "@insightsTrendPrevious": {
+    "description": "Mes a mes: the arrow that selects the previous month (screen readers)."
+  },
+  "insightsTrendNext": "Ver el mes siguiente en el gráfico",
+  "@insightsTrendNext": {
+    "description": "Mes a mes: the arrow that selects the next month (screen readers)."
+  },
+  "insightsLivingTitle": "¿Cuánto me cuesta vivir?",
+  "@insightsLivingTitle": {
+    "description": "¿Cuánto me cuesta vivir?: the card's title."
+  },
+  "insightsLivingPerMonth": "al mes",
+  "@insightsLivingPerMonth": {
+    "description": "¿Cuánto me cuesta vivir?: after the monthly average (\"al mes\")."
+  },
+  "insightsLivingFixed": "Fijos",
+  "@insightsLivingFixed": {
+    "description": "¿Cuánto me cuesta vivir?: fixed costs."
+  },
+  "insightsLivingFixedHint": "Categorías con un pago recurrente",
+  "@insightsLivingFixedHint": {
+    "description": "¿Cuánto me cuesta vivir?: what fixed means."
+  },
+  "insightsLivingVariable": "Variables",
+  "@insightsLivingVariable": {
+    "description": "¿Cuánto me cuesta vivir?: variable costs."
+  },
+  "insightsLivingVariableHint": "Lo que cambia de un mes a otro",
+  "@insightsLivingVariableHint": {
+    "description": "¿Cuánto me cuesta vivir?: what variable means."
+  },
+  "insightsLivingCaption": "Promedio mensual por categoría",
+  "@insightsLivingCaption": {
+    "description": "¿Cuánto me cuesta vivir?: the list, for screen readers."
+  },
+  "insightsLivingTypeFixed": "Fijo",
+  "@insightsLivingTypeFixed": {
+    "description": "¿Cuánto me cuesta vivir?: a category row's type, fixed."
+  },
+  "insightsLivingTypeVariable": "Variable",
+  "@insightsLivingTypeVariable": {
+    "description": "¿Cuánto me cuesta vivir?: a category row's type, variable."
+  },
+  "insightsLivingEmpty": "Necesito al menos un mes completo con gastos para calcularlo. Cuando cierre tu primer mes con movimientos, aquí lo verás.",
+  "@insightsLivingEmpty": {
+    "description": "¿Cuánto me cuesta vivir?: not enough history."
+  },
+  "insightsLivingArchived": "archivada",
+  "@insightsLivingArchived": {
+    "description": "¿Cuánto me cuesta vivir?: the note after an archived category's name."
+  },
+  "insightsLivingTotal": "Total",
+  "@insightsLivingTotal": {
+    "description": "¿Cuánto me cuesta vivir?: the total, for screen readers."
+  },
+  "insightsLivingLead": "Lo que gastas en un mes normal: el promedio de {count, plural, one{tu último mes completo} other{tus últimos {count} meses completos}}.",
+  "@insightsLivingLead": {
+    "description": "¿Cuánto me cuesta vivir?: what the average is of. {count} is how many complete months.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -47,7 +47,7 @@ class MonthPicker extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: 8,
         children: [
-          _Step(
+          StepButton(
             glyph: '‹',
             label: l10n.monthPickerPrevious,
             onPressed: () => onChange(addMonths(month, -1)),
@@ -64,7 +64,7 @@ class MonthPicker extends StatelessWidget {
               ),
             ),
           ),
-          _Step(
+          StepButton(
             glyph: '›',
             label: l10n.monthPickerNext,
             onPressed: atMax ? null : () => onChange(addMonths(month, 1)),
@@ -76,9 +76,9 @@ class MonthPicker extends StatelessWidget {
 }
 
 /// An arrow (`.lk-step`): a 44px round button that sinks 3px into a 1px edge; disabled it is half
-/// as opaque and does not move.
-class _Step extends StatelessWidget {
-  const _Step({required this.glyph, required this.label, required this.onPressed});
+/// as opaque and does not move. The month picker's ‹ and ›, and the trend's under its chart.
+class StepButton extends StatelessWidget {
+  const StepButton({super.key, required this.glyph, required this.label, required this.onPressed});
 
   final String glyph;
   final String label;

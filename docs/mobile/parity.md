@@ -261,6 +261,21 @@ when the app's picture changes. The web shots are regenerated only when the web 
   API has no delete, so the app has none either. The budget sheet's stories `manage-categories--budget-sheet-open`
   and `--budget-sheet-negative` were added to `Categories.stories.tsx` for these pairs (no existing story leaves the
   sheet open), and `APP_GETS` has Ocio's own movements as the app asks for them.
+- **Análisis (`insights-insights--*`).** The page is as long as its three cards (about 2130px), and a pair
+  compares the viewport only, so the stories that look at a card below the fold scroll the page to it
+  (`TrendScrolled`, `TrendYearScrolled`, `TrendGapsScrolled` and `CostOfLivingScrolled` were added to
+  `Insights.stories.tsx`; the card starts 16px under the top, or as near as the page's end lets it). The app test
+  moves the screen up by as much in its frame (`ShellFrame.padding` with a negative top, and `screenHeight`), which is
+  what a scrolled page looks like with the bar fixed over it, gradient included.
+  - The charts are Recharts on the web and a `CustomPainter` in the app (`lib/insights/chart_geometry.dart` is a port of
+    what Recharts computes). `pnpm --filter @lukas/web parity:insights-geometry` reads what the web draws for the
+    insights stories (sector paths, bars, grid, axis names, the budget line) into
+    `apps/mobile/test/insights/recharts_geometry.json`, which `chart_geometry_test.dart` checks the port against, with the
+    stories' own data.
+  - Recharts leaves out the month names that would touch, measuring them in a hidden span under the `body` (Nunito
+    11px at weight 700) while the names are drawn at 800: the app measures the same way (`measureTickName`).
+  - Recharts keeps a bar out of the picture when it has no height; the stories' counts of bars are of the months
+    that have data.
 - **Stories that are not pictures of the component.** A few stories' end states are not what the
   component draws on its own:
   - `ui-toast--*`: Playwright takes the picture with CSS animations at their end, so the time bar is

@@ -1,4 +1,5 @@
 import 'package:built_value/serializer.dart' show Serializer;
+import 'package:flutter/material.dart' show Scaffold;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -104,7 +105,7 @@ List<Override> parityHomeOverrides(HomeRepository repo) => [
 /// first, so the picture is taken with him in it.
 Future<void> precacheLukitas(WidgetTester t) async {
   await t.runAsync(() async {
-    final context = t.element(find.byType(HomeScreen));
+    final context = t.element(find.byType(Scaffold).first);
     for (final mood in LukitasMood.values) {
       await precacheImage(AssetImage(mood.sheet), context);
     }

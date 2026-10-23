@@ -82,6 +82,9 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
   CategoryDetailController get _controller =>
       ref.read(categoryDetailProvider(widget.categoryId).notifier);
 
+  /// The month on screen, once known.
+  String? _shownMonth;
+
   String _monthFor(String current) {
     final asked = _chosen ?? widget.initialMonth ?? '';
     return _monthFormat.hasMatch(asked) && asked.compareTo(current) <= 0 ? asked : current;
@@ -136,7 +139,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       return _frame(context, body);
     }
     final current = data.todayAt(ref.read(clockProvider)()).substring(0, 7);
-    final month = _monthFor(current);
+    final month = _shownMonth = _monthFor(current);
     if (!_started) {
       _started = true;
       // Not while the tree builds: the controller changes state.
@@ -221,7 +224,16 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
     onAdd: () => unawaited(openAddSheet(context)),
     onMic: () => unawaited(openCapture(context, listen: true)),
     onNavigate: (to) {
-      if (to == 'home') _back();
+      if (to == 'home') {
+        _back();
+      } else if (to == 'insights') {
+        // Análisis opens on the month the detail is on.
+        final month = _shownMonth;
+        unawaited(
+          GoRouter.maybeOf(context)
+              ?.push<void>(month == null ? '/insights' : '/insights?month=$month'),
+        );
+      }
     },
     child: SafeArea(bottom: false, child: child),
   );

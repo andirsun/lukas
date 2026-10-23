@@ -413,6 +413,87 @@ export const CostOfLiving: Story = {
   }),
 };
 
+// -- Scrolled (the mobile parity pictures) --------------------------------------------------------
+
+/**
+ * Where the page stops so a card below the fold fills the phone's viewport: the card starts this
+ * many px under the top of it, or as near as the page's end lets it. The mobile parity harness
+ * compares the viewport only (docs/mobile/parity.md), and the app test scrolls to the same place.
+ */
+const SCROLL_GAP = 16;
+
+/** Scrolls the page until `card` starts `SCROLL_GAP` px under the top of the viewport. */
+async function scrollTo(card: HTMLElement) {
+  window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - SCROLL_GAP);
+  await waitFor(() => expect(window.scrollY).toBeGreaterThan(0));
+}
+
+/** "Mes a mes" over six months, with the page scrolled so its card is what the phone shows. */
+export const TrendScrolled: Story = {
+  render: october,
+  play: settledAfter(async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await showSixMonths(canvas);
+    const trend = await region(canvas, "Mes a mes");
+    await waitFor(
+      () => expect(trend.querySelectorAll(".lk-trend-income .recharts-rectangle")).toHaveLength(6),
+      { timeout: 8000 },
+    );
+    await settled(canvasElement);
+    await scrollTo(trend);
+  }),
+};
+
+/** The same over a year: twelve months do not all fit under their names, so some names are left out (seven have bars: the data starts six months back). */
+export const TrendYearScrolled: Story = {
+  render: october,
+  play: settledAfter(async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("tab", { name: "1 año" }));
+    const trend = await region(canvas, "Mes a mes");
+    await waitFor(
+      () => expect(trend.querySelectorAll(".lk-trend-income .recharts-rectangle")).toHaveLength(7),
+      { timeout: 8000 },
+    );
+    await settled(canvasElement);
+    await scrollTo(trend);
+  }),
+};
+
+/** Budgets that start two months ago, an older month selected: the line has gaps, and no budget is said. */
+export const TrendGapsScrolled: Story = {
+  render: (args) => (
+    <HomeStage onRequest={args.onRequest} data="october" budgetsSince={2} path="/app/insights" />
+  ),
+  play: settledAfter(async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await showSixMonths(canvas);
+    const trend = await region(canvas, "Mes a mes");
+    await waitFor(() => expect(trend.querySelectorAll(".lk-trend-budget-dot")).toHaveLength(3), {
+      timeout: 8000,
+    });
+    for (let i = 0; i < 3; i++) {
+      await userEvent.click(
+        within(trend).getByRole("button", { name: /mes anterior en el gráfico/ }),
+      );
+    }
+    await settled(canvasElement);
+    await scrollTo(trend);
+  }),
+};
+
+/** "¿Cuánto me cuesta vivir?", scrolled into the phone's viewport. */
+export const CostOfLivingScrolled: Story = {
+  render: october,
+  play: settledAfter(async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const living = await region(canvas, "¿Cuánto me cuesta vivir?");
+    await waitFor(() => expect(living).toHaveTextContent(`${eur("2237,08")} al mes`));
+    await settled(canvasElement);
+    await scrollTo(living);
+  }),
+};
+
 // -- Empty ----------------------------------------------------------------------------------------
 
 /**

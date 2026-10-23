@@ -726,7 +726,8 @@ void main() {
       expect(find.text('Análisis'), findsOneWidget);
       expect(find.byKey(const Key('home.add')), findsOneWidget);
       expect(find.byKey(const Key('home.capture')), findsOneWidget);
-      // Análisis has no route yet: it does nothing (and does not fail).
+      // This test has no router: the tap does nothing (and does not fail). That it opens Análisis
+      // is test/insights/insights_test.dart's.
       await tester.tap(find.text('Análisis'));
       await tester.pumpAndSettle();
       expect(find.text('Te quedan este mes'), findsOneWidget);

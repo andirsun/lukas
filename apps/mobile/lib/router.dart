@@ -8,6 +8,7 @@ import 'entry/entry_screen.dart';
 import 'entry/verify_link_screen.dart';
 import 'budgets/category_detail_screen.dart';
 import 'home/home_screen.dart';
+import 'insights/insights_screen.dart';
 import 'progress/progress_screen.dart';
 import 'settings/about_screen.dart';
 import 'settings/home_actions.dart';
@@ -62,6 +63,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           // The month it opens on (`?month=2026-09`), home's when it comes from a budget row.
           initialMonth: state.uri.queryParameters['month'],
         ),
+      ),
+      GoRoute(
+        path: '/insights',
+        builder: (context, state) =>
+            // The month the period ends at (`?month=2026-09`), home's when it comes from there.
+            InsightsScreen(initialMonth: state.uri.queryParameters['month']),
       ),
       GoRoute(path: '/progress', builder: (context, state) => const ProgressScreen()),
       GoRoute(

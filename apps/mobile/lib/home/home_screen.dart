@@ -348,8 +348,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       onAdd: () => unawaited(openAddSheet(context)),
       // The same path the widget's 🎤 takes: quick capture, listening.
       onMic: () => unawaited(openCapture(context, listen: true)),
-      // Análisis comes with its own route (a later task): until then the tab leads nowhere.
-      onNavigate: (_) {},
+      // Análisis opens on the month on screen. Inicio is where the person is.
+      onNavigate: (to) {
+        if (to != 'insights') return;
+        final month = home.month ?? data.month;
+        unawaited(GoRouter.maybeOf(context)?.push<void>('/insights?month=$month'));
+      },
       child: SafeArea(bottom: false, child: _content(context, home, data, l10n)),
     );
   }

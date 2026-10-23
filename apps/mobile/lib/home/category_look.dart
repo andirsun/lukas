@@ -60,3 +60,30 @@ CategoryLook categoryLook({required String icon, required String color}) => Cate
   _importerGlyphs[icon] ?? icon,
   _importerTints[color] ?? _parseHex(color) ?? _importerTints['gray']!,
 );
+
+/// The name of a pickable tint (`yellow`) from its colour, or null for any other colour: a port of
+/// the web's `tintName`. Charts draw a named tint with its theme token (`LukitasColors.tintYellow`),
+/// which the day theme darkens so a mark keeps 3:1 against the card.
+String? tintName(Color tint) {
+  for (final MapEntry(:key, :value) in _importerTints.entries) {
+    if (value == tint) return key;
+  }
+  return null;
+}
+
+/// The tints a person can pick for a category, by name, in the order the web lists them
+/// (`CATEGORY_TINTS`).
+const categoryTintNames = [
+  'orange',
+  'red',
+  'purple',
+  'indigo',
+  'blue',
+  'sky',
+  'pink',
+  'amber',
+  'yellow',
+  'green',
+  'teal',
+  'gray',
+];

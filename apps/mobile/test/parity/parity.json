@@ -895,5 +895,125 @@
     "storyId": "manage-categories--budget-sheet-negative",
     "theme": "day",
     "appTest": "test/parity/budgets_parity_test.dart"
+  },
+  {
+    "id": "insights-donut",
+    "storyId": "insights-insights--donut-by-category",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-donut",
+    "storyId": "insights-insights--donut-by-category",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-income",
+    "storyId": "insights-insights--donut-income",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-income",
+    "storyId": "insights-insights--donut-income",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-pending",
+    "storyId": "insights-insights--donut-pending",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-pending",
+    "storyId": "insights-insights--donut-pending",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-range",
+    "storyId": "insights-insights--donut-range",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-range",
+    "storyId": "insights-insights--donut-range",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-trend",
+    "storyId": "insights-insights--trend-scrolled",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-trend",
+    "storyId": "insights-insights--trend-scrolled",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-trend-year",
+    "storyId": "insights-insights--trend-year-scrolled",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-trend-year",
+    "storyId": "insights-insights--trend-year-scrolled",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-trend-gaps",
+    "storyId": "insights-insights--trend-gaps-scrolled",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-trend-gaps",
+    "storyId": "insights-insights--trend-gaps-scrolled",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-living",
+    "storyId": "insights-insights--cost-of-living-scrolled",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-living",
+    "storyId": "insights-insights--cost-of-living-scrolled",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-empty",
+    "storyId": "insights-insights--empty",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-empty",
+    "storyId": "insights-insights--empty",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-english",
+    "storyId": "insights-insights--english",
+    "theme": "night",
+    "appTest": "test/parity/insights_parity_test.dart"
+  },
+  {
+    "id": "insights-english",
+    "storyId": "insights-insights--english",
+    "theme": "day",
+    "appTest": "test/parity/insights_parity_test.dart"
   }
 ]

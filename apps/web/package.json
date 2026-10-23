@@ -14,6 +14,7 @@
     "storybook": "storybook dev --port 6006",
     "parity:fixtures": "tsx scripts/parity-fixtures.ts",
     "parity:shots": "tsx scripts/parity-shots.ts",
+    "parity:insights-geometry": "tsx scripts/insights-geometry.ts",
     "test": "vitest run",
     "e2e": "playwright test",
     "build:landing": "tsx scripts/build-landing.ts",
