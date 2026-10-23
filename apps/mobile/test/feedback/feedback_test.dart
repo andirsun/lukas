@@ -9,12 +9,14 @@ import 'fakes.dart';
 ProviderContainer containerWith(
   FakeFeedbackPlatform platform, {
   SoundSettingStore? store,
+  FlagStore? vibrationStore,
   List<Override> overrides = const [],
 }) {
   final container = ProviderContainer(
     overrides: [
       feedbackPlatformProvider.overrideWithValue(platform),
       soundSettingStoreProvider.overrideWithValue(store ?? FakeSoundStore()),
+      vibrationSettingStoreProvider.overrideWithValue(vibrationStore ?? FakeSoundStore()),
       ...overrides,
     ],
   );
@@ -26,6 +28,7 @@ ProviderContainer containerWith(
 Future<void> started(ProviderContainer container) async {
   container.read(feedbackProvider);
   await container.read(soundEnabledProvider.notifier).ready;
+  await container.read(vibrationEnabledProvider.notifier).ready;
 }
 
 void main() {
@@ -117,12 +120,13 @@ void main() {
       container.read(feedbackProvider)(FeedbackEvent.paid);
       await Future<void>.delayed(Duration.zero);
       expect(platform.sounds, isEmpty);
-      expect(platform.haptics, hasLength(2), reason: 'haptics are unaffected');
 
       await container.read(soundEnabledProvider.notifier).ready;
+      await container.read(vibrationEnabledProvider.notifier).ready;
       container.read(feedbackProvider)(FeedbackEvent.saved);
       await Future<void>.delayed(Duration.zero);
       expect(platform.sounds, isEmpty, reason: 'and still muted once it is read');
+      expect(platform.haptics, hasLength(1), reason: 'the sound setting leaves haptics alone');
     });
 
     test('until the setting is read nothing is heard, and after it sounds play', () async {
@@ -222,6 +226,84 @@ void main() {
       await container.read(soundEnabledProvider.notifier).set(false);
       await Future<void>.delayed(Duration.zero);
       expect(container.read(soundEnabledProvider), isFalse);
+    });
+  });
+
+  group('the vibration setting', () {
+    test('vibration is on by default', () async {
+      final platform = FakeFeedbackPlatform();
+      final container = containerWith(platform, vibrationStore: FakeSoundStore());
+      await started(container);
+      expect(container.read(vibrationEnabledProvider), isTrue);
+      container.read(feedbackProvider)(FeedbackEvent.undo);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.haptics, hasLength(1));
+    });
+
+    test('with vibration off, no event vibrates, and sounds still play', () async {
+      final platform = FakeFeedbackPlatform();
+      final container = containerWith(platform);
+      await started(container);
+      await container.read(vibrationEnabledProvider.notifier).set(false);
+      container.read(feedbackProvider)(FeedbackEvent.paid);
+      container.read(feedbackProvider)(FeedbackEvent.keyPressed);
+      container.read(feedbackProvider)(FeedbackEvent.thresholdCrossed);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.haptics, isEmpty);
+      expect(platform.sounds, [FeedbackSound.paid]);
+    });
+
+    test('turning vibration back on vibrates again', () async {
+      final platform = FakeFeedbackPlatform();
+      final container = containerWith(platform);
+      await started(container);
+      final setting = container.read(vibrationEnabledProvider.notifier);
+      await setting.set(false);
+      await setting.set(true);
+      container.read(feedbackProvider)(FeedbackEvent.undo);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.haptics, hasLength(1));
+    });
+
+    test(
+      'a person who turned vibration off never feels the first one after a fresh start',
+      () async {
+        final platform = FakeFeedbackPlatform();
+        final container = containerWith(platform, vibrationStore: FakeSoundStore(false));
+        container.read(feedbackProvider)(FeedbackEvent.saved);
+        await Future<void>.delayed(Duration.zero);
+        expect(platform.haptics, isEmpty, reason: 'not read yet is quiet');
+        await container.read(vibrationEnabledProvider.notifier).ready;
+        container.read(feedbackProvider)(FeedbackEvent.saved);
+        await Future<void>.delayed(Duration.zero);
+        expect(platform.haptics, isEmpty, reason: 'and still off once it is read');
+      },
+    );
+
+    test('the choice is kept on its own key: a new start reads it back, sound untouched', () async {
+      final vibration = FakeSoundStore();
+      final sound = FakeSoundStore();
+      final first = containerWith(FakeFeedbackPlatform(), store: sound, vibrationStore: vibration);
+      await first.read(vibrationEnabledProvider.notifier).set(false);
+      expect(vibration.value, isFalse);
+      expect(sound.value, isNull);
+
+      final second = containerWith(FakeFeedbackPlatform(), store: sound, vibrationStore: vibration);
+      second.listen(vibrationEnabledProvider, (_, _) {});
+      await Future<void>.delayed(Duration.zero);
+      expect(second.read(vibrationEnabledProvider), isFalse);
+      expect(second.read(soundEnabledProvider), isTrue);
+    });
+
+    test('a store that cannot be read leaves vibration on, and one that cannot be written does not throw', () async {
+      final platform = FakeFeedbackPlatform();
+      final container = containerWith(platform, vibrationStore: _BrokenStore());
+      await started(container);
+      container.read(feedbackProvider)(FeedbackEvent.undo);
+      await Future<void>.delayed(Duration.zero);
+      expect(platform.haptics, hasLength(1));
+      await container.read(vibrationEnabledProvider.notifier).set(false);
+      expect(container.read(vibrationEnabledProvider), isFalse);
     });
   });
 

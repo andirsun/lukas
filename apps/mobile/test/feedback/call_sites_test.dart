@@ -45,6 +45,7 @@ Future<_Env> _pump(
     overrides: [
       feedbackPlatformProvider.overrideWithValue(platform),
       soundSettingStoreProvider.overrideWithValue(FakeSoundStore()),
+      vibrationSettingStoreProvider.overrideWithValue(FakeSoundStore()),
       if (withAdd) addRepositoryProvider.overrideWithValue(FakeAddRepository(repo)),
       if (withCapture) ...[
         captureRepositoryProvider.overrideWithValue(FakeCaptureRepository(repo)),

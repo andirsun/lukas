@@ -1098,5 +1098,105 @@
         "type": "int"
       }
     }
-  }
+  },
+  "progressTitle": "Guarda tu progreso",
+  "@progressTitle": {
+    "description": "Guarda tu progreso (guests only): the screen's title, the home chip and the Settings card."
+  },
+  "progressLead": "Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos.",
+  "@progressLead": {
+    "description": "The honest copy for guests (Task 14 brief), shown on Guarda tu progreso."
+  },
+  "progressEmailBody": "Agrega tu correo y tus movimientos se quedan tal cual, en la misma cuenta. Te mandamos un código para confirmarlo.",
+  "progressSave": "Guardar con mi correo",
+  "progressPasskeyTitle": "O agrega una huella",
+  "progressPasskeyBody": "Una huella en este teléfono te deja entrar sin correo, pero si pierdes el teléfono o la huella, pierdes la cuenta. Para usar Lukitas en otro dispositivo o con asistentes de IA necesitas un correo.",
+  "@progressPasskeyBody": {
+    "description": "Spec 4.3: a guest's passkey, and what only an email gives."
+  },
+  "progressPasskeyAdd": "Agregar una huella",
+  "progressPasskeyAdding": "Esperando tu huella…",
+  "progressPasskeyAdded": "Listo: ya puedes entrar con tu huella.",
+  "progressPasskeyFailed": "No pudimos guardar tu huella. Inténtalo otra vez.",
+  "settingsTitle": "Ajustes",
+  "settingsOpenLabel": "Ajustes",
+  "@settingsOpenLabel": {
+    "description": "Home: the gear that opens Settings."
+  },
+  "settingsAccount": "Cuenta",
+  "settingsGuestAccount": "Estás usando Lukitas sin correo.",
+  "settingsPreferences": "Preferencias",
+  "settingsTheme": "Tema",
+  "settingsThemeAuto": "Automático",
+  "settingsThemeDay": "Día",
+  "settingsThemeNight": "Noche",
+  "settingsThemeHint": "Automático sigue el modo de tu teléfono.",
+  "settingsLanguage": "Idioma",
+  "settingsLanguageAuto": "Automático",
+  "settingsLanguageEs": "Español",
+  "@settingsLanguageEs": {
+    "description": "The language's own name: the same in both catalogs."
+  },
+  "settingsLanguageEn": "English",
+  "@settingsLanguageEn": {
+    "description": "The language's own name: the same in both catalogs."
+  },
+  "settingsLanguageHint": "Automático usa el idioma de tu teléfono.",
+  "settingsSound": "Sonidos",
+  "settingsSoundHint": "Suenan al anotar y al celebrar.",
+  "settingsVibration": "Vibración",
+  "settingsVibrationHint": "Un toque suave al anotar, deslizar y deshacer.",
+  "settingsNotices": "Avisos",
+  "settingsDueNotice": "Hoy vence…",
+  "settingsDueNoticeHint": "A las 9:00, un aviso con los pagos recurrentes que vencen hoy.",
+  "settingsGuestNotice": "Aviso si no tienes correo",
+  "settingsGuestNoticeHint": "Si pasan 45 días sin abrir Lukitas y no tienes correo, te avisamos que tus datos se borrarán.",
+  "settingsWidget": "Widget",
+  "settingsHideAmount": "Ocultar el monto en el widget",
+  "settingsHideAmountHint": "Muestra •••• en vez de lo que te queda.",
+  "settingsVoice": "Voz",
+  "settingsDeleteVoice": "Borrar los modelos de voz",
+  "settingsDeleteVoiceHint": "Libera espacio en el teléfono. La próxima vez que dictes, te pedimos descargarlos otra vez.",
+  "settingsDeleteVoiceTitle": "¿Borrar los modelos de voz?",
+  "settingsDeleteVoiceBody": "No podrás dictar hasta descargarlos de nuevo. Lo que ya anotaste no cambia.",
+  "settingsDeleteVoiceConfirm": "Sí, borrar",
+  "settingsDeleteVoiceDone": "Listo: borramos los modelos de voz.",
+  "settingsDeleteVoiceFailed": "No pudimos borrar los modelos de voz. Inténtalo otra vez.",
+  "settingsServer": "Servidor",
+  "settingsServerTitle": "Cambiar de servidor",
+  "settingsServerLead": "Otro servidor es otra cuenta: al cambiar, cierras sesión aquí.",
+  "settingsServerField": "Dirección del servidor",
+  "settingsServerInvalid": "Escribe una dirección que empiece por https://, como https://lukitas.ejemplo.com.",
+  "settingsServerUseDefault": "Usar el de Lukitas",
+  "settingsServerChange": "Cambiar",
+  "settingsServerChanged": "Listo: ahora usas {server}.",
+  "@settingsServerChanged": {
+    "placeholders": {
+      "server": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAbout": "Acerca de",
+  "settingsWeb": "Más en la web",
+  "settingsWebHint": "Categorías, recurrentes, informes y descargar tus datos.",
+  "settingsWebFailed": "No pudimos abrir el navegador.",
+  "settingsSignOut": "Cerrar sesión",
+  "guestSignOutTitle": "¿Cerrar sesión sin guardar tu progreso?",
+  "guestSignOutBody": "Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos. Si cierras sesión ahora, no podrás volver a esta cuenta.",
+  "@guestSignOutBody": {
+    "description": "Includes the honest copy of the Task 14 brief, word for word."
+  },
+  "guestSignOutConfirm": "Cerrar sesión de todos modos",
+  "guestServerTitle": "¿Cambiar de servidor sin guardar tu progreso?",
+  "guestServerBody": "Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos. Cambiar de servidor cierra tu sesión, y no podrás volver a esta cuenta.",
+  "@guestServerBody": {
+    "description": "Includes the honest copy of the Task 14 brief, word for word."
+  },
+  "guestServerConfirm": "Cambiar de todos modos",
+  "aboutTitle": "Acerca de Lukitas",
+  "aboutLead": "Lukitas es software libre, bajo la licencia AGPL-3.0. Puedes leer y revisar su código.",
+  "aboutVoice": "Dictar funciona en tu teléfono, con los modelos de voz Vosk (Apache-2.0). Tu voz no sale de él.",
+  "aboutLicenses": "Licencias",
+  "aboutLicensesHint": "De cada pieza de software que usa Lukitas, los modelos de voz y los sonidos."
 }

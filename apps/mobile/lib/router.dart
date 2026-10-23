@@ -7,13 +7,17 @@ import 'entry/email_screen.dart';
 import 'entry/entry_screen.dart';
 import 'entry/verify_link_screen.dart';
 import 'home/home_screen.dart';
+import 'progress/progress_screen.dart';
+import 'settings/about_screen.dart';
+import 'settings/home_actions.dart';
+import 'settings/settings_screen.dart';
 
 /// Where the session sends a [location], or null to stay:
 /// - the magic link (`/auth/verify`) always opens: it decides for itself, guests included;
 /// - while the stored session is read, a blank screen;
 /// - signed out, only the entry screens;
-/// - signed in, never the first-run screen, and the email screen only for a guest (to save their
-///   progress, or to sign in as another account after a warning).
+/// - signed in, never the first-run screen, and the email screen and "Guarda tu progreso" only for
+///   a guest (to save their progress, or to sign in as another account after a warning).
 String? sessionRedirect(SessionState session, Uri location) {
   final path = location.path;
   if (path == '/auth/verify') return null;
@@ -24,7 +28,7 @@ String? sessionRedirect(SessionState session, Uri location) {
       return path == '/entry' || path == '/entry/email' ? null : '/entry';
     case SessionStatus.signedIn:
       if (path == '/loading' || path == '/entry') return '/';
-      if (path == '/entry/email' && !session.isGuest) return '/';
+      if ((path == '/entry/email' || path == '/progress') && !session.isGuest) return '/';
       return null;
   }
 }
@@ -37,7 +41,16 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: session,
     redirect: (context, state) => sessionRedirect(session.value, state.uri),
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const HomeScreen(trailing: HomeActions()),
+      ),
+      GoRoute(path: '/progress', builder: (context, state) => const ProgressScreen()),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+        routes: [GoRoute(path: 'about', builder: (context, state) => const AboutScreen())],
+      ),
       GoRoute(path: '/loading', builder: (context, state) => const Scaffold()),
       GoRoute(path: '/entry', builder: (context, state) => const EntryScreen()),
       GoRoute(

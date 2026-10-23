@@ -11,7 +11,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lukitas/api/session.dart';
 import 'package:lukitas/home/home_screen.dart';
@@ -158,35 +157,64 @@ void main() {
     expect(me['email'], email);
   });
 
-  testWidgets('a guest saves their progress by claiming an email: same user, no longer a guest', (
-    tester,
-  ) async {
-    final email = _freshEmail('mobile-claim');
-    await _startApp(tester);
-    await _tap(tester, 'entry.guest');
-    await _pumpUntil(tester, find.byType(HomeScreen));
-    final guest = await _me();
-    final guestToken = (await SessionStore().read())!.token;
+  testWidgets(
+    'a guest sees Guarda tu progreso; claiming an allowlisted email keeps every movement',
+    (tester) async {
+      final email = _freshEmail('mobile-claim');
+      await _startApp(tester);
+      await _tap(tester, 'entry.guest');
+      await _pumpUntil(tester, find.byType(HomeScreen));
+      final guest = await _me();
+      final guestToken = (await SessionStore().read())!.token;
+      final auth = Options(headers: {'Authorization': 'Bearer $guestToken'});
 
-    // "Guarda tu progreso" (Task 14) will lead here; until then the route is opened directly.
-    GoRouter.of(tester.element(find.byType(HomeScreen))).go('/entry/email');
-    await _pumpUntil(tester, find.byKey(const Key('entry.email')));
-    await tester.enterText(find.byKey(const Key('entry.email')), email);
-    await _tap(tester, 'entry.send');
-    await _tap(tester, 'guest.save');
-    await _pumpUntil(tester, find.byKey(const Key('entry.code')));
+      // A movement the guest noted before saving their progress.
+      final name = 'Antes del correo ${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
+      final category = await _http.post<Map<String, dynamic>>(
+        '$_server/api/v1/categories',
+        data: {'name': name, 'kind': 'expense', 'icon': '🛒', 'color': '#2fd388'},
+        options: auth,
+      );
+      expect(category.statusCode, 201, reason: '${category.data}');
+      final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+      final movement = await _http.post<Map<String, dynamic>>(
+        '$_server/api/v1/transactions',
+        data: {'name': name, 'amount': -1500000, 'categoryId': category.data!['id'], 'date': today},
+        options: auth.copyWith(headers: {...auth.headers!, 'Idempotency-Key': 'claim-$name'}),
+      );
+      expect(movement.statusCode, 201, reason: '${movement.data}');
 
-    final mail = await _mailTo(email);
-    await tester.enterText(find.byKey(const Key('entry.code')), _codeFrom(mail.subject));
-    await _tap(tester, 'entry.submitCode');
-    await _pumpUntil(tester, find.byType(HomeScreen));
+      // Home offers "Guarda tu progreso" to a guest; it asks for the email and sends the code.
+      await _tap(tester, 'home.saveProgress');
+      await _pumpUntil(tester, find.byKey(const Key('progress.email')));
+      await tester.enterText(find.byKey(const Key('progress.email')), email);
+      await _tap(tester, 'progress.save');
+      await _pumpUntil(tester, find.byKey(const Key('entry.code')));
 
-    final stored = await SessionStore().read();
-    expect(stored?.token, guestToken);
-    expect(stored?.guest, isFalse);
-    final me = await _me();
-    expect(me['id'], guest['id']);
-    expect(me['email'], email);
-    expect(me['isAnonymous'], isFalse);
-  });
+      final mail = await _mailTo(email);
+      await tester.enterText(find.byKey(const Key('entry.code')), _codeFrom(mail.subject));
+      await _tap(tester, 'entry.submitCode');
+      await _pumpUntil(tester, find.byType(HomeScreen));
+
+      // The same user and the same token: no longer a guest, with the email, and the movement kept.
+      final stored = await SessionStore().read();
+      expect(stored?.token, guestToken);
+      expect(stored?.guest, isFalse);
+      final me = await _me();
+      expect(me['id'], guest['id']);
+      expect(me['email'], email);
+      expect(me['isAnonymous'], isFalse);
+      final kept = await _http.get<Map<String, dynamic>>(
+        '$_server/api/v1/transactions',
+        options: auth,
+      );
+      expect(kept.statusCode, 200);
+      expect(
+        (kept.data!['items'] as List<dynamic>).where((t) => (t as Map)['name'] == name),
+        hasLength(1),
+      );
+      // And home no longer offers it.
+      expect(find.byKey(const Key('home.saveProgress')), findsNothing);
+    },
+  );
 }

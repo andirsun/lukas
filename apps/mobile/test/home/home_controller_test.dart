@@ -49,7 +49,7 @@ class _FakeSession extends SessionController {
   SessionState build() => SessionState.signedIn(const StoredSession(token: 't', guest: true));
 
   @override
-  Future<void> signOut() async => signOuts++;
+  Future<void> signOut({bool discardGuest = false}) async => signOuts++;
 }
 
 Future<void> settle() => Future<void>.delayed(Duration.zero);

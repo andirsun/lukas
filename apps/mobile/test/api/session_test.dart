@@ -237,6 +237,47 @@ void main() {
       expect(auth.calls.last, 'signOut email-token-0');
     });
 
+    test(
+      'signOut of a guest throws GuestInTheWay and keeps the session, the widget and the cache',
+      () async {
+        mockStorage(token: 'guest-token-0', guest: true);
+        auth.guests['guest-token-0'] = true;
+        widget.saved[widgetSnapshotKey] = '{"v":1}';
+        homeCache.value = '{"v":1}';
+        final container = containerWith();
+        final controller = await ready(container);
+
+        await expectLater(controller.signOut(), throwsA(isA<GuestInTheWay>()));
+
+        expect(container.read(sessionProvider).status, SessionStatus.signedIn);
+        expect((await SessionStore().read())?.token, 'guest-token-0');
+        expect(
+          auth.calls,
+          isNot(contains('signOut guest-token-0')),
+          reason: 'the server is not told',
+        );
+        expect(widget.saved, isNotEmpty);
+        expect(homeCache.value, isNotNull);
+      },
+    );
+
+    test('a guest who was warned signs out with discardGuest, and everything goes', () async {
+      mockStorage(token: 'guest-token-0', guest: true);
+      auth.guests['guest-token-0'] = true;
+      widget.saved[widgetSnapshotKey] = '{"v":1}';
+      homeCache.value = '{"v":1}';
+      final container = containerWith();
+      final controller = await ready(container);
+
+      await controller.signOut(discardGuest: true);
+
+      expect(container.read(sessionProvider).status, SessionStatus.signedOut);
+      expect(await SessionStore().read(), isNull);
+      expect(auth.calls.last, 'signOut guest-token-0');
+      expect(widget.saved, isEmpty);
+      expect(homeCache.value, isNull);
+    });
+
     test("signOut also wipes the widget's figures: they are the person's", () async {
       mockStorage(token: 'email-token-0');
       widget.saved[widgetSnapshotKey] = '{"v":1}';

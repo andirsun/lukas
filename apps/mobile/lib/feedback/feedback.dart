@@ -6,24 +6,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'feedback_event.dart';
 import 'feedback_platform.dart';
 import 'sound_setting.dart';
+import 'vibration_setting.dart';
 
 export 'feedback_event.dart';
 export 'feedback_platform.dart';
 export 'sound_setting.dart';
+export 'vibration_setting.dart';
 
-/// Gives feedback for something that happened (spec section 6.2): plays its sound (unless muted),
-/// vibrates (sounds wait for the sound setting to be read, and stay silent when it is mute), and never throws: a phone with no motor or speaker just skips that part. Call it from
+/// Gives feedback for something that happened (spec section 6.2): plays its sound (unless muted)
+/// and vibrates (unless vibration is off). Each waits for its setting to be read and stays quiet
+/// when it is off. It never throws: a phone with no motor or speaker just skips that part. Call it from
 /// a gesture's handler: `ref.read(feedbackProvider)(FeedbackEvent.saved)`, or [FeedbackContext.feedback]
 /// where there is only a `BuildContext`.
 final feedbackProvider = Provider<void Function(FeedbackEvent event)>((ref) {
   final platform = ref.watch(feedbackPlatformProvider);
-  // Starts reading the sound setting now, at the app's start: no sound plays before it is known.
+  // Starts reading both settings now, at the app's start: nothing plays or vibrates before they
+  // are known.
   ref.read(soundEnabledProvider);
+  ref.read(vibrationEnabledProvider);
   _quietly(platform.warmUp);
 
   void run(FeedbackEvent event) {
     final pattern = hapticPatterns[event];
-    if (pattern != null) _quietly(() => platform.vibrate(pattern));
+    if (pattern != null && _vibrationOn(ref)) _quietly(() => platform.vibrate(pattern));
     final sound = feedbackSounds[event];
     if (sound != null && _soundOn(ref)) _quietly(() => platform.play(sound));
   }
@@ -34,6 +39,14 @@ final feedbackProvider = Provider<void Function(FeedbackEvent event)>((ref) {
 bool _soundOn(Ref ref) {
   try {
     return ref.read(soundEnabledProvider.notifier).playable;
+  } on Object {
+    return false;
+  }
+}
+
+bool _vibrationOn(Ref ref) {
+  try {
+    return ref.read(vibrationEnabledProvider.notifier).vibratable;
   } on Object {
     return false;
   }

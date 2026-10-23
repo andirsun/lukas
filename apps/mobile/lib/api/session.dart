@@ -9,6 +9,7 @@ import '../home/widget_snapshot.dart';
 import 'auth_api.dart';
 import 'client.dart';
 import 'device.dart';
+import 'server_url.dart';
 import 'passkeys.dart';
 
 export 'auth_api.dart' show authApiProvider;
@@ -78,9 +79,10 @@ class SessionState {
   bool get isGuest => stored?.guest ?? false;
 }
 
-/// An email or passkey sign-in was asked for while a guest is signed in. Going ahead would start a
-/// second user and leave the guest's account unreachable, so the caller must first offer to save
-/// the guest's progress (claim the email) or warn, and only then pass `replaceGuest: true`.
+/// A sign-in with another account, or a sign-out, was asked for while a guest is signed in. Going
+/// ahead would leave the guest's account unreachable, so the caller must first offer to save the
+/// guest's progress (claim the email) or warn, and only then pass `replaceGuest: true` (sign-in)
+/// or `discardGuest: true` (sign-out).
 class GuestInTheWay implements Exception {
   const GuestInTheWay();
 }
@@ -208,8 +210,12 @@ class SessionController extends Notifier<SessionState> {
     await _auth.passkeyRegister(token, challenge, attestation);
   }
 
-  Future<void> signOut() async {
+  /// Signs out. A guest's account has no email, so once the token is gone nobody can reach it:
+  /// this throws [GuestInTheWay], changing nothing, unless [discardGuest] says the person was
+  /// warned (Settings does) or the server itself has dropped the session (a 401).
+  Future<void> signOut({bool discardGuest = false}) async {
     await ready;
+    if (state.isGuest && !discardGuest) throw const GuestInTheWay();
     final token = state.stored?.token;
     if (token != null) {
       try {

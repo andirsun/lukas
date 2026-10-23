@@ -44,7 +44,11 @@ const _maxContentWidth = 480.0;
 /// a sticky "Movimientos" tab. Lukitas names a save or a payment for 10 s, then goes back to the
 /// month's line. The last figures stay on screen while offline.
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key, this.onEdit});
+  const HomeScreen({super.key, this.onEdit, this.trailing});
+
+  /// Shown at the end of the month's row: the gear for Settings, and a guest's "Guarda tu
+  /// progreso". Null (tests, goldens): nothing there.
+  final Widget? trailing;
 
   /// Opens a movement to edit (a tap on its row, or a swipe right on a paid one). Null: the edit
   /// sheet. Tests pass their own to see what was asked for.
@@ -346,10 +350,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: MonthPill(name: monthName),
-                        ),
+                        if (widget.trailing == null)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: MonthPill(name: monthName),
+                          )
+                        else
+                          Row(
+                            children: [
+                              MonthPill(name: monthName),
+                              // Whatever room the month leaves; a long label shortens, never overflows.
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: widget.trailing!,
+                                ),
+                              ),
+                            ],
+                          ),
                         if (home.stale)
                           Padding(
                             padding: const EdgeInsets.only(top: LukitasTokens.space2),

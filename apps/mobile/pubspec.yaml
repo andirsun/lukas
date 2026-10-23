@@ -70,3 +70,7 @@ flutter:
     - assets/sounds/paid.mp3
     - assets/sounds/tap.mp3
     - assets/sounds/undo.mp3
+    # Licence texts About lists next to the packages' (lib/settings/licenses.dart): the Apache 2.0
+    # of the voice models and the Android libraries, and the AGPL 3.0 of the app and its sounds.
+    - assets/licenses/apache-2.0.txt
+    - assets/licenses/agpl-3.0.txt

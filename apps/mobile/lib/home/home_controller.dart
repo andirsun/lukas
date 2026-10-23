@@ -210,7 +210,7 @@ class HomeController extends Notifier<HomeState> {
   void _checkSession(Object error) {
     if (!_alive) return;
     if (error is HomeFailure && error.unauthorized) {
-      unawaited(ref.read(sessionProvider.notifier).signOut());
+      unawaited(ref.read(sessionProvider.notifier).signOut(discardGuest: true));
     }
   }
 

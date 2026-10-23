@@ -202,3 +202,5 @@ jobs:
       # and for no permission nobody chose.
       - run: flutter build apk --release
       - run: scripts/check-permissions.sh
+      # About can list a licence for every Dart package (Flutter collects them into NOTICES.Z).
+      - run: scripts/check-licenses.sh

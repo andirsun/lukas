@@ -147,6 +147,11 @@ the APK and load into the `SoundPool`, and that the motor channel answers. How a
 for a real phone (an emulator has no motor): tap through the add sheet, a swipe and a quick capture
 there.
 
+`integration_test/settings_test.dart` needs no dev stack either: it checks that the licences About adds
+(the voice models, the speech engine, the sounds) are registered at start, and that "Más en la web"
+refuses anything but http and https. `integration_test/entry_test.dart` includes the claim: a guest
+with a movement saves their progress to an email from Mailpit and keeps the movement.
+
 The first Gradle build also installs `platforms;android-35` and `cmake;3.22.1` into the SDK: the
 `jni` plugin (pulled in through `flutter_secure_storage`'s dependencies) builds against them.
 

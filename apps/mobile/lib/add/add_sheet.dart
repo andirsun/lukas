@@ -245,7 +245,7 @@ class _AddSheetState extends ConsumerState<AddSheet> {
       }
     } on HomeFailure catch (failure) {
       if (failure.unauthorized) {
-        unawaited(ref.read(sessionProvider.notifier).signOut());
+        unawaited(ref.read(sessionProvider.notifier).signOut(discardGuest: true));
         if (mounted) navigator.pop();
         return;
       }

@@ -1,5 +1,6 @@
 package com.andersonlaverde.lukitas
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
@@ -30,10 +31,14 @@ class MainActivity : FlutterActivity() {
         haptics = HapticsChannel(this, messenger)
         sounds = SoundChannel(this, messenger)
 
-        // The phone's IANA time zone (lib/api/device.dart): Dart only knows its abbreviation.
+        // The phone's IANA time zone (lib/api/device.dart): Dart only knows its abbreviation. And
+        // the browser, for "Más en la web".
         MethodChannel(messenger, "lukitas/device").setMethodCallHandler { call, result ->
             when (call.method) {
                 "timeZone" -> result.success(ZoneId.systemDefault().id)
+                // "Más en la web" (lib/settings/url_opener.dart): the address in the phone's
+                // browser, as any link does. True when a browser took it.
+                "openUrl" -> result.success(openInBrowser(call.arguments as? String))
                 else -> result.notImplemented()
             }
         }
@@ -53,6 +58,19 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+        }
+    }
+
+    /** Opens an http or https [address] with `ACTION_VIEW`; false when it is neither or no app
+     *  takes it. Nothing else is ever opened from a string Dart sends. */
+    private fun openInBrowser(address: String?): Boolean {
+        val uri = address?.let { Uri.parse(it) } ?: return false
+        if (uri.scheme != "https" && uri.scheme != "http") return false
+        return try {
+            startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE))
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
         }
     }
 

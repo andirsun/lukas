@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'client.dart';
 import 'device.dart';
+import 'server_url.dart';
 import 'gen/lukitas_api.dart';
 
 /// A failed auth call: the server's error `code` when it sent one (Better Auth's, such as

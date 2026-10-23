@@ -389,7 +389,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
       );
     } on HomeFailure catch (failure) {
       if (failure.unauthorized) {
-        unawaited(ref.read(sessionProvider.notifier).signOut());
+        unawaited(ref.read(sessionProvider.notifier).signOut(discardGuest: true));
         if (mounted) navigator.pop();
         return;
       }

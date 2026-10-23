@@ -40,15 +40,3 @@ class DeviceHints {
 
 /// The phone's [DeviceHints], read once at start (main.dart overrides this).
 final deviceHintsProvider = Provider<DeviceHints>((ref) => DeviceHints.fallback);
-
-/// The server the app talks to (spec section 6.1: changeable in settings later). A build can point
-/// at another one with `--dart-define=LUKITAS_SERVER=http://10.0.2.2:3000` (the dev stack, seen
-/// from the emulator).
-final serverUrlProvider = Provider<Uri>(
-  (ref) => Uri.parse(
-    const String.fromEnvironment(
-      'LUKITAS_SERVER',
-      defaultValue: 'https://app-lukas.andersonlaverde.com',
-    ),
-  ),
-);
