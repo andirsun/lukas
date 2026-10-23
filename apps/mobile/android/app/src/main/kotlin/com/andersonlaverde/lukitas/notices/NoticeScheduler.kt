@@ -1,5 +1,6 @@
 package com.andersonlaverde.lukitas.notices
 
+import android.app.NotificationManager
 import android.content.Context
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
@@ -65,6 +66,9 @@ object NoticeScheduler {
         // Another person, or the switch on again later, starts with no day recorded.
         settings.lastDueDay = null
         WorkManager.getInstance(context).cancelUniqueWork(DUE)
+        // One already on the shade goes too: after a sign-out it names the previous person's
+        // payments.
+        removePosted(context, NoticePoster.DUE_ID)
     }
 
     /** Sets the guest warning 45 days from now, in place of any earlier one. */
@@ -81,6 +85,12 @@ object NoticeScheduler {
     fun cancelGuest(context: Context) {
         NoticeSettings(context).guestEnabled = false
         WorkManager.getInstance(context).cancelUniqueWork(GUEST)
+        // One already on the shade goes too: after a claim or a sign-out it is no longer true.
+        removePosted(context, NoticePoster.GUEST_ID)
+    }
+
+    private fun removePosted(context: Context, id: Int) {
+        context.getSystemService(NotificationManager::class.java)?.cancel(id)
     }
 
     fun cancelAll(context: Context) {

@@ -1,5 +1,6 @@
 package com.andersonlaverde.lukitas.notices
 
+import android.app.NotificationManager
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.NetworkType
@@ -16,6 +17,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import java.time.Duration
 import java.time.Instant
 
@@ -110,6 +112,39 @@ class NoticeSchedulerTest {
         NoticeScheduler.cancelGuest(context)
         assertTrue(active(NoticeScheduler.GUEST).isEmpty())
         assertFalse(NoticeSettings(context).guestEnabled)
+    }
+
+    private fun shade() = shadowOf(context.getSystemService(NotificationManager::class.java))
+
+    /** Both notices on the shade, as the jobs post them. */
+    private fun postBoth() {
+        val poster = NoticePoster(context)
+        assertTrue(poster.postDue(listOf("Arriendo", "Spotify"), "es"))
+        assertTrue(poster.postGuestWarning("es"))
+        assertEquals(2, shade().allNotifications.size)
+    }
+
+    @Test
+    fun `cancelling Hoy vence also removes the one on the shade, and only that one`() {
+        postBoth()
+        NoticeScheduler.cancelDue(context)
+        assertNull(shade().getNotification(NoticePoster.DUE_ID))
+        assertTrue(shade().getNotification(NoticePoster.GUEST_ID) != null)
+    }
+
+    @Test
+    fun `cancelling the guest warning also removes the one on the shade, and only that one`() {
+        postBoth()
+        NoticeScheduler.cancelGuest(context)
+        assertNull(shade().getNotification(NoticePoster.GUEST_ID))
+        assertTrue(shade().getNotification(NoticePoster.DUE_ID) != null)
+    }
+
+    @Test
+    fun `signing out leaves no notice on the shade`() {
+        postBoth()
+        NoticeScheduler.cancelAll(context)
+        assertTrue(shade().allNotifications.isEmpty())
     }
 
     @Test

@@ -13,6 +13,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
@@ -157,6 +158,21 @@ void main() {
       timeout: _tapByHand ? const Duration(minutes: 3) : const Duration(seconds: 30),
     );
     expect(find.byType(SettingsScreen), findsNothing);
+
+    // Signing out takes the notice off the shade: it names this person's payments. (Sent by the
+    // test, the tap leaves it there; tapped by hand, the shade already took it.)
+    if (!_tapByHand) {
+      expect(await _test.invokeMethod<List<Object?>>('activeNotices'), ['Hoy vencen Arriendo y Spotify']);
+    }
+    final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+    await container.read(sessionProvider.notifier).signOut(discardGuest: true);
+    final end = DateTime.now().add(const Duration(seconds: 10));
+    var left = await _test.invokeMethod<List<Object?>>('activeNotices');
+    while (left!.isNotEmpty && DateTime.now().isBefore(end)) {
+      await tester.pump(const Duration(milliseconds: 100));
+      left = await _test.invokeMethod<List<Object?>>('activeNotices');
+    }
+    expect(left, isEmpty);
 
     await SessionStore().clear();
     await const SecureSettingsStore().delete(localeKey);
