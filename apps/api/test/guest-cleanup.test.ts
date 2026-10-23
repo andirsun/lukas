@@ -304,6 +304,23 @@ describe("guest session lifetime", () => {
     expect(await exists(g.userId)).toBe(false);
   });
 
+  test("the background header leaves expiry checks in place: an expired session is still a 401", async () => {
+    const g = await newGuest();
+    await t.admin
+      .update(session)
+      .set({
+        createdAt: new Date(Date.now() - 61 * DAY),
+        updatedAt: new Date(Date.now() - 61 * DAY),
+        expiresAt: new Date(Date.now() - 1 * DAY),
+      })
+      .where(eq(session.userId, g.userId));
+
+    const res = await t.request("GET", "/v1/me", {
+      headers: { ...g.headers, "x-lukas-background": "1" },
+    });
+    expect(res.status).toBe(401);
+  });
+
   test("a session idle for 61 days is no longer valid", async () => {
     const g = await newGuest();
     await t.admin
