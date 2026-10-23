@@ -74,6 +74,16 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Debug builds also carry x86_64, so the CI emulator (scripts/run-integration-tests.sh on
+            // an AOSP x86_64 image, which has no ARM translation) can install them. vosk-android and
+            // JNA ship x86_64 libraries. Release builds stay ARM only, above.
+            if (project.findProperty("split-per-abi")?.toString()?.toBoolean() != true) {
+                ndk {
+                    abiFilters.add("x86_64")
+                }
+            }
+        }
         release {
             // The release signing key lives only on the founder's Mac and never reaches Gradle:
             // scripts/release.sh builds with LUKITAS_UNSIGNED_RELEASE=1 (no signature at all, the

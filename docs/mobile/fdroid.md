@@ -13,19 +13,27 @@ Lukitas is built to be listed on F-Droid, but nothing has been submitted (spec s
 
 ## Reproducibility, measured
 
-`scripts/check-reproducible.sh` builds the unsigned release APKs twice from clean (`flutter clean` and a fresh `pub get` between them) and compares them byte for byte. Measured on the founder's Mac (Apple Silicon, Flutter 3.47.7, JDK 17.0.21, AGP 9.1.0) on the tree of the commit that added these scripts:
+`scripts/check-reproducible.sh` builds the unsigned release APKs twice from clean (`flutter clean` and a fresh `pub get` between them) and compares them byte for byte; with `--also-at <new dir>` it adds a third build from a fresh clone of HEAD at another path, which is the case that matters (F-Droid never builds where the founder did). Measured on the founder's Mac (Apple Silicon, Flutter 3.47.7, JDK 17.0.21, AGP 9.1.0), on the tree of the commit that added these scripts and again at `d6ac945`:
 
 | Comparison | arm64-v8a | armeabi-v7a |
 |---|---|---|
-| Two clean builds, same checkout path | identical | identical |
-| The same commit built in two different checkout paths | **differs** | **differs** |
+| Two clean builds, same checkout path (also across days: the same hashes came out again) | identical | identical |
+| The same commit built in a second checkout path | **differs** | **differs** |
 
-The APKs themselves are normalised by AGP (entry timestamps fixed, no signature, nothing from the clock), so the container is stable. Across checkout paths, exactly two files differ, in both ABIs:
+The APKs themselves are normalised by AGP (entry timestamps fixed, no signature, nothing from the clock), so the container is stable. Across checkout paths exactly two files differ, in both ABIs:
 
-- `lib/<abi>/libapp.so`, the Dart AOT snapshot: it contains the absolute `file:///…/.dart_tool/flutter_build/dart_plugin_registrant.dart` of the build tree and a name hash derived from it (`_PluginRegistrant@<hash>`), and everything after it shifts.
-- `lib/<abi>/libdartjni.so`, built by CMake from the `jni` plugin: 19 bytes differ (a build id or path-derived data; not investigated further).
+- `lib/<abi>/libapp.so`, the Dart AOT snapshot: it contains the absolute `file:///…/.dart_tool/flutter_build/dart_plugin_registrant.dart` of the build tree and a name hash derived from it (`_PluginRegistrant@<hash>`), and everything after it shifts. This is also a privacy leak: **the founder's published APK carries his home directory and user name** (`/Users/<name>/projects/lukas/…`). Building in a container or VM at a neutral fixed path fixes the leak and the F-Droid mismatch together, and is the first thing to try.
+- `lib/<abi>/libdartjni.so`, built by CMake from the `jni` plugin: 19 bytes differ (probably the build id, or path-derived data; not investigated).
 
-What this means for F-Droid: F-Droid builds at its own fixed path (under `build/<applicationId>` of its build server) and signs the result with its own key, so its APK is not the founder's. For F-Droid's reproducible-build verification (publishing the developer's signature on F-Droid's build, `Binaries:` in the recipe) the founder's build has to be made at the same absolute path, for example in a container or VM that mounts the checkout there. Without that, the founder's APK and F-Droid's are two different, individually reproducible builds, and F-Droid ships its own: users who switch between them have to reinstall, and `ANDROID_CERT_SHA256` lists both fingerprints (`release.md`). Whether to chase path-independence (for instance by asking Flutter for a stable `--source` mapping, which does not exist as a flag today) or to build in a fixed-path container is a later decision. The builds also depend on a warm Gradle cache only for speed, not for the bytes. Not yet measured: a different machine or operating system (Linux, which is what F-Droid runs).
+What this means for F-Droid: F-Droid builds at its own fixed path (under `build/<applicationId>` of its build server) and signs the result with its own key, so its APK is not the founder's. For F-Droid's reproducible-build verification (publishing the developer's signature on F-Droid's build, `Binaries:` in the recipe) the founder's build has to be made at the same absolute path, which means a container that mounts the checkout there. Without that, the founder's APK and F-Droid's are two different, individually reproducible builds, F-Droid ships its own, users who switch between them have to reinstall, and `ANDROID_CERT_SHA256` lists both fingerprints (`release.md`).
+
+Not tried, in case path independence is wanted instead of a fixed-path container:
+
+- Dart front-end `--filesystem-root` / `--filesystem-scheme`, which Flutter only exposes through the hidden `--extra-front-end-options`, to map the build tree to a neutral root;
+- `-ffile-prefix-map`, `-fdebug-prefix-map` and `-Wl,--build-id=none` in the CMake flags of `libdartjni.so` (the `jni` plugin's build, which the app does not control, so likely a patch in the recipe);
+- `--split-debug-info` is about symbols, not paths: it is not a fix for this.
+
+Not yet measured: a different machine or Linux, which is what F-Droid runs. The Dart `gen_snapshot` and the NDK toolchain differ between macOS and Linux hosts, so even a same-path build on the Mac may not match F-Droid's bytes; the only real answer is a build on a Linux host (a container) at F-Droid's path. The builds depend on a warm Gradle cache for speed only, not for the bytes.
 
 ## What the submission will have to solve
 

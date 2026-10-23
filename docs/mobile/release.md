@@ -20,7 +20,12 @@ Pre-release suffixes (`-rc1`) are refused: tags are `mobile-vX.Y.Z` and nothing 
 
 ## The signing key (once)
 
-Use JDK 17's `keytool` (setup.md puts it in `~/development/jdk`). The keystore goes outside every repository; keytool asks for the password, so it never touches a shell history. Keep the keystore file and its password in your password manager too: lose them and no APK you handed out can be updated, only reinstalled.
+Use JDK 17's `keytool` (setup.md puts it in `~/development/jdk`). The keystore goes outside every repository; keytool asks for the password, so it never touches a shell history. 
+**Back it up before you hand out a single APK.** If the keystore or its password is lost, every installed copy of the app can never be updated: Android refuses an update signed with a different key, so people would have to uninstall (losing a guest's data on the phone's side) and install again, and `ANDROID_CERT_SHA256` and the passkeys tied to it would have to change. Nobody, including F-Droid, can recover it.
+
+- Keep an encrypted copy of the `.p12` file and its password in your password manager (as an attachment and a note), and a second copy offline (an encrypted disk image on a USB drive that lives somewhere else).
+- Test the copy once: `"$JAVA_HOME/bin/keytool" -list -keystore <copy> -alias lukitas` should ask for the password and print the key's `SHA256` fingerprint. Write that fingerprint next to the backup; it must match what `release.sh` prints.
+- Never put the keystore, its password or a `key.properties` in the repository, a chat, an email or CI (`apps/mobile/.gitignore` and `android/.gitignore` refuse `*.p12`, `*.pfx`, `*.jks`, `*.keystore` and `key.properties`, but keep it outside the checkout anyway).
 
 ```sh
 export JAVA_HOME=~/development/jdk/jdk-17.0.21+9/Contents/Home
@@ -47,10 +52,11 @@ chmod 600 ~/.lukitas-signing/lukitas-release.p12
 cd ~/projects/lukas
 git checkout main && git pull
 git tag mobile-v1.0.0                  # the release; the script builds the commit the tag points at
+                                       # (push the tag once the APK is checked: F-Droid reads tags)
 export PATH="$HOME/development/flutter/bin:$PATH"
 export LUKITAS_KEYSTORE=~/.lukitas-signing/lukitas-release.p12
 export LUKITAS_KEY_ALIAS=lukitas
-read -rs -p "Keystore password: " LUKITAS_KEYSTORE_PASSWORD; export LUKITAS_KEYSTORE_PASSWORD; echo
+printf 'Keystore password: '; read -rs LUKITAS_KEYSTORE_PASSWORD; echo; export LUKITAS_KEYSTORE_PASSWORD
 apps/mobile/scripts/release.sh
 ```
 
@@ -76,7 +82,7 @@ Install on a phone: `adb install apps/mobile/dist/1.0.0/lukitas-1.0.0-arm64-v8a.
 
 ## Reproducible builds
 
-`scripts/check-reproducible.sh` builds the unsigned release APKs twice from clean on the same commit and compares them with `sha256sum` (and `diffoscope`, if installed, when they differ). The result and what it means for F-Droid are in `fdroid.md`.
+`scripts/check-reproducible.sh` builds the unsigned release APKs twice from clean on the same commit and compares them with `sha256sum` (and `diffoscope`, if installed, when they differ); `--also-at <new dir>` adds a build from a fresh clone at another path. The result and what it means for F-Droid are in `fdroid.md`.
 
 ## CI
 

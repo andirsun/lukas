@@ -142,6 +142,11 @@ jobs:
     needs: mobile-changes
     if: needs.mobile-changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # A new push to a pull request replaces the run in flight; main's runs all finish.
+    concurrency:
+      group: mobile-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     defaults:
       run:
         working-directory: apps/mobile
@@ -238,13 +243,17 @@ jobs:
   # The Android app on an emulator, against the dev stack (docs/mobile/setup.md, "Integration tests
   # against the dev stack"). A job of its own: it takes longest, and a slow emulator should not hold
   # up the quick checks above. Same filter, so it is skipped (which counts as passing) when nothing
-  # the app depends on changed. Linux runners have KVM; the emulator needs it enabled for the runner
+  # the app depends on changed. Debug builds carry x86_64 for this x86_64 AOSP image (no Google
+  # services, no ARM translation). Linux runners have KVM; the emulator needs it enabled for the runner
   # user. The AVD is cached after its first boot (the snapshot step).
   mobile-emulator:
     needs: mobile-changes
     if: needs.mobile-changes.outputs.mobile == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    concurrency:
+      group: mobile-emulator-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     env:
       # The suite's "now", as in the e2e job: the API's clock is pinned to it.
       E2E_NOW: "2026-10-21T15:00:00Z"

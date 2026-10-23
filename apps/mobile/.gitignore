@@ -52,3 +52,6 @@ app.*.map.json
 /lib/l10n/app_localizations*.dart
 # Release APKs (scripts/release.sh).
 /dist/
+# A signing keystore never belongs in the checkout (docs/mobile/release.md keeps it outside).
+*.p12
+*.pfx
