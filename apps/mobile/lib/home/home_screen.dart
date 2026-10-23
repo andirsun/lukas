@@ -373,16 +373,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       builder: (context, constraints) {
         // Read here, below the `AppShell` that provides it: 112px plus the system's bottom inset.
         final room = ShellRoom.of(context);
-        final inset = math.max(
-          LukitasTokens.space4,
-          (constraints.maxWidth - _maxContentWidth) / 2 + LukitasTokens.space4,
-        );
+        // The content is inset from the page's edge, and by the frame's padding too (none in the app).
+        final inset =
+            math.max(
+              LukitasTokens.space4,
+              (constraints.maxWidth - _maxContentWidth) / 2 + LukitasTokens.space4,
+            ) +
+            ShellRoom.sides(context).left;
         return SwipeScope(
           child: RefreshIndicator(
             onRefresh: _controller.refresh,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
+                // What goes above the screen's content: nothing in the app.
+                SliverToBoxAdapter(child: ShellRoom.leading(context)),
                 SliverPadding(
                   // `px-4 pt-3`; the tabs' strip reaches 8px up into the gap above it, so the
                   // gap is 12 - 8.

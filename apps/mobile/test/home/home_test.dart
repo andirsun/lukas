@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/home/home_repository.dart';
 
+import '../support/page_gradient.dart';
 import 'fakes.dart';
 import 'fixtures.dart';
 import 'home_harness.dart';
@@ -960,6 +961,58 @@ void main() {
       await tester.fling(find.byType(CustomScrollView), const Offset(0, 400), 1000);
       await tester.pumpAndSettle();
       expect(find.text('Sin conexión. Te mostramos lo último que cargó.'), findsNothing);
+    });
+  });
+
+  group('the page background', () {
+    /// Scrolls home's page by [offset] px.
+    void scrollBy(WidgetTester tester, double offset) =>
+        tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(offset);
+
+    FakeHomeRepository longMonth() => FakeHomeRepository(
+      items: [
+        for (var i = 20; i >= 1; i--)
+          tx('t$i', '2026-10-${i.toString().padLeft(2, '0')}', -100, name: 'Gasto $i'),
+      ],
+    );
+
+    testWidgets('Movimientos: the glow scrolls away with the list, as the web\'s page does', (
+      tester,
+    ) async {
+      await pumpHome(tester, longMonth());
+      final screen = screenOf(tester);
+      final start = pageGradient(tester);
+      expect(start.top, 0);
+      expect(start.height, greaterThan(screen.height * 1.5), reason: 'as tall as the page');
+
+      scrollBy(tester, 600);
+      await tester.pumpAndSettle();
+      final scrolled = pageGradient(tester);
+      expect(scrolled.top, -600);
+      // The list builds its rows as they come near, and its length is an estimate until it has:
+      // the page is as tall as it was, to a few pixels.
+      expect(scrolled.height, closeTo(start.height, start.height * 0.02));
+    });
+
+    testWidgets('Presupuestos: the same, over its own list', (tester) async {
+      final repo = monthWithBudgets();
+      await pumpHome(tester, repo);
+      await tester.tap(find.text('Presupuestos'));
+      await tester.pumpAndSettle();
+      // A short screen, so the list has somewhere to go.
+      tester.view.physicalSize = const Size(390, 300);
+      await tester.pumpAndSettle();
+      expect(pageGradient(tester).top, 0);
+      scrollBy(tester, 100);
+      await tester.pumpAndSettle();
+      expect(pageGradient(tester).top, -100);
+    });
+
+    testWidgets('a month with nothing in it is a screen tall, as min-h-dvh makes it', (
+      tester,
+    ) async {
+      await pumpHome(tester, FakeHomeRepository(), size: const Size(390, 2400));
+      expect(pageGradient(tester), Offset.zero & const Size(390, 2400));
     });
   });
 }

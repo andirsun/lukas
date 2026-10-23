@@ -19,6 +19,7 @@ import '../home/fakes.dart';
 import '../home/fixtures.dart';
 import '../home/home_harness.dart' show testNow;
 import '../settings/harness.dart';
+import '../support/page_gradient.dart';
 import 'fakes.dart';
 
 /// Presupuestos, a category's detail and the budget sheet, in the whole app (the real router, home
@@ -574,6 +575,27 @@ void main() {
       await tester.tap(find.text('REINTENTAR'));
       await tester.pumpAndSettle();
       expect(find.text('Mercado'), findsOneWidget);
+    });
+  });
+
+  group('the page background', () {
+    testBudgets('the detail: the glow scrolls away with the movements, as the web\'s page does', (
+      tester,
+    ) async {
+      await pumpBudgets(tester);
+      await openDetail(tester, 'Hogar');
+      final screen = screenOf(tester);
+      final start = pageGradient(tester);
+      expect(start.top, 0);
+      expect(start.height, greaterThanOrEqualTo(screen.height));
+
+      tester.view.physicalSize = const Size(390, 400);
+      await tester.pumpAndSettle();
+      final short = pageGradient(tester);
+      tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(50);
+      await tester.pumpAndSettle();
+      expect(pageGradient(tester).top, -50);
+      expect(pageGradient(tester).height, short.height);
     });
   });
 }

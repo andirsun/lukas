@@ -169,98 +169,112 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
               LukitasTokens.space4,
               (constraints.maxWidth - _maxContentWidth) / 2 + LukitasTokens.space4,
             );
+            // The page is a screen tall at least (`min-h-dvh`), and a pull anywhere on it refreshes.
             return SwipeScope(
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  inset,
-                  LukitasTokens.space3,
-                  inset,
-                  ShellRoom.of(context),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: LukitasTokens.space3,
-                  children: [
-                    _Header(
-                      title: l10n.insightsTitle,
-                      picker: MonthPicker(
-                        month: end,
-                        max: current,
-                        onChange: (month) => unawaited(_controller.showMonth(month)),
-                      ),
-                    ),
-                    SegmentedControl<int>(
-                      label: l10n.insightsPeriodLabel,
-                      value: state.span,
-                      options: [
-                        for (final span in spans) SegmentOption(span, _spanLabel(l10n, span)),
-                      ],
-                      onChanged: (span) => unawaited(_controller.setSpan(span)),
-                    ),
-                    if (staleFailure != null)
-                      Row(
-                        spacing: LukitasTokens.space3,
-                        children: [
-                          Expanded(
-                            child: Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                _staleNote(l10n, staleFailure),
-                                style: LkText.caption.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: colors.near,
-                                ),
+              child: SizedBox(
+                height: constraints.maxHeight,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  // The page is this scroll content: the shell paints its gradient over all of it.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ShellRoom.leading(context),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          inset + ShellRoom.sides(context).left,
+                          LukitasTokens.space3,
+                          inset + ShellRoom.sides(context).right,
+                          ShellRoom.of(context),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: LukitasTokens.space3,
+                          children: [
+                            _Header(
+                              title: l10n.insightsTitle,
+                              picker: MonthPicker(
+                                month: end,
+                                max: current,
+                                onChange: (month) => unawaited(_controller.showMonth(month)),
                               ),
                             ),
-                          ),
-                          PressButton.text(
-                            l10n.retry,
-                            tone: PressTone.secondary,
-                            size: PressSize.sm,
-                            onPressed: () => unawaited(_controller.refresh()),
-                          ),
-                        ],
+                            SegmentedControl<int>(
+                              label: l10n.insightsPeriodLabel,
+                              value: state.span,
+                              options: [
+                                for (final span in spans)
+                                  SegmentOption(span, _spanLabel(l10n, span)),
+                              ],
+                              onChanged: (span) => unawaited(_controller.setSpan(span)),
+                            ),
+                            if (staleFailure != null)
+                              Row(
+                                spacing: LukitasTokens.space3,
+                                children: [
+                                  Expanded(
+                                    child: Semantics(
+                                      liveRegion: true,
+                                      child: Text(
+                                        _staleNote(l10n, staleFailure),
+                                        style: LkText.caption.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          color: colors.near,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  PressButton.text(
+                                    l10n.retry,
+                                    tone: PressTone.secondary,
+                                    size: PressSize.sm,
+                                    onPressed: () => unawaited(_controller.refresh()),
+                                  ),
+                                ],
+                              ),
+                            InsightBody(
+                              busy: state.spending.stale,
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(minHeight: 72),
+                                child: line == null
+                                    ? const SizedBox.shrink()
+                                    : LukasBubble(message: line, mood: LukitasMood.happy),
+                              ),
+                            ),
+                            CategoryDonut(
+                              report: state.byCategory.data,
+                              range: byCategoryRange is ByCategoryRange ? byCategoryRange : null,
+                              stale: state.byCategory.stale,
+                              kind: state.kind,
+                              onKind: (kind) => unawaited(_controller.setKind(kind)),
+                              status: state.status,
+                              onStatus: (status) => unawaited(_controller.setStatus(status)),
+                              period: period,
+                              current: current,
+                              currency: data.currency,
+                              order: 0,
+                            ),
+                            TrendChart(
+                              report: state.trend.data,
+                              range: trendRange is Period ? trendRange : null,
+                              stale: state.trend.stale,
+                              period: period,
+                              current: current,
+                              currency: data.currency,
+                              order: 1,
+                            ),
+                            CostOfLiving(
+                              report: state.living.data,
+                              noHistory: state.livingMonths == 0,
+                              categories: data.categories,
+                              currency: data.currency,
+                              order: 2,
+                            ),
+                          ],
+                        ),
                       ),
-                    InsightBody(
-                      busy: state.spending.stale,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 72),
-                        child: line == null
-                            ? const SizedBox.shrink()
-                            : LukasBubble(message: line, mood: LukitasMood.happy),
-                      ),
-                    ),
-                    CategoryDonut(
-                      report: state.byCategory.data,
-                      range: byCategoryRange is ByCategoryRange ? byCategoryRange : null,
-                      stale: state.byCategory.stale,
-                      kind: state.kind,
-                      onKind: (kind) => unawaited(_controller.setKind(kind)),
-                      status: state.status,
-                      onStatus: (status) => unawaited(_controller.setStatus(status)),
-                      period: period,
-                      current: current,
-                      currency: data.currency,
-                      order: 0,
-                    ),
-                    TrendChart(
-                      report: state.trend.data,
-                      range: trendRange is Period ? trendRange : null,
-                      stale: state.trend.stale,
-                      period: period,
-                      current: current,
-                      currency: data.currency,
-                      order: 1,
-                    ),
-                    CostOfLiving(
-                      report: state.living.data,
-                      noHistory: state.livingMonths == 0,
-                      categories: data.categories,
-                      currency: data.currency,
-                      order: 2,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             );

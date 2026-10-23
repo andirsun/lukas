@@ -195,19 +195,32 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
               LukitasTokens.space4,
               (constraints.maxWidth - _maxContentWidth) / 2 + LukitasTokens.space4,
             );
+            // The page is a screen tall at least (`min-h-dvh`), and a pull anywhere on it refreshes.
             return SwipeScope(
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(
-                  inset,
-                  LukitasTokens.space3,
-                  inset,
-                  ShellRoom.of(context),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  spacing: LukitasTokens.space3,
-                  children: children,
+              child: SizedBox(
+                height: constraints.maxHeight,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  // The page is this scroll content: the shell paints its gradient over all of it.
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ShellRoom.leading(context),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          inset + ShellRoom.sides(context).left,
+                          LukitasTokens.space3,
+                          inset + ShellRoom.sides(context).right,
+                          ShellRoom.of(context),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          spacing: LukitasTokens.space3,
+                          children: children,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );

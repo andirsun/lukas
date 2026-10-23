@@ -84,9 +84,7 @@ class _DemoBanner extends StatelessWidget {
 }
 
 /// Home in the story's frame, reading [repo].
-Widget _home({bool banner = false, double? height}) => ShellFrame(
-  // The web's page is as long as its content, and its background gradient with it.
-  screenHeight: height,
+Widget _home({bool banner = false}) => ShellFrame(
   padding: const EdgeInsets.all(16),
   banner: banner ? const _DemoBanner() : null,
   // The web has no 🎤 (spec §5); the bar's own pictures show it.
@@ -105,7 +103,7 @@ void main() {
       await parityGolden(
         t,
         'home-in-pesos',
-        _home(banner: true, height: 3402.02),
+        _home(banner: true),
         theme: theme,
         overrides: parityHomeOverrides(FixtureHomeRepository(fixture)),
         act: precacheLukitas,
@@ -117,7 +115,7 @@ void main() {
       await parityGolden(
         t,
         'home-transactions',
-        _home(height: 1029.89),
+        _home(),
         theme: theme,
         overrides: parityHomeOverrides(FixtureHomeRepository(fixture, pending: 'Spotify')),
         act: (t) async {
@@ -163,7 +161,7 @@ void main() {
     await parityGolden(
       t,
       'home-day-theme',
-      _home(height: 1029.89),
+      _home(),
       theme: 'day',
       overrides: parityHomeOverrides(FixtureHomeRepository(fixture)),
       act: (t) async {

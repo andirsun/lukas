@@ -163,10 +163,12 @@ when the app's picture changes. The web shots are regenerated only when the web 
   the first phrasing, and the home pairs ask the app for it too (`lukasVariantProvider`).
 - **The story's page.** Storybook pads every story by 16px (`.storybook/preview.tsx`) while the bottom bar
   stays fixed to the viewport, and the web's background gradient is as tall as its page (a long list
-  stretches it). A screen pair puts the app's screen in a `ShellFrame` (`lib/ui/app_shell.dart`) with that
-  padding, the page's height (`screenHeight`, measured from the story's `.lk-screen`), no 🎤 (`showMic`) and,
-  for the demo, a stand-in of the banner (`banner`). In the app itself the frame is zero and the gradient
-  is as tall as the screen.
+  stretches it, and `min-h-dvh` keeps a short page a screen tall) and scrolls away with it. A screen pair puts
+  the app's screen in a `ShellFrame` (`lib/ui/app_shell.dart`) with that padding (which the screen puts inside its
+  scroll content, `ShellRoom.leading` and `ShellRoom.sides`, so it scrolls as Storybook's does), no 🎤 (`showMic`)
+  and, for the demo, a stand-in of the banner (`banner`). The gradient is the app's own, in the app and in the
+  pairs: the shell paints it as tall as its screen's scroll content (at least the screen) and moves it with
+  the scrolling (`PageGradientPainter`, from the scroll notifications). In the app itself the frame is zero.
 - **Stories that end with a sheet open.** `home-home--empty-month` opens the add sheet and closes it again
   (the story's play function was changed to close it), so its picture is the empty month. The add sheet has
   its own pairs (Task 8).
@@ -265,8 +267,8 @@ when the app's picture changes. The web shots are regenerated only when the web 
   compares the viewport only, so the stories that look at a card below the fold scroll the page to it
   (`TrendScrolled`, `TrendYearScrolled`, `TrendGapsScrolled` and `CostOfLivingScrolled` were added to
   `Insights.stories.tsx`; the card starts 16px under the top, or as near as the page's end lets it). The app test
-  moves the screen up by as much in its frame (`ShellFrame.padding` with a negative top, and `screenHeight`), which is
-  what a scrolled page looks like with the bar fixed over it, gradient included.
+  scrolls the app's own page to the same offset (`position.jumpTo`, or as far as it goes), so the gradient in those
+  pictures is the one a phone shows.
   - The charts are Recharts on the web and a `CustomPainter` in the app (`lib/insights/chart_geometry.dart` is a port of
     what Recharts computes). `pnpm --filter @lukas/web parity:insights-geometry` reads what the web draws for the
     insights stories (sector paths, bars, grid, axis names, the budget line) into

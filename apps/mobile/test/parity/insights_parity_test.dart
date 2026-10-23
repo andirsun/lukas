@@ -1,6 +1,8 @@
 @Tags(['golden'])
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -62,24 +64,16 @@ class _FixtureInsights implements InsightsRepository {
   );
 }
 
-/// Análisis in the story's frame: Storybook's 16px of padding, the page as long as the web's
-/// ([height]: its `.lk-screen`), scrolled by [scroll] px, the bar under it, no 🎤.
-class _Frame extends StatelessWidget {
-  const _Frame({required this.height, required this.scroll});
+/// Análisis in the story's frame: Storybook's 16px of padding, the bar under it, no 🎤. The page is
+/// the app's own: as long as its content, its gradient with it.
+Widget _screen() =>
+    ShellFrame(padding: const EdgeInsets.all(16), showMic: false, child: const InsightsScreen());
 
-  final double height;
-  final ValueNotifier<double> scroll;
-
-  @override
-  Widget build(BuildContext context) => ValueListenableBuilder<double>(
-    valueListenable: scroll,
-    builder: (context, scrolled, _) => ShellFrame(
-      padding: EdgeInsets.fromLTRB(16, 16 - scrolled, 16, 16),
-      screenHeight: height,
-      showMic: false,
-      child: const InsightsScreen(),
-    ),
-  );
+/// Scrolls the app's page to [offset], as the story's `window.scrollTo` does the web's (or as far as
+/// the page goes).
+void _scrollTo(WidgetTester t, double offset) {
+  final position = t.state<ScrollableState>(find.byType(Scrollable).first).position;
+  position.jumpTo(math.min(offset, position.maxScrollExtent));
 }
 
 /// A click in Chrome puts the focus on what it clicked, which rings it; a tap does not in Flutter.
@@ -94,24 +88,21 @@ Finder _option<T>(String label) =>
     find.descendant(of: find.byType(SegmentedControl<T>), matching: find.text(label));
 
 /// [act] does what the story's `play` function does, with the page at the top (the controls it
-/// clicks are there); [scrolled] is where the page ends up, once it has.
+/// clicks are there); [scrolled] is how far the story then scrolls the page.
 Future<void> _pair(
   WidgetTester t, {
   required String id,
   required String story,
   required String theme,
-  required double height,
   double scrolled = 0,
   Locale locale = const Locale('es'),
-  Future<void> Function(WidgetTester t, ValueNotifier<double> scroll)? act,
+  Future<void> Function(WidgetTester t)? act,
 }) async {
   final fixture = ParityFixtures.load(story);
-  final scroll = ValueNotifier<double>(0);
-  addTearDown(scroll.dispose);
   await parityGolden(
     t,
     id,
-    _Frame(height: height, scroll: scroll),
+    _screen(),
     theme: theme,
     locale: locale,
     overrides: [
@@ -120,9 +111,11 @@ Future<void> _pair(
     ],
     act: (t) async {
       await precacheLukitas(t);
-      await act?.call(t, scroll);
-      scroll.value = scrolled;
-      await t.pumpAndSettle();
+      await act?.call(t);
+      if (scrolled > 0) {
+        _scrollTo(t, scrolled);
+        await t.pumpAndSettle();
+      }
       // A key puts the app in keyboard mode, where the focused control draws its ring.
       if (act != null) await _keyboardMode(t);
     },
@@ -137,7 +130,6 @@ void main() {
         id: 'insights-donut',
         story: 'insights-insights--donut-by-category',
         theme: theme,
-        height: 2132,
       );
     });
 
@@ -147,8 +139,7 @@ void main() {
         id: 'insights-income',
         story: 'insights-insights--donut-income',
         theme: theme,
-        height: 1796,
-        act: (t, _) async {
+        act: (t) async {
           await t.tap(_option<InsightsKind>('Ingresos'));
           await t.pumpAndSettle();
         },
@@ -163,8 +154,7 @@ void main() {
         id: 'insights-pending',
         story: 'insights-insights--donut-pending',
         theme: theme,
-        height: 2076,
-        act: (t, _) async {
+        act: (t) async {
           await t.tap(_option<InsightsStatus>('Pendientes'));
           await t.pumpAndSettle();
           await t.tap(_option<InsightsStatus>('Pagados'));
@@ -179,8 +169,7 @@ void main() {
         id: 'insights-range',
         story: 'insights-insights--donut-range',
         theme: theme,
-        height: 2132,
-        act: (t, _) async {
+        act: (t) async {
           await t.tap(_option<int>('3 meses'));
           await t.pumpAndSettle();
           await t.tap(find.bySemanticsLabel('Mes anterior'));
@@ -196,9 +185,8 @@ void main() {
         id: 'insights-trend',
         story: 'insights-insights--trend-scrolled',
         theme: theme,
-        height: 2132,
         scrolled: 1027,
-        act: (t, _) async {
+        act: (t) async {
           await t.tap(_option<int>('6 meses'));
           await t.pumpAndSettle();
         },
@@ -211,9 +199,8 @@ void main() {
         id: 'insights-trend-year',
         story: 'insights-insights--trend-year-scrolled',
         theme: theme,
-        height: 2132,
         scrolled: 1027,
-        act: (t, _) async {
+        act: (t) async {
           await t.tap(_option<int>('1 año'));
           await t.pumpAndSettle();
         },
@@ -228,13 +215,12 @@ void main() {
         id: 'insights-trend-gaps',
         story: 'insights-insights--trend-gaps-scrolled',
         theme: theme,
-        height: 2132,
         scrolled: 1027,
-        act: (t, scroll) async {
+        act: (t) async {
           await t.tap(_option<int>('6 meses'));
           await t.pumpAndSettle();
           // The arrows of the trend are below the fold: the story clicks them from script.
-          scroll.value = 1027;
+          _scrollTo(t, 1027);
           await t.pumpAndSettle();
           for (var i = 0; i < 3; i++) {
             await t.tap(find.bySemanticsLabel('Ver el mes anterior en el gráfico'));
@@ -251,19 +237,12 @@ void main() {
         id: 'insights-living',
         story: 'insights-insights--cost-of-living-scrolled',
         theme: theme,
-        height: 2132,
         scrolled: 1249,
       );
     });
 
     testWidgets('insights parity: nothing logged yet ($theme)', (t) async {
-      await _pair(
-        t,
-        id: 'insights-empty',
-        story: 'insights-insights--empty',
-        theme: theme,
-        height: 915,
-      );
+      await _pair(t, id: 'insights-empty', story: 'insights-insights--empty', theme: theme);
     });
 
     testWidgets('insights parity: in English ($theme)', (t) async {
@@ -272,7 +251,6 @@ void main() {
         id: 'insights-english',
         story: 'insights-insights--english',
         theme: theme,
-        height: 2132,
         locale: const Locale('en'),
       );
     });

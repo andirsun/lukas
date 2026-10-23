@@ -21,6 +21,7 @@ import '../home/fakes.dart';
 import '../home/fixtures.dart';
 import '../home/home_harness.dart' show testNow;
 import '../settings/harness.dart';
+import '../support/page_gradient.dart';
 import 'fakes.dart';
 
 /// Análisis in the whole app (the real router, home under it) against fakes of the server. How it
@@ -406,6 +407,33 @@ void main() {
       await tester.drag(find.byType(SingleChildScrollView), const Offset(0, -3000));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the page background', () {
+    testInsights('the glow scrolls away with the content, as the web\'s page does', (tester) async {
+      await pumpInsights(tester, location: '/insights');
+      final screen = screenOf(tester);
+      final start = pageGradient(tester);
+      expect(start.top, 0);
+      expect(start.width, screen.width);
+      expect(start.height, greaterThan(screen.height * 2), reason: 'as tall as the page');
+
+      // Scrolls the page by 600px (a drag spends 20px of it on the touch slop).
+      tester.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(600);
+      await tester.pumpAndSettle();
+      final scrolled = pageGradient(tester);
+      expect(scrolled.top, -600, reason: 'the glow moved up by what the content did');
+      expect(scrolled.height, start.height);
+      // The page's colour is all that is left under the top of the screen: the glow is above it.
+      expect(scrolled.bottom, greaterThan(screen.height));
+    });
+
+    testInsights('a page shorter than the screen is still a screen tall, as min-h-dvh makes it', (
+      tester,
+    ) async {
+      await pumpInsights(tester, location: '/insights', size: const Size(390, 2800));
+      expect(pageGradient(tester), Offset.zero & const Size(390, 2800));
     });
   });
 
