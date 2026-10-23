@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/theme/text_styles.dart';
 import 'package:lukitas/theme/theme.dart';
+import 'package:lukitas/theme/tokens.g.dart';
 
 import '../support/fonts.dart';
 
@@ -168,6 +169,67 @@ void main() {
 
     test('the CSS sizes are read in px: sanity of the parser', () {
       expect(_px('36px'), 36);
+    });
+  });
+
+  group('default text takes the ink of its own theme', () {
+    // tokens.css --ink: #f3f0ff at night, #221a47 by day; app.css:50-56 body { color: var(--ink) }.
+    for (final (name, theme, ink) in [
+      ('night', nightTheme, LukitasTokens.night.ink),
+      ('day', dayTheme, LukitasTokens.day.ink),
+    ]) {
+      testWidgets('a plain Text and a dialog\'s title and content are the $name ink', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Column(
+                  children: [
+                    const Text('plain', key: Key('plain')),
+                    TextButton(
+                      onPressed: () => showDialog<void>(
+                        context: context,
+                        builder: (_) => const AlertDialog(
+                          title: Text('title', key: Key('title')),
+                          content: Text('content', key: Key('content')),
+                        ),
+                      ),
+                      child: const Text('open'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(find.text('open'));
+        await tester.pumpAndSettle();
+        for (final key in ['plain', 'title', 'content']) {
+          final text = tester.widget<Text>(find.byKey(Key(key)));
+          final style = DefaultTextStyle.of(tester.element(find.byKey(Key(key)))).style
+              .merge(text.style);
+          expect(style.color, ink, reason: '$key in $name');
+        }
+      });
+    }
+
+    test('every Material text style carries the ink, never Material\'s black or white', () {
+      for (final (theme, ink) in [
+        (nightTheme, LukitasTokens.night.ink),
+        (dayTheme, LukitasTokens.day.ink),
+      ]) {
+        final t = theme.textTheme;
+        for (final style in [
+          t.displayLarge, t.displayMedium, t.displaySmall, t.headlineLarge, t.headlineMedium,
+          t.headlineSmall, t.titleLarge, t.titleMedium, t.titleSmall, t.bodyLarge, t.bodyMedium,
+          t.bodySmall, t.labelLarge, t.labelMedium, t.labelSmall, //
+        ]) {
+          expect(style!.color, ink);
+        }
+      }
     });
   });
 

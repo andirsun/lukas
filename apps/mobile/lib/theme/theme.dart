@@ -31,11 +31,17 @@ class LukitasTheme extends ThemeExtension<LukitasTheme> {
 
 /// Material's text styles in Nunito at the weight of the web's body, 700 (app.css:50-56: the body
 /// is `font-family: var(--font-text); font-weight: 700`), so text the app does not style itself
-/// reads as the web's does. Sizes stay Material's: screens set theirs with [LkText].
-TextTheme _webTextTheme(Brightness brightness) {
+/// reads as the web's does, in the theme's own ink (`body { color: var(--ink) }`, app.css:50-56),
+/// not in a colour Material's typography picks for black or white. Sizes stay Material's: screens
+/// set theirs with [LkText].
+TextTheme _webTextTheme(LukitasColors colors) {
+  // Only the sizes, spacing and heights of Material's styles are kept: the colour is the ink's.
   final base = Typography.material2021().black;
-  TextStyle? web(TextStyle? style) =>
-      style?.copyWith(fontFamily: LkText.textFamily, fontWeight: FontWeight.w700);
+  TextStyle? web(TextStyle? style) => style?.copyWith(
+    fontFamily: LkText.textFamily,
+    fontWeight: FontWeight.w700,
+    color: colors.ink,
+  );
   return TextTheme(
     displayLarge: web(base.displayLarge),
     displayMedium: web(base.displayMedium),
@@ -85,7 +91,7 @@ ThemeData lukitasThemeData(LukitasTheme tokens, Brightness brightness) {
     scaffoldBackgroundColor: c.bg,
     canvasColor: c.bg,
     fontFamily: LkText.textFamily,
-    textTheme: _webTextTheme(brightness),
+    textTheme: _webTextTheme(c),
     focusColor: c.focus,
     appBarTheme: AppBarTheme(
       backgroundColor: c.bg,
