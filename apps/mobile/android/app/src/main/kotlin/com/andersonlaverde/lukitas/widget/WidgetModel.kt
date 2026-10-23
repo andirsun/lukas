@@ -43,11 +43,19 @@ sealed interface WidgetModel {
         /** The ＋ and 🎤 read aloud, in the snapshot's language. */
         val addLabel: String,
         val captureLabel: String,
+        /** What TalkBack reads for the amount when it is not what is shown ("Monto oculto"). */
+        val amountDescription: String? = null,
+        /** What TalkBack reads for the progress bar ("25 % del presupuesto gastado"). */
+        val progressDescription: String? = null,
     ) : WidgetModel
 }
 
-/** Figures this old are marked "hace un rato": the refresh job runs about every 3 hours. */
-val STALE_AFTER: Duration = Duration.ofHours(3)
+/**
+ * Figures this old are marked "hace un rato" even with no failed refresh: twice the refresh job's
+ * period, so a run that is merely late (WorkManager's flex, Doze) never shows it. A failed refresh
+ * after the figures shows it at once ([WidgetSnapshot.refreshFailedAt]).
+ */
+val STALE_AFTER: Duration = RefreshScheduler.INTERVAL.multipliedBy(2)
 
 private fun themeOf(name: String?): WidgetTheme = when (name) {
     "light" -> WidgetTheme.DAY
@@ -89,7 +97,10 @@ fun widgetModel(context: Context, snapshot: WidgetSnapshot?, now: Instant, zone:
     val current = month == YearMonth.from(now.atZone(zone))
     val budgets = snapshot.budgetTotal > 0
     val over = budgets && snapshot.remaining < 0
+    val hidden = snapshot.hideAmount
     val label = when {
+        // Hidden, nothing tells how the month goes: not "Te pasaste", not even "Te quedan".
+        hidden -> if (current) strings.getString(R.string.widget_hidden_label) else name
         !budgets -> if (current) {
             strings.getString(R.string.widget_spent)
         } else {
@@ -107,23 +118,28 @@ fun widgetModel(context: Context, snapshot: WidgetSnapshot?, now: Instant, zone:
         }
     }
     val cents = if (budgets) kotlin.math.abs(snapshot.remaining) else snapshot.spent
-    val amount = if (snapshot.hideAmount) {
+    val amount = if (hidden) {
         strings.getString(R.string.widget_hidden)
     } else {
         formatMoney(cents, snapshot.currency, language)
     }
-    val worried = snapshot.mood == "worried"
+    val worried = !hidden && snapshot.mood == "worried"
+    val progress = if (budgets && !hidden) {
+        (snapshot.spent.toDouble() / snapshot.budgetTotal).coerceIn(0.0, 1.0).toFloat()
+    } else {
+        null
+    }
     val updatedAt = snapshot.updatedAt
-    val stale = updatedAt == null || Duration.between(updatedAt, now) >= STALE_AFTER
+    val failedAt = snapshot.refreshFailedAt
+    val stale = updatedAt == null ||
+        Duration.between(updatedAt, now) >= STALE_AFTER ||
+        (failedAt != null && failedAt.isAfter(updatedAt))
     return WidgetModel.Figures(
         label = label,
         amount = amount,
-        progress = if (budgets) {
-            (snapshot.spent.toDouble() / snapshot.budgetTotal).coerceIn(0.0, 1.0).toFloat()
-        } else {
-            null
-        },
+        progress = progress,
         tone = when {
+            hidden -> Tone.GOOD
             over -> Tone.OVER
             worried -> Tone.NEAR
             else -> Tone.GOOD
@@ -134,5 +150,9 @@ fun widgetModel(context: Context, snapshot: WidgetSnapshot?, now: Instant, zone:
         theme = theme,
         addLabel = strings.getString(R.string.widget_add),
         captureLabel = strings.getString(R.string.widget_capture),
+        amountDescription = if (hidden) strings.getString(R.string.widget_amount_hidden) else null,
+        progressDescription = progress?.let {
+            strings.getString(R.string.widget_progress, kotlin.math.round(it * 100).toInt())
+        },
     )
 }

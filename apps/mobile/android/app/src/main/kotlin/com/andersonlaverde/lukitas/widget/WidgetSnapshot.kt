@@ -31,6 +31,12 @@ data class WidgetSnapshot(
     val hideAmount: Boolean = false,
     /** "dark", "light" or "system": the theme picked in the app. */
     val theme: String = "dark",
+    /**
+     * When the refresh job last failed to reach the server (offline, a server error), if after
+     * [updatedAt]: the figures are then marked "hace un rato". Written by [RefreshWorker] only; the
+     * app's writes drop it (their figures are fresh) and its choice patches keep it.
+     */
+    val refreshFailedAt: Instant? = null,
 ) {
     fun toJson(): String {
         val doc = JSONObject()
@@ -47,6 +53,7 @@ data class WidgetSnapshot(
                 .put("month", month)
                 .put("mood", mood)
                 .put("updatedAt", updatedAt?.toString())
+            if (refreshFailedAt != null) doc.put("refreshFailedAt", refreshFailedAt.toString())
         }
         return doc.toString()
     }
@@ -87,19 +94,20 @@ data class WidgetSnapshot(
                     locale = locale,
                     month = doc.getString("month"),
                     mood = doc.optString("mood", "happy"),
-                    updatedAt = doc.optString("updatedAt", "").let { text ->
-                        try {
-                            Instant.parse(text)
-                        } catch (_: DateTimeParseException) {
-                            null
-                        }
-                    },
+                    updatedAt = instant(doc.optString("updatedAt", "")),
+                    refreshFailedAt = instant(doc.optString("refreshFailedAt", "")),
                     hideAmount = hideAmount,
                     theme = theme,
                 )
             } catch (_: JSONException) {
                 signedOut
             }
+        }
+
+        private fun instant(text: String): Instant? = try {
+            Instant.parse(text)
+        } catch (_: DateTimeParseException) {
+            null
         }
 
         fun preferences(context: Context): SharedPreferences =

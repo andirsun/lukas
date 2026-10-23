@@ -13,6 +13,31 @@ import 'package:lukitas/home/widget_snapshot.dart';
 import '../entry/fakes.dart';
 import '../home/fakes.dart';
 
+/// What happened, in order, across the widget's store and the session's.
+final _log = <String>[];
+
+class _LoggedWidgetStore extends FakeWidgetStore {
+  @override
+  Future<void> save(String key, String value) async {
+    await super.save(key, value);
+    _log.add(value.contains('"signedIn":false') ? 'widget signed out' : 'widget figures');
+  }
+
+  @override
+  Future<void> updateWidgets() async {
+    await super.updateWidgets();
+    _log.add('widgets redrawn');
+  }
+}
+
+class _LoggedSessionStore extends SessionStore {
+  @override
+  Future<void> clear() async {
+    _log.add('session cleared');
+    await super.clear();
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -357,6 +382,40 @@ void main() {
       expect(container.read(sessionProvider).status, SessionStatus.signedOut);
       expect(widgetSignedOut(widget), isTrue);
       expect(homeCache.value, isNull);
+    });
+
+    group('the widget is signed out before the session is forgotten', () {
+      // If the process dies in between, the widget must not keep the figure: with the session
+      // still there, the next start (or refresh) finds it and puts things right.
+      ProviderContainer ordered() {
+        _log.clear();
+        final container = ProviderContainer(
+          overrides: [
+            authApiProvider.overrideWithValue(auth),
+            passkeysProvider.overrideWithValue(passkeys),
+            widgetStoreProvider.overrideWithValue(_LoggedWidgetStore()),
+            sessionStoreProvider.overrideWithValue(_LoggedSessionStore()),
+            homeCacheStoreProvider.overrideWithValue(homeCache),
+          ],
+        );
+        addTearDown(container.dispose);
+        return container;
+      }
+
+      test('on sign-out', () async {
+        mockStorage(token: 'email-token-0');
+        final container = ordered();
+        await ready(container).then((c) => c.signOut());
+        expect(_log, ['widget signed out', 'widgets redrawn', 'session cleared']);
+      });
+
+      test('when the server no longer knows the session', () async {
+        mockStorage(token: 'stale-token');
+        auth.failures['isGuest'] = const AuthFailure(status: 401);
+        final container = ordered();
+        await (await ready(container)).refreshed;
+        expect(_log, ['widget signed out', 'widgets redrawn', 'session cleared']);
+      });
     });
 
     test("signOut also wipes the widget's figures: they are the person's", () async {

@@ -187,6 +187,23 @@ void main() {
       },
     );
 
+    test('from the sign-out on, nothing signed in is written, until someone signs in', () async {
+      hide.gate.complete();
+      container = make();
+      final sync = container.read(widgetSyncProvider);
+      // Sign-out writes the widget first, while the session still reads as signed in.
+      await sync.signedOut();
+      await sync.summaryLoaded(summary(budgetTotal: 100, spent: 20), currency: 'COP');
+      await container.read(themeModeProvider.notifier).set(ThemeMode.light);
+      await sync.idle;
+      expect(doc()['signedIn'], false);
+      expect(doc().containsKey('remaining'), isFalse);
+
+      sync.signedIn();
+      await sync.summaryLoaded(summary(budgetTotal: 100, spent: 20), currency: 'COP');
+      expect(doc()['signedIn'], true);
+    });
+
     test('a summary that arrives after the sign-out writes nothing', () async {
       container = make();
       final late = container

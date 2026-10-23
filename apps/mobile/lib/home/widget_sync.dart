@@ -47,6 +47,11 @@ class WidgetSync {
   /// already signed in by the time it runs (a guest replaced by an email account).
   var _session = 0;
 
+  /// From a sign-out until the next sign-in, nothing signed in is written. Sign-out writes the
+  /// widget before it forgets the session (so a process that dies in between leaves no figure),
+  /// which means the session still reads as signed in for a moment: this covers that moment.
+  var _closed = false;
+
   WidgetStore get _store => _ref.read(widgetStoreProvider);
   bool get _signedIn => _ref.read(sessionProvider).status == SessionStatus.signedIn;
   bool get _hideAmount => _ref.read(hideWidgetAmountProvider);
@@ -75,7 +80,7 @@ class WidgetSync {
     final session = _session;
     return _enqueue(() async {
       await _ref.read(hideWidgetAmountProvider.notifier).ready;
-      if (!_signedIn || session != _session) return;
+      if (_closed || !_signedIn || session != _session) return;
       await saveWidgetSnapshot(
         _store,
         signedInSnapshot(
@@ -95,6 +100,7 @@ class WidgetSync {
   /// nothing), and never held up by a slow store read.
   Future<void> signedOut() async {
     _session++;
+    _closed = true;
     try {
       await saveWidgetSnapshot(
         _store,
@@ -104,6 +110,9 @@ class WidgetSync {
       // Nothing more to do.
     }
   }
+
+  /// Someone signed in: their figures may be written again.
+  void signedIn() => _closed = false;
 
   /// The hide-amount switch or the theme changed: the stored snapshot gets them, its figures and
   /// their time unchanged.
@@ -125,7 +134,7 @@ class WidgetSync {
         return;
       }
       // Read before a sign-out, written after it: dropped, the sign-out's snapshot stands.
-      if (patched['signedIn'] == true && (!_signedIn || session != _session)) return;
+      if (patched['signedIn'] == true && (_closed || !_signedIn || session != _session)) return;
       await saveWidgetSnapshot(_store, patched);
     });
   }

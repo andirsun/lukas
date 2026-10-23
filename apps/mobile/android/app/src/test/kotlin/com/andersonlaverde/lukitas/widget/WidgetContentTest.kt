@@ -116,26 +116,41 @@ class WidgetContentTest {
     fun `offline - the last figure, with a subtle hace un rato`() = runGlanceAppWidgetUnitTest {
         setContext(context)
         provideComposable {
-            MediumWidgetContent(model(snapshot(updatedAt = now.minusSeconds(5 * 3600))))
+            MediumWidgetContent(
+                model(snapshot(updatedAt = now.minusSeconds(3600)).copy(refreshFailedAt = now.minusSeconds(60))),
+            )
         }
         onNode(hasText("$1.500.000")).assertExists()
         onNode(hasText("hace un rato")).assertExists()
     }
 
     @Test
-    fun `amount hidden - dots in its place, on both sizes`() {
+    fun `amount hidden - nothing about the money on either size, read aloud as hidden`() {
+        val over = snapshot(remaining = -50000000, spent = 250000000, hideAmount = true, mood = "worried")
         for (draw in listOf<@androidx.compose.runtime.Composable (WidgetModel) -> Unit>(
             { SmallWidgetContent(it) },
             { MediumWidgetContent(it) },
         )) {
             runGlanceAppWidgetUnitTest {
                 setContext(context)
-                provideComposable { draw(model(snapshot(hideAmount = true))) }
+                provideComposable { draw(model(over)) }
                 onNode(hasText("••••")).assertExists()
-                onNode(hasText("$1.500.000")).assertDoesNotExist()
-                onNode(hasText("Te quedan")).assertExists()
+                onNode(hasContentDescription("Monto oculto")).assertExists()
+                onNode(hasText("$")).assertDoesNotExist()
+                onNode(hasText("Te pasaste")).assertDoesNotExist()
+                onNode(hasText("Te quedan")).assertDoesNotExist()
+                onNode(hasText("Este mes")).assertExists()
+                onNode(hasContentDescription("del presupuesto")).assertDoesNotExist()
+                onNode(isLinearProgressIndicator(1f)).assertDoesNotExist()
             }
         }
+    }
+
+    @Test
+    fun `the bar is read aloud with its percentage`() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        provideComposable { MediumWidgetContent(model(snapshot())) }
+        onNode(hasContentDescription("25 % del presupuesto gastado")).assertExists()
     }
 
     @Test

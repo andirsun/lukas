@@ -101,6 +101,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
                                 month = figures.month,
                                 mood = if (figures.worried) "worried" else "happy",
                                 updatedAt = dependencies.clock(),
+                                refreshFailedAt = null,
                             ),
                         )
                         "refreshed"
@@ -109,7 +110,13 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
                         writeSignedOut(context)
                         "session refused"
                     }
-                    SummaryResult.Failed -> "failed"
+                    SummaryResult.Failed -> {
+                        // Marked, so the widget says "hace un rato" now rather than hours later.
+                        val latest = WidgetSnapshot.read(context)
+                        if (latest == null || !latest.signedIn) return@withContext "failed"
+                        write(context, latest.copy(refreshFailedAt = dependencies.clock()))
+                        "failed"
+                    }
                 }
             }
         }

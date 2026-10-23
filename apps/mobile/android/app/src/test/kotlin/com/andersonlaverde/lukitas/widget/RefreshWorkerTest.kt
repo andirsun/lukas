@@ -229,20 +229,41 @@ class RefreshWorkerTest {
     }
 
     @Test
-    fun `offline, the last figure stays`() {
+    fun `offline, the last figure stays, marked as a failed refresh`() {
         store(earlier)
         server.stop()
         runWorker()
-        assertEquals(earlier, stored())
+        assertEquals(earlier.copy(refreshFailedAt = now), stored())
     }
 
     @Test
-    fun `a server error keeps the last figure`() {
+    fun `a server error keeps the last figure, marked as a failed refresh`() {
         store(earlier)
         status = 503
         body = "{}"
         runWorker()
-        assertEquals(earlier, stored())
+        assertEquals(earlier.copy(refreshFailedAt = now), stored())
+    }
+
+    @Test
+    fun `a refresh that works clears an earlier failure`() {
+        store(earlier.copy(refreshFailedAt = now.minusSeconds(600)))
+        runWorker()
+        assertNull(stored()!!.refreshFailedAt)
+        assertEquals(now, stored()!!.updatedAt)
+    }
+
+    @Test
+    fun `a failure after the sign-out marks nothing`() {
+        store(earlier)
+        status = 503
+        body = "{}"
+        whileAnswering = {
+            session.stored = null
+            store(WidgetSnapshot(signedIn = false, theme = "light", hideAmount = true, locale = "es"))
+        }
+        runWorker()
+        assertEquals(WidgetSnapshot(signedIn = false, theme = "light", hideAmount = true, locale = "es"), stored())
     }
 
     @Test
@@ -300,6 +321,6 @@ class RefreshWorkerTest {
         }
         runWorker()
         release.countDown()
-        assertEquals(earlier, stored())
+        assertEquals(earlier.copy(refreshFailedAt = now), stored())
     }
 }

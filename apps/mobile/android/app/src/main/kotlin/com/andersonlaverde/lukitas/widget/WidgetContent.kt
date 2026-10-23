@@ -154,6 +154,9 @@ private fun Figure(model: WidgetModel.Figures, amountSize: Int, labelLines: Int 
     Text(
         text = model.amount,
         maxLines = 1,
+        modifier = model.amountDescription?.let { description ->
+            GlanceModifier.semantics { contentDescription = description }
+        } ?: GlanceModifier,
         style = TextStyle(
             color = WidgetPalette.color("ink", theme),
             fontSize = amountSize.sp,
@@ -242,7 +245,11 @@ fun MediumWidgetContent(model: WidgetModel) {
                 Spacer(GlanceModifier.height(6.dp))
                 LinearProgressIndicator(
                     progress = progress,
-                    modifier = GlanceModifier.fillMaxWidth().height(6.dp).cornerRadius(3.dp),
+                    modifier = GlanceModifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .cornerRadius(3.dp)
+                        .semantics { contentDescription = model.progressDescription.orEmpty() },
                     color = WidgetPalette.color(toneColor(model.tone), theme),
                     backgroundColor = WidgetPalette.color("stroke", theme),
                 )

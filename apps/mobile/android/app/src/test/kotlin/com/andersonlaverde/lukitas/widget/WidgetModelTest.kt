@@ -95,16 +95,46 @@ class WidgetModelTest {
     }
 
     @Test
-    fun `figures not refreshed for three hours say so, subtly`() {
-        assertNull(figures(snapshot(updatedAt = now.minusSeconds(2 * 3600))).stale)
-        assertEquals("hace un rato", figures(snapshot(updatedAt = now.minusSeconds(3 * 3600))).stale)
+    fun `hace un rato only after a refresh failed, or after twice the refresh period`() {
+        // A late run on a working connection is not "a while ago".
+        assertNull(figures(snapshot(updatedAt = now.minusSeconds(4 * 3600))).stale)
+        assertEquals("hace un rato", figures(snapshot(updatedAt = now.minusSeconds(6 * 3600))).stale)
+        // A refresh that failed after these figures were fetched: offline.
+        val failed = snapshot(updatedAt = now.minusSeconds(3600)).copy(refreshFailedAt = now.minusSeconds(60))
+        assertEquals("hace un rato", figures(failed).stale)
+        // A failure before the figures came (the app wrote newer ones since) says nothing.
+        val since = snapshot(updatedAt = now.minusSeconds(60)).copy(refreshFailedAt = now.minusSeconds(3600))
+        assertNull(figures(since).stale)
     }
 
     @Test
-    fun `the hidden amount is dots, the label stays`() {
-        val model = figures(snapshot(hideAmount = true))
-        assertEquals("••••", model.amount)
-        assertEquals("Te quedan", model.label)
+    fun `the hidden amount tells nothing about the money - dots, a neutral label, no bar, no worry`() {
+        for (hidden in listOf(
+            snapshot(hideAmount = true),
+            snapshot(hideAmount = true, remaining = -50000000, spent = 250000000),
+            snapshot(hideAmount = true, mood = "worried"),
+        )) {
+            val model = figures(hidden)
+            assertEquals("••••", model.amount)
+            assertEquals("Este mes", model.label)
+            assertNull(model.progress)
+            assertEquals(Tone.GOOD, model.tone)
+            assertEquals(Mood.HAPPY, model.mood)
+            assertEquals("Monto oculto", model.amountDescription)
+            assertNull(model.progressDescription)
+        }
+        assertEquals("Septiembre", figures(snapshot(hideAmount = true, month = "2026-09")).label)
+        assertEquals("This month", figures(snapshot(hideAmount = true, locale = "en")).label)
+        assertEquals("Amount hidden", figures(snapshot(hideAmount = true, locale = "en")).amountDescription)
+    }
+
+    @Test
+    fun `TalkBack reads the amount as it is shown, and the bar as a percentage`() {
+        val model = figures(snapshot())
+        assertNull(model.amountDescription)
+        assertEquals("25 % del presupuesto gastado", model.progressDescription)
+        assertEquals("25% of the budget spent", figures(snapshot(locale = "en")).progressDescription)
+        assertNull(figures(snapshot(budgetTotal = 0)).progressDescription)
     }
 
     @Test

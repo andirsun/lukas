@@ -83,6 +83,10 @@ class HomeWidgetStore implements WidgetStore {
 /// }
 /// ```
 ///
+/// The refresh job may add `"refreshFailedAt"` (UTC) when it could not reach the server, so the
+/// widget marks the figures "hace un rato"; the app's writes drop it (their figures are fresh) and
+/// [withChoices] keeps it.
+///
 /// Amounts stay in cents so the widget and its refresh job write money one way
 /// (`android/.../widget/Money.kt`, the same rules as lib/money/format.dart).
 Map<String, Object?> signedInSnapshot(

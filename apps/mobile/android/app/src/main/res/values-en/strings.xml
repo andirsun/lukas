@@ -14,4 +14,10 @@
     <string name="widget_small_description">What\'s left this month, and ＋ to note an expense.</string>
     <string name="widget_medium_description">Lukitas, what\'s left this month, ＋ and 🎤 to note it.</string>
     <string name="tile_capture">Say an expense</string>
+    <!-- With the amount hidden: a neutral label (nothing about how the month goes), and what
+         TalkBack reads in place of the dots. -->
+    <string name="widget_hidden_label">This month</string>
+    <string name="widget_amount_hidden">Amount hidden</string>
+    <!-- The progress bar, read aloud. -->
+    <string name="widget_progress">%1$d%% of the budget spent</string>
 </resources>

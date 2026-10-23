@@ -129,8 +129,8 @@ class SessionController extends Notifier<SessionState> {
       if (guest != stored.guest) await _signedIn(stored.token, guest: guest);
     } on AuthFailure catch (failure) {
       if (failure.status == 401 && state.stored?.token == stored.token) {
+        await _forgetWidget();
         await _store.clear();
-        _forgetWidget();
         state = SessionState.signedOut;
       }
     }
@@ -140,9 +140,10 @@ class SessionController extends Notifier<SessionState> {
     // Another token is another session (a guest replaced by an email account, say): what the old
     // one left on this phone goes with it. The same token (a claim, a corrected flag) keeps it.
     final previous = state.stored?.token;
-    if (previous != null && previous != token) _forgetWidget();
+    if (previous != null && previous != token) await _forgetWidget();
     await _store.write(token, guest: guest);
     state = SessionState.signedIn(StoredSession(token: token, guest: guest));
+    ref.read(widgetSyncProvider).signedIn();
   }
 
   void _guardGuest(bool replaceGuest) {
@@ -230,18 +231,24 @@ class SessionController extends Notifier<SessionState> {
         // whatever went wrong there, the session is forgotten here all the same.
       }
     }
+    await _forgetWidget();
     await _store.clear();
-    _forgetWidget();
     state = SessionState.signedOut;
   }
 
+  /// The most a sign-out waits for the widget's storage.
+  static const widgetWait = Duration(seconds: 2);
+
   /// The widget on the home screen and the home cache hold the signed-in person's figures: signed
   /// out, neither may show them to the next person. The widget gets its signed-out snapshot
-  /// ("Abre Lukitas para empezar", no figure) and is redrawn (Review Focus 4). Not waited for:
-  /// signing out never hangs on their storage.
-  void _forgetWidget() {
-    unawaited(ref.read(widgetSyncProvider).signedOut());
+  /// ("Abre Lukitas para empezar", no figure) and is redrawn (Review Focus 4) **before** the
+  /// session is forgotten: if the process dies in between, the session is still there and the
+  /// next start puts things right, while the other order would leave the figure on the home
+  /// screen with nobody signed in. Waited for at most [widgetWait]: signing out never hangs on
+  /// the widget's storage. The home cache is not waited for.
+  Future<void> _forgetWidget() async {
     unawaited(clearHomeCache(ref.read(homeCacheStoreProvider)));
+    await ref.read(widgetSyncProvider).signedOut().timeout(widgetWait, onTimeout: () {});
   }
 }
 
