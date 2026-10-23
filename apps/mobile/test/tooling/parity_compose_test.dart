@@ -139,6 +139,38 @@ void main() {
       expect(run(['--max', '30'], root: root.path, out: StringBuffer()), 0);
     });
 
+    test('a pair with known differences says so, on its line and in the summary', () {
+      File('${root.path}/test/parity/parity.json').writeAsStringSync(
+        jsonEncode([
+          {
+            'id': 'same',
+            'storyId': 'ui-x--same',
+            'theme': 'night',
+            'appTest': 'x_test.dart',
+            'knownDifferences': ['✓ is drawn from a different test font on each side'],
+          },
+          {'id': 'off', 'storyId': 'ui-x--off', 'theme': 'night', 'appTest': 'x_test.dart'},
+        ]),
+      );
+      final out = StringBuffer();
+      run([], root: root.path, out: out);
+      final lines = out.toString().trim().split('\n');
+      final same = lines.firstWhere((l) => l.startsWith('same-night'));
+      expect(same, contains('KNOWN DIFFERENCE'));
+      expect(same, contains('✓ is drawn from a different test font on each side'));
+      expect(lines.firstWhere((l) => l.startsWith('off-night')), isNot(contains('KNOWN')));
+      final summary = jsonDecode(
+        File('${root.path}/build/parity/summary.json').readAsStringSync(),
+      ) as Map<String, Object?>;
+      expect((summary['same-night']! as Map<String, Object?>)['knownDifferences'], [
+        '✓ is drawn from a different test font on each side',
+      ]);
+      expect(
+        (summary['off-night']! as Map<String, Object?>).containsKey('knownDifferences'),
+        isFalse,
+      );
+    });
+
     test('a pair without both pictures fails', () {
       File('${root.path}/test/parity/app/same-night.png').deleteSync();
       final out = StringBuffer();

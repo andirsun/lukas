@@ -112,6 +112,30 @@ void main() {
     expect(find.text('Agregar gasto'), findsNothing);
   });
 
+  testWidgets(
+    'it leaves the way the web does: fast first, decelerating (the curve flipped on exit)',
+    (t) async {
+      await _open(t);
+      final panel = find.byType(Material).last;
+      final rest = t.getTopLeft(panel).dy;
+      final height = t.getSize(panel).height;
+      await t.tap(find.text('CERRAR'));
+      await t.pump();
+      // The first frame starts the animation; a quarter of the 260 ms later it has covered what the web's
+      // `cubic-bezier(0.32, 0.72, 0, 1)` covers a quarter of the way through: more than half the way out.
+      await t.pump(const Duration(milliseconds: 65));
+      const web = Cubic(0.32, 0.72, 0, 1);
+      final out = (t.getTopLeft(panel).dy - rest) / height;
+      expect(out, closeTo(web.transform(0.25), 0.05));
+      expect(
+        out,
+        greaterThan(0.4),
+        reason: 'a sheet that dawdled before leaving would be near 0.05',
+      );
+      await t.pumpAndSettle();
+    },
+  );
+
   testWidgets('dragged down past a quarter of its height it closes on release', (t) async {
     await _open(t);
     final height = t.getSize(find.byType(Material).last).height;

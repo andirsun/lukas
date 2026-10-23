@@ -102,6 +102,40 @@ void main() {
     expect(t.getSize(find.byType(BottomBar)).height, 70);
   });
 
+  for (final width in [412.0, 380.0, 360.0, 320.0]) {
+    testWidgets('at $width px wide the 🎤 overlaps neither the ＋ nor a tab, nor the tab\'s label', (
+      t,
+    ) async {
+      await t.pumpWidget(_bar(width: width));
+      Rect box(String text, Type type) =>
+          t.getRect(find.ancestor(of: find.text(text), matching: find.byType(type)).first);
+      final plus = box('＋', SizedBox);
+      final mic = box('🎤', SizedBox);
+      final insights = box('Análisis', AnimatedContainer);
+      final home = box('Inicio', AnimatedContainer);
+      expect(
+        mic.left,
+        greaterThanOrEqualTo(plus.right + (width >= 360 ? 4 : 0)),
+        reason: 'clear of the ＋ (4px to spare from 360px; at 320px the tabs give up all they can and 1px is left)',
+      );
+      expect(mic.right, lessThanOrEqualTo(insights.left), reason: 'clear of the Análisis tab');
+      expect(
+        mic.right,
+        lessThanOrEqualTo(insights.left - 0),
+        reason: 'not on its empty margin either',
+      );
+      expect(mic.overlaps(home), isFalse);
+      expect(mic.size, const Size(44, 44), reason: 'still a 44px target');
+      expect(t.getRect(find.text('Análisis')).overlaps(mic), isFalse);
+      // The ＋ is where the web puts it: in the middle.
+      expect(plus.center.dx, closeTo(width / 2, 0.5));
+      // The tabs keep the web's 76px wherever there is room for the 🎤 beside the ＋.
+      if (width >= 380) expect(insights.width, 76);
+      expect(insights.width, greaterThanOrEqualTo(56));
+      expect(t.takeException(), isNull);
+    });
+  }
+
   testWidgets('without the 🎤 (the parity pair) it is not there', (t) async {
     await t.pumpWidget(_bar(showMic: false));
     expect(find.text('🎤'), findsNothing);
@@ -132,6 +166,17 @@ void main() {
     expect(taps, ['home', 'insights']);
     expect(added, 1);
     expect(mic, 1);
+  });
+
+  testWidgets('at 130% on a 320px phone the labels still fit their 56px tabs', (t) async {
+    await t.pumpWidget(
+      uiApp(
+        BottomBar(current: 'home', onAdd: () {}, onMic: () {}, onNavigate: (_) {}),
+        width: 320,
+        textScale: 1.3,
+      ),
+    );
+    expect(t.takeException(), isNull);
   });
 
   testWidgets('at 130% on a 360px phone the labels do not overflow', (t) async {

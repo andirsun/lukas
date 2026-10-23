@@ -174,6 +174,17 @@ when the app's picture changes. The web shots are regenerated only when the web 
   `PingFang.ttc` of macOS's downloaded font asset (face 11 is `PingFangSC-Semibold`, taken out of the
   collection by `ttcFace`). Apple's, read from the Mac, never committed. On a phone Android's fallback
   draws them.
+- **✓ and ✎ are a known test-font difference** until NotoSansSymbols2 (OFL) is in the harness. Neither is in a
+  web font, so Chrome falls back to a system font and the Flutter golden harness names macOS Zapf Dingbats
+  (`test/support/emoji_font.dart`, `loadParityFonts`). For ✓ both sides use Zapf Dingbats (the shots read it
+  from the Mac too); for ✎ Chrome picks another font than Zapf Dingbats, so the glyph differs visibly. A pair
+  that draws one of them carries a `knownDifferences` note in `test/parity/parity.json`, and
+  `compose.dart` prints it on the pair's line (`KNOWN DIFFERENCE: ...`) and writes it to `summary.json`: a
+  pass there is not proof of that glyph. The pairs:
+  - ✓: `pending-badge-idle-to-paid`, `pending-badge-day-english`, `transaction-row-pending`,
+    `name-field-pick-shortcut`, `name-field-typing`, `name-field-day-english`.
+  - ✎: `swipe-row-open-day-english` (the Editar action).
+  Remove the notes when the symbol font replaces Zapf Dingbats on both sides.
 - **Icons.** Material icons draw with the Flutter SDK's own `MaterialIcons-Regular.otf`
   (`loadMaterialIcons` in `test/support/fonts.dart`), the file `flutter build` bundles. The Stage 3
   goldens load it too.

@@ -63,104 +63,122 @@ class BottomBar extends StatelessWidget {
       container: true,
       explicitChildNodes: true,
       label: l10n.navLabel,
-      child: SizedBox(
-        width: double.infinity,
-        height: floor + 12,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // `.lk-tabbar`: `padding: 8px 6px 12px` under a 2px `stroke` line, on the sunken surface.
-            Positioned(
-              left: 0,
-              right: 0,
-              top: _rise,
-              bottom: 0,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colors.surfaceSunken,
-                  border: Border(top: BorderSide(color: colors.stroke, width: 2)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(6, 2 + 8, 6, 12),
-                  child: SizedBox(
-                    height: tabs,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        _Tab(
-                          glyph: '🏠',
-                          label: l10n.navHome,
-                          current: current == 'home',
-                          onPressed: () => onNavigate('home'),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // The tabs are 76px wide as the web draws them, unless the 🎤 would then touch the Análisis
+          // tab (a phone narrower than the web's 380px column): they give up room, to 56px, so the 🎤
+          // keeps 44px with 4px to spare on each side.
+          const mic = 44.0;
+          final barWidth = constraints.maxWidth;
+          final tabWidth = ((barWidth - 12 - 58 - 3 * (mic + 2 * 4)) / 2).clamp(56.0, 76.0);
+          // What `space-around` leaves between the ＋ and a tab, and where the 🎤 goes in it: 8px from the
+          // ＋ when there is room, centred when there is not.
+          final gap = (barWidth - 12 - (2 * tabWidth + 58)) / 3;
+          final micGap = gap - mic >= 8 ? 8.0 : math.max(0.0, (gap - mic) / 2);
+          return SizedBox(
+            width: double.infinity,
+            height: floor + 12,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // `.lk-tabbar`: `padding: 8px 6px 12px` under a 2px `stroke` line, on the sunken surface.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: _rise,
+                  bottom: 0,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: colors.surfaceSunken,
+                      border: Border(top: BorderSide(color: colors.stroke, width: 2)),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(6, 2 + 8, 6, 12),
+                      child: SizedBox(
+                        height: tabs,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            _Tab(
+                              width: tabWidth,
+                              glyph: '🏠',
+                              label: l10n.navHome,
+                              current: current == 'home',
+                              onPressed: () => onNavigate('home'),
+                            ),
+                            // Where the ＋ stands.
+                            const SizedBox(width: 58, height: 44),
+                            _Tab(
+                              width: tabWidth,
+                              glyph: '📊',
+                              label: l10n.navInsights,
+                              current: current == 'insights',
+                              onPressed: () => onNavigate('insights'),
+                            ),
+                          ],
                         ),
-                        // Where the ＋ stands.
-                        const SizedBox(width: 58, height: 44),
-                        _Tab(
-                          glyph: '📊',
-                          label: l10n.navInsights,
-                          current: current == 'insights',
-                          onPressed: () => onNavigate('insights'),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            // The ＋ shares its bottom with the tabs: 14px above their top.
-            Positioned(
-              left: 0,
-              right: 0,
-              top: floor - 58,
-              height: 58,
-              child: Center(
-                child: _RaisedButton(
-                  size: 58,
-                  glyph: '＋',
-                  style: LkText.plus,
-                  label: l10n.navAdd,
-                  onPressed: onAdd,
-                ),
-              ),
-            ),
-            if (showMic)
-              Positioned(
-                left: 0,
-                right: 0,
-                top: floor - 44,
-                height: 44,
-                child: Center(
-                  // 8px from the ＋'s right edge.
-                  child: Transform.translate(
-                    offset: const Offset(29 + 8 + 22, 0),
+                // The ＋ shares its bottom with the tabs: 14px above their top.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: floor - 58,
+                  height: 58,
+                  child: Center(
                     child: _RaisedButton(
-                      size: 44,
-                      glyph: '🎤',
-                      style: LkText.tabIcon,
-                      label: l10n.captureFabLabel,
-                      onPressed: onMic,
+                      size: 58,
+                      glyph: '＋',
+                      style: LkText.plus,
+                      label: l10n.navAdd,
+                      onPressed: onAdd,
                     ),
                   ),
                 ),
-              ),
-          ],
-        ),
+                if (showMic)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: floor - 44,
+                    height: 44,
+                    child: Center(
+                      // [micGap] from the ＋'s right edge.
+                      child: Transform.translate(
+                        offset: Offset(29 + micGap + mic / 2, 0),
+                        child: _RaisedButton(
+                          size: 44,
+                          glyph: '🎤',
+                          style: LkText.tabIcon,
+                          label: l10n.captureFabLabel,
+                          onPressed: onMic,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-/// `.lk-tab`: an icon over a label, 76px wide and at least 44px tall. It has no edge: it dips 2px
+/// `.lk-tab`: an icon over a label, [width] wide (76px) and at least 44px tall. It has no edge: it dips 2px
 /// while pressed. The current one is in `ink`, the others `ink-muted`.
 class _Tab extends StatelessWidget {
   const _Tab({
+    required this.width,
     required this.glyph,
     required this.label,
     required this.current,
     required this.onPressed,
   });
 
+  final double width;
   final String glyph;
   final String label;
   final bool current;
@@ -184,7 +202,7 @@ class _Tab extends StatelessWidget {
               : const Duration(milliseconds: 80),
           curve: Curves.ease,
           transform: Matrix4.translationValues(0, state.pressed ? 2 : 0, 0),
-          width: 76,
+          width: width,
           constraints: const BoxConstraints(minHeight: 44),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.end,

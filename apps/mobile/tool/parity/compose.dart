@@ -68,17 +68,22 @@ int run(List<String> args, {required String root, required StringSink out}) {
     final diff = compare(readPng(webFile), readPng(appFile));
     final image = 'build/parity/$name.png';
     writePng('$root/$image', diff.sheet);
+    // What this pair's pictures are known not to prove (parity.json's `knownDifferences`), so that
+    // a pass is never read as proof of it.
+    final known = [...?(pair['knownDifferences'] as List<Object?>?)?.cast<String>()];
     summary[name] = {
       'storyId': pair['storyId'],
       'inkPercent': diff.inkShare * 100,
       'canvasPercent': diff.canvasShare * 100,
       'image': image,
+      if (known.isNotEmpty) 'knownDifferences': known,
     };
     final over = maxPercent != null && diff.inkShare * 100 > maxPercent;
     if (over) failed = true;
     out.writeln(
       '$name: ${_percent(diff.inkShare)} of the ink differs '
-      '(${_percent(diff.canvasShare)} of the page)  $image${over ? '  FAIL: over $maxPercent%' : ''}',
+      '(${_percent(diff.canvasShare)} of the page)  $image${over ? '  FAIL: over $maxPercent%' : ''}'
+      '${known.isEmpty ? '' : '  KNOWN DIFFERENCE: ${known.join('; ')}'}',
     );
   }
   File('$root/build/parity/summary.json')

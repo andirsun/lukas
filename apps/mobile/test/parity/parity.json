@@ -105,13 +105,19 @@
     "id": "pending-badge-idle-to-paid",
     "storyId": "ui-pendingbadge--idle-to-paid",
     "theme": "night",
-    "appTest": "test/parity/pending_badge_parity_test.dart"
+    "appTest": "test/parity/pending_badge_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "pending-badge-idle-to-paid",
     "storyId": "ui-pendingbadge--idle-to-paid",
     "theme": "day",
-    "appTest": "test/parity/pending_badge_parity_test.dart"
+    "appTest": "test/parity/pending_badge_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "pending-badge-paying",
@@ -141,7 +147,10 @@
     "id": "pending-badge-day-english",
     "storyId": "ui-pendingbadge--day-english",
     "theme": "day",
-    "appTest": "test/parity/pending_badge_parity_test.dart"
+    "appTest": "test/parity/pending_badge_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "category-chip-picker",
@@ -489,25 +498,37 @@
     "id": "name-field-pick-shortcut",
     "storyId": "ui-namefield--pick-shortcut",
     "theme": "night",
-    "appTest": "test/parity/name_field_parity_test.dart"
+    "appTest": "test/parity/name_field_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "name-field-pick-shortcut",
     "storyId": "ui-namefield--pick-shortcut",
     "theme": "day",
-    "appTest": "test/parity/name_field_parity_test.dart"
+    "appTest": "test/parity/name_field_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "name-field-typing",
     "storyId": "ui-namefield--typing",
     "theme": "night",
-    "appTest": "test/parity/name_field_parity_test.dart"
+    "appTest": "test/parity/name_field_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "name-field-typing",
     "storyId": "ui-namefield--typing",
     "theme": "day",
-    "appTest": "test/parity/name_field_parity_test.dart"
+    "appTest": "test/parity/name_field_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "name-field-focus-and-press",
@@ -525,7 +546,10 @@
     "id": "name-field-day-english",
     "storyId": "ui-namefield--day-english",
     "theme": "day",
-    "appTest": "test/parity/name_field_parity_test.dart"
+    "appTest": "test/parity/name_field_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "swipe-row-at-rest",
@@ -555,7 +579,10 @@
     "id": "swipe-row-open-day-english",
     "storyId": "ui-swiperow--day-english",
     "theme": "day",
-    "appTest": "test/parity/swipe_row_parity_test.dart"
+    "appTest": "test/parity/swipe_row_parity_test.dart",
+    "knownDifferences": [
+      "✎ is drawn from a different font on each side (Zapf Dingbats in the app, another system font in Chrome): this pair does not prove the pencil's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "transaction-row-expense",
@@ -597,13 +624,19 @@
     "id": "transaction-row-pending",
     "storyId": "ui-transactionrow--pending",
     "theme": "night",
-    "appTest": "test/parity/transaction_row_parity_test.dart"
+    "appTest": "test/parity/transaction_row_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "transaction-row-pending",
     "storyId": "ui-transactionrow--pending",
     "theme": "day",
-    "appTest": "test/parity/transaction_row_parity_test.dart"
+    "appTest": "test/parity/transaction_row_parity_test.dart",
+    "knownDifferences": [
+      "✓ is drawn from macOS Zapf Dingbats on both sides, not the font a phone or Chrome would pick: this pair does not prove the check mark's glyph (until NotoSansSymbols2 is in the harness)"
+    ]
   },
   {
     "id": "transaction-row-pending-read-only",

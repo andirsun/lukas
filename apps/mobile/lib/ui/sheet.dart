@@ -442,7 +442,13 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     final scrim = LkSurface.scrim(colors, Theme.of(context).brightness);
     final animation = widget.animation;
     final backdrop = CurvedAnimation(parent: animation, curve: Curves.easeInOut);
-    final slide = CurvedAnimation(parent: animation, curve: _sheetEase, reverseCurve: _sheetEase);
+    // On the way out the parent runs from 1 to 0 and `reverseCurve` is applied to it as it is, so the
+    // curve goes backwards: flipped, the sheet leaves fast and decelerates, as the web's exit does.
+    final slide = CurvedAnimation(
+      parent: animation,
+      curve: _sheetEase,
+      reverseCurve: _sheetEase.flipped,
+    );
     final inset = MediaQuery.viewInsetsOf(context).bottom;
 
     Widget panel = RawGestureDetector(
