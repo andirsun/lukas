@@ -255,6 +255,9 @@ export function guestDefaults(headers: Headers | undefined): {
   };
 }
 
+/** Whether a request comes from the app: only the app sends `x-lukas-timezone`. */
+const fromDevice = (headers: Headers | undefined) => headers?.has(TIMEZONE_HINT_HEADER) ?? false;
+
 /**
  * The language of a sign-in email: the profile's for an existing user; for a new address, the
  * language of `x-lukas-locale` (the web sends `es` or `en`, the app the phone's tag, such as
@@ -373,22 +376,26 @@ export function createAuth(deps: AppDeps) {
     databaseHooks: {
       user: {
         create: {
-          // A guest's time zone and language come from the device; an email user's stay at the
-          // defaults until the web's onboarding sets them.
+          // A guest's time zone and language come from the device, and so do an app user's: the
+          // app sends `x-lukas-timezone` on every request and has no onboarding. A user created
+          // from the web (no such header) stays at the defaults until the web's onboarding.
           before: async (data, ctx) => {
-            if (!data.isAnonymous) return;
-            const { timezone, locale } = guestDefaults(ctx?.headers ?? ctx?.request?.headers);
+            const headers = ctx?.headers ?? ctx?.request?.headers;
+            if (!data.isAnonymous && !fromDevice(headers)) return;
+            const { timezone, locale } = guestDefaults(headers);
             return { data: { ...data, timezone, locale } };
           },
           after: async (created, ctx) => {
-            // A guest skips the web's currency step, so the device picks it (the web's rule);
-            // an email user starts in EUR and chooses during onboarding.
-            const currency = created.isAnonymous
-              ? defaultCurrencyFor(
-                  String(created.timezone ?? "UTC"),
-                  guestDefaults(ctx?.headers ?? ctx?.request?.headers).region,
-                )
-              : "EUR";
+            // A guest or an app user skips the web's currency step, so the device picks it (the
+            // web's rule); a web user starts in EUR and chooses during onboarding.
+            const headers = ctx?.headers ?? ctx?.request?.headers;
+            const currency =
+              created.isAnonymous || fromDevice(headers)
+                ? defaultCurrencyFor(
+                    String(created.timezone ?? "UTC"),
+                    guestDefaults(headers).region,
+                  )
+                : "EUR";
             await withUser(deps.db, created.id, (tx) =>
               tx.insert(accounts).values({
                 userId: created.id,

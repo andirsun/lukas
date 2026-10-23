@@ -220,3 +220,50 @@ describe("guests", () => {
     expect(t.mailer.sent).toHaveLength(sentBefore);
   });
 });
+
+describe("app sign-ups by email (x-lukas-timezone on the creating request)", () => {
+  let t: TestApp;
+  beforeAll(async () => {
+    t = await createTestApp();
+  });
+  afterAll(() => t?.stop());
+
+  /** Email sign-up as the app does it: both steps carry the device's zone and language. */
+  async function signUpByEmail(email: string, headers: Record<string, string>) {
+    const sent = await t.request("POST", "/auth/email-otp/send-verification-otp", {
+      headers,
+      body: { email, type: "sign-in" },
+    });
+    expect(sent.status).toBe(200);
+    const code = /(\d{6})$/.exec(t.mailer.lastTo(email)?.subject ?? "")?.[1];
+    const res = await t.request("POST", "/auth/sign-in/email-otp", {
+      headers,
+      body: { email, otp: code },
+    });
+    expect(res.status).toBe(200);
+    return { authorization: `Bearer ${res.headers.get("set-auth-token")}` };
+  }
+
+  test("a new email user from the app gets the device's zone, language and currency", async () => {
+    const headers = await signUpByEmail("bogota@lukas.test", {
+      "x-lukas-timezone": "America/Bogota",
+      "x-lukas-locale": "en-US",
+    });
+    expect(await me(t, headers)).toMatchObject({
+      isAnonymous: false,
+      timezone: "America/Bogota",
+      locale: "en",
+      currency: "COP",
+    });
+  });
+
+  test("a new email user from the web (no x-lukas-timezone) keeps UTC, Spanish and EUR", async () => {
+    const headers = await signUpByEmail("web@lukas.test", { "x-lukas-locale": "en" });
+    expect(await me(t, headers)).toMatchObject({
+      isAnonymous: false,
+      timezone: "UTC",
+      locale: "es",
+      currency: "EUR",
+    });
+  });
+});

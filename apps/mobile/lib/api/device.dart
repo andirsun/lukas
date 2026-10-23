@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// What the API learns about the phone with every request: its IANA time zone
-/// (`x-lukas-timezone`) and its language tag (`x-lukas-locale`). A new guest's profile, currency
-/// included, starts from them (apps/api/src/auth.ts, `guestDefaults`).
+/// (`x-lukas-timezone`) and its language tag (`x-lukas-locale`). A new user's profile, currency
+/// included, starts from them, guest or email (apps/api/src/auth.ts, `guestDefaults`).
 class DeviceHints {
   const DeviceHints({required this.timezone, required this.locale});
 
