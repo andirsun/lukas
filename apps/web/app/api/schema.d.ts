@@ -486,24 +486,7 @@ export interface components {
             items: components["schemas"]["Transaction"][];
         };
         CreateTransactionsBatch: {
-            items: {
-                name: string;
-                amount: number;
-                /** Format: uuid */
-                categoryId: string;
-                date: string;
-                /**
-                 * @default paid
-                 * @enum {string}
-                 */
-                status?: "paid" | "pending";
-                note?: string | null;
-                /**
-                 * @default app
-                 * @enum {string}
-                 */
-                source?: "app" | "web" | "widget" | "mcp";
-            }[];
+            items: components["schemas"]["CreateTransaction"][];
         };
         DeleteTransactionsBatch: {
             ids: string[];

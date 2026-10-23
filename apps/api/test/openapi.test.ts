@@ -83,6 +83,15 @@ describe("the OpenAPI contract", () => {
     );
   });
 
+  test("a batch's items are the named CreateTransaction, not an unnamed copy", async () => {
+    const doc = await contract();
+    const batch = doc.components.schemas.CreateTransactionsBatch as {
+      properties: { items: { items: { $ref?: string }; minItems?: number; maxItems?: number } };
+    };
+    expect(batch.properties.items.items.$ref).toBe("#/components/schemas/CreateTransaction");
+    expect(batch.properties.items).toMatchObject({ minItems: 1, maxItems: 20 });
+  });
+
   test("the create routes declare the Idempotency-Key header", async () => {
     const doc = await contract();
     const header = (id: string) =>

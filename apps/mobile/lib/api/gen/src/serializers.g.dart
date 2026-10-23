@@ -26,9 +26,6 @@ Serializers _$serializers =
           ..add(CreateTransactionSource_Enum.serializer)
           ..add(CreateTransactionStatusEnum.serializer)
           ..add(CreateTransactionsBatch.serializer)
-          ..add(CreateTransactionsBatchItemsInner.serializer)
-          ..add(CreateTransactionsBatchItemsInnerSource_Enum.serializer)
-          ..add(CreateTransactionsBatchItemsInnerStatusEnum.serializer)
           ..add(DeleteTransactionsBatch.serializer)
           ..add(FileImport.serializer)
           ..add(FileImportStatusEnum.serializer)
@@ -73,8 +70,8 @@ Serializers _$serializers =
             () => ListBuilder<CostOfLivingReportCategoriesInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, const [const FullType(CreateTransactionsBatchItemsInner)]),
-            () => ListBuilder<CreateTransactionsBatchItemsInner>(),
+            const FullType(BuiltList, const [const FullType(CreateTransaction)]),
+            () => ListBuilder<CreateTransaction>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(ProblemErrorsInner)]),

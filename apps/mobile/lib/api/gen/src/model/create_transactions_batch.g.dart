@@ -8,7 +8,7 @@ part of 'create_transactions_batch.dart';
 
 class _$CreateTransactionsBatch extends CreateTransactionsBatch {
   @override
-  final BuiltList<CreateTransactionsBatchItemsInner> items;
+  final BuiltList<CreateTransaction> items;
 
   factory _$CreateTransactionsBatch([void Function(CreateTransactionsBatchBuilder)? updates]) =>
       (CreateTransactionsBatchBuilder()..update(updates))._build();
@@ -47,10 +47,9 @@ class CreateTransactionsBatchBuilder
     implements Builder<CreateTransactionsBatch, CreateTransactionsBatchBuilder> {
   _$CreateTransactionsBatch? _$v;
 
-  ListBuilder<CreateTransactionsBatchItemsInner>? _items;
-  ListBuilder<CreateTransactionsBatchItemsInner> get items =>
-      _$this._items ??= ListBuilder<CreateTransactionsBatchItemsInner>();
-  set items(ListBuilder<CreateTransactionsBatchItemsInner>? items) => _$this._items = items;
+  ListBuilder<CreateTransaction>? _items;
+  ListBuilder<CreateTransaction> get items => _$this._items ??= ListBuilder<CreateTransaction>();
+  set items(ListBuilder<CreateTransaction>? items) => _$this._items = items;
 
   CreateTransactionsBatchBuilder() {
     CreateTransactionsBatch._defaults(this);

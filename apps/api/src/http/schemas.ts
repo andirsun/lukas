@@ -31,9 +31,15 @@ export const Problem = problemDto.meta({ id: "Problem" });
 export const Transaction = transactionDto.meta({ id: "Transaction" });
 export const CreateTransaction = createTransactionSchema.meta({ id: "CreateTransaction" });
 export const UpdateTransaction = updateTransactionSchema.meta({ id: "UpdateTransaction" });
-export const CreateTransactionsBatch = createTransactionsBatchSchema.meta({
-  id: "CreateTransactionsBatch",
-});
+/**
+ * Core's batch holds core's unnamed create schema, so its items are swapped for the named one
+ * above (keeping core's limits, 1 to 20): otherwise generated clients get an unnamed duplicate of
+ * CreateTransaction for them.
+ */
+const batchItems = createTransactionsBatchSchema.shape.items;
+export const CreateTransactionsBatch = createTransactionsBatchSchema
+  .extend({ items: batchItems.clone({ ...batchItems.def, element: CreateTransaction }) })
+  .meta({ id: "CreateTransactionsBatch" });
 export const DeleteTransactionsBatch = deleteTransactionsBatchSchema.meta({
   id: "DeleteTransactionsBatch",
 });

@@ -26,7 +26,6 @@ import 'package:lukitas/api/gen/src/model/create_category.dart';
 import 'package:lukitas/api/gen/src/model/create_recurrence.dart';
 import 'package:lukitas/api/gen/src/model/create_transaction.dart';
 import 'package:lukitas/api/gen/src/model/create_transactions_batch.dart';
-import 'package:lukitas/api/gen/src/model/create_transactions_batch_items_inner.dart';
 import 'package:lukitas/api/gen/src/model/delete_transactions_batch.dart';
 import 'package:lukitas/api/gen/src/model/file_import.dart';
 import 'package:lukitas/api/gen/src/model/import_stats.dart';
@@ -67,7 +66,6 @@ part 'serializers.g.dart';
   CreateRecurrence,
   CreateTransaction,
   CreateTransactionsBatch,
-  CreateTransactionsBatchItemsInner,
   DeleteTransactionsBatch,
   FileImport,
   ImportStats,
@@ -128,12 +126,12 @@ Serializers serializers =
             () => ListBuilder<CostOfLivingReportCategoriesInner>(),
           )
           ..addBuilderFactory(
-            const FullType(BuiltList, [FullType(CreateTransactionsBatchItemsInner)]),
-            () => ListBuilder<CreateTransactionsBatchItemsInner>(),
-          )
-          ..addBuilderFactory(
             const FullType(BuiltList, [FullType(SummaryCategoriesInner)]),
             () => ListBuilder<SummaryCategoriesInner>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, [FullType(CreateTransaction)]),
+            () => ListBuilder<CreateTransaction>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, [FullType(String)]),

@@ -4,7 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
-import 'package:lukitas/api/gen/src/model/create_transactions_batch_items_inner.dart';
+import 'package:lukitas/api/gen/src/model/create_transaction.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -18,7 +18,7 @@ part 'create_transactions_batch.g.dart';
 abstract class CreateTransactionsBatch
     implements Built<CreateTransactionsBatch, CreateTransactionsBatchBuilder> {
   @BuiltValueField(wireName: r'items')
-  BuiltList<CreateTransactionsBatchItemsInner> get items;
+  BuiltList<CreateTransaction> get items;
 
   CreateTransactionsBatch._();
 
@@ -48,7 +48,7 @@ class _$CreateTransactionsBatchSerializer implements PrimitiveSerializer<CreateT
     yield r'items';
     yield serializers.serialize(
       object.items,
-      specifiedType: const FullType(BuiltList, [FullType(CreateTransactionsBatchItemsInner)]),
+      specifiedType: const FullType(BuiltList, [FullType(CreateTransaction)]),
     );
   }
 
@@ -76,8 +76,8 @@ class _$CreateTransactionsBatchSerializer implements PrimitiveSerializer<CreateT
         case r'items':
           final valueDes = serializers.deserialize(
             value,
-            specifiedType: const FullType(BuiltList, [FullType(CreateTransactionsBatchItemsInner)]),
-          ) as BuiltList<CreateTransactionsBatchItemsInner>;
+            specifiedType: const FullType(BuiltList, [FullType(CreateTransaction)]),
+          ) as BuiltList<CreateTransaction>;
           result.items.replace(valueDes);
           break;
         default:
