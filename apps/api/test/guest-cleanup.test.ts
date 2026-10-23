@@ -32,13 +32,20 @@ async function newGuest() {
   return { userId: json.user.id, headers: { authorization: `Bearer ${token}` } };
 }
 
-/** Makes the user's sessions last active `days` days before NOW. */
+/** Makes the user, and its sessions, last active `days` days before NOW. */
 async function lastActive(userId: string, days: number) {
   await t.admin
     .update(session)
     .set({ updatedAt: daysAgo(days) })
     .where(eq(session.userId, userId));
+  await t.admin
+    .update(user)
+    .set({ lastActiveAt: daysAgo(days) })
+    .where(eq(user.id, userId));
 }
+
+const lastActiveAt = async (userId: string) =>
+  (await t.admin.select({ at: user.lastActiveAt }).from(user).where(eq(user.id, userId)))[0]?.at;
 
 const exists = async (userId: string) =>
   (await t.admin.select({ id: user.id }).from(user).where(eq(user.id, userId))).length === 1;
@@ -103,11 +110,11 @@ describe("cleanupInactiveGuests", () => {
     await t.admin.delete(session);
     await t.admin
       .update(user)
-      .set({ createdAt: daysAgo(70) })
+      .set({ createdAt: daysAgo(70), lastActiveAt: null })
       .where(eq(user.id, old.userId));
     await t.admin
       .update(user)
-      .set({ createdAt: daysAgo(10) })
+      .set({ createdAt: daysAgo(10), lastActiveAt: null })
       .where(eq(user.id, recent.userId));
 
     expect(await cleanupInactiveGuests(t.db, NOW)).toBe(1);
@@ -251,7 +258,7 @@ describe("guest session lifetime", () => {
     expect(days).toBeGreaterThan(SESSION_DAYS - 0.01);
   });
 
-  /** A session last used 59 days ago: its expiry is a day away. */
+  /** A guest, and its session, last active 59 days ago: the session's expiry is a day away. */
   async function ageSession(userId: string) {
     const updatedAt = new Date(Date.now() - 59 * DAY);
     const expiresAt = new Date(Date.now() + 1 * DAY);
@@ -259,6 +266,7 @@ describe("guest session lifetime", () => {
       .update(session)
       .set({ createdAt: updatedAt, updatedAt, expiresAt })
       .where(eq(session.userId, userId));
+    await t.admin.update(user).set({ lastActiveAt: updatedAt }).where(eq(user.id, userId));
     return { updatedAt, expiresAt };
   }
 
@@ -333,6 +341,99 @@ describe("guest session lifetime", () => {
       .where(eq(session.userId, g.userId));
 
     expect((await me(g.headers)).status).toBe(401);
+  });
+});
+
+describe("a guest's last activity outlives its sessions", () => {
+  const signOut = (headers: { authorization: string }) =>
+    t.request("POST", "/auth/sign-out", { headers, body: {} });
+  const recent = (at: Date | null | undefined) =>
+    expect(Date.now() - (at?.getTime() ?? 0)).toBeLessThan(60_000);
+
+  /** The guest, and its session, last active `days` ago; the session expires `expiresIn` days on. */
+  async function idle(userId: string, days: number, expiresIn: number) {
+    const at = new Date(Date.now() - days * DAY);
+    await t.admin
+      .update(session)
+      .set({ createdAt: at, updatedAt: at, expiresAt: new Date(Date.now() + expiresIn * DAY) })
+      .where(eq(session.userId, userId));
+    await t.admin.update(user).set({ lastActiveAt: at }).where(eq(user.id, userId));
+    return at;
+  }
+
+  test("a new guest session stamps the user", async () => {
+    const g = await newGuest();
+    recent(await lastActiveAt(g.userId));
+  });
+
+  test("a guest who signs out is kept for 60 days from then (a passkey can bring them back)", async () => {
+    const g = await newGuest();
+    // An old account, used yesterday.
+    await t.admin
+      .update(user)
+      .set({ createdAt: new Date(Date.now() - 70 * DAY) })
+      .where(eq(user.id, g.userId));
+    await idle(g.userId, 1, 59);
+    expect((await signOut(g.headers)).status).toBe(200);
+    expect(await t.admin.select().from(session).where(eq(session.userId, g.userId))).toHaveLength(
+      0,
+    );
+    recent(await lastActiveAt(g.userId));
+
+    expect(await cleanupInactiveGuests(t.db, new Date(Date.now() + 59 * DAY))).toBe(0);
+    expect(await exists(g.userId)).toBe(true);
+    expect(await cleanupInactiveGuests(t.db, new Date(Date.now() + 61 * DAY))).toBe(1);
+    expect(await exists(g.userId)).toBe(false);
+  });
+
+  test("a refreshed guest session stamps the user", async () => {
+    const g = await newGuest();
+    await idle(g.userId, 59, 1);
+    expect((await t.request("GET", "/v1/me", { headers: g.headers })).status).toBe(200);
+    recent(await lastActiveAt(g.userId));
+  });
+
+  test("a background request never stamps the user", async () => {
+    const g = await newGuest();
+    const at = await idle(g.userId, 59, 1);
+    const res = await t.request("GET", "/v1/me", {
+      headers: { ...g.headers, "x-lukas-background": "1" },
+    });
+    expect(res.status).toBe(200);
+    expect(await lastActiveAt(g.userId)).toEqual(at);
+  });
+
+  test("an expired session ended by a background request does not count as activity", async () => {
+    const g = await newGuest();
+    const at = await idle(g.userId, 61, -1);
+    const res = await t.request("GET", "/v1/me", {
+      headers: { ...g.headers, "x-lukas-background": "1" },
+    });
+    expect(res.status).toBe(401);
+    expect(await lastActiveAt(g.userId)).toEqual(at);
+    expect(await cleanupInactiveGuests(t.db, new Date())).toBe(1);
+  });
+
+  test("the cleanup reads the later of the stamp and the latest session", async () => {
+    const stamped = await newGuest();
+    await lastActive(stamped.userId, 90);
+    await t.admin
+      .update(user)
+      .set({ lastActiveAt: daysAgo(5) })
+      .where(eq(user.id, stamped.userId));
+    const sessionOnly = await newGuest();
+    await lastActive(sessionOnly.userId, 90);
+    await t.admin
+      .update(session)
+      .set({ updatedAt: daysAgo(5) })
+      .where(eq(session.userId, sessionOnly.userId));
+
+    expect(await cleanupInactiveGuests(t.db, NOW)).toBe(0);
+  });
+
+  test("an email user is never stamped", async () => {
+    const member = await t.signIn("stamp@lukas.test");
+    expect(await lastActiveAt(member.userId)).toBeNull();
   });
 });
 

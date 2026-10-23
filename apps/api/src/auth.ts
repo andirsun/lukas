@@ -18,6 +18,7 @@ import { anonymous, bearer, emailOTP, jwt } from "better-auth/plugins";
 import { apiPathPrefix, type Config } from "./config.ts";
 import type { AppDeps } from "./deps.ts";
 import { claimEmail, signInEmail } from "./emails/sign-in.ts";
+import { stampGuestActivity } from "./services/guest-cleanup.ts";
 
 export const OAUTH_SCOPES = ["finance:read", "finance:write", "offline_access"] as const;
 export const CODE_TTL_SECONDS = 600;
@@ -327,6 +328,9 @@ export function createAuth(deps: AppDeps) {
         timezone: { type: "string", required: false, defaultValue: "UTC", input: false },
         locale: { type: "string", required: false, defaultValue: "es", input: false },
         onboardingCompletedAt: { type: "date", required: false, input: false },
+        // A guest's latest activity, kept on the user so it outlives a signed-out session; the
+        // guest cleanup reads it (services/guest-cleanup.ts, `stampGuestActivity`).
+        lastActiveAt: { type: "date", required: false, input: false, returned: false },
       },
     },
     advanced: {
@@ -374,6 +378,28 @@ export function createAuth(deps: AppDeps) {
       }),
     },
     databaseHooks: {
+      // A guest's activity is stamped on the user, so it outlives the session (guest-cleanup.ts).
+      // A background request refreshes nothing, so it never stamps.
+      session: {
+        create: {
+          after: async (created) => stampGuestActivity(deps.db, created.userId, created.updatedAt),
+        },
+        update: {
+          after: async (updated) => {
+            if (updated.userId && updated.updatedAt)
+              await stampGuestActivity(deps.db, updated.userId, updated.updatedAt);
+          },
+        },
+        delete: {
+          // Sign-out is activity; an expired session that a request finds and removes is not, so
+          // it stamps only when that session was last used.
+          after: async (ended) => {
+            const now = new Date();
+            const live = new Date(ended.expiresAt) > now;
+            await stampGuestActivity(deps.db, ended.userId, live ? now : new Date(ended.updatedAt));
+          },
+        },
+      },
       user: {
         create: {
           // A guest's time zone and language come from the device, and so do an app user's: the

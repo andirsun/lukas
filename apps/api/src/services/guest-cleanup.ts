@@ -12,10 +12,25 @@ export const GUEST_CLEANUP_LOCK = 0x6c756b61;
 export const GUEST_CLEANUP_BATCH = 500;
 
 /**
- * Deletes the guests (anonymous users) whose latest session activity (`session.updatedAt`) is more
- * than 60 days before `now`, and returns how many it deleted. A guest with no session at all,
- * which should not happen, counts as inactive since it was created. A user with an email is never
- * touched: `isAnonymous` turns false the moment a guest claims one.
+ * Records that a guest was active at `at` (`user.lastActiveAt`, which only moves forward), so the
+ * activity outlives the session: a guest who signs out keeps 60 days to come back with a passkey.
+ * Better Auth's session hooks call it when a guest's session is created, refreshed or ended
+ * (auth.ts); a background request refreshes nothing, so it never gets here. A user with an email is
+ * left alone.
+ */
+export async function stampGuestActivity(db: Db, userId: string, at: Date): Promise<void> {
+  // Raw SQL: an ORM update would also move `user.updatedAt`.
+  await db.execute(sql`update ${user}
+    set last_active_at = greatest(last_active_at, ${at.toISOString()}::timestamp)
+    where ${user.id} = ${userId} and ${user.isAnonymous}`);
+}
+
+/**
+ * Deletes the guests (anonymous users) whose latest activity is more than 60 days before `now`, and
+ * returns how many it deleted. The latest activity is the later of `user.lastActiveAt` and the
+ * latest `session.updatedAt`; a guest with neither, which should not happen, counts as inactive
+ * since it was created. A user with an email is never touched: `isAnonymous` turns false the
+ * moment a guest claims one.
  *
  * Deleting the user cascades to all of its data, as `DELETE /v1/me` does (sessions, accounts,
  * categories, transactions...). That needs no privilege beyond the API's own role: `user` and
@@ -43,8 +58,12 @@ async function deleteBatch(db: Db, now: Date): Promise<number> {
     );
     if (!lock?.locked) return 0;
 
+    // `greatest` skips nulls: it is null only when the guest has neither a stamp nor a session.
     const lastActive = sql`coalesce(
-      (select max(${session.updatedAt}) from ${session} where ${session.userId} = ${user.id}),
+      greatest(
+        (select max(${session.updatedAt}) from ${session} where ${session.userId} = ${user.id}),
+        ${user.lastActiveAt}
+      ),
       ${user.createdAt}
     )`;
     const inactive = tx

@@ -155,7 +155,7 @@ A guest may register a passkey on their anonymous user (the existing passkey rou
 - It deletes anonymous users with no session activity for 60 days, with all their data (the existing cascade).
 - Users with an email are never auto-deleted.
 - The 45-day warning is a local notice on the phone (§7).
-- "Activity" is the latest session `updatedAt`.
+- "Activity" is the later of the latest session `updatedAt` and `user.lastActiveAt`, which is stamped when a guest's session is created, refreshed or ended. A guest with a passkey who signs out therefore keeps 60 days from the sign-out. Background requests never count.
 
 ### 4.5 Android App Links and passkeys
 

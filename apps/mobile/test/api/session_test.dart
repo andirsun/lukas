@@ -226,8 +226,35 @@ void main() {
       await controller.signInWithPasskey();
 
       expect(passkeys.calls, ['get {"challenge":"sign-in"}']);
-      expect(auth.calls, ['passkeySignInOptions', 'passkeySignIn {"assertion":true}']);
+      expect(auth.calls, [
+        'passkeySignInOptions',
+        'passkeySignIn {"assertion":true}',
+        'isGuest passkey-token-1',
+      ]);
       expect(container.read(sessionProvider).stored?.token, 'passkey-token-1');
+      expect(container.read(sessionProvider).isGuest, isFalse);
+    });
+
+    test("a guest's passkey signs them back in as a guest", () async {
+      auth.passkeyBelongsToGuest = true;
+      final container = containerWith();
+      final controller = await ready(container);
+      await controller.signInWithPasskey();
+
+      expect(container.read(sessionProvider).isGuest, isTrue);
+      expect((await SessionStore().read())?.guest, isTrue);
+      // So signing out warns first, as for any guest.
+      await expectLater(controller.signOut(), throwsA(isA<GuestInTheWay>()));
+    });
+
+    test('a passkey sign-in whose guest check fails is kept as a guest (the safe side)', () async {
+      final container = containerWith();
+      final controller = await ready(container);
+      auth.failures['isGuest'] = const AuthFailure(code: 'NETWORK', status: 0);
+      await controller.signInWithPasskey();
+
+      expect(container.read(sessionProvider).stored?.token, 'passkey-token-1');
+      expect(container.read(sessionProvider).isGuest, isTrue);
     });
 
     test('registerPasskey adds a passkey to the signed-in user, guest or not', () async {

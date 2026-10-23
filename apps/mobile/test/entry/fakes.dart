@@ -27,6 +27,9 @@ class FakeAuthApi implements AuthApi {
   /// What `GET /v1/me` says about `isAnonymous`, per token.
   final guests = <String, bool>{};
 
+  /// Whether the passkey signs in a guest (a guest can add one, spec section 4.3).
+  bool passkeyBelongsToGuest = false;
+
   var _tokens = 0;
   String _newToken(String kind) => '$kind-token-${++_tokens}';
 
@@ -91,7 +94,7 @@ class FakeAuthApi implements AuthApi {
     calls.add('passkeySignIn $responseJson');
     _fail('passkeySignIn');
     final token = _newToken('passkey');
-    guests[token] = false;
+    guests[token] = passkeyBelongsToGuest;
     return token;
   }
 

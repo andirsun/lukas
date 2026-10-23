@@ -202,7 +202,16 @@ class SessionController extends Notifier<SessionState> {
     final challenge = await _auth.passkeySignInOptions();
     final assertion = await _passkeys.get(challenge.optionsJson);
     final token = await _auth.passkeySignIn(challenge, assertion);
-    await _signedIn(token, guest: false);
+    // A guest can add a passkey (spec section 4.3), so the passkey may belong to one: ask, so a
+    // guest stays a guest (warned on sign-out, offered "Guarda tu progreso"). If the server can't
+    // say, the safe side is a guest, which /v1/me corrects at the next start.
+    bool guest;
+    try {
+      guest = await _auth.isGuest(token);
+    } on AuthFailure {
+      guest = true;
+    }
+    await _signedIn(token, guest: guest);
   }
 
   /// Adds a passkey on this phone to the signed-in user, a guest included (spec section 4.3).

@@ -335,7 +335,11 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(passkeys.calls, ['get {"challenge":"sign-in"}']);
-      expect(auth.calls, ['passkeySignInOptions', 'passkeySignIn {"assertion":true}']);
+      expect(auth.calls.take(3), [
+        'passkeySignInOptions',
+        'passkeySignIn {"assertion":true}',
+        'isGuest passkey-token-1',
+      ]);
       expect(_stored(container)?.token, 'passkey-token-1');
       expect(find.byType(HomeScreen), findsOneWidget);
     });
