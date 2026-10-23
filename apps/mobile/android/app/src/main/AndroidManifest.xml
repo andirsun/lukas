@@ -2,6 +2,9 @@
     xmlns:tools="http://schemas.android.com/tools">
     <!-- The API at <server>/api. Release builds need it too (scripts/check-permissions.sh). -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Quick capture's microphone (voice/VoiceChannel.kt), asked at the first 🎤. The speech engine
+         (Vosk) runs on the phone: the audio never leaves it. scripts/check-permissions.sh expects it. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <!-- androidx.credentials brings androidx.biometric, whose manifest asks for these. They serve a
          credential provider's own biometric prompt; this app only asks the platform's Credential
          Manager, and the person's passkey provider checks the fingerprint in its own process. -->

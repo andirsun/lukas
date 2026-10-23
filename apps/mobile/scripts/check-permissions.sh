@@ -3,8 +3,9 @@
 #
 # The release build is what F-Droid ships, and Android merges the INTERNET permission into debug
 # and profile builds only (src/debug, src/profile), so a release APK without it cannot reach its
-# server. This fails when INTERNET is missing, and when the APK asks for any permission not in
-# ALLOWED below: a new permission is a decision, made here on purpose.
+# server. This fails when INTERNET or RECORD_AUDIO (quick capture's microphone, Task 12) is missing,
+# and when the APK asks for any permission not in ALLOWED below: a new permission is a decision,
+# made here on purpose.
 #
 # Usage, from anywhere (after `flutter build apk --release`):
 #   apps/mobile/scripts/check-permissions.sh [--apk <path>]
@@ -13,9 +14,11 @@
 set -euo pipefail
 
 PACKAGE="com.andersonlaverde.lukitas"
-REQUIRED=("android.permission.INTERNET")
+REQUIRED=("android.permission.INTERNET" "android.permission.RECORD_AUDIO")
 ALLOWED=(
   "android.permission.INTERNET"
+  # Quick capture listens on the phone (Vosk); the audio never leaves it. Asked at first 🎤 use.
+  "android.permission.RECORD_AUDIO"
   # androidx.core's own signature permission for receivers registered as not exported.
   "${PACKAGE}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
 )

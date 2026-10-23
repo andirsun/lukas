@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../add/add_sheet.dart';
 import '../api/gen/lukitas_api.dart';
+import '../capture/capture_sheet.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../theme/theme.dart';
@@ -30,8 +31,8 @@ final lukasVariantProvider = Provider<int Function()>((ref) {
 /// How long Lukitas celebrates a save or a payment (the web's `CELEBRATE_MS`).
 const _celebrateFor = Duration(milliseconds: 2500);
 
-/// Space under the list so the ＋ never covers the last row.
-const _addButtonRoom = 88.0;
+/// Space under the list so the 🎤 and the ＋ never cover the last row.
+const _addButtonRoom = 144.0;
 
 /// The widest the content grows on a big screen.
 const _maxContentWidth = 480.0;
@@ -254,16 +255,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       // Nothing to add to until the categories are known.
       floatingActionButton: data == null
           ? null
-          : FloatingActionButton(
-              key: const Key('home.add'),
-              tooltip: l10n.addFabLabel,
-              backgroundColor: colors.brand,
-              foregroundColor: colors.onBrand,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
-              ),
-              onPressed: () => unawaited(openAddSheet(context)),
-              child: const Icon(Icons.add, size: 30),
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 🎤: say (or type) a sentence, and save its movements at once.
+                FloatingActionButton.small(
+                  key: const Key('home.capture'),
+                  heroTag: 'home.capture',
+                  tooltip: l10n.captureFabLabel,
+                  backgroundColor: colors.surface,
+                  foregroundColor: colors.brand,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(LukitasTokens.radiusMd),
+                    side: BorderSide(color: colors.brand, width: 2),
+                  ),
+                  onPressed: () => unawaited(openCapture(context)),
+                  child: const Icon(Icons.mic),
+                ),
+                const SizedBox(height: LukitasTokens.space2),
+                FloatingActionButton(
+                  key: const Key('home.add'),
+                  heroTag: 'home.add',
+                  tooltip: l10n.addFabLabel,
+                  backgroundColor: colors.brand,
+                  foregroundColor: colors.onBrand,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
+                  ),
+                  onPressed: () => unawaited(openAddSheet(context)),
+                  child: const Icon(Icons.add, size: 30),
+                ),
+              ],
             ),
       body: DecoratedBox(
         decoration: BoxDecoration(

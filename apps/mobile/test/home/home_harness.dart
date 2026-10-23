@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/add/add_repository.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
@@ -47,6 +48,7 @@ Future<HomeHarness> pumpHome(
   DateTime? now,
   DateTime Function()? clock,
   AddRepository? addRepo,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -64,6 +66,7 @@ Future<HomeHarness> pumpHome(
         (summary, {required currency, required locale}) async =>
             snapshots.add(WrittenSnapshot(summary, currency, locale)),
       ),
+      ...overrides,
     ],
   );
   addTearDown(container.dispose);

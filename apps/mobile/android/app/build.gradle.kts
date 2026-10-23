@@ -36,6 +36,8 @@ android {
             // The release signing key lives only on the founder's Mac (scripts/release.sh, later).
             // Until then a local release build is signed with the debug key, so it still installs.
             signingConfig = signingConfigs.getByName("debug")
+            // Vosk reaches its native library through JNA, by reflection: R8 must keep both.
+            proguardFiles("proguard-rules.pro")
         }
     }
 }
@@ -54,4 +56,9 @@ dependencies {
     // Passkeys through the platform's Credential Manager (Android 14+), never through the
     // library's Play Services bridge, which scripts/check-no-google.sh refuses.
     implementation("androidx.credentials:credentials:1.6.0")
+    // Quick capture's speech engine, on the phone with no network (the voice spike's choice,
+    // docs/superpowers/reports/2026-10-22-stage-3-voice-spike.md). Apache-2.0; it brings JNA 5.18.1
+    // (Apache-2.0 / LGPL-2.1). Never Android's SpeechRecognizer, which hands the audio to the
+    // phone's recognition service (Google's, mostly).
+    implementation("com.alphacephei:vosk-android:0.3.75")
 }

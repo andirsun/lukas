@@ -129,6 +129,19 @@ They read sign-in codes and links from Mailpit, as the web's e2e suite does. The
 requests per 10 minutes from one address, and every run from the emulator comes from the same one:
 running the suite more than twice in 10 minutes gets `too_many_requests`.
 
+`integration_test/capture_test.dart` replaces the speech engine with a fixed transcript (spec
+section 6.4). The real engine's plumbing (model download, SHA-256 check, unzip, Vosk load, both
+recognizers, stop) has its own test, skipped unless a stand-in for the `voice-models-v1` release
+serves the official model zips (the emulator has no real microphone, so it hears silence):
+
+```sh
+python3 -m http.server 8765 --directory <folder with vosk-model-small-es-0.42.zip>
+# once the app is installed by the run below (the test waits for the download):
+adb -s emulator-5554 shell pm grant com.andersonlaverde.lukitas android.permission.RECORD_AUDIO
+flutter test integration_test/voice_engine_test.dart -d emulator-5554 \
+  --dart-define=VOICE_MODELS_URL=http://10.0.2.2:8765
+```
+
 The first Gradle build also installs `platforms;android-35` and `cmake;3.22.1` into the SDK: the
 `jni` plugin (pulled in through `flutter_secure_storage`'s dependencies) builds against them.
 

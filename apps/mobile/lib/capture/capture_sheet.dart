@@ -1,0 +1,1179 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart' show CancelToken;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../add/add_repository.dart';
+import '../add/add_sheet.dart' show canRetrySave;
+import '../add/idempotency_key.dart';
+import '../api/gen/lukitas_api.dart';
+import '../api/session.dart';
+import '../home/category_look.dart';
+import '../home/home_controller.dart';
+import '../home/home_repository.dart';
+import '../home/home_widgets.dart' show QuietSpinner;
+import '../home/toast.dart';
+import '../l10n/app_localizations.dart';
+import '../money/format.dart';
+import '../theme/theme.dart';
+import '../theme/tokens.g.dart';
+import 'capture_repository.dart';
+import 'engine/speech_engine.dart';
+import 'models_download.dart';
+import 'parser/dates.dart' show addDays;
+import 'parser/parse.dart' as p;
+import 'preview/capture_preview.dart';
+
+/// Told about every batch saved, with its rows, once the sheet closes: the hook for Task 13's
+/// `feedback(FeedbackEvent.saved)` (Lukitas celebrating, the sound and the haptic). Until then it
+/// does nothing; the celebration line and Deshacer are the toast's.
+final batchSavedFeedbackProvider = Provider<void Function(List<Transaction> saved)>(
+  (ref) => (_) {},
+);
+
+/// Opens quick capture (spec section 6.1.4): 🎤 listens with "¿En qué gastaste?" (or, with
+/// [listen] false, the typing field is ready), the preview shows one editable, removable card per
+/// movement plus what could not be read, and "GUARDAR N" saves them all at once.
+///
+/// It needs only the app's providers (the home figures it reads the categories, currency and time
+/// zone from, the API, the speech engine), no home screen state: the ＋'s neighbour on home calls
+/// it, and so will the widget's deep link (Task 15). A save closes the sheet, updates home through
+/// its controller and shows one celebration with the total and one Deshacer.
+Future<void> openCapture(BuildContext context, {bool listen = true}) {
+  final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+  final duration = MediaQuery.disableAnimationsOf(context)
+      ? Duration.zero
+      : LukitasTokens.durationSheet;
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    backgroundColor: colors.surface,
+    clipBehavior: Clip.antiAlias,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(LukitasTokens.radiusXl)),
+    ),
+    sheetAnimationStyle: AnimationStyle(duration: duration, reverseDuration: duration),
+    builder: (context) => CaptureSheet(listen: listen),
+  );
+}
+
+enum _Stage { starting, offer, downloading, listening, typing, preview }
+
+/// Why the typing field shows instead of listening: one sentence over it.
+enum _Note { micDenied, noEngine, listenFailed, nothingHeard, nothingRead }
+
+class CaptureSheet extends ConsumerStatefulWidget {
+  const CaptureSheet({super.key, this.listen = true});
+
+  final bool listen;
+
+  @override
+  ConsumerState<CaptureSheet> createState() => _CaptureSheetState();
+}
+
+class _CaptureSheetState extends ConsumerState<CaptureSheet> {
+  var _stage = _Stage.starting;
+  _Note? _note;
+  var _canListen = false;
+  final _field = TextEditingController();
+  final _fieldFocus = FocusNode();
+
+  StreamSubscription<String>? _listening;
+  var _heard = '';
+
+  /// A transcript that came before home's figures did: read once they are here.
+  String? _pending;
+
+  CancelToken? _download;
+  var _downloaded = 0;
+  ModelDownloadFailure? _downloadFailure;
+
+  CapturePreview? _preview;
+  List<p.Usual> _usual = const [];
+  int? _openCard;
+
+  var _saving = false;
+  HomeFailure? _failure;
+
+  /// The batch attempt's key: made at the first press, the same for Reintentar, new after any
+  /// change to the cards (a different body).
+  String? _key;
+  int? _keyVersion;
+
+  SpeechEngine get _engine => ref.read(speechEngineProvider);
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_fetchUsual());
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_start()));
+  }
+
+  @override
+  void dispose() {
+    unawaited(_listening?.cancel());
+    _download?.cancel();
+    _preview?.dispose();
+    _field.dispose();
+    _fieldFocus.dispose();
+    super.dispose();
+  }
+
+  void _set(VoidCallback change) {
+    if (mounted) setState(change);
+  }
+
+  String get _locale => AppLocalizations.of(context).localeName == 'en' ? 'en' : 'es';
+
+  /// The names already used and their usual categories: the parser's first choice of category.
+  Future<void> _fetchUsual() async {
+    try {
+      final found = await ref.read(addRepositoryProvider).suggestions('');
+      _usual = [for (final s in found) p.Usual(name: s.name, categoryId: s.categoryId)];
+    } on Object {
+      // Without them, categories are matched by name only.
+    }
+  }
+
+  Future<void> _start() async {
+    final canListen = await _engine.available();
+    if (!mounted) return;
+    _canListen = canListen;
+    if (!widget.listen) {
+      _type(null);
+    } else if (!canListen) {
+      _type(_Note.noEngine);
+    } else {
+      _listen();
+    }
+  }
+
+  // -- listening -----------------------------------------------------------------------------
+
+  void _listen() {
+    unawaited(_listening?.cancel());
+    _set(() {
+      _stage = _Stage.listening;
+      _note = null;
+      _heard = '';
+    });
+    _listening = _engine
+        .listen(locale: _locale)
+        .listen(
+          (text) => _set(() => _heard = text),
+          onError: (Object error) {
+            _listening = null;
+            final kind = error is SpeechFailure ? error.kind : SpeechFailureKind.failed;
+            switch (kind) {
+              case SpeechFailureKind.noModel:
+                _set(() {
+                  _stage = _Stage.offer;
+                  _downloadFailure = null;
+                });
+              case SpeechFailureKind.permissionDenied:
+                _type(_Note.micDenied);
+              case SpeechFailureKind.failed:
+                _type(_Note.listenFailed);
+            }
+          },
+          onDone: () {
+            if (_listening == null || !mounted) return;
+            _listening = null;
+            final text = _heard.trim();
+            if (text.isEmpty) {
+              _type(_Note.nothingHeard);
+            } else {
+              _read(text);
+            }
+          },
+          cancelOnError: true,
+        );
+  }
+
+  void _stopListening() => unawaited(_engine.stop());
+
+  /// The typing field, with [note] over it saying why it shows, if anything.
+  void _type(_Note? note, {String? text}) {
+    final listening = _listening;
+    _listening = null;
+    if (listening != null) {
+      unawaited(listening.cancel());
+      unawaited(_engine.stop());
+    }
+    _set(() {
+      _stage = _Stage.typing;
+      _note = note;
+      if (text != null) _field.text = text;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _stage == _Stage.typing) _fieldFocus.requestFocus();
+    });
+  }
+
+  // -- the model download --------------------------------------------------------------------
+
+  Future<void> _downloadModel() async {
+    final cancel = CancelToken();
+    _set(() {
+      _download = cancel;
+      _downloaded = 0;
+      _downloadFailure = null;
+      _stage = _Stage.downloading;
+    });
+    try {
+      await ref
+          .read(modelStoreProvider)
+          .download(
+            _locale,
+            cancel: cancel,
+            onProgress: (received, _) => _set(() => _downloaded = received),
+          );
+    } on ModelDownloadFailure catch (failure) {
+      if (!mounted) return;
+      _set(() {
+        _download = null;
+        _stage = _Stage.offer;
+        _downloadFailure = failure.cancelled ? null : failure;
+      });
+      return;
+    }
+    if (!mounted) return;
+    _download = null;
+    _listen();
+  }
+
+  // -- the preview ---------------------------------------------------------------------------
+
+  void _read(String sentence) {
+    final data = ref.read(homeProvider).data;
+    if (data == null) {
+      _set(() {
+        _pending = sentence;
+        _stage = _Stage.preview;
+      });
+      return;
+    }
+    _pending = null;
+    final today = data.todayAt(ref.read(clockProvider)());
+    final result = p.parseSentence(
+      sentence,
+      p.ParseContext(
+        locale: _locale,
+        currency: data.currency,
+        today: today,
+        timeZone: data.timezone,
+        categories: [
+          for (final c in data.categories.values)
+            if (!c.archived)
+              p.Category(
+                id: c.id,
+                name: c.name,
+                kind: c.kind == CategoryKindEnum.income ? p.Kind.income : p.Kind.expense,
+              ),
+        ],
+        usual: _usual,
+      ),
+    );
+    if (result.drafts.isEmpty && result.unread.isEmpty) {
+      _type(_Note.nothingRead, text: sentence);
+      return;
+    }
+    final preview = _preview ??= CapturePreview(today: today)..addListener(_onPreviewChanged);
+    preview.read(sentence, result);
+    _set(() {
+      _stage = _Stage.preview;
+      _note = null;
+      _failure = null;
+      _openCard = null;
+    });
+  }
+
+  void _onPreviewChanged() => _set(() {});
+
+  void _readTyped() {
+    final text = _field.text.trim();
+    if (text.isEmpty) return;
+    FocusScope.of(context).unfocus();
+    _read(text);
+  }
+
+  // -- saving --------------------------------------------------------------------------------
+
+  Future<void> _save(AppLocalizations l10n) async {
+    final preview = _preview;
+    final data = ref.read(homeProvider).data;
+    if (_saving || preview == null || data == null || !preview.ready) return;
+    final repo = ref.read(captureRepositoryProvider);
+    // What outlives the sheet: the toast, Deshacer, the home update and the feedback hook.
+    final container = ProviderScope.containerOf(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+
+    if (_keyVersion != preview.version) _key = null;
+    final key = _key ??= newIdempotencyKey();
+    _keyVersion = preview.version;
+    final drafts = preview.drafts(categoryName: (id) => data.categories[id]?.name ?? '');
+    final total = preview.total;
+
+    _set(() {
+      _saving = true;
+      _failure = null;
+    });
+    try {
+      final saved = await repo.saveBatch(drafts, idempotencyKey: key);
+      unawaited(container.read(homeProvider.notifier).savedBatch(saved));
+      container.read(batchSavedFeedbackProvider)(saved);
+      if (mounted) navigator.pop();
+      _celebrate(
+        container: container,
+        messenger: messenger,
+        colors: colors,
+        l10n: l10n,
+        saved: saved,
+        total: formatMoney(total, data.currency, l10n.localeName),
+      );
+    } on HomeFailure catch (failure) {
+      if (failure.unauthorized) {
+        unawaited(ref.read(sessionProvider.notifier).signOut());
+        if (mounted) navigator.pop();
+        return;
+      }
+      _set(() {
+        _saving = false;
+        _failure = failure;
+      });
+    } on Object {
+      _set(() {
+        _saving = false;
+        _failure = const HomeFailure(500);
+      });
+    }
+  }
+
+  // -- build ---------------------------------------------------------------------------------
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    final home = ref.watch(homeProvider);
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final pending = _pending;
+    if (pending != null && home.data != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _pending == pending) _read(pending);
+      });
+    }
+
+    final Widget body = switch (_stage) {
+      _Stage.starting => const Padding(
+        padding: EdgeInsets.all(LukitasTokens.space5),
+        child: Center(child: QuietSpinner(size: 28)),
+      ),
+      _Stage.offer => _offer(l10n, colors),
+      _Stage.downloading => _downloading(l10n, colors),
+      _Stage.listening => _listeningView(l10n, colors),
+      _Stage.typing => _typing(l10n, colors),
+      _Stage.preview =>
+        home.data == null || _preview == null
+            ? _unloaded(l10n, colors, home)
+            : _previewView(l10n, colors, home.data!),
+    };
+
+    return Semantics(
+      scopesRoute: true,
+      namesRoute: true,
+      explicitChildNodes: true,
+      label: l10n.captureTitle,
+      child: Padding(
+        key: const Key('capture.sheet'),
+        padding: EdgeInsets.only(bottom: keyboard),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _Header(title: l10n.captureTitle, closeLabel: l10n.addClose),
+              Flexible(child: body),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _unloaded(AppLocalizations l10n, LukitasColors colors, HomeState home) {
+    final failed = home.failure != null;
+    return Padding(
+      padding: const EdgeInsets.all(LukitasTokens.space5),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!failed) const QuietSpinner(size: 28),
+          const SizedBox(height: LukitasTokens.space3),
+          Text(
+            failed
+                ? (home.failure!.offline ? l10n.errorNetwork : l10n.errorGeneric)
+                : l10n.homeLoading,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
+          ),
+          if (failed) ...[
+            const SizedBox(height: LukitasTokens.space3),
+            FilledButton(
+              onPressed: () => unawaited(ref.read(homeProvider.notifier).refresh()),
+              child: Text(l10n.retry),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _padded(List<Widget> children) => SingleChildScrollView(
+    padding: const EdgeInsets.fromLTRB(
+      LukitasTokens.space4,
+      LukitasTokens.space2,
+      LukitasTokens.space4,
+      LukitasTokens.space4,
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    ),
+  );
+
+  Widget _offer(AppLocalizations l10n, LukitasColors colors) {
+    final megabytes = (ref.read(modelStoreProvider).modelFor(_locale).bytes / 1e6).round();
+    final failure = _downloadFailure;
+    return _padded([
+      Text(
+        l10n.captureOfferTitle,
+        style: TextStyle(color: colors.ink, fontSize: 18, fontWeight: FontWeight.w800),
+      ),
+      const SizedBox(height: LukitasTokens.space2),
+      Text(
+        l10n.captureOfferBody(megabytes),
+        style: TextStyle(color: colors.inkMuted, fontWeight: FontWeight.w600),
+      ),
+      if (failure != null) ...[
+        const SizedBox(height: LukitasTokens.space2),
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            failure.corrupt ? l10n.captureDownloadCorrupt : l10n.captureDownloadFailed,
+            style: TextStyle(color: colors.over, fontWeight: FontWeight.w800),
+          ),
+        ),
+      ],
+      const SizedBox(height: LukitasTokens.space4),
+      FilledButton(
+        key: const Key('capture.offer.download'),
+        onPressed: () => unawaited(_downloadModel()),
+        child: Text(l10n.captureOfferDownload(megabytes)),
+      ),
+      const SizedBox(height: LukitasTokens.space2),
+      TextButton(
+        key: const Key('capture.offer.decline'),
+        onPressed: () => _type(null),
+        child: Text(l10n.captureOfferDecline),
+      ),
+    ]);
+  }
+
+  Widget _downloading(AppLocalizations l10n, LukitasColors colors) {
+    final total = ref.read(modelStoreProvider).modelFor(_locale).bytes;
+    final fraction = total == 0 ? 0.0 : (_downloaded / total).clamp(0.0, 1.0);
+    return _padded([
+      Semantics(
+        liveRegion: true,
+        child: Text(
+          l10n.captureDownloading((fraction * 100).floor()),
+          style: TextStyle(color: colors.ink, fontWeight: FontWeight.w800),
+        ),
+      ),
+      const SizedBox(height: LukitasTokens.space3),
+      LinearProgressIndicator(value: fraction, color: colors.brand),
+      const SizedBox(height: LukitasTokens.space3),
+      TextButton(
+        key: const Key('capture.download.cancel'),
+        onPressed: () => _download?.cancel(),
+        child: Text(l10n.captureDownloadCancel),
+      ),
+    ]);
+  }
+
+  Widget _listeningView(AppLocalizations l10n, LukitasColors colors) => _padded([
+    const SizedBox(height: LukitasTokens.space2),
+    Icon(Icons.mic, size: 48, color: colors.brand),
+    const SizedBox(height: LukitasTokens.space2),
+    Semantics(
+      liveRegion: true,
+      child: Text(
+        l10n.captureListeningPrompt,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: colors.ink, fontSize: 22, fontWeight: FontWeight.w800),
+      ),
+    ),
+    const SizedBox(height: LukitasTokens.space1),
+    Text(
+      l10n.captureListeningNote,
+      textAlign: TextAlign.center,
+      style: TextStyle(color: colors.inkMuted, fontSize: 13, fontWeight: FontWeight.w600),
+    ),
+    const SizedBox(height: LukitasTokens.space4),
+    Text(
+      _heard,
+      key: const Key('capture.heard'),
+      textAlign: TextAlign.center,
+      style: TextStyle(color: colors.ink, fontSize: 18, fontWeight: FontWeight.w700),
+    ),
+    const SizedBox(height: LukitasTokens.space4),
+    FilledButton(
+      key: const Key('capture.stop'),
+      onPressed: _stopListening,
+      child: Text(l10n.captureStop),
+    ),
+    const SizedBox(height: LukitasTokens.space2),
+    TextButton(
+      key: const Key('capture.type'),
+      onPressed: () => _type(null, text: _heard),
+      child: Text(l10n.captureTypeInstead),
+    ),
+  ]);
+
+  String? _noteText(AppLocalizations l10n) => switch (_note) {
+    _Note.micDenied => l10n.captureMicDenied,
+    _Note.noEngine => l10n.captureNoEngine,
+    _Note.listenFailed => l10n.captureListenFailed,
+    _Note.nothingHeard => l10n.captureNothingHeard,
+    _Note.nothingRead => l10n.captureNothingRead,
+    null => null,
+  };
+
+  Widget _typing(AppLocalizations l10n, LukitasColors colors) {
+    final note = _noteText(l10n);
+    return _padded([
+      if (note != null) ...[
+        Semantics(
+          liveRegion: true,
+          child: Text(
+            note,
+            key: const Key('capture.note'),
+            style: TextStyle(color: colors.inkMuted, fontWeight: FontWeight.w700),
+          ),
+        ),
+        const SizedBox(height: LukitasTokens.space3),
+      ],
+      TextField(
+        key: const Key('capture.field'),
+        controller: _field,
+        focusNode: _fieldFocus,
+        minLines: 1,
+        maxLines: 3,
+        maxLength: 500,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _readTyped(),
+        style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
+        decoration: InputDecoration(
+          labelText: l10n.captureFieldLabel,
+          hintText: l10n.captureFieldHint,
+          counterText: '',
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(LukitasTokens.radiusMd),
+            borderSide: BorderSide(color: colors.stroke, width: 2),
+          ),
+        ),
+      ),
+      const SizedBox(height: LukitasTokens.space3),
+      Row(
+        children: [
+          if (_canListen) ...[
+            OutlinedButton.icon(
+              key: const Key('capture.listen'),
+              onPressed: _listen,
+              icon: const Icon(Icons.mic),
+              label: Text(l10n.captureListen),
+            ),
+            const SizedBox(width: LukitasTokens.space2),
+          ],
+          Expanded(
+            child: FilledButton(
+              key: const Key('capture.read'),
+              onPressed: _readTyped,
+              child: Text(l10n.captureRead),
+            ),
+          ),
+        ],
+      ),
+    ]);
+  }
+
+  Widget _previewView(AppLocalizations l10n, LukitasColors colors, HomeData data) {
+    final preview = _preview!;
+    final cards = preview.cards;
+    final failure = _failure;
+    final categories = [
+      for (final c in data.categories.values)
+        if (!c.archived) c,
+    ];
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Flexible(
+          child: _padded([
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    preview.sentence,
+                    style: TextStyle(
+                      color: colors.inkMuted,
+                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  key: const Key('capture.change'),
+                  onPressed: _saving ? null : () => _type(null, text: preview.sentence),
+                  child: Text(l10n.captureChangeSentence),
+                ),
+              ],
+            ),
+            const SizedBox(height: LukitasTokens.space2),
+            for (var i = 0; i < cards.length; i++) ...[
+              _CardView(
+                key: ValueKey('card-${cards[i].id}'),
+                index: i,
+                card: cards[i],
+                open: _openCard == cards[i].id,
+                categories: categories,
+                currency: data.currency,
+                today: preview.today,
+                enabled: !_saving,
+                onToggle: () =>
+                    _set(() => _openCard = _openCard == cards[i].id ? null : cards[i].id),
+                onPick: () => _set(() => _openCard = cards[i].id),
+                onRemove: () => preview.remove(cards[i].id),
+                onChange: ({amount, kind, name, categoryId, date}) => preview.update(
+                  cards[i].id,
+                  amount: amount,
+                  kind: kind,
+                  name: name,
+                  categoryId: categoryId,
+                  date: date,
+                ),
+                onPicked: () => _set(() => _openCard = null),
+              ),
+              const SizedBox(height: LukitasTokens.space2),
+            ],
+            for (var i = 0; i < preview.unread.length; i++)
+              Padding(
+                key: Key('capture.unread.$i'),
+                padding: const EdgeInsets.only(bottom: LukitasTokens.space2),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        l10n.captureUnread(preview.unread[i]),
+                        style: TextStyle(color: colors.near, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    TextButton(
+                      key: Key('capture.unread.$i.complete'),
+                      onPressed: _saving
+                          ? null
+                          : () {
+                              preview.complete(i);
+                              _set(() => _openCard = preview.cards.last.id);
+                            },
+                      child: Text(l10n.captureComplete),
+                    ),
+                  ],
+                ),
+              ),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            LukitasTokens.space4,
+            LukitasTokens.space2,
+            LukitasTokens.space4,
+            LukitasTokens.space4,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (failure != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: LukitasTokens.space2),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            _failureMessage(l10n, failure),
+                            style: TextStyle(
+                              color: colors.over,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (canRetrySave(failure))
+                        TextButton(
+                          key: const Key('capture.retry'),
+                          onPressed: () => unawaited(_save(l10n)),
+                          style: TextButton.styleFrom(foregroundColor: colors.gold),
+                          child: Text(l10n.retry),
+                        ),
+                    ],
+                  ),
+                ),
+              FilledButton(
+                key: const Key('capture.save'),
+                onPressed: preview.ready && !_saving ? () => unawaited(_save(l10n)) : null,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
+                  ),
+                ),
+                child: _saving
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const QuietSpinner(),
+                          const SizedBox(width: LukitasTokens.space2),
+                          Text(l10n.addSaving),
+                        ],
+                      )
+                    : Text(l10n.captureSave(cards.length)),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+String _failureMessage(AppLocalizations l10n, HomeFailure failure) {
+  if (failure.offline) return l10n.errorNetwork;
+  if (failure.code == 'idempotency_in_progress') return l10n.addErrorBusy;
+  if (failure.code == 'category_not_found') return l10n.addErrorCategory;
+  if (failure.status == 422) return l10n.addErrorInvalid;
+  return failure.status >= 500 ? l10n.errorInternal : l10n.errorGeneric;
+}
+
+/// The one celebration after a batch: how many and the total, with one Deshacer that takes them
+/// all away. Everything it needs is passed in: the sheet is gone by the time anyone taps.
+void _celebrate({
+  required ProviderContainer container,
+  required ScaffoldMessengerState messenger,
+  required LukitasColors colors,
+  required AppLocalizations l10n,
+  required List<Transaction> saved,
+  required String total,
+}) {
+  final ids = [for (final t in saved) t.id];
+  showToast(
+    messenger,
+    colors,
+    l10n.captureSaved(saved.length, total),
+    actionLabel: l10n.undo,
+    onAction: () => unawaited(() async {
+      try {
+        await container.read(captureRepositoryProvider).undoBatch(ids);
+      } on HomeFailure catch (failure) {
+        showToast(
+          messenger,
+          colors,
+          failure.offline ? l10n.errorNetwork : l10n.errorGeneric,
+          error: true,
+        );
+        return;
+      }
+      unawaited(container.read(homeProvider.notifier).forget(ids));
+      showToast(messenger, colors, l10n.captureUndone(ids.length));
+    }()),
+  );
+}
+
+// -- pieces ----------------------------------------------------------------------------------
+
+class _Header extends StatelessWidget {
+  const _Header({required this.title, required this.closeLabel});
+
+  final String title;
+  final String closeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 8),
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: colors.stroke,
+            borderRadius: BorderRadius.circular(LukitasTokens.radiusPill),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: LukitasTokens.space4, right: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    title,
+                    style: TextStyle(color: colors.ink, fontSize: 18, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+              IconButton(
+                key: const Key('capture.close'),
+                tooltip: closeLabel,
+                onPressed: () => Navigator.of(context).pop(),
+                icon: Icon(Icons.close, color: colors.inkMuted),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+typedef _CardChange = void Function({
+  int? amount,
+  p.Kind? kind,
+  String? name,
+  String? categoryId,
+  String? date,
+});
+
+/// One movement of the preview: its amount, name and category at a glance, a remove button, and,
+/// open, the fields to change it.
+class _CardView extends StatelessWidget {
+  const _CardView({
+    super.key,
+    required this.index,
+    required this.card,
+    required this.open,
+    required this.categories,
+    required this.currency,
+    required this.today,
+    required this.enabled,
+    required this.onToggle,
+    required this.onPick,
+    required this.onRemove,
+    required this.onChange,
+    required this.onPicked,
+  });
+
+  final int index;
+  final CaptureCard card;
+  final bool open;
+  final List<Category> categories;
+  final String currency;
+  final String today;
+  final bool enabled;
+  final VoidCallback onToggle;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+  final _CardChange onChange;
+  final VoidCallback onPicked;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    final locale = l10n.localeName;
+    final category = categories.where((c) => c.id == card.categoryId).firstOrNull;
+    final hasAmount = (card.amount ?? 0) > 0;
+    final expense = card.kind == p.Kind.expense;
+
+    return Container(
+      key: Key('capture.card.$index'),
+      decoration: BoxDecoration(
+        color: colors.surfaceSunken,
+        borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
+        border: Border.all(color: card.complete ? colors.stroke : colors.near, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
+            onTap: enabled ? onToggle : null,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(LukitasTokens.space3, LukitasTokens.space2, 0, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hasAmount
+                              ? formatMoney(card.amount!, currency, locale)
+                              : l10n.captureNeedsAmount,
+                          style: TextStyle(
+                            color: hasAmount ? (expense ? colors.over : colors.good) : colors.near,
+                            fontSize: hasAmount ? 20 : 15,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        if (card.name.isNotEmpty)
+                          Text(
+                            card.name,
+                            style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
+                          ),
+                        const SizedBox(height: 4),
+                        if (category != null)
+                          Text(
+                            '${categoryLook(icon: category.icon, color: category.color).glyph} '
+                            '${category.name}',
+                            style: TextStyle(color: colors.inkMuted, fontWeight: FontWeight.w700),
+                          )
+                        else
+                          OutlinedButton(
+                            key: Key('capture.card.$index.pick'),
+                            onPressed: enabled ? onPick : null,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colors.near,
+                              side: BorderSide(color: colors.near, width: 2),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            child: Text(l10n.capturePickCategory),
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    key: Key('capture.card.$index.remove'),
+                    tooltip: l10n.captureRemove,
+                    onPressed: enabled ? onRemove : null,
+                    icon: Icon(Icons.close, color: colors.inkMuted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (open)
+            _CardEditor(
+              key: ValueKey('editor-${card.id}'),
+              index: index,
+              card: card,
+              categories: categories,
+              currency: currency,
+              today: today,
+              onChange: onChange,
+              onPicked: onPicked,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardEditor extends StatefulWidget {
+  const _CardEditor({
+    super.key,
+    required this.index,
+    required this.card,
+    required this.categories,
+    required this.currency,
+    required this.today,
+    required this.onChange,
+    required this.onPicked,
+  });
+
+  final int index;
+  final CaptureCard card;
+  final List<Category> categories;
+  final String currency;
+  final String today;
+  final _CardChange onChange;
+  final VoidCallback onPicked;
+
+  @override
+  State<_CardEditor> createState() => _CardEditorState();
+}
+
+class _CardEditorState extends State<_CardEditor> {
+  late final _amount = TextEditingController(text: _amountText(widget.card.amount));
+  late final _name = TextEditingController(text: widget.card.name);
+
+  bool get _whole => widget.currency == 'COP';
+
+  String _amountText(int? cents) {
+    if (cents == null || cents == 0) return '';
+    if (_whole || cents % 100 == 0) return '${cents ~/ 100}';
+    return (cents / 100).toStringAsFixed(2);
+  }
+
+  /// What is typed, in cents: whole pesos in COP, up to two decimals (comma or dot) elsewhere.
+  int _cents(String text) {
+    final cleaned = text.trim().replaceAll(',', '.');
+    if (cleaned.isEmpty) return 0;
+    if (_whole) return (int.tryParse(cleaned) ?? 0) * 100;
+    final value = double.tryParse(cleaned);
+    return value == null ? 0 : (value * 100).round();
+  }
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    _name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    final card = widget.card;
+    final i = widget.index;
+    final kind = card.kind == p.Kind.income ? CategoryKindEnum.income : CategoryKindEnum.expense;
+    final ofKind = widget.categories.where((c) => c.kind == kind).toList();
+    final yesterday = addDays(widget.today, -1);
+    InputDecoration field(String label) => InputDecoration(
+      labelText: label,
+      isDense: true,
+      counterText: '',
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(LukitasTokens.radiusMd),
+        borderSide: BorderSide(color: colors.stroke, width: 2),
+      ),
+    );
+    Widget chip(Key key, String label, bool selected, VoidCallback onTap) => ChoiceChip(
+      key: key,
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      selectedColor: colors.brand,
+      labelStyle: TextStyle(
+        color: selected ? colors.onBrand : colors.ink,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        LukitasTokens.space3,
+        0,
+        LukitasTokens.space3,
+        LukitasTokens.space3,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  key: Key('capture.card.$i.amount'),
+                  controller: _amount,
+                  keyboardType: TextInputType.numberWithOptions(decimal: !_whole),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(_whole ? r'[0-9]' : r'[0-9.,]')),
+                  ],
+                  maxLength: 12,
+                  onChanged: (text) => widget.onChange(amount: _cents(text)),
+                  style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
+                  decoration: field(l10n.captureAmountLabel),
+                ),
+              ),
+              const SizedBox(width: LukitasTokens.space2),
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  key: Key('capture.card.$i.name'),
+                  controller: _name,
+                  maxLength: 120,
+                  onChanged: (text) => widget.onChange(name: text),
+                  style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
+                  decoration: field(l10n.captureNameLabel),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: LukitasTokens.space2),
+          Wrap(
+            spacing: LukitasTokens.space2,
+            runSpacing: LukitasTokens.space1,
+            children: [
+              chip(
+                Key('capture.card.$i.kind.expense'),
+                l10n.addKindExpense,
+                card.kind == p.Kind.expense,
+                () => widget.onChange(kind: p.Kind.expense),
+              ),
+              chip(
+                Key('capture.card.$i.kind.income'),
+                l10n.addKindIncome,
+                card.kind == p.Kind.income,
+                () => widget.onChange(kind: p.Kind.income),
+              ),
+              chip(
+                Key('capture.card.$i.date.today'),
+                l10n.addToday,
+                card.date == widget.today,
+                () => widget.onChange(date: widget.today),
+              ),
+              chip(
+                Key('capture.card.$i.date.yesterday'),
+                l10n.captureYesterday,
+                card.date == yesterday,
+                () => widget.onChange(date: yesterday),
+              ),
+              if (card.date != widget.today && card.date != yesterday)
+                chip(Key('capture.card.$i.date.other'), card.date, true, () {}),
+            ],
+          ),
+          const SizedBox(height: LukitasTokens.space2),
+          if (ofKind.isEmpty)
+            Text(
+              card.kind == p.Kind.income ? l10n.addNoCategoriesIncome : l10n.addNoCategoriesExpense,
+              style: TextStyle(color: colors.inkMuted, fontWeight: FontWeight.w700),
+            )
+          else
+            Wrap(
+              spacing: LukitasTokens.space2,
+              runSpacing: LukitasTokens.space1,
+              children: [
+                for (final c in ofKind)
+                  chip(
+                    Key('capture.card.$i.category.${c.id}'),
+                    '${categoryLook(icon: c.icon, color: c.color).glyph} ${c.name}',
+                    c.id == card.categoryId,
+                    () {
+                      widget.onChange(categoryId: c.id);
+                      widget.onPicked();
+                    },
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}

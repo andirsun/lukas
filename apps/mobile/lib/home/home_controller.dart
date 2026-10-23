@@ -528,6 +528,32 @@ class HomeController extends Notifier<HomeState> {
     );
   }
 
+  /// Movements a quick capture just saved together: their rows are there at once, what is saved
+  /// for a start with no network follows, and the summary is asked once (only the latest answer
+  /// counts). No Lukitas event: capture shows its own celebration for the batch.
+  Future<void> savedBatch(List<Transaction> saved) async {
+    if (state.data == null) return;
+    for (final tx in saved) {
+      _place(tx);
+    }
+    unawaited(_persist());
+    await _refreshSummary();
+  }
+
+  /// Takes the rows [ids] off at once, after the server deleted them (a capture's Deshacer), and
+  /// asks for the summary again.
+  Future<void> forget(List<String> ids) async {
+    final data = state.data;
+    if (data == null) return;
+    final gone = ids.toSet();
+    _replaceItems([
+      for (final t in data.items)
+        if (!gone.contains(t.id)) t,
+    ]);
+    unawaited(_persist());
+    await _refreshSummary();
+  }
+
   /// A movement the add sheet just edited: its row is replaced where it belongs, and the summary
   /// follows. No event: an edit is no celebration.
   Future<void> updated(Transaction tx) async {

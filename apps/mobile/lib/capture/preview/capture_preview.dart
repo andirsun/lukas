@@ -1,0 +1,167 @@
+import 'package:flutter/foundation.dart';
+
+import '../parser/parse.dart';
+
+/// One movement in the preview, as the person may still change it.
+@immutable
+class CaptureCard {
+  const CaptureCard({
+    required this.id,
+    required this.amount,
+    required this.kind,
+    required this.name,
+    required this.categoryId,
+    required this.date,
+  });
+
+  /// Stays the same through edits (widget keys).
+  final int id;
+
+  /// Positive cents; null while a fragment completed by hand has no amount yet.
+  final int? amount;
+  final Kind kind;
+
+  /// As heard (lowercase), or as typed.
+  final String name;
+  final String? categoryId;
+
+  /// `YYYY-MM-DD`.
+  final String date;
+
+  bool get complete => (amount ?? 0) > 0 && categoryId != null;
+
+  CaptureCard copyWith({
+    int? Function()? amount,
+    Kind? kind,
+    String? name,
+    String? Function()? categoryId,
+    String? date,
+  }) => CaptureCard(
+    id: id,
+    amount: amount == null ? this.amount : amount(),
+    kind: kind ?? this.kind,
+    name: name ?? this.name,
+    categoryId: categoryId == null ? this.categoryId : categoryId(),
+    date: date ?? this.date,
+  );
+}
+
+/// The preview of a sentence (spec section 6.1.4): one editable, removable card per draft, and the
+/// fragments the parser could not read, which can each become a card completed by hand.
+class CapturePreview extends ChangeNotifier {
+  CapturePreview({required this.today});
+
+  /// Today in the profile's time zone: the date of a card made from a fragment.
+  final String today;
+
+  var _cards = <CaptureCard>[];
+  var _unread = <String>[];
+  var _sentence = '';
+  var _nextId = 0;
+  var _version = 0;
+
+  List<CaptureCard> get cards => List.unmodifiable(_cards);
+  List<String> get unread => List.unmodifiable(_unread);
+
+  /// The sentence the cards come from, as heard or typed.
+  String get sentence => _sentence;
+
+  /// Grows with every change: a save attempt's idempotency key is good for one version only.
+  int get version => _version;
+
+  /// GUARDAR can be pressed: at least one card, and every card has an amount and a category.
+  bool get ready => _cards.isNotEmpty && _cards.every((c) => c.complete);
+
+  /// The cards' amounts added up, in cents.
+  int get total => _cards.fold(0, (sum, c) => sum + (c.amount ?? 0));
+
+  void _changed() {
+    _version++;
+    notifyListeners();
+  }
+
+  /// Shows what [sentence] was read as, replacing what was there.
+  void read(String sentence, ParseResult result) {
+    _sentence = sentence;
+    _cards = [
+      for (final d in result.drafts)
+        CaptureCard(
+          id: _nextId++,
+          amount: d.amount,
+          kind: d.kind,
+          name: d.name,
+          categoryId: d.categoryId,
+          date: d.date,
+        ),
+    ];
+    _unread = [...result.unread];
+    _changed();
+  }
+
+  /// Turns the unread fragment at [index] into a card, named after it, to complete by hand.
+  void complete(int index) {
+    if (index < 0 || index >= _unread.length) return;
+    final fragment = _unread.removeAt(index);
+    _cards = [
+      ..._cards,
+      CaptureCard(
+        id: _nextId++,
+        amount: null,
+        kind: Kind.expense,
+        name: fragment.toLowerCase(),
+        categoryId: null,
+        date: today,
+      ),
+    ];
+    _changed();
+  }
+
+  void remove(int id) {
+    _cards = [
+      for (final c in _cards)
+        if (c.id != id) c,
+    ];
+    _changed();
+  }
+
+  /// Changes the card [id]. A new [kind] drops its category, which belonged to the other kind,
+  /// unless a [categoryId] comes with it.
+  void update(int id, {int? amount, Kind? kind, String? name, String? categoryId, String? date}) {
+    _cards = [
+      for (final c in _cards)
+        if (c.id != id)
+          c
+        else
+          c.copyWith(
+            amount: amount == null ? null : () => amount,
+            kind: kind,
+            name: name,
+            categoryId: categoryId != null
+                ? () => categoryId
+                : (kind != null && kind != c.kind ? () => null : null),
+            date: date,
+          ),
+    ];
+    _changed();
+  }
+
+  /// The cards as drafts to save (only when [ready]): a name starts with a capital letter, and an
+  /// empty one is the category's name, as in the add sheet.
+  List<Draft> drafts({required String Function(String categoryId) categoryName}) => [
+    for (final c in _cards)
+      Draft(
+        amount: c.amount!,
+        kind: c.kind,
+        name: savedName(c.name, categoryName(c.categoryId!)),
+        categoryId: c.categoryId,
+        date: c.date,
+      ),
+  ];
+}
+
+/// [name] trimmed with a capital first letter, or [fallback] when it is empty.
+String savedName(String name, String fallback) {
+  final trimmed = name.trim();
+  if (trimmed.isEmpty) return fallback;
+  return trimmed[0].toUpperCase() + trimmed.substring(1);
+}

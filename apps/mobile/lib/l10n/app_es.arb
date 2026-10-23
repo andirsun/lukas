@@ -907,5 +907,183 @@
   "nameFieldSuggestions": "Nombres recientes",
   "@nameFieldSuggestions": {
     "description": "Add sheet: names the shortcuts under the name (screen readers)."
+  },
+  "captureFabLabel": "Decir o escribir un gasto",
+  "@captureFabLabel": {
+    "description": "Home: the 🎤 button that opens quick capture."
+  },
+  "captureTitle": "Dilo o escríbelo",
+  "@captureTitle": {
+    "description": "Quick capture: the sheet's title."
+  },
+  "captureListeningPrompt": "¿En qué gastaste?",
+  "@captureListeningPrompt": {
+    "description": "Quick capture: shown while listening."
+  },
+  "captureListeningNote": "Te escucho aquí mismo: lo que dices no sale de tu teléfono.",
+  "@captureListeningNote": {
+    "description": "Quick capture: under the prompt while listening; the engine runs on the phone, with no network."
+  },
+  "captureStop": "Listo",
+  "@captureStop": {
+    "description": "Quick capture: stops listening."
+  },
+  "captureTypeInstead": "Escribir",
+  "@captureTypeInstead": {
+    "description": "Quick capture: switches from listening to the typing field."
+  },
+  "captureListen": "Hablar",
+  "@captureListen": {
+    "description": "Quick capture: switches from the typing field to listening."
+  },
+  "captureFieldLabel": "Escribe lo que gastaste",
+  "@captureFieldLabel": {
+    "description": "Quick capture: the typing field's label."
+  },
+  "captureFieldHint": "gasté 15 mil en almuerzo y 3 lukas en uber",
+  "@captureFieldHint": {
+    "description": "Quick capture: example sentence in the empty typing field."
+  },
+  "captureRead": "Leer",
+  "@captureRead": {
+    "description": "Quick capture: reads the typed sentence into the preview."
+  },
+  "captureChangeSentence": "Cambiar frase",
+  "@captureChangeSentence": {
+    "description": "Quick capture: goes back from the preview to the sentence, to change it."
+  },
+  "captureMicDenied": "Sin permiso para el micrófono no puedo escucharte, así que escríbelo aquí.",
+  "@captureMicDenied": {
+    "description": "Quick capture: the one sentence over the typing field when the microphone permission is denied."
+  },
+  "captureNoEngine": "Este teléfono no puede escuchar con Lukitas, así que escríbelo aquí.",
+  "@captureNoEngine": {
+    "description": "Quick capture: the one sentence over the typing field when the phone cannot run the speech engine."
+  },
+  "captureListenFailed": "No pude escucharte. Escríbelo aquí.",
+  "@captureListenFailed": {
+    "description": "Quick capture: the microphone or the engine failed."
+  },
+  "captureNothingHeard": "No te escuché. Escríbelo aquí o vuelve a intentarlo.",
+  "@captureNothingHeard": {
+    "description": "Quick capture: listening ended with nothing heard."
+  },
+  "captureNothingRead": "No encontré movimientos. Prueba con un monto, como «15 mil en almuerzo».",
+  "@captureNothingRead": {
+    "description": "Quick capture: the sentence had no movement and nothing unread."
+  },
+  "captureOfferTitle": "Para escucharte, Lukitas necesita su voz en español",
+  "@captureOfferTitle": {
+    "description": "Quick capture: the opt-in to download the voice model of the app's language."
+  },
+  "captureOfferBody": "Se descarga una sola vez ({megabytes} MB) y queda en tu teléfono: escucha sin internet y lo que dices nunca sale de él. Sin ella, puedes escribir.",
+  "@captureOfferBody": {
+    "description": "Quick capture: the opt-in's explanation, with the download size.",
+    "placeholders": {
+      "megabytes": {
+        "type": "int"
+      }
+    }
+  },
+  "captureOfferDownload": "Descargar {megabytes} MB",
+  "@captureOfferDownload": {
+    "description": "Quick capture: accepts the voice download.",
+    "placeholders": {
+      "megabytes": {
+        "type": "int"
+      }
+    }
+  },
+  "captureOfferDecline": "Ahora no, escribo",
+  "@captureOfferDecline": {
+    "description": "Quick capture: declines the voice download; the typing field shows."
+  },
+  "captureDownloading": "Descargando la voz… {percent} %",
+  "@captureDownloading": {
+    "description": "Quick capture: download progress.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "captureDownloadCancel": "Cancelar",
+  "@captureDownloadCancel": {
+    "description": "Quick capture: stops the download (it resumes next time)."
+  },
+  "captureDownloadFailed": "No se pudo descargar la voz. Revisa tu internet e inténtalo de nuevo; seguirá donde quedó.",
+  "@captureDownloadFailed": {
+    "description": "Quick capture: the download failed."
+  },
+  "captureDownloadCorrupt": "La voz llegó dañada y la borramos. Inténtalo de nuevo.",
+  "@captureDownloadCorrupt": {
+    "description": "Quick capture: the download's SHA-256 did not match."
+  },
+  "captureUnread": "No entendí: «{fragment}»",
+  "@captureUnread": {
+    "description": "Quick capture: a fragment the parser could not read.",
+    "placeholders": {
+      "fragment": {
+        "type": "String"
+      }
+    }
+  },
+  "captureComplete": "Completar",
+  "@captureComplete": {
+    "description": "Quick capture: turns an unread fragment into a card to complete by hand."
+  },
+  "capturePickCategory": "Elige categoría",
+  "@capturePickCategory": {
+    "description": "Quick capture: a card that has no category yet."
+  },
+  "captureNeedsAmount": "Falta el monto",
+  "@captureNeedsAmount": {
+    "description": "Quick capture: a card that has no amount yet."
+  },
+  "captureAmountLabel": "Monto",
+  "@captureAmountLabel": {
+    "description": "Quick capture: the amount field of a card."
+  },
+  "captureNameLabel": "Nombre",
+  "@captureNameLabel": {
+    "description": "Quick capture: the name field of a card."
+  },
+  "captureRemove": "Quitar",
+  "@captureRemove": {
+    "description": "Quick capture: removes a card (screen readers)."
+  },
+  "captureYesterday": "Ayer",
+  "@captureYesterday": {
+    "description": "Quick capture: the date chip for yesterday."
+  },
+  "captureSave": "GUARDAR {count}",
+  "@captureSave": {
+    "description": "Quick capture: saves every card at once.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureSaved": "¡Listo! {count, plural, =1{1 movimiento} other{{count} movimientos}} por {amount}",
+  "@captureSaved": {
+    "description": "Quick capture: the celebration after saving a batch (it has one Deshacer for all).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "captureUndone": "Quitados: {count, plural, =1{1 movimiento} other{{count} movimientos}}",
+  "@captureUndone": {
+    "description": "Quick capture: after Deshacer on a batch.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

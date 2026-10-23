@@ -4,17 +4,22 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
 import com.andersonlaverde.lukitas.passkeys.PasskeyChannel
+import com.andersonlaverde.lukitas.voice.VoiceChannel
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.time.ZoneId
 
 class MainActivity : FlutterActivity() {
+    private var voice: VoiceChannel? = null
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
 
         PasskeyChannel(this, messenger)
+        // Quick capture: the microphone and the on-phone speech engine (voice/VoiceChannel.kt).
+        voice = VoiceChannel(this, messenger)
 
         // The phone's IANA time zone (lib/api/device.dart): Dart only knows its abbreviation.
         MethodChannel(messenger, "lukitas/device").setMethodCallHandler { call, result ->
@@ -40,5 +45,14 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        if (voice?.onPermissionResult(requestCode, grantResults) == true) return
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 }

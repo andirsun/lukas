@@ -595,4 +595,40 @@ void main() {
       expect(errors, isEmpty);
     });
   });
+
+  group('a quick-capture batch', () {
+    test('its rows show at once, and the summary is asked once', () async {
+      final (container, repo, _) = setup(FakeHomeRepository(items: [tx('a', '2026-10-20', -1000)]));
+      container.listen(homeProvider, (_, _) {});
+      await settleAll();
+      final before = repo.calls.where((c) => c.startsWith('summary')).length;
+
+      await container.read(homeProvider.notifier).savedBatch([
+        tx('b1', '2026-10-22', -1500000),
+        tx('b2', '2026-10-21', -300000),
+      ]);
+      final ids = container.read(homeProvider).data!.items.map((t) => t.id);
+      expect(ids, ['b1', 'b2', 'a']);
+      expect(repo.calls.where((c) => c.startsWith('summary')).length, before + 1);
+    });
+
+    test('forget takes its rows off together (Deshacer), and the summary follows', () async {
+      final (container, repo, _) = setup(
+        FakeHomeRepository(
+          items: [
+            tx('b1', '2026-10-22', -100),
+            tx('b2', '2026-10-21', -200),
+            tx('a', '2026-10-20', -1),
+          ],
+        ),
+      );
+      container.listen(homeProvider, (_, _) {});
+      await settleAll();
+      final before = repo.calls.where((c) => c.startsWith('summary')).length;
+
+      await container.read(homeProvider.notifier).forget(['b1', 'b2']);
+      expect(container.read(homeProvider).data!.items.map((t) => t.id), ['a']);
+      expect(repo.calls.where((c) => c.startsWith('summary')).length, before + 1);
+    });
+  });
 }
