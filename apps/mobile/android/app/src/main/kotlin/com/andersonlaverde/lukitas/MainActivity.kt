@@ -1,15 +1,22 @@
 package com.andersonlaverde.lukitas
 
+import android.app.Notification
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.os.Bundle
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.andersonlaverde.lukitas.haptics.HapticsChannel
 import com.andersonlaverde.lukitas.launch.LaunchLinks
+import com.andersonlaverde.lukitas.notices.DueWorker
+import com.andersonlaverde.lukitas.notices.GuestWorker
+import com.andersonlaverde.lukitas.notices.NoticePoster
+import com.andersonlaverde.lukitas.notices.NoticesChannel
 import com.andersonlaverde.lukitas.passkeys.PasskeyChannel
 import com.andersonlaverde.lukitas.sounds.SoundChannel
 import com.andersonlaverde.lukitas.voice.VoiceChannel
@@ -25,6 +32,7 @@ class MainActivity : FlutterActivity() {
     private var voice: VoiceChannel? = null
     private var haptics: HapticsChannel? = null
     private var sounds: SoundChannel? = null
+    private var notices: NoticesChannel? = null
     private var launch: MethodChannel? = null
 
     /** The widget's or the tile's `lukitas://` link, until Dart takes it (lib/launch/launch_links.dart). */
@@ -86,6 +94,9 @@ class MainActivity : FlutterActivity() {
         haptics = HapticsChannel(this, messenger)
         sounds = SoundChannel(this, messenger)
 
+        // The two local notices (lib/notices): scheduling them, and the notification permission.
+        notices = NoticesChannel(this, messenger)
+
         // The phone's IANA time zone (lib/api/device.dart): Dart only knows its abbreviation. And
         // the browser, for "Más en la web".
         MethodChannel(messenger, "lukitas/device").setMethodCallHandler { call, result ->
@@ -145,29 +156,49 @@ class MainActivity : FlutterActivity() {
                     }
                     // Runs the widget's refresh job once through WorkManager and answers what it
                     // did (RefreshWorker's outcome), or its final state when it did not succeed.
-                    "refreshWidget" -> {
-                        val request = OneTimeWorkRequestBuilder<RefreshWorker>().build()
-                        val workManager = WorkManager.getInstance(this)
-                        workManager.enqueue(request)
-                        thread {
-                            var done: WorkInfo? = workManager.getWorkInfoById(request.id).get()
-                            var waited = 0
-                            while (done?.state?.isFinished != true && waited < 30_000) {
-                                Thread.sleep(100)
-                                waited += 100
-                                done = workManager.getWorkInfoById(request.id).get()
-                            }
-                            val answer = if (done?.state == WorkInfo.State.SUCCEEDED) {
-                                done.outputData.getString(RefreshWorker.OUTCOME)
-                            } else {
-                                "state ${done?.state}"
-                            }
-                            runOnUiThread { result.success(answer) }
-                        }
+                    "refreshWidget" -> runOnce(OneTimeWorkRequestBuilder<RefreshWorker>().build(), RefreshWorker.OUTCOME, result)
+                    // The same for the two notices' jobs (notices/NoticeWorkers.kt), as they run at
+                    // 9:00 and 45 days on; they post only when the person allowed notifications.
+                    "runDueNotice" -> runOnce(OneTimeWorkRequestBuilder<DueWorker>().build(), DueWorker.OUTCOME, result)
+                    "runGuestNotice" -> runOnce(OneTimeWorkRequestBuilder<GuestWorker>().build(), DueWorker.OUTCOME, result)
+                    // The text of each notice this app has on the shade.
+                    "activeNotices" -> result.success(
+                        getSystemService(NotificationManager::class.java).activeNotifications.map {
+                            it.notification.extras.getString(Notification.EXTRA_TEXT)
+                        },
+                    )
+                    // Taps the "Hoy vence…" notice: sends the very PendingIntent the shade would.
+                    "tapDueNotice" -> {
+                        val notice = getSystemService(NotificationManager::class.java).activeNotifications
+                            .firstOrNull { it.id == NoticePoster.DUE_ID }
+                        notice?.notification?.contentIntent?.send()
+                        result.success(notice != null)
                     }
                     else -> result.notImplemented()
                 }
             }
+        }
+    }
+
+    /** Runs [request] once through WorkManager and answers its [outputKey] result, or its final
+     *  state when it did not succeed (debuggable builds' test channel only). */
+    private fun runOnce(request: OneTimeWorkRequest, outputKey: String, result: MethodChannel.Result) {
+        val workManager = WorkManager.getInstance(this)
+        workManager.enqueue(request)
+        thread {
+            var done: WorkInfo? = workManager.getWorkInfoById(request.id).get()
+            var waited = 0
+            while (done?.state?.isFinished != true && waited < 30_000) {
+                Thread.sleep(100)
+                waited += 100
+                done = workManager.getWorkInfoById(request.id).get()
+            }
+            val answer = if (done?.state == WorkInfo.State.SUCCEEDED) {
+                done.outputData.getString(outputKey)
+            } else {
+                "state ${done?.state}"
+            }
+            runOnUiThread { result.success(answer) }
         }
     }
 
@@ -198,6 +229,8 @@ class MainActivity : FlutterActivity() {
         haptics = null
         sounds?.dispose()
         sounds = null
+        notices?.dispose()
+        notices = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
@@ -213,6 +246,7 @@ class MainActivity : FlutterActivity() {
         grantResults: IntArray,
     ) {
         if (voice?.onPermissionResult(requestCode, grantResults) == true) return
+        if (notices?.onPermissionResult(requestCode, grantResults) == true) return
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 }

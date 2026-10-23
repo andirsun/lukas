@@ -20,4 +20,13 @@
     <string name="widget_amount_hidden">Amount hidden</string>
     <!-- The progress bar, read aloud. -->
     <string name="widget_progress">%1$d%% of the budget spent</string>
+    <string name="notice_due_one">%1$s is due today</string>
+    <string name="notice_due_many">%1$s are due today</string>
+    <string name="notice_and">and</string>
+    <string name="notice_and_i">and</string>
+    <string name="notice_guest">Your data will be deleted in 15 days if you don\'t add your email</string>
+    <string name="notice_channel_due">Payments due today</string>
+    <string name="notice_channel_due_description">At 9:00, one notice with the recurring payments due that day.</string>
+    <string name="notice_channel_guest">Warning if you have no email</string>
+    <string name="notice_channel_guest_description">A notice if 45 days pass without opening Lukitas and your account has no email.</string>
 </resources>

@@ -38,6 +38,7 @@ void main() {
       expect(launchActionOf('lukitas://add'), LaunchAction.add);
       expect(launchActionOf('lukitas://capture'), LaunchAction.capture);
       expect(launchActionOf('lukitas://capture/'), LaunchAction.capture);
+      expect(launchActionOf('lukitas://due'), LaunchAction.due);
       expect(launchActionOf('lukitas://settings'), isNull);
       expect(launchActionOf('https://add'), isNull);
       expect(launchActionOf('https://app-lukas.andersonlaverde.com/auth/verify?code=1'), isNull);
@@ -89,6 +90,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(env.router.state.uri.path, '/');
     expect(find.byType(AddSheet), findsOneWidget);
+  });
+
+  testWidgets('the "Hoy vence…" notice opens home from any screen, with no sheet over it', (tester) async {
+    final links = FakeLaunchLinks();
+    final env = await pumpSettingsApp(
+      tester,
+      location: '/settings',
+      overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+    );
+    links.open('lukitas://due');
+    await tester.pumpAndSettle();
+    expect(env.router.state.uri.path, '/');
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.byType(AddSheet), findsNothing);
+    expect(find.byType(CaptureSheet), findsNothing);
+  });
+
+  testWidgets('the notice at a cold start opens home, and a sheet already open gives way', (tester) async {
+    final links = FakeLaunchLinks();
+    await pumpSettingsApp(tester, overrides: [launchLinkSourceProvider.overrideWithValue(links)]);
+    links.open('lukitas://add');
+    await tester.pumpAndSettle();
+    expect(find.byType(AddSheet), findsOneWidget);
+
+    links.open('lukitas://due');
+    await tester.pumpAndSettle();
+    expect(find.byType(AddSheet), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('signed out, the notice opens nothing', (tester) async {
+    final links = FakeLaunchLinks('lukitas://due');
+    await pumpSettingsApp(
+      tester,
+      signedIn: false,
+      overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+    );
+    expect(find.byType(EntryScreen), findsOneWidget);
   });
 
   testWidgets('a second link replaces the sheet the first one opened', (tester) async {

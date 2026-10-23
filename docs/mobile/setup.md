@@ -154,6 +154,15 @@ The Android JVM tests (`cd apps/mobile/android && ./gradlew :app:testDebugUnitTe
 widget's Glance rendering tests on Robolectric, which downloads its Android image from Maven
 Central on the first run.
 
+`integration_test/notices_test.dart` covers the two local notices (Task 16). The first test needs the
+notification permission not yet given (a fresh install), the second needs it given: install with
+`adb -s emulator-5554 install -r -g build/app/outputs/flutter-apk/app-debug.apk` and
+`adb -s emulator-5554 shell pm grant com.andersonlaverde.lukitas android.permission.POST_NOTIFICATIONS`
+right before it. It makes two recurring payments due today through the API, runs the "Hoy vence…" job
+once through WorkManager, checks the notice's text, and taps it (the same PendingIntent the shade
+sends) from Settings, expecting home. With `--dart-define=TAP_BY_HAND=true` it waits for you to tap
+the real notification on the shade (`adb shell cmd statusbar expand-notifications`).
+
 `integration_test/feedback_test.dart` needs no dev stack: it checks that the sound files are found in
 the APK and load into the `SoundPool`, and that the motor channel answers. How a haptic *feels* is
 for a real phone (an emulator has no motor): tap through the add sheet, a swipe and a quick capture

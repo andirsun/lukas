@@ -20,6 +20,10 @@
          expects exactly these. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- The two local notices (notices/, spec section 7.2). Android 13+ asks the person at runtime:
+         only from the app, once, with a sentence on why (lib/notices); a refusal means the notices
+         are not posted. scripts/check-permissions.sh expects it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- WorkManager's manifest also asks for these two, for work this app never does: long work in
          a foreground service, and alarms below Android 6 (the app needs Android 8). Removed on
          purpose; whoever needs one deletes its line and allows it in scripts/check-permissions.sh. -->
@@ -67,8 +71,9 @@
             <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
         </activity>
         <!-- The widget's ＋ (lukitas://add) and 🎤 and the Quick Settings tile
-             (lukitas://capture), spec section 7.1, open MainActivity through this alias, which is
-             not exported: only the app itself (its widget's and tile's PendingIntents) can start
+             (lukitas://capture), spec section 7.1, and the "Hoy vence…" notice (lukitas://due),
+             7.2, open MainActivity through this alias, which is
+             not exported: only the app itself (its widget's, tile's and notice's PendingIntents) can start
              it, so no other app and no web page can open the microphone sheet. MainActivity hands
              the link to Dart (launch/LaunchLinks.kt). -->
         <activity-alias
@@ -80,6 +85,8 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:scheme="lukitas" android:host="add"/>
                 <data android:scheme="lukitas" android:host="capture"/>
+                <!-- The "Hoy vence…" notice (notices/NoticePoster.kt): home, with the payments in view. -->
+                <data android:scheme="lukitas" android:host="due"/>
             </intent-filter>
         </activity-alias>
         <!-- The home-screen widget, small (2×1) and medium (4×2), drawn with Jetpack Glance

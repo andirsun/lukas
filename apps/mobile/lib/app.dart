@@ -5,6 +5,7 @@ import 'feedback/feedback.dart';
 import 'home/widget_sync.dart';
 import 'launch/launch_links.dart';
 import 'l10n/app_localizations.dart';
+import 'notices/notice_sync.dart';
 import 'router.dart';
 import 'settings/preferences.dart';
 import 'theme/theme.dart';
@@ -21,6 +22,9 @@ class LukitasApp extends ConsumerWidget {
     ref.watch(widgetSyncProvider);
     // Opens the add sheet or quick capture for the widget's ＋ and 🎤 and the Quick Settings tile.
     ref.watch(launchLinksProvider);
+    // Schedules the two local notices ("Hoy vence…" at 9:00, the guest warning) and asks the
+    // notification permission, once, when one first becomes relevant.
+    ref.watch(noticeSyncProvider);
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appName,
       theme: dayTheme,

@@ -37,4 +37,18 @@ void main() {
     // The platform's own SoundPool: no audio plugin, nothing from Google.
     expect(kotlin, contains('SoundPool'));
   });
+
+  test('the notices: POST_NOTIFICATIONS, and the due link comes only through the not-exported alias', () {
+    expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
+    // Exactly one place may start the app on lukitas://due: the alias that is not exported.
+    final alias = RegExp(
+      r'<activity-alias[^>]*LaunchLinkAlias[\s\S]*?</activity-alias>',
+    ).firstMatch(manifest)!.group(0)!;
+    expect(alias, contains('android:exported="false"'));
+    expect(alias, contains('android:host="due"'));
+    expect(manifest.split('android:host="due"').length - 1, 1);
+    // No Firebase, no push receiver: both notices are scheduled on the phone.
+    expect(manifest, isNot(contains('firebase')));
+    expect(manifest, isNot(contains('com.google.android.c2dm')));
+  });
 }

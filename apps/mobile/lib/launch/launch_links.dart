@@ -7,12 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../add/add_sheet.dart';
 import '../api/session.dart';
 import '../capture/capture_sheet.dart';
+import '../home/home_controller.dart';
 import '../router.dart';
 
 /// What a `lukitas://` link asks for (spec section 7.1): the widget's ＋ (`lukitas://add`, the add
 /// sheet with the keypad ready) and its 🎤, also the Quick Settings tile's (`lukitas://capture`,
-/// quick capture listening).
-enum LaunchAction { add, capture }
+/// quick capture listening). `lukitas://due` is the "Hoy vence…" notice's (spec section 7.2): home,
+/// where the payments due today are listed first.
+enum LaunchAction { add, capture, due }
 
 /// The action [link] asks for, or null for any other link.
 LaunchAction? launchActionOf(String? link) {
@@ -22,6 +24,7 @@ LaunchAction? launchActionOf(String? link) {
   return switch (uri.host) {
     'add' => LaunchAction.add,
     'capture' => LaunchAction.capture,
+    'due' => LaunchAction.due,
     _ => null,
   };
 }
@@ -110,6 +113,10 @@ class LaunchLinks {
         unawaited(openAddSheet(context));
       case LaunchAction.capture:
         unawaited(openCapture(context, listen: true));
+      case LaunchAction.due:
+        // Home is the destination: today's payments sit at the top of its list. A home that was
+        // already loaded is brought up to date, so the payment that fell due overnight is there.
+        if (_ref.exists(homeProvider)) unawaited(_ref.read(homeProvider.notifier).refresh());
     }
   }
 }

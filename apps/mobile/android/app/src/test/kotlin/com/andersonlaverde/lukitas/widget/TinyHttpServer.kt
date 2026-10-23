@@ -8,7 +8,7 @@ import java.net.SocketException
 import kotlin.concurrent.thread
 
 /** A request as [TinyHttpServer] saw it. */
-class TinyRequest(val path: String, val headers: Map<String, String>)
+class TinyRequest(val path: String, val headers: Map<String, String>, val query: String = "")
 
 /**
  * One-connection-at-a-time HTTP/1.1 on 127.0.0.1, enough for the refresh job's GET (the JDK's own
@@ -36,8 +36,10 @@ class TinyHttpServer(private val answer: (TinyRequest) -> Pair<Int, String>) {
                         val colon = header.indexOf(':')
                         if (colon > 0) headers[header.substring(0, colon).trim().lowercase()] = header.substring(colon + 1).trim()
                     }
-                    val path = line.split(" ").getOrElse(1) { "/" }.substringBefore('?')
-                    val (status, body) = answer(TinyRequest(path, headers))
+                    val target = line.split(" ").getOrElse(1) { "/" }
+                    val path = target.substringBefore('?')
+                    val query = target.substringAfter('?', "")
+                    val (status, body) = answer(TinyRequest(path, headers, query))
                     val bytes = body.toByteArray()
                     val out = it.getOutputStream()
                     out.write(

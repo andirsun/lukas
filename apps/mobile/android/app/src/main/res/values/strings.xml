@@ -30,4 +30,19 @@
     <string name="widget_amount_hidden">Monto oculto</string>
     <!-- The progress bar, read aloud. -->
     <string name="widget_progress">%1$d %% del presupuesto gastado</string>
+
+    <!-- The two local notices (spec section 7.2), posted by notices/. The title; the sentence is the text. -->
+    <string name="notice_title" translatable="false">Lukitas</string>
+    <!-- "Hoy vence Arriendo" / "Hoy vencen Arriendo y Spotify". %1$s is the names, joined. -->
+    <string name="notice_due_one">Hoy vence %1$s</string>
+    <string name="notice_due_many">Hoy vencen %1$s</string>
+    <!-- "A, B y C"; "e" instead of "y" before a word that starts with the sound i. -->
+    <string name="notice_and">y</string>
+    <string name="notice_and_i">e</string>
+    <string name="notice_guest">Tus datos se borrarán en 15 días si no agregas tu correo</string>
+    <!-- One notification channel per notice: their names and what they are for, in the phone's settings. -->
+    <string name="notice_channel_due">Pagos que vencen hoy</string>
+    <string name="notice_channel_due_description">A las 9:00, un aviso con los pagos recurrentes que vencen ese día.</string>
+    <string name="notice_channel_guest">Aviso si no tienes correo</string>
+    <string name="notice_channel_guest_description">Un aviso si pasan 45 días sin abrir Lukitas y tu cuenta no tiene correo.</string>
 </resources>

@@ -29,9 +29,11 @@ class LaunchLinksTest {
         Intent(Intent.ACTION_VIEW, Uri.parse(link)).setClassName(context, "com.andersonlaverde.lukitas.LaunchLinkAlias")
 
     @Test
-    fun `only lukitas add and capture links are taken, and only through the app's own entry`() {
+    fun `only lukitas add, capture and due links are taken, and only through the app's own entry`() {
         assertEquals("lukitas://add", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.ADD)))
         assertEquals("lukitas://capture", LaunchLinks.linkOf(viaAlias("lukitas://capture")))
+        // The "Hoy vence…" notice opens home through the same entry.
+        assertEquals("lukitas://due", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.DUE)))
         assertNull(LaunchLinks.linkOf(viaAlias("lukitas://settings")))
         assertNull(LaunchLinks.linkOf(viaAlias("https://app-lukas.andersonlaverde.com/auth/verify")))
         assertNull(LaunchLinks.linkOf(Intent(Intent.ACTION_MAIN)))

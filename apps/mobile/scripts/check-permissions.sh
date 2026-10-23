@@ -5,7 +5,7 @@
 # and profile builds only (src/debug, src/profile), so a release APK without it cannot reach its
 # server. This fails when INTERNET, RECORD_AUDIO (quick capture's microphone, Task 12), VIBRATE
 # (the haptics, Task 13), ACCESS_NETWORK_STATE or RECEIVE_BOOT_COMPLETED (the widget's refresh job
-# on WorkManager, Task 15) is missing, and when the APK asks for any permission not in ALLOWED
+# on WorkManager, Task 15) or POST_NOTIFICATIONS (the two local notices, Task 16) is missing, and when the APK asks for any permission not in ALLOWED
 # below: a new permission is a decision, made here on purpose.
 #
 # Usage, from anywhere (after `flutter build apk --release`):
@@ -21,6 +21,7 @@ REQUIRED=(
   "android.permission.VIBRATE"
   "android.permission.ACCESS_NETWORK_STATE"
   "android.permission.RECEIVE_BOOT_COMPLETED"
+  "android.permission.POST_NOTIFICATIONS"
 )
 ALLOWED=(
   "android.permission.INTERNET"
@@ -33,6 +34,10 @@ ALLOWED=(
   # FOREGROUND_SERVICE stay out (the manifest removes them): the app never needs them.
   "android.permission.ACCESS_NETWORK_STATE"
   "android.permission.RECEIVE_BOOT_COMPLETED"
+  # The two local notices (notices/, spec section 7.2): "Hoy vence…" and the guest warning. Android
+  # 13+ asks at runtime, only from the app, once, with a sentence on why (lib/notices); a refusal
+  # means they are not posted. No Firebase, no push: both are scheduled on the phone.
+  "android.permission.POST_NOTIFICATIONS"
   # androidx.core's own signature permission for receivers registered as not exported.
   "${PACKAGE}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
 )
