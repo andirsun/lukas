@@ -91,8 +91,8 @@ String _failureMessage(AppLocalizations l10n, HomeFailure failure) {
   return failure.status >= 500 ? l10n.errorInternal : l10n.errorGeneric;
 }
 
-/// The add or edit sheets open now that hold the person's input. A plain registry, not state: it
-/// is read when a link arrives (lib/launch/launch_links.dart), never watched.
+/// The add, edit or capture sheets open now that hold the person's input. A plain registry, not
+/// state: it is read when a link arrives (lib/launch/launch_links.dart), never watched.
 class SheetsWithInput {
   final _open = <Object>{};
 

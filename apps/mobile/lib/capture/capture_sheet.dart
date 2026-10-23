@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../add/add_repository.dart';
-import '../add/add_sheet.dart' show canRetrySave;
+import '../add/add_sheet.dart' show SheetsWithInput, canRetrySave, sheetsWithInputProvider;
 import '../add/idempotency_key.dart';
 import '../api/gen/lukitas_api.dart';
 import '../api/session.dart';
@@ -41,6 +41,32 @@ final batchSavedFeedbackProvider = Provider<void Function(List<Transaction> save
     if (celebrates(event)) ref.read(celebrationProvider.notifier).celebrate();
   },
 );
+
+/// What a 🎤 link can ask of the capture sheet that is open.
+abstract interface class CaptureLinkTarget {
+  /// The person tapped 🎤 (the widget's, the tile's) with this sheet open: brings it to listening
+  /// when it can, without stacking a second sheet and without losing what it holds.
+  void listenFromLink();
+}
+
+/// The capture sheet open now. A plain registry, not state: read when a 🎤 link arrives
+/// (lib/launch/launch_links.dart), never watched.
+class OpenCaptureSheets {
+  final _open = <CaptureLinkTarget>[];
+
+  void add(CaptureLinkTarget sheet) => _open.add(sheet);
+
+  void remove(CaptureLinkTarget sheet) => _open.remove(sheet);
+
+  /// Hands the 🎤 link to the open capture sheet; false when none is open.
+  bool listenFromLink() {
+    if (_open.isEmpty) return false;
+    _open.last.listenFromLink();
+    return true;
+  }
+}
+
+final openCaptureSheetsProvider = Provider<OpenCaptureSheets>((ref) => OpenCaptureSheets());
 
 /// Opens quick capture (spec section 6.1.4): 🎤 listens with "¿En qué gastaste?" (or, with
 /// [listen] false, the typing field is ready), the preview shows one editable, removable card per
@@ -83,7 +109,9 @@ class CaptureSheet extends ConsumerStatefulWidget {
   ConsumerState<CaptureSheet> createState() => _CaptureSheetState();
 }
 
-class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBindingObserver {
+class _CaptureSheetState extends ConsumerState<CaptureSheet>
+    with WidgetsBindingObserver
+    implements CaptureLinkTarget {
   var _stage = _Stage.starting;
   _Note? _note;
   var _canListen = false;
@@ -126,11 +154,22 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
   /// was in the background): the microphone never opens unseen.
   var _listenWhenBack = false;
 
+  /// What was in the typing field when listening started (a 🎤 link or "Hablar" over typed text):
+  /// kept in the field meanwhile, and read together with what is said.
+  var _kept = '';
+
+  /// Read once here: dispose may not use ref.
+  late final SheetsWithInput _withInput;
+  late final OpenCaptureSheets _openSheets;
+
   SpeechEngine get _engine => ref.read(speechEngineProvider);
 
   @override
   void initState() {
     super.initState();
+    _withInput = ref.read(sheetsWithInputProvider);
+    _openSheets = ref.read(openCaptureSheetsProvider)..add(this);
+    _field.addListener(_markInput);
     WidgetsBinding.instance.addObserver(this);
     unawaited(_fetchUsual());
     // Whether the first-use note shows is known once the kept flag has been read.
@@ -140,6 +179,8 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
 
   @override
   void dispose() {
+    _openSheets.remove(this);
+    _withInput.mark(this, hasInput: false);
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_listening?.cancel());
     _download?.cancel();
@@ -160,12 +201,38 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
     // heard stays in the typing field. Coming back does not listen by itself.
     if ((state == AppLifecycleState.hidden || state == AppLifecycleState.paused) &&
         _stage == _Stage.listening) {
-      _type(null, text: _heard);
+      _type(null, text: _heard.trim().isEmpty ? null : _spoken(_heard));
     }
   }
 
   void _set(VoidCallback change) {
-    if (mounted) setState(change);
+    if (!mounted) return;
+    setState(change);
+    _markInput();
+  }
+
+  /// Whether the sheet holds something of the person's that a link must never throw away: text
+  /// typed (or kept while listening), what was said and is waiting to be read, or cards to save.
+  bool get _hasInput {
+    final preview = _preview;
+    return switch (_stage) {
+      _Stage.typing => _field.text.trim().isNotEmpty,
+      _Stage.starting || _Stage.listening => _kept.isNotEmpty,
+      _Stage.preview =>
+        _pending != null ||
+            (preview != null && (preview.cards.isNotEmpty || preview.unread.isNotEmpty)),
+      _Stage.offer || _Stage.downloading => false,
+    };
+  }
+
+  void _markInput() => _withInput.mark(this, hasInput: _hasInput);
+
+  /// A 🎤 link with this sheet open: listening, from the typing field. Any other stage stays as it
+  /// is: it is listening already, or has nothing to listen with (no model, no engine), or holds
+  /// cards that a new sentence would replace.
+  @override
+  void listenFromLink() {
+    if (_stage == _Stage.typing && _canListen) _listen();
   }
 
   String get _locale => AppLocalizations.of(context).localeName == 'en' ? 'en' : 'es';
@@ -183,10 +250,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
   Future<void> _start() async {
     final locale = _locale;
     // Both at once: nothing waits for the other.
-    final (canListen, warm) = await (
-      _engine.available(),
-      _engine.isWarm(locale: locale),
-    ).wait;
+    final (canListen, warm) = await (_engine.available(), _engine.isWarm(locale: locale)).wait;
     if (!mounted) return;
     _canListen = canListen;
     _warm = canListen && warm;
@@ -215,6 +279,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
       return;
     }
     unawaited(_listening?.cancel());
+    _kept = _field.text.trim();
     _set(() {
       _stage = _Stage.listening;
       _note = null;
@@ -252,7 +317,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
             if (text.isEmpty) {
               _type(_Note.nothingHeard);
             } else {
-              _read(text);
+              _read(_spoken(text));
             }
           },
           cancelOnError: true,
@@ -261,9 +326,13 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
 
   void _stopListening() => unawaited(_engine.stop());
 
+  /// What was said, after what was typed before listening started, if anything.
+  String _spoken(String heard) => [_kept, heard.trim()].where((t) => t.isNotEmpty).join(' ');
+
   /// The typing field, with [note] over it saying why it shows, if anything.
   void _type(_Note? note, {String? text}) {
     _listenWhenBack = false;
+    _kept = '';
     final listening = _listening;
     _listening = null;
     if (listening != null) {

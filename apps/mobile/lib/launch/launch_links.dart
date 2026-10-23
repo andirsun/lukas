@@ -81,7 +81,9 @@ final launchLinkSourceProvider = Provider<LaunchLinkSource>((ref) => ChannelLaun
 /// Opens what a `lukitas://` link asks for, at a cold start too: it waits for the stored session to
 /// be read, then, signed in, goes to home (closing whatever sheet or screen was open) and opens
 /// the add sheet or quick capture listening there. Signed out it does nothing: the router already
-/// shows the entry screen. Nor does it while an add sheet holds the person's input: that is kept.
+/// shows the entry screen. Nor does it while a sheet holds the person's input (an add or edit sheet,
+/// typed text or cards in capture): that is kept. A capture sheet already open is not replaced by a
+/// second one: 🎤 brings it to listening.
 class LaunchLinks {
   LaunchLinks(this._ref);
 
@@ -100,8 +102,13 @@ class LaunchLinks {
     if (action == null) return;
     await _ref.read(sessionProvider.notifier).ready;
     if (_ref.read(sessionProvider).status != SessionStatus.signedIn) return;
-    // An add or edit sheet with the person's input in it is never thrown away for a link: the
-    // link is dropped, and the sheet stays as it was (the app only comes to the front).
+    // 🎤 with a capture sheet already open: that sheet is brought to listening, whatever it holds
+    // (typed text and cards stay), and no second one is stacked over it.
+    if (action == LaunchAction.capture && _ref.read(openCaptureSheetsProvider).listenFromLink()) {
+      return;
+    }
+    // A sheet with the person's input in it (add, edit or capture) is never thrown away for a link:
+    // the link is dropped, and the sheet stays as it was (the app only comes to the front).
     if (_ref.read(sheetsWithInputProvider).any) return;
     final router = _ref.read(routerProvider);
     router.go('/');
