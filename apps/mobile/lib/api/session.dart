@@ -90,6 +90,9 @@ class GuestInTheWay implements Exception {
 /// The sign-in flows (spec sections 4 and 6.1): a guest, an email code or magic link, or a
 /// passkey; and the guest's claim of an email. Every token lands in [SessionStore].
 class SessionController extends Notifier<SessionState> {
+  /// The most a sign-out waits for the server to be told.
+  static const signOutWait = Duration(seconds: 10);
+
   /// Done once the stored session has been read.
   late Future<void> ready;
 
@@ -219,9 +222,13 @@ class SessionController extends Notifier<SessionState> {
     final token = state.stored?.token;
     if (token != null) {
       try {
-        await _auth.signOut(token);
+        // Best effort, and never for long: a server that is down (the reason someone changes
+        // server) must not hold the sign-out up. Forgetting the session here is what matters.
+        await _auth.signOut(token).timeout(signOutWait);
       } on AuthFailure {
-        // Offline or already gone: forgetting it here is what matters.
+        // Offline or already gone.
+      } on TimeoutException {
+        // Not answering.
       }
     }
     await _store.clear();

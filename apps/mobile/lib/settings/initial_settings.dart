@@ -10,8 +10,9 @@ import 'settings_store.dart';
 class InitialSettings {
   const InitialSettings({required this.serverUrl, required this.themeMode, this.locale});
 
-  /// The defaults: the Lukitas server, and the phone's own theme and language.
-  static final defaults = InitialSettings(serverUrl: defaultServerUrl, themeMode: ThemeMode.system);
+  /// The defaults: the Lukitas server, night (spec section 6.2), and the phone's own language
+  /// (Spanish or English; Spanish for any other).
+  static final defaults = InitialSettings(serverUrl: defaultServerUrl, themeMode: ThemeMode.dark);
 
   final Uri serverUrl;
   final ThemeMode themeMode;
@@ -35,8 +36,8 @@ class InitialSettings {
       serverUrl: (server == null ? null : parseServerUrl(server)) ?? defaultServerUrl,
       themeMode: switch (await get(themeModeKey)) {
         'light' => ThemeMode.light,
-        'dark' => ThemeMode.dark,
-        _ => ThemeMode.system,
+        'system' => ThemeMode.system,
+        _ => ThemeMode.dark,
       },
       locale: switch (await get(localeKey)) {
         'es' => const Locale('es'),

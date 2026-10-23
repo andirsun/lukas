@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -274,6 +276,47 @@ void main() {
       expect(container.read(sessionProvider).status, SessionStatus.signedOut);
       expect(await SessionStore().read(), isNull);
       expect(auth.calls.last, 'signOut guest-token-0');
+      expect(widget.saved, isEmpty);
+      expect(homeCache.value, isNull);
+    });
+
+    test(
+      'the old server being down does not stop the sign-out: everything local still goes',
+      () async {
+        mockStorage(token: 'email-token-0');
+        widget.saved[widgetSnapshotKey] = '{"v":1}';
+        homeCache.value = '{"v":1}';
+        auth.failures['signOut'] = const AuthFailure(status: 0);
+        final container = containerWith();
+        final controller = await ready(container);
+
+        await controller.signOut();
+
+        expect(auth.calls, contains('signOut email-token-0'));
+        expect(container.read(sessionProvider).status, SessionStatus.signedOut);
+        expect(await SessionStore().read(), isNull);
+        expect(widget.saved, isEmpty);
+        expect(homeCache.value, isNull);
+      },
+    );
+
+    testWidgets('a server that never answers is waited for 10 seconds at most', (tester) async {
+      mockStorage(token: 'email-token-0');
+      widget.saved[widgetSnapshotKey] = '{"v":1}';
+      homeCache.value = '{"v":1}';
+      auth.holdSignOut = Completer<void>();
+      final container = containerWith();
+      final controller = await ready(container);
+
+      var done = false;
+      unawaited(controller.signOut().then((_) => done = true));
+      await tester.pump(const Duration(seconds: 9));
+      expect(done, isFalse, reason: 'still waiting for the server');
+      expect(container.read(sessionProvider).status, SessionStatus.signedIn);
+
+      await tester.pump(const Duration(seconds: 2));
+      expect(done, isTrue);
+      expect(container.read(sessionProvider).status, SessionStatus.signedOut);
       expect(widget.saved, isEmpty);
       expect(homeCache.value, isNull);
     });

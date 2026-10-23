@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -113,7 +115,13 @@ class FakeAuthApi implements AuthApi {
   @override
   Future<void> signOut(String token) async {
     calls.add('signOut $token');
+    _fail('signOut');
+    final hold = holdSignOut;
+    if (hold != null) await hold.future;
   }
+
+  /// While set, signOut waits for it (a server that accepts the connection and then says nothing).
+  Completer<void>? holdSignOut;
 }
 
 /// The phone's passkey prompt, answered at once.

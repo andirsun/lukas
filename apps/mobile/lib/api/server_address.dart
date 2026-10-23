@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
+
 /// The server the app talks to unless the person changes it (spec section 6.1): a build can point
 /// at another one with `--dart-define=LUKITAS_SERVER=http://10.0.2.2:3000` (the dev stack, seen
 /// from the emulator).
@@ -8,14 +10,15 @@ final defaultServerUrl = Uri.parse(
   ),
 );
 
-/// The hosts that may use plain `http`, for development: the phone's own `localhost` and the
-/// emulator's name for the computer it runs on.
+/// The hosts that may use plain `http`, in debug builds only: the phone's own `localhost` and the
+/// emulator's name for the computer it runs on. A release build refuses plain `http` outright (it
+/// has no cleartext permission anyway), so a typo there says so at once.
 const _developmentHosts = {'localhost', '10.0.2.2'};
 
-/// [raw] as a server address, or null when the app must not talk to it: an `https` address, or an
-/// `http` one for [_developmentHosts] only; no user info, query or fragment. A trailing slash is
-/// dropped, so one server has one spelling.
-Uri? parseServerUrl(String raw) {
+/// [raw] as a server address, or null when the app must not talk to it: an `https` address, or (when
+/// [development], which is true in debug builds only) an `http` one for [_developmentHosts]; no
+/// user info, query or fragment. A trailing slash is dropped, so one server has one spelling.
+Uri? parseServerUrl(String raw, {bool development = kDebugMode}) {
   final text = raw.trim();
   if (text.isEmpty || text.contains(RegExp(r'\s'))) return null;
   final Uri parsed;
@@ -27,8 +30,9 @@ Uri? parseServerUrl(String raw) {
   if (!parsed.hasAuthority || parsed.host.isEmpty) return null;
   if (parsed.userInfo.isNotEmpty || parsed.hasQuery || parsed.hasFragment) return null;
   final secure = parsed.scheme == 'https';
-  final development = parsed.scheme == 'http' && _developmentHosts.contains(parsed.host);
-  if (!secure && !development) return null;
+  final plainHttp =
+      development && parsed.scheme == 'http' && _developmentHosts.contains(parsed.host);
+  if (!secure && !plainHttp) return null;
   if (parsed.hasPort && (parsed.port < 1 || parsed.port > 65535)) return null;
   final path = parsed.path.replaceFirst(RegExp(r'/+$'), '');
   try {

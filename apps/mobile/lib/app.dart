@@ -7,7 +7,7 @@ import 'router.dart';
 import 'settings/preferences.dart';
 import 'theme/theme.dart';
 
-/// The app shell: theme (the phone's, unless picked), es and en copy, and routes.
+/// The app shell: theme (night by default), es and en copy, and routes.
 class LukitasApp extends ConsumerWidget {
   const LukitasApp({super.key});
 
@@ -19,7 +19,7 @@ class LukitasApp extends ConsumerWidget {
       onGenerateTitle: (context) => AppLocalizations.of(context).appName,
       theme: dayTheme,
       darkTheme: nightTheme,
-      // The phone's own theme unless the person picked day or night in Settings.
+      // Night unless the person picked day, or the phone's own mode, in Settings.
       themeMode: ref.watch(themeModeProvider),
       // The phone's language unless the person picked Spanish or English in Settings.
       locale: ref.watch(localeOverrideProvider),

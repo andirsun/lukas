@@ -11,6 +11,7 @@ Future<ProcessResult> _check({required String notices, required String pubspec})
   final pubspecFile = File('${dir.path}/pubspec.yaml')..writeAsStringSync(pubspec);
   return Process.run('bash', [
     'scripts/check-licenses.sh',
+    '--skip-android',
     '--notices',
     noticesFile.path,
     '--pubspec',

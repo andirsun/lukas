@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
 import '../theme/tokens.g.dart';
+import 'licenses.dart';
 
 /// About (spec section 6.1.6): what Lukitas is, and the licences of everything in it. The licence
 /// page is Flutter's own, fed by the packages' LICENSE files (collected at build) and the extras
@@ -30,11 +31,15 @@ class AboutScreen extends StatelessWidget {
                 const SizedBox(height: LukitasTokens.space5),
                 OutlinedButton(
                   key: const Key('about.licenses'),
-                  onPressed: () => showLicensePage(
-                    context: context,
-                    applicationName: l10n.appName,
-                    applicationLegalese: 'AGPL-3.0',
-                  ),
+                  onPressed: () {
+                    // The notices are written in the app's own language.
+                    setLicenseLanguage(Localizations.localeOf(context));
+                    showLicensePage(
+                      context: context,
+                      applicationName: l10n.appName,
+                      applicationLegalese: l10n.aboutLegalese,
+                    );
+                  },
                   child: Text(l10n.aboutLicenses),
                 ),
                 const SizedBox(height: LukitasTokens.space2),

@@ -6,23 +6,30 @@
 # file. This reads it from the release APK, and fails when a package listed under `dependencies:`
 # in pubspec.yaml has no entry. (The app's own extras, the voice models, the speech engine, the
 # Android libraries and the sounds, are added in code: lib/settings/licenses.dart, and a widget
-# test checks them.)
+# test checks them.) It then checks that the Android libraries About lists
+# (assets/licenses/android-libraries.json) are exactly the release classpath's, each with the
+# licence its POM declares: scripts/gen-android-licenses.dart --check, which fails when the file
+# is stale. That part needs Gradle and the POMs it cached while building.
 #
 # Usage, from anywhere (after `flutter build apk --release`):
 #   apps/mobile/scripts/check-licenses.sh [--apk <path>]
 #   apps/mobile/scripts/check-licenses.sh --notices <file>   the unpacked NOTICES text (the tests use it)
-# Exit codes: 0 every package has a licence, 1 some have none, 2 no APK, NOTICES or pubspec.
+#   ... --skip-android                                        leave out the Android libraries part
+# Exit codes: 0 all fine, 1 a package has no licence or the Android list is stale, 2 no APK,
+# NOTICES, pubspec or POMs.
 set -euo pipefail
 
 MOBILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 apk="$MOBILE/build/app/outputs/flutter-apk/app-release.apk"
 notices=""
 pubspec="$MOBILE/pubspec.yaml"
+android=1
 while [ $# -gt 0 ]; do
   case "$1" in
     --apk) apk="${2:-}"; shift 2 ;;
     --notices) notices="${2:-}"; shift 2 ;;
     --pubspec) pubspec="${2:-}"; shift 2 ;;
+    --skip-android) android=0; shift ;;
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
@@ -66,3 +73,11 @@ done <<<"$packages"
 
 if [ "$failed" -ne 0 ]; then exit 1; fi
 echo "A licence for each of the $count direct dependencies."
+
+if [ "$android" -eq 1 ]; then
+  cd "$MOBILE"
+  # Gradle runs on the JDK Flutter is configured with, as `flutter build` does.
+  jdk_dir="$(flutter config --list 2>/dev/null | sed -n 's/^ *jdk-dir: //p')"
+  if [ -n "$jdk_dir" ]; then export JAVA_HOME="$jdk_dir"; fi
+  dart run scripts/gen-android-licenses.dart --check
+fi

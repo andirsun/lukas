@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/auth_api.dart';
@@ -31,6 +32,16 @@ void main() {
       expect(parseServerUrl('http://localhost:3000')?.toString(), 'http://localhost:3000');
       expect(parseServerUrl('http://10.0.2.2:3000')?.toString(), 'http://10.0.2.2:3000');
       expect(parseServerUrl('http://localhost')?.toString(), 'http://localhost');
+    });
+
+    test('a release build takes no plain http at all: nothing there could use it', () {
+      expect(parseServerUrl('http://localhost:3000', development: false), isNull);
+      expect(parseServerUrl('http://10.0.2.2:3000', development: false), isNull);
+      expect(parseServerUrl('https://app.example.com', development: false), isNotNull);
+    });
+
+    test('the development hosts are for debug builds by default', () {
+      expect(parseServerUrl('http://localhost:3000') != null, kDebugMode);
     });
 
     test('everything else is refused', () {
@@ -128,6 +139,30 @@ void main() {
       await container.read(serverUrlProvider.notifier).change('https://my.server.org');
       expect(auth.calls.where((c) => c.startsWith('signOut')), ['signOut email-token-0']);
     });
+
+    test(
+      'the old server being down does not stop the change: signed out, cleared, switched',
+      () async {
+        mockStorage(token: 'email-token-0');
+        widget.saved[widgetSnapshotKey] = '{"v":1}';
+        homeCache.value = '{"v":1}';
+        auth.failures['signOut'] = const AuthFailure(status: 0);
+        final container = containerWith();
+        await container.read(sessionProvider.notifier).ready;
+
+        final changed = await container
+            .read(serverUrlProvider.notifier)
+            .change('https://my.server.org');
+
+        expect(changed, isTrue);
+        expect(container.read(serverUrlProvider).toString(), 'https://my.server.org');
+        expect(container.read(sessionProvider).status, SessionStatus.signedOut);
+        expect(await SessionStore().read(), isNull);
+        expect(widget.saved, isEmpty);
+        expect(homeCache.value, isNull);
+        expect(settings.values[serverUrlKey], 'https://my.server.org');
+      },
+    );
 
     test('a guest who was warned is signed out too (the screen asks first)', () async {
       mockStorage(token: 'guest-token-0', guest: true);

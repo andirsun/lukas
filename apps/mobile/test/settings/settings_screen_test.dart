@@ -123,25 +123,28 @@ void main() {
   });
 
   group('theme and language', () {
-    testWidgets('they follow the system, and an override is kept', (tester) async {
+    testWidgets('night is the default; Day and System can be picked, and the choice is kept', (
+      tester,
+    ) async {
       final env = await pumpSettingsApp(tester, location: '/settings');
       MaterialApp app() => tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(app().themeMode, ThemeMode.system);
+      expect(app().themeMode, ThemeMode.dark);
       expect(app().locale, isNull);
+
+      await tester.tap(find.byKey(const Key('settings.theme.day')));
+      await tester.pumpAndSettle();
+      expect(app().themeMode, ThemeMode.light);
+      expect(env.settings.values['setting.theme'], 'light');
+
+      await tester.tap(find.byKey(const Key('settings.theme.system')));
+      await tester.pumpAndSettle();
+      expect(app().themeMode, ThemeMode.system);
+      expect(env.settings.values['setting.theme'], 'system');
 
       await tester.tap(find.byKey(const Key('settings.theme.night')));
       await tester.pumpAndSettle();
       expect(app().themeMode, ThemeMode.dark);
       expect(env.settings.values['setting.theme'], 'dark');
-
-      await tester.tap(find.byKey(const Key('settings.theme.day')));
-      await tester.pumpAndSettle();
-      expect(app().themeMode, ThemeMode.light);
-
-      await tester.tap(find.byKey(const Key('settings.theme.auto')));
-      await tester.pumpAndSettle();
-      expect(app().themeMode, ThemeMode.system);
-      expect(env.settings.values.containsKey('setting.theme'), isFalse);
     });
 
     testWidgets('picking English changes every word at once; Automático goes back to the phone', (
@@ -391,18 +394,22 @@ void main() {
       await tester.tap(find.byKey(const Key('about.licenses')));
       await tester.pumpAndSettle();
 
-      // Flutter's own page lists the packages of the registry; the app's extras are in it.
+      // Flutter's own page lists the packages of the registry; the app's extras are in it: the
+      // models, the speech engine, an Android library, the sounds.
+      final list = find
+          .descendant(of: find.byType(LicensePage), matching: find.byType(Scrollable))
+          .first;
       for (final name in [
-        'vosk-model-small-es-0.42',
-        'vosk-model-small-en-us-0.15',
-        'vosk-android 0.3.75',
         'Lukitas feedback sounds',
+        'androidx.core:core 1.15.0',
+        'vosk-android 0.3.75',
+        'vosk-model-small-en-us-0.15',
+        'vosk-model-small-es-0.42',
       ]) {
-        await tester.scrollUntilVisible(
-          find.text(name),
-          100,
-          scrollable: find.byType(Scrollable).first,
-        );
+        // From the top each time: the page's order is not alphabetical.
+        await tester.fling(list, const Offset(0, 10000), 10000);
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(find.text(name), 100, scrollable: list, maxScrolls: 200);
         expect(find.text(name), findsOneWidget, reason: name);
       }
     });

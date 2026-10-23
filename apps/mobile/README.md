@@ -25,6 +25,6 @@ The app takes no Google Play Services, Firebase, ML Kit, Play Core, ARCore or ot
 - `scripts/check-no-google.sh` scans the Gradle build files for the Google Services and Firebase plugins, then resolves every variant's runtime classpath (debug, profile, release) and the pub packages, and fails on any banned name.
 - `scripts/test-no-google-probes.sh` adds banned dependencies to a temporary copy of the app and expects the check to catch each one.
 - `scripts/check-permissions.sh`, after `flutter build apk --release`, checks that the release APK asks for INTERNET and for no permission outside its allowlist.
-- `scripts/check-licenses.sh`, after `flutter build apk --release`, checks that the APK's licence file (`NOTICES.Z`, which About's licence page shows) has an entry for every package under `dependencies:`. The voice models, the speech engine, the Android libraries and the sounds are added by `lib/settings/licenses.dart`.
+- `scripts/check-licenses.sh`, after `flutter build apk --release`, checks that the APK's licence file (`NOTICES.Z`, which About's licence page shows) has an entry for every package under `dependencies:`. It also fails when `assets/licenses/android-libraries.json` (the Android libraries About lists, each under the licence its POM declares) is not what the release classpath resolves to: regenerate it with `dart run scripts/gen-android-licenses.dart`. The voice models, the speech engine, the sounds and the app are added by `lib/settings/licenses.dart`.
 
 CI runs all four.

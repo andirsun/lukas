@@ -28,10 +28,17 @@ void main() {
       'vosk-model-small-en-us-0.15',
       'vosk-android 0.3.75',
       'JNA 5.18.1',
-      'AndroidX',
       'Lukitas feedback sounds',
     ]) {
       expect(packages, contains(extra));
+    }
+    // The Android libraries come from the release classpath's POMs, each at its own version.
+    for (final library in [
+      'androidx.core:core ',
+      'androidx.glance:glance-appwidget-external-protobuf ',
+      'org.jspecify:jspecify ',
+    ]) {
+      expect(packages.any((p) => p.startsWith(library)), isTrue, reason: library);
     }
     final model = entries.firstWhere((e) => e.packages.contains('vosk-model-small-es-0.42'));
     expect(model.paragraphs.map((p) => p.text).join('\n'), contains('Apache License'));

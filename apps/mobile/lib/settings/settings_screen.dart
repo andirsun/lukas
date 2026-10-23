@@ -127,7 +127,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } on Object {
       if (mounted) _toast(l10n.settingsDeleteVoiceFailed, error: true);
     }
-    ref.invalidate(voiceModelsInstalledProvider);
+    if (mounted) ref.invalidate(voiceModelsInstalledProvider);
   }
 
   // -- build ---------------------------------------------------------------------------------
@@ -235,10 +235,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         selected: themeMode,
                         segments: [
                           ButtonSegment(
-                            value: ThemeMode.system,
+                            value: ThemeMode.dark,
                             label: Text(
-                              l10n.settingsThemeAuto,
-                              key: const Key('settings.theme.auto'),
+                              l10n.settingsThemeNight,
+                              key: const Key('settings.theme.night'),
                             ),
                           ),
                           ButtonSegment(
@@ -249,10 +249,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           ),
                           ButtonSegment(
-                            value: ThemeMode.dark,
+                            value: ThemeMode.system,
                             label: Text(
-                              l10n.settingsThemeNight,
-                              key: const Key('settings.theme.night'),
+                              l10n.settingsThemeSystem,
+                              key: const Key('settings.theme.system'),
                             ),
                           ),
                         ],

@@ -58,7 +58,8 @@ class HideWidgetAmount extends StoredFlag {
 
 final hideWidgetAmountProvider = NotifierProvider<HideWidgetAmount, bool>(HideWidgetAmount.new);
 
-/// The theme: follows the phone unless the person picked day or night.
+/// The theme: night unless the person picked day or "System" (the phone's own mode). Every choice
+/// is kept, "System" included, since night is what no choice at all means.
 class ThemeModeSetting extends Notifier<ThemeMode> {
   @override
   ThemeMode build() => ref.watch(initialSettingsProvider).themeMode;
@@ -67,11 +68,11 @@ class ThemeModeSetting extends Notifier<ThemeMode> {
     state = mode;
     final store = ref.read(settingsStoreProvider);
     try {
-      if (mode == ThemeMode.system) {
-        await store.delete(themeModeKey);
-      } else {
-        await store.write(themeModeKey, mode.name);
-      }
+      await store.write(themeModeKey, switch (mode) {
+        ThemeMode.system => 'system',
+        ThemeMode.light => 'light',
+        ThemeMode.dark => 'dark',
+      });
     } on Object {
       // Not kept: the choice holds for this run.
     }

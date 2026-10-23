@@ -71,13 +71,14 @@ void main() {
       return container;
     }
 
-    test('they follow the system by default', () async {
+    test('the theme is night until chosen (spec 6.2), the language follows the phone', () async {
       final container = containerWith(FakeSettingsStore());
-      expect(container.read(themeModeProvider), ThemeMode.system);
+      expect(container.read(themeModeProvider), ThemeMode.dark);
       expect(container.read(localeOverrideProvider), isNull);
       final initial = await InitialSettings.read(FakeSettingsStore());
-      expect(initial.themeMode, ThemeMode.system);
+      expect(initial.themeMode, ThemeMode.dark);
       expect(initial.locale, isNull);
+      expect(InitialSettings.defaults.themeMode, ThemeMode.dark);
     });
 
     test('an override of the theme is kept and read back at the next start', () async {
@@ -92,13 +93,22 @@ void main() {
       expect(next.read(themeModeProvider), ThemeMode.dark);
     });
 
-    test('going back to "follow the system" forgets the override', () async {
+    test('"System" is a choice of its own: kept, and read back as System, not as night', () async {
       final store = FakeSettingsStore();
       final container = containerWith(store);
-      await container.read(themeModeProvider.notifier).set(ThemeMode.dark);
       await container.read(themeModeProvider.notifier).set(ThemeMode.system);
-      expect(store.values, isEmpty);
+      expect(store.values['setting.theme'], 'system');
       expect((await InitialSettings.read(store)).themeMode, ThemeMode.system);
+      final next = containerWith(store, initial: await InitialSettings.read(store));
+      expect(next.read(themeModeProvider), ThemeMode.system);
+    });
+
+    test('back to night is kept too', () async {
+      final store = FakeSettingsStore();
+      final container = containerWith(store);
+      await container.read(themeModeProvider.notifier).set(ThemeMode.light);
+      await container.read(themeModeProvider.notifier).set(ThemeMode.dark);
+      expect((await InitialSettings.read(store)).themeMode, ThemeMode.dark);
     });
 
     test('an override of the language is kept; null follows the phone again', () async {
@@ -113,16 +123,19 @@ void main() {
       expect(store.values, isEmpty);
     });
 
-    test('a stored value nobody understands reads as "follow the system"', () async {
-      final store = FakeSettingsStore({themeModeKey: 'sepia', localeKey: 'klingon'});
-      final initial = await InitialSettings.read(store);
-      expect(initial.themeMode, ThemeMode.system);
-      expect(initial.locale, isNull);
-    });
+    test(
+      'a stored value nobody understands reads as the defaults: night, and the phone\'s language',
+      () async {
+        final store = FakeSettingsStore({themeModeKey: 'sepia', localeKey: 'klingon'});
+        final initial = await InitialSettings.read(store);
+        expect(initial.themeMode, ThemeMode.dark);
+        expect(initial.locale, isNull);
+      },
+    );
 
     test('a store that cannot be read starts with the defaults', () async {
       final initial = await InitialSettings.read(_BrokenSettingsStore());
-      expect(initial.themeMode, ThemeMode.system);
+      expect(initial.themeMode, ThemeMode.dark);
       expect(initial.locale, isNull);
     });
 

@@ -1127,10 +1127,10 @@
   "settingsGuestAccount": "Estás usando Lukitas sin correo.",
   "settingsPreferences": "Preferencias",
   "settingsTheme": "Tema",
-  "settingsThemeAuto": "Automático",
+  "settingsThemeSystem": "Sistema",
   "settingsThemeDay": "Día",
   "settingsThemeNight": "Noche",
-  "settingsThemeHint": "Automático sigue el modo de tu teléfono.",
+  "settingsThemeHint": "Por defecto es de noche. Sistema sigue el modo de tu teléfono.",
   "settingsLanguage": "Idioma",
   "settingsLanguageAuto": "Automático",
   "settingsLanguageEs": "Español",
@@ -1198,5 +1198,28 @@
   "aboutLead": "Lukitas es software libre, bajo la licencia AGPL-3.0. Puedes leer y revisar su código.",
   "aboutVoice": "Dictar funciona en tu teléfono, con los modelos de voz Vosk (Apache-2.0). Tu voz no sale de él.",
   "aboutLicenses": "Licencias",
-  "aboutLicensesHint": "De cada pieza de software que usa Lukitas, los modelos de voz y los sonidos."
+  "aboutLicensesHint": "De cada pieza de software que usa Lukitas, los modelos de voz y los sonidos.",
+  "licenseNoticeModel": "El modelo de voz en {language} de la captura rápida, de Alpha Cephei Inc., bajo la licencia Apache 2.0 (https://alphacephei.com/vosk/models). No viene en la app: se descarga al teléfono si aceptas, y reconoce la voz sin salir de él.",
+  "@licenseNoticeModel": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeVosk": "El motor de voz Vosk (https://github.com/alphacep/vosk-api), de Alpha Cephei Inc., bajo la licencia Apache 2.0.",
+  "licenseNoticeJna": "Java Native Access (https://github.com/java-native-access/jna), por donde Vosk llega a su biblioteca nativa. Tiene doble licencia: Apache 2.0 o LGPL 2.1. Lukitas la usa bajo la licencia Apache 2.0.",
+  "licenseNoticeLibraries": "Bibliotecas de Android con las que se construye la app. Cada una declara su licencia en su propio POM; esta es la del grupo: {license}. Ninguna es Google Play Services ni Firebase.",
+  "@licenseNoticeLibraries": {
+    "placeholders": {
+      "license": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeBsd": "Una biblioteca de Android con licencia BSD de 3 cláusulas, con el texto que se publica junto a ella. Va dentro de AndroidX Glance, que se usa para el widget.",
+  "licenseNoticeJsr305": "Anotaciones JSR 305. Su POM declara la licencia Apache 2.0 (el texto está abajo), pero el proyecto JSR 305 también se describe como de licencia BSD de 3 cláusulas; se incluyen las dos.",
+  "licenseNoticeSounds": "Los sonidos de Lukitas al anotar, pagar, deshacer o acercarte a un límite son obra original hecha para Lukitas: unos pocos tonos simples, sin muestras de terceros. Se publican con la licencia de la propia app, la GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
+  "licenseNoticeApp": "Lukitas es software libre, bajo la GNU Affero General Public License 3.0. Su código está en https://github.com/andirsun/lukas.",
+  "aboutLegalese": "Software libre, AGPL-3.0"
 }
