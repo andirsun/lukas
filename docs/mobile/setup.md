@@ -145,12 +145,26 @@ flutter test integration_test/voice_engine_test.dart -d emulator-5554 \
 ```
 
 `integration_test/widget_test.dart` covers the home-screen widget (Task 15): it presses the
-widget's ＋ and 🎤 the way the widget does (the very intent `launch/LaunchLinks.kt` builds, started
-through the debug-only `lukitas/test` channel) and runs the refresh job once through WorkManager,
+widget's ＋, 🎤 and body the way the widget does (the very intent `launch/LaunchLinks.kt` builds, started
+through the debug-only `lukitas/test` channel; the body also with the `glance-action:/CALLBACK?...`
+intent Glance used to give it, which showed "Page Not Found" while the app ran) and runs the refresh job once through WorkManager,
 which reads the session where the app keeps it and asks the dev stack for the summary; then it
 signs out and checks the widget keeps no figure. To look at the widgets themselves, long-press the
 emulator's home screen, open Widgets and drag a Lukitas one out; the Quick Settings tile is added
 with `adb -s emulator-5554 shell cmd statusbar add-tile com.andersonlaverde.lukitas/.tile.CaptureTileService`.
+
+`integration_test/voice_latency_test.dart` times tap to listening with the real engine (cold, then
+warm), against the same stand-in for the models as above, and prints `LATENCY` lines. The emulator
+has no microphone, so it times the plumbing. `--dart-define=VOICE_USED=true` is a person who has
+captured before (the model is loaded at the app's start):
+
+```sh
+python3 -m http.server 8765 --directory <folder with both model zips>
+adb -s emulator-5554 install -r -t -g build/app/outputs/flutter-apk/app-debug.apk
+flutter test integration_test/voice_latency_test.dart -d emulator-5554 \
+  --dart-define=LUKITAS_SERVER=http://10.0.2.2:3000 \
+  --dart-define=VOICE_MODELS_URL=http://10.0.2.2:8765 --dart-define=VOICE_USED=true
+```
 
 The Android JVM tests (`cd apps/mobile/android && ./gradlew :app:testDebugUnitTest`) include the
 widget's Glance rendering tests on Robolectric, which downloads its Android image from Maven

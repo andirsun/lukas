@@ -3,17 +3,22 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/capture/capture_repository.dart';
+import 'package:lukitas/capture/capture_note.dart';
 import 'package:lukitas/capture/capture_sheet.dart';
 import 'package:lukitas/capture/engine/speech_engine.dart';
+import 'package:lukitas/capture/mic_level.dart';
 import 'package:lukitas/capture/models_download.dart';
+import 'package:lukitas/feedback/stored_flag.dart';
 import 'package:lukitas/home/home_repository.dart';
 
 import '../home/fakes.dart';
 import '../home/fixtures.dart';
 import '../home/home_harness.dart';
+import '../settings/fakes.dart' show FakeFlagStore;
 import 'fakes.dart';
 
 const _sentence = 'gasté 15 mil en almuerzo y 3 lukas en uber';
@@ -36,6 +41,8 @@ Future<_Env> _pump(
   SpeechFailure? failure,
   bool available = true,
   Locale locale = const Locale('es'),
+  FakeFlagStore? noteFlag,
+  bool warm = false,
 }) async {
   final server = FakeHomeRepository(
     categoryList: [
@@ -50,7 +57,7 @@ Future<_Env> _pump(
     transcripts: [...heard],
     failure: failure,
     availableAnswer: available,
-  );
+  )..warm = warm;
   final models = FakeModelStore();
   final celebrated = <List<Transaction>>[];
   final harness = await pumpHome(
@@ -62,6 +69,10 @@ Future<_Env> _pump(
       speechEngineProvider.overrideWithValue(engine),
       modelStoreProvider.overrideWithValue(models),
       batchSavedFeedbackProvider.overrideWithValue(celebrated.add),
+      // Where the first-use note's flag is kept: nothing kept yet unless a test says so.
+      flagStoreProvider.overrideWith(
+        (ref, key) => key == 'setting.capture.note' ? (noteFlag ?? FakeFlagStore()) : FakeFlagStore(),
+      ),
     ],
   );
   return _Env(server, capture, engine, models, harness, celebrated);
@@ -490,5 +501,176 @@ void main() {
     await tester.pumpAndSettle();
     expect(env.engine.listens, 1);
     expect(find.text('GUARDAR 2'), findsOneWidget);
+  });
+
+  group('the first-use note', () {
+    const note = 'Te escucho aquí mismo: lo que dices no sale de tu teléfono.';
+
+    testWidgets('the first time, it shows under the prompt', (tester) async {
+      final env = await _pump(tester);
+      env.engine.hold = true;
+      await _openMoving(tester);
+      env.engine.held!.add('');
+      await tester.pump();
+      expect(find.text('¿En qué gastaste?'), findsOneWidget);
+      expect(find.text(note), findsOneWidget);
+      await env.engine.held!.close();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('once a capture was saved, it never shows again', (tester) async {
+      final noteFlag = FakeFlagStore(false);
+      final env = await _pump(tester, noteFlag: noteFlag);
+      env.engine.hold = true;
+      await _openMoving(tester);
+      env.engine.held!.add('');
+      await tester.pump();
+      expect(find.text('¿En qué gastaste?'), findsOneWidget);
+      expect(find.text(note), findsNothing);
+      await env.engine.held!.close();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('it is kept as seen only when a capture is saved, not when one is opened', (
+      tester,
+    ) async {
+      final noteFlag = FakeFlagStore();
+      await _pump(tester, noteFlag: noteFlag);
+      await _open(tester);
+      expect(noteFlag.value, isNull, reason: 'a sheet that read a sentence has saved nothing yet');
+      await _pickCategory(tester, 0, 'cat-food');
+      await tester.tap(find.byKey(const Key('capture.save')));
+      await tester.pumpAndSettle();
+      expect(noteFlag.value, isFalse, reason: 'the first successful capture: no more note');
+      await _letTimersEnd(tester);
+    });
+
+    testWidgets('a save that fails keeps the note for the next time', (tester) async {
+      final noteFlag = FakeFlagStore();
+      final env = await _pump(tester, noteFlag: noteFlag);
+      await _open(tester);
+      await _pickCategory(tester, 0, 'cat-food');
+      env.capture.failures['save'] = const HomeFailure(500);
+      await tester.tap(find.byKey(const Key('capture.save')));
+      await tester.pumpAndSettle();
+      expect(noteFlag.value, isNull);
+    });
+
+    testWidgets('opened to type, listening again later still shows it the first time', (
+      tester,
+    ) async {
+      final env = await _pump(tester);
+      env.engine.hold = true;
+      await _openMoving(tester);
+      env.engine.held!.add('');
+      await tester.pump();
+      expect(find.text(note), findsOneWidget);
+      await tester.tap(find.byKey(const Key('capture.type')));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(note), findsNothing, reason: 'the typing field has no note');
+      await tester.tap(find.byKey(const Key('capture.listen')));
+      await tester.pump(const Duration(milliseconds: 300));
+      env.engine.held!.add('');
+      await tester.pump();
+      expect(find.text(note), findsOneWidget);
+      await env.engine.held!.close();
+      await tester.pumpAndSettle();
+    });
+
+    test('it is a stored flag, on until the first capture', () {
+      final container = ProviderContainer(
+        overrides: [flagStoreProvider.overrideWith((ref, key) => FakeFlagStore())],
+      );
+      addTearDown(container.dispose);
+      expect(container.read(captureNoteProvider), isTrue);
+      expect(container.read(captureNoteProvider.notifier), isA<StoredFlag>());
+    });
+  });
+
+  group('listening starts at once when the engine is warm', () {
+    testWidgets('no "preparing" state: the prompt and the level show from the first frame', (
+      tester,
+    ) async {
+      final env = await _pump(tester, warm: true);
+      env.engine.hold = true;
+      await _openMoving(tester);
+      // Nothing has come from the engine yet: not even its first event.
+      expect(env.engine.listens, 1);
+      expect(find.text('Preparando el micrófono…'), findsNothing);
+      expect(find.text('¿En qué gastaste?'), findsOneWidget);
+      expect(find.byType(MicLevel), findsOneWidget);
+      await env.engine.held!.close();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('not warm: "preparing" shows until the engine says it listens', (tester) async {
+      final env = await _pump(tester, warm: false);
+      env.engine.hold = true;
+      await _openMoving(tester);
+      expect(find.text('Preparando el micrófono…'), findsOneWidget);
+      expect(find.text('¿En qué gastaste?'), findsNothing);
+      env.engine.held!.add('');
+      await tester.pump();
+      expect(find.text('Preparando el micrófono…'), findsNothing);
+      expect(find.text('¿En qué gastaste?'), findsOneWidget);
+      await env.engine.held!.close();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('listening again after the first time is warm too', (tester) async {
+      final env = await _pump(tester, warm: false);
+      env.engine.hold = true;
+      await _openMoving(tester);
+      env.engine.held!.add('');
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('capture.type')));
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.byKey(const Key('capture.listen')));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Preparando el micrófono…'), findsNothing);
+      await env.engine.held!.close();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the sheet never loads or records on its own: only a listen does', (tester) async {
+      final env = await _pump(tester, warm: true);
+      await tester.tap(find.byKey(const Key('home.capture')));
+      await tester.pump();
+      // Opened to type (listen: false) asks nothing of the microphone.
+      expect(env.engine.listens, lessThanOrEqualTo(1));
+      await tester.pumpAndSettle();
+    });
+  });
+
+  group('the live microphone level', () {
+    testWidgets('while listening, the bars follow the engine\'s levels', (tester) async {
+      final env = await _pump(tester, warm: true);
+      env.engine.hold = true;
+      await _openMoving(tester);
+      final bars = find.byWidgetPredicate(
+        (w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('mic.bar.'),
+      );
+      expect(bars, findsWidgets);
+      final last = find.byKey(const Key('mic.bar.${MicLevel.defaultBars - 1}'));
+      final quiet = tester.getSize(last).height;
+      env.engine.levelsController.add(0.9);
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(tester.getSize(last).height, greaterThan(quiet + 20));
+      await env.engine.held!.close();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('it is gone with the listening stage', (tester) async {
+      final env = await _pump(tester, warm: true);
+      env.engine.hold = true;
+      await _openMoving(tester);
+      expect(find.byType(MicLevel), findsOneWidget);
+      await tester.tap(find.byKey(const Key('capture.type')));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(MicLevel), findsNothing);
+      expect(env.engine.levelsController.hasListener, isFalse);
+    });
   });
 }

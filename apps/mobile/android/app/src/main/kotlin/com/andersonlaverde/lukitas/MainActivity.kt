@@ -21,6 +21,7 @@ import com.andersonlaverde.lukitas.notices.NoticesChannel
 import com.andersonlaverde.lukitas.passkeys.PasskeyChannel
 import com.andersonlaverde.lukitas.sounds.SoundChannel
 import com.andersonlaverde.lukitas.voice.VoiceChannel
+import com.andersonlaverde.lukitas.voice.VoiceModels
 import com.andersonlaverde.lukitas.widget.RefreshScheduler
 import com.andersonlaverde.lukitas.widget.RefreshWorker
 import com.andersonlaverde.lukitas.widget.SecureStorageSession
@@ -44,6 +45,9 @@ class MainActivity : FlutterActivity() {
         // Taken before Flutter starts, so its router never sees it (it would read "lukitas://add"
         // as "/"). An activity recreated from saved state gets its first link again: not reopened.
         takeLink(intent, act = savedInstanceState == null)
+        // The speech model Dart last asked to have loaded in advance (after a first capture) loads in
+        // the background while Flutter starts, so 🎤 from the widget or the tile finds it ready.
+        VoiceModels.warmFromHint(this)
         super.onCreate(savedInstanceState)
     }
 

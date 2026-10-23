@@ -52,6 +52,15 @@ class _Listening implements SpeechEngine {
 
   @override
   Future<void> stop() async => _heard?.close();
+
+  @override
+  Future<bool> isWarm({required String locale}) async => false;
+
+  @override
+  Future<void> warmUp({required String locale}) async {}
+
+  @override
+  Stream<double> get levels => const Stream.empty();
 }
 
 Future<void> _pumpUntil(

@@ -19,6 +19,19 @@ abstract class SpeechEngine {
 
   /// Stops listening: the stream sends the final transcript, then closes.
   Future<void> stop();
+
+  /// Whether listening in [locale] starts at once: its model is already loaded (by [warmUp], or by
+  /// an earlier sentence) and the microphone is allowed. The capture sheet then shows no "preparing"
+  /// state at all.
+  Future<bool> isWarm({required String locale});
+
+  /// Loads [locale]'s model in the background, if it is downloaded, so the next [listen] does not
+  /// wait for it. Never records, and never fails: when it cannot, [listen] loads it as before.
+  Future<void> warmUp({required String locale});
+
+  /// The microphone's level while [listen] runs, 0 (silence) to 1 (loud), about 25 times a second.
+  /// Only the level: audio never leaves the engine. Silent when nothing listens.
+  Stream<double> get levels;
 }
 
 enum SpeechFailureKind {

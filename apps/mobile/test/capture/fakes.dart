@@ -67,6 +67,32 @@ class FakeSpeechEngine implements SpeechEngine {
 
   @override
   Future<void> stop() async => stops++;
+
+  /// Whether the model is already loaded (the person has captured before, the app loaded it at its
+  /// start): listening then shows no "preparing" at all.
+  var warm = false;
+
+  /// [warmUp] throws.
+  var warmFails = false;
+
+  /// The locales [warmUp] was asked for.
+  final warmUps = <String>[];
+
+  @override
+  Future<bool> isWarm({required String locale}) async => warm;
+
+  @override
+  Future<void> warmUp({required String locale}) async {
+    if (warmFails) throw StateError('cannot load');
+    warmUps.add(locale);
+    warm = true;
+  }
+
+  /// The microphone's level, as the engine streams it while listening.
+  final levelsController = StreamController<double>.broadcast();
+
+  @override
+  Stream<double> get levels => levelsController.stream;
 }
 
 /// The batch routes in memory, on top of the same movements the fake home repository serves.

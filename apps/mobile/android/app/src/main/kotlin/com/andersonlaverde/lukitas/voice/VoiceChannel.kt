@@ -33,11 +33,18 @@ import java.util.concurrent.Executors
  * the final one: the grammar recognizer hits endpoints mid-sentence. Dart merges the two.
  *
  * Methods: `supported` → Boolean (the native library loads); `requestPermission` → Boolean;
+ * `warmUp({modelPath})` → Boolean (loads the model in the background, keeps it while the process
+ * lives; never records); `isWarm({modelPath})` → Boolean (loaded, and the microphone allowed);
  * `stop`; `modelsDirectory` → String; `freeBytes` → Long; `unzip({zip, into})`; `releaseModels`.
- * Events, after listening with `{modelPath, grammar}`: `{type: ready}` once the model is loaded
- * and the microphone records, `{type: partial, text}`,
- * `{type: result, pass: free|grammar, json}`, `{type: done}` (then the stream ends) or
- * `{type: error, code}`.
+ * Events, after listening with `{modelPath, grammar}`: `{type: ready}` once the microphone records,
+ * `{type: level, value}` (0..1, about 25 a second: only a number, never the audio),
+ * `{type: partial, text}`, `{type: result, pass: free|grammar, json}`, `{type: done}` (then the
+ * stream ends) or `{type: error, code}`.
+ *
+ * Fast start: the microphone is opened first, the moment the person's tap reaches here, with room
+ * for four seconds of audio; the model and the two recognizers attach while it records, and what was
+ * said meanwhile is read from that buffer first, so no word is lost. The model is the process's
+ * ([VoiceModels]), loaded in advance and kept; a recording only borrows it.
  */
 class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
     MethodChannel.MethodCallHandler, EventChannel.StreamHandler {
@@ -50,15 +57,24 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
 
     private var pendingPermission: MethodChannel.Result? = null
 
+    /** The person is done talking (or listening ends for any reason): reading the microphone stops. */
     @Volatile private var stopRequested = false
+
+    /**
+     * Nothing more is wanted, not even what was said while the model loaded: the app went to the
+     * background, the sheet closed, the models are being deleted, the channel is disposed. A plain
+     * [stopRequested] still recognises what the microphone kept while the recognizers attached.
+     */
+    @Volatile private var hardStop = false
     @Volatile private var session: Int = 0
     @Volatile private var disposed = false
 
-    // Kept loaded between sentences (loading takes about 300 ms); freed by releaseModels.
-    private var model: Model? = null
-    private var modelPath: String? = null
+    // The model is the process's (VoiceModels): loaded in advance, kept between sentences and across
+    // activities, freed on memory pressure and by releaseModels.
+    private val models = VoiceModels.cache
 
     init {
+        VoiceModels.register(activity)
         // JNA passes Java strings to Vosk in this encoding: the grammar must reach it as UTF-8, or
         // every accented word (gasté, millón…) is silently dropped.
         System.setProperty("jna.encoding", "UTF-8")
@@ -82,6 +98,28 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
                 main.post { result.success(ok) }
             }
             "requestPermission" -> requestPermission(result)
+            "warmUp" -> {
+                val path = call.argument<String>("modelPath")
+                if (path == null) {
+                    result.error("failed", "Missing modelPath", null)
+                    return
+                }
+                // The next process start loads this one before Dart runs (VoiceModels.warmFromHint).
+                WarmHint.remember(activity, path)
+                models.warm(path).whenComplete { loaded, error ->
+                    main.post {
+                        if (error != null) result.error("failed", error.message, null) else result.success(loaded)
+                    }
+                }
+            }
+            "isWarm" -> {
+                val path = call.argument<String>("modelPath")
+                result.success(
+                    path != null && models.loadedPath() == path &&
+                        activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) ==
+                        PackageManager.PERMISSION_GRANTED,
+                )
+            }
             "stop" -> {
                 stopRequested = true
                 result.success(null)
@@ -106,8 +144,12 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
             }
             "releaseModels" -> {
                 stopRequested = true
+                hardStop = true
+                WarmHint.forget(activity)
+                // Behind a running recording on the worker, which ends within one chunk now; the
+                // model itself is closed when nobody uses it.
                 worker.execute {
-                    closeModel()
+                    models.drop()
                     main.post { result.success(null) }
                 }
             }
@@ -118,35 +160,27 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
     /** Stops recording now (the app went to the background): the loop ends within one chunk. */
     fun stopRecording() {
         stopRequested = true
+        hardStop = true
     }
 
     /**
      * The activity or engine is going away: end the recording loop (it holds the microphone and two
-     * recognizers), close the model, shut the threads down, and answer nothing more. Safe to call
+     * recognizers), shut the threads down, and answer nothing more. Safe to call
      * twice.
      */
     fun dispose() {
         if (disposed) return
         disposed = true
         stopRequested = true
+        hardStop = true
         session++
         pendingPermission?.success(false)
         pendingPermission = null
         methods.setMethodCallHandler(null)
         events.setStreamHandler(null)
-        // Queued behind a running recording, which ends within 100 ms now that it is stopped.
-        worker.execute { closeModel() }
+        // The model stays: it is the process's, for the next activity (VoiceModels).
         worker.shutdown()
         files.shutdown()
-    }
-
-    /** On the worker thread only. Forgets the model as it frees it, so a failed load that follows
-     *  can never leave a freed model in use. */
-    private fun closeModel() {
-        val loaded = model
-        model = null
-        modelPath = null
-        loaded?.close()
     }
 
     private fun requestPermission(result: MethodChannel.Result) {
@@ -180,6 +214,7 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
             return
         }
         stopRequested = false
+        hardStop = false
         val id = ++session
         worker.execute { record(id, path, grammar, sink) }
     }
@@ -187,6 +222,7 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
     override fun onCancel(arguments: Any?) {
         // The Dart side stopped listening (the sheet closed): stop recording, send nothing more.
         stopRequested = true
+        hardStop = true
         session++
     }
 
@@ -198,54 +234,59 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
         var free: Recognizer? = null
         var biased: Recognizer? = null
         var audio: AudioRecord? = null
+        var lease: ModelCache.Lease<Model>? = null
         try {
-            val loaded = model.takeIf { modelPath == path } ?: run {
-                closeModel()
-                Model(path).also {
-                    model = it
-                    modelPath = path
-                }
-            }
-            free = Recognizer(loaded, SAMPLE_RATE.toFloat()).apply { setWords(true) }
-            biased = Recognizer(loaded, SAMPLE_RATE.toFloat(), grammar).apply { setWords(true) }
-
-            // Stopped, cancelled or disposed while the model loaded (the app went to the
-            // background, say): the microphone is never opened.
-            if (stopRequested || id != session) {
-                if (id == session) {
-                    send(id, sink, mapOf("type" to "result", "pass" to "free", "json" to free.finalResult))
-                    send(id, sink, mapOf("type" to "result", "pass" to "grammar", "json" to biased.finalResult))
-                    send(id, sink, mapOf("type" to "done"))
-                    main.post { if (id == session) sink.endOfStream() }
-                }
-                return
-            }
-            val minimum = AudioRecord.getMinBufferSize(
-                SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
-            )
+            if (stopRequested || hardStop || id != session) return endUnheard(id, sink, null, null)
             if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
                 PackageManager.PERMISSION_GRANTED
             ) {
                 throw IllegalStateException("permission")
             }
+            // 1. The microphone, first: from here every word is kept in AudioRecord's own buffer
+            // while the model and the recognizers attach.
+            val minimum = AudioRecord.getMinBufferSize(
+                SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
+            )
             audio = AudioRecord(
                 MediaRecorder.AudioSource.VOICE_RECOGNITION,
                 SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                maxOf(minimum, CHUNK * 2 * 4),
+                maxOf(minimum, BUFFER_BYTES),
             )
             if (audio.state != AudioRecord.STATE_INITIALIZED) throw IllegalStateException("mic")
             audio.startRecording()
             send(id, sink, mapOf("type" to "ready"))
 
+            // 2. The model: loaded already when it was warmed up; otherwise loading starts now.
+            // Meanwhile the audio is read (and its level shown) and kept, to be recognised first.
             val chunk = ShortArray(CHUNK)
-            var lastPartial = ""
-            while (!stopRequested && id == session) {
+            val backlog = ArrayDeque<ShortArray>()
+            val loading = models.warm(path)
+            while (!loading.isDone) {
+                if (hardStop || id != session) return endUnheard(id, sink, null, null)
+                if (stopRequested) {
+                    // Done talking before the model was up: no more audio is read, but what was
+                    // said is still recognised once it is.
+                    Thread.sleep(10)
+                    continue
+                }
                 val read = audio.read(chunk, 0, chunk.size)
                 if (read < 0) throw IllegalStateException("mic_read_$read")
                 if (read == 0) continue
-                if (free.acceptWaveForm(chunk, read)) {
+                backlog.addLast(chunk.copyOf(read))
+                sendLevel(id, sink, chunk, read)
+            }
+            lease = models.acquire(path) { hardStop || id != session }
+                ?: return endUnheard(id, sink, null, null)
+            val model = lease.model
+            free = Recognizer(model, SAMPLE_RATE.toFloat()).apply { setWords(true) }
+            biased = Recognizer(model, SAMPLE_RATE.toFloat(), grammar).apply { setWords(true) }
+
+            // 3. Recognise: first what was said while the above attached, then live.
+            var lastPartial = ""
+            fun feed(samples: ShortArray, count: Int) {
+                if (free.acceptWaveForm(samples, count)) {
                     send(id, sink, mapOf("type" to "result", "pass" to "free", "json" to free.result))
                     lastPartial = ""
                 } else {
@@ -255,17 +296,23 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
                         send(id, sink, mapOf("type" to "partial", "text" to partial))
                     }
                 }
-                if (biased.acceptWaveForm(chunk, read)) {
+                if (biased.acceptWaveForm(samples, count)) {
                     send(id, sink, mapOf("type" to "result", "pass" to "grammar", "json" to biased.result))
                 }
             }
-            audio.stop()
-            if (id == session) {
-                send(id, sink, mapOf("type" to "result", "pass" to "free", "json" to free.finalResult))
-                send(id, sink, mapOf("type" to "result", "pass" to "grammar", "json" to biased.finalResult))
-                send(id, sink, mapOf("type" to "done"))
-                main.post { if (id == session) sink.endOfStream() }
+            while (backlog.isNotEmpty() && !hardStop && id == session) {
+                val old = backlog.removeFirst()
+                feed(old, old.size)
             }
+            while (!stopRequested && !hardStop && id == session) {
+                val read = audio.read(chunk, 0, chunk.size)
+                if (read < 0) throw IllegalStateException("mic_read_$read")
+                if (read == 0) continue
+                sendLevel(id, sink, chunk, read)
+                feed(chunk, read)
+            }
+            audio.stop()
+            endUnheard(id, sink, free, biased)
         } catch (error: Throwable) {
             val code = when (error.message) {
                 "permission" -> "permission"
@@ -278,14 +325,35 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
             audio?.release()
             free?.close()
             biased?.close()
+            lease?.close()
         }
+    }
+
+    /** One level event for the audio just read (never the audio itself). */
+    private fun sendLevel(id: Int, sink: EventChannel.EventSink, samples: ShortArray, count: Int) {
+        send(id, sink, mapOf("type" to "level", "value" to AudioLevel.of(samples, count)))
+    }
+
+    /**
+     * Ends the stream: the final result of each recognizer that exists, then done. Called when the
+     * recording was stopped, whether or not the recognizers had come up.
+     */
+    private fun endUnheard(id: Int, sink: EventChannel.EventSink, free: Recognizer?, biased: Recognizer?) {
+        if (id != session) return
+        if (free != null) send(id, sink, mapOf("type" to "result", "pass" to "free", "json" to free.finalResult))
+        if (biased != null) send(id, sink, mapOf("type" to "result", "pass" to "grammar", "json" to biased.finalResult))
+        send(id, sink, mapOf("type" to "done"))
+        main.post { if (id == session) sink.endOfStream() }
     }
 
     companion object {
         private const val SAMPLE_RATE = 16000
 
-        /** 100 ms of 16 kHz mono audio. */
-        private const val CHUNK = 1600
+        /** 40 ms of 16 kHz mono audio: 25 level events a second. */
+        private const val CHUNK = 640
+
+        /** Room for four seconds of audio while the model loads and the recognizers attach (PCM16). */
+        private const val BUFFER_BYTES = SAMPLE_RATE * 2 * 4
         private const val PERMISSION_REQUEST = 4210
     }
 }

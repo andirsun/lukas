@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/capture/engine/speech_engine.dart';
 import 'package:lukitas/capture/engine/voice_channel.dart';
@@ -37,6 +38,22 @@ class _FakeChannel implements VoicePlatform {
   Future<void> stop() async {
     stops++;
   }
+
+  /// The paths a model was asked to be loaded from, and whether one is loaded.
+  final warmUps = <String>[];
+  String? loaded;
+  var warmFails = false;
+
+  @override
+  Future<bool> warmUp(String modelPath) async {
+    if (warmFails) throw PlatformException(code: 'failed');
+    warmUps.add(modelPath);
+    loaded = modelPath;
+    return true;
+  }
+
+  @override
+  Future<bool> isWarm(String modelPath) async => loaded == modelPath;
 
   @override
   Future<String> modelsDirectory() async => '/models';
@@ -255,5 +272,74 @@ void main() {
     expect(channel.stops, 1);
     await channel.finish();
     await tester.pump();
+  });
+
+  group('keeping the model loaded', () {
+    test('warmUp loads the installed model through the platform, without listening', () async {
+      await engine.warmUp(locale: 'es');
+      expect(channel.warmUps, ['/models/voice/vosk-model-small-es-0.42']);
+      expect(channel.starts, isEmpty, reason: 'nothing records until the person taps');
+      expect(channel.stops, 0);
+    });
+
+    test('without a downloaded model there is nothing to load, and no error', () async {
+      store.path = null;
+      await engine.warmUp(locale: 'es');
+      expect(channel.warmUps, isEmpty);
+      expect(await engine.isWarm(locale: 'es'), isFalse);
+    });
+
+    test('a failing platform is no error either: the first listen just loads it', () async {
+      channel.warmFails = true;
+      await engine.warmUp(locale: 'es');
+      expect(await engine.isWarm(locale: 'es'), isFalse);
+    });
+
+    test('isWarm is what the platform has loaded, for that locale\'s model', () async {
+      expect(await engine.isWarm(locale: 'es'), isFalse);
+      await engine.warmUp(locale: 'es');
+      expect(await engine.isWarm(locale: 'es'), isTrue);
+      // The platform let it go (memory pressure, the models deleted): not warm any more.
+      channel.loaded = null;
+      expect(await engine.isWarm(locale: 'es'), isFalse);
+    });
+  });
+
+  group('the microphone level', () {
+    test('level events of a listen come out on levels, in order, and not as text', () async {
+      final levels = <double>[];
+      final texts = <String>[];
+      engine.levels.listen(levels.add);
+      final done = engine.listen(locale: 'es').listen(texts.add).asFuture<void>();
+      await pumpEventQueue();
+      channel.send(const VoiceEvent.ready());
+      channel.send(const VoiceEvent.level(0.2));
+      channel.send(const VoiceEvent.level(0.7));
+      await pumpEventQueue();
+      expect(levels, [0.2, 0.7]);
+      expect(texts, [''], reason: 'only the ready event, no text for a level');
+      await channel.finish();
+      await done;
+    });
+
+    test('a level event reads as a number from the channel\'s map', () {
+      final event = VoiceEvent.fromMap({'type': 'level', 'value': 0.5});
+      expect(event, isA<VoiceLevel>().having((e) => e.value, 'value', 0.5));
+      expect(
+        VoiceEvent.fromMap({'type': 'level', 'value': 1}),
+        isA<VoiceLevel>().having((e) => e.value, 'value', 1.0),
+      );
+      expect(
+        VoiceEvent.fromMap({'type': 'level'}),
+        isA<VoiceLevel>().having((e) => e.value, 'value', 0.0),
+      );
+    });
+
+    test('levels is silent when nothing listens', () async {
+      final levels = <double>[];
+      engine.levels.listen(levels.add);
+      await pumpEventQueue();
+      expect(levels, isEmpty);
+    });
   });
 }

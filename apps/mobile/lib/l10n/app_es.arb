@@ -922,7 +922,7 @@
   },
   "captureListeningNote": "Te escucho aquí mismo: lo que dices no sale de tu teléfono.",
   "@captureListeningNote": {
-    "description": "Quick capture: under the prompt while listening; the engine runs on the phone, with no network."
+    "description": "Quick capture: under the prompt while listening, for the first use only (until the first saved capture); the engine runs on the phone, with no network."
   },
   "captureStop": "Listo",
   "@captureStop": {
@@ -1088,7 +1088,7 @@
   },
   "capturePreparing": "Preparando el micrófono…",
   "@capturePreparing": {
-    "description": "Quick capture: while the speech model loads and the microphone starts; the prompt shows after."
+    "description": "Quick capture: while the microphone starts when the speech model is not loaded yet; with the model already loaded (after a first capture) it does not show at all, the prompt does from the tap."
   },
   "captureDownloadNoSpace": "No hay espacio en el teléfono: la voz necesita unos {megabytes} MB libres.",
   "@captureDownloadNoSpace": {

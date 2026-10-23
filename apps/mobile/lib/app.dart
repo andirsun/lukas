@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'feedback/feedback.dart';
 import 'home/widget_sync.dart';
+import 'capture/prewarm.dart';
 import 'launch/launch_links.dart';
 import 'l10n/app_localizations.dart';
 import 'notices/notice_sync.dart';
@@ -22,6 +23,8 @@ class LukitasApp extends ConsumerWidget {
     ref.watch(widgetSyncProvider);
     // Opens the add sheet or quick capture for the widget's ＋ and 🎤 and the Quick Settings tile.
     ref.watch(launchLinksProvider);
+    // Loads the speech model in the background (after a first capture), so 🎤 listens at once.
+    ref.watch(voicePrewarmProvider);
     // Schedules the two local notices ("Hoy vence…" at 9:00, the guest warning) and asks the
     // notification permission, once, when one first becomes relevant.
     ref.watch(noticeSyncProvider);

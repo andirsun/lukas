@@ -19,6 +19,10 @@ sealed class VoiceEvent {
   /// A recognizer's result JSON at an endpoint, or at the end (`getResult()`/`getFinalResult()`).
   const factory VoiceEvent.result(VoicePass pass, String json) = VoiceResult;
 
+  /// The microphone's level over the last 40 ms, 0 (silence) to 1 (loud). Only this number comes
+  /// from the audio: the audio itself never leaves Kotlin.
+  const factory VoiceEvent.level(double value) = VoiceLevel;
+
   /// Recording has ended and both final results were sent.
   const factory VoiceEvent.done() = VoiceDone;
 
@@ -34,6 +38,7 @@ sealed class VoiceEvent {
         map['pass'] == 'grammar' ? VoicePass.grammar : VoicePass.free,
         map['json'] as String? ?? '',
       ),
+      'level' => VoiceEvent.level((map['value'] as num?)?.toDouble() ?? 0),
       'done' => const VoiceEvent.done(),
       'error' => VoiceEvent.error(map['code'] as String? ?? 'failed'),
       _ => null,
@@ -56,6 +61,11 @@ class VoiceResult extends VoiceEvent {
   final String json;
 }
 
+class VoiceLevel extends VoiceEvent {
+  const VoiceLevel(this.value);
+  final double value;
+}
+
 class VoiceDone extends VoiceEvent {
   const VoiceDone();
 }
@@ -72,6 +82,14 @@ abstract interface class VoicePlatform implements ModelFiles {
 
   /// Asks for the microphone when it has not been granted yet; true when granted.
   Future<bool> requestPermission();
+
+  /// Loads the model at [modelPath] in the background and keeps it loaded while the process lives
+  /// (until memory pressure or [releaseModels]); true once it is. Never opens the microphone.
+  Future<bool> warmUp(String modelPath);
+
+  /// Whether the model at [modelPath] is loaded and the microphone is allowed: listening then
+  /// starts at once.
+  Future<bool> isWarm(String modelPath);
 
   /// Records (16 kHz mono PCM16, `VOICE_RECOGNITION`) into a free and a grammar-biased recognizer
   /// on the model at [modelPath], until [stop].
@@ -102,6 +120,14 @@ class VoiceChannel implements VoicePlatform {
   @override
   Future<bool> requestPermission() async =>
       await _methods.invokeMethod<bool>('requestPermission') ?? false;
+
+  @override
+  Future<bool> warmUp(String modelPath) async =>
+      await _methods.invokeMethod<bool>('warmUp', {'modelPath': modelPath}) ?? false;
+
+  @override
+  Future<bool> isWarm(String modelPath) async =>
+      await _methods.invokeMethod<bool>('isWarm', {'modelPath': modelPath}) ?? false;
 
   @override
   Stream<VoiceEvent> start({required String modelPath, required String grammar}) => _events

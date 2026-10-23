@@ -19,8 +19,10 @@ import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.g.dart';
+import 'capture_note.dart';
 import 'capture_repository.dart';
 import 'engine/speech_engine.dart';
+import 'mic_level.dart';
 import 'models_download.dart';
 import 'parser/parse.dart' as p;
 import 'preview/capture_cards.dart';
@@ -92,8 +94,14 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
   var _heard = '';
 
   /// The engine has loaded its model and the microphone records: "¿En qué gastaste?" shows only
-  /// then, so the start of a sentence is not lost.
+  /// then, so the start of a sentence is not lost. When the engine is [_warm] it shows from the tap:
+  /// the microphone starts within a few milliseconds, and what is said while the recognizers attach
+  /// is buffered (VoiceChannel.kt), so no "preparing" state is shown at all.
   var _ready = false;
+
+  /// The engine's model was loaded when the sheet opened (or has been since): listening starts at
+  /// once.
+  var _warm = false;
 
   /// A transcript that came before home's figures did: read once they are here.
   String? _pending;
@@ -125,6 +133,8 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(_fetchUsual());
+    // Whether the first-use note shows is known once the kept flag has been read.
+    unawaited(ref.read(captureNoteProvider.notifier).ready.then((_) => _set(() {})));
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_start()));
   }
 
@@ -171,9 +181,15 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
   }
 
   Future<void> _start() async {
-    final canListen = await _engine.available();
+    final locale = _locale;
+    // Both at once: nothing waits for the other.
+    final (canListen, warm) = await (
+      _engine.available(),
+      _engine.isWarm(locale: locale),
+    ).wait;
     if (!mounted) return;
     _canListen = canListen;
+    _warm = canListen && warm;
     if (!widget.listen) {
       _type(null);
     } else if (!canListen) {
@@ -203,13 +219,15 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
       _stage = _Stage.listening;
       _note = null;
       _heard = '';
-      _ready = false;
+      _ready = _warm;
     });
     _listening = _engine
         .listen(locale: _locale)
         .listen(
           (text) => _set(() {
             _ready = true;
+            // The model has loaded by now: the next listen needs no preparing either.
+            _warm = true;
             _heard = text;
           }),
           onError: (Object error) {
@@ -373,6 +391,9 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
     });
     try {
       final saved = await repo.saveBatch(drafts, idempotencyKey: key);
+      // The first successful capture: the note about listening on the phone is never shown again,
+      // and the speech model is loaded in advance from now on (prewarm.dart).
+      unawaited(container.read(captureNoteProvider.notifier).set(false));
       // Once the figures of the whole batch are in, it feels like a save (see the hook).
       unawaited(
         afterFigures(container.read(homeProvider.notifier).savedBatch(saved))
@@ -567,9 +588,11 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
 
   Widget _listeningView(AppLocalizations l10n, LukitasColors colors) => _padded([
     const SizedBox(height: LukitasTokens.space2),
-    if (_ready)
-      Icon(Icons.mic, size: 48, color: colors.brand)
-    else
+    if (_ready) ...[
+      Icon(Icons.mic, size: 40, color: colors.brand),
+      // The input level, live: the person sees the microphone is in use.
+      MicLevel(levels: _engine.levels),
+    ] else
       const Center(child: QuietSpinner(size: 48)),
     const SizedBox(height: LukitasTokens.space2),
     Semantics(
@@ -581,11 +604,13 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
       ),
     ),
     const SizedBox(height: LukitasTokens.space1),
-    Text(
-      l10n.captureListeningNote,
-      textAlign: TextAlign.center,
-      style: TextStyle(color: colors.inkMuted, fontSize: 13, fontWeight: FontWeight.w600),
-    ),
+    // The explanation of where the voice goes, for the first use only.
+    if (ref.read(captureNoteProvider.notifier).active)
+      Text(
+        l10n.captureListeningNote,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: colors.inkMuted, fontSize: 13, fontWeight: FontWeight.w600),
+      ),
     const SizedBox(height: LukitasTokens.space4),
     Text(
       _heard,

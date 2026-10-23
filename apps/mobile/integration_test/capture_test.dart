@@ -43,6 +43,15 @@ class _FixedTranscript implements SpeechEngine {
 
   @override
   Future<void> stop() async {}
+
+  @override
+  Future<bool> isWarm({required String locale}) async => false;
+
+  @override
+  Future<void> warmUp({required String locale}) async {}
+
+  @override
+  Stream<double> get levels => const Stream.empty();
 }
 
 /// The real batch route, whose first answer is lost on the way back: the server saved the rows,

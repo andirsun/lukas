@@ -29,13 +29,37 @@ class VoskEngine implements SpeechEngine {
   final VoicePlatform _channel;
   final ModelStore _models;
   _Session? _session;
+  final _levels = StreamController<double>.broadcast();
 
   @override
   Future<bool> available() => _channel.supported();
 
   @override
+  Stream<double> get levels => _levels.stream;
+
+  @override
+  Future<bool> isWarm({required String locale}) async {
+    try {
+      final path = await _models.installedPath(locale);
+      return path != null && await _channel.isWarm(path);
+    } on Object {
+      return false;
+    }
+  }
+
+  @override
+  Future<void> warmUp({required String locale}) async {
+    try {
+      final path = await _models.installedPath(locale);
+      if (path != null) await _channel.warmUp(path);
+    } on Object {
+      // Not loaded in advance: the first listen loads it, as it always did.
+    }
+  }
+
+  @override
   Stream<String> listen({required String locale}) {
-    final session = _Session(_channel, locale);
+    final session = _Session(_channel, locale, _levels);
     _session = session;
     session.out = StreamController<String>(
       onListen: () => unawaited(session.begin(_models)),
@@ -49,10 +73,11 @@ class VoskEngine implements SpeechEngine {
 }
 
 class _Session {
-  _Session(this._channel, this._locale);
+  _Session(this._channel, this._locale, this._levels);
 
   final VoicePlatform _channel;
   final String _locale;
+  final StreamController<double> _levels;
   late final StreamController<String> out;
   StreamSubscription<VoiceEvent>? _events;
   final _free = <HeardWord>[];
@@ -94,6 +119,8 @@ class _Session {
         // 8 s to start talking count from here, not from the model load.
         _nothing ??= Timer(nothingHeardLimit, () => unawaited(stop()));
         out.add('');
+      case VoiceLevel(:final value):
+        if (_levels.hasListener) _levels.add(value);
       case VoicePartial(:final text):
         _partial = text;
         if (text.trim().isNotEmpty) {
