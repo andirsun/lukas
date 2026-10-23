@@ -30,6 +30,9 @@ class _FakeServer {
   /// Sends the body in small pieces, slowly.
   var slow = false;
 
+  /// A 206 answer says it starts here instead of where it was asked to.
+  int? wrongRangeStart;
+
   Uint8List body = _payload;
 
   Uri get base => Uri.parse('http://127.0.0.1:${_server.port}/release');
@@ -57,7 +60,8 @@ class _FakeServer {
     String? contentRange;
     final match = range == null ? null : RegExp(r'^bytes=(\d+)-$').firstMatch(range);
     if (match != null && !ignoreRange) {
-      from = int.parse(match.group(1)!);
+      from = wrongRangeStart ?? int.parse(match.group(1)!);
+      wrongRangeStart = null;
       if (from >= body.length) {
         response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
         await response.close();
@@ -107,6 +111,12 @@ class _FakeFiles implements ModelFiles {
   final unzipped = <String>[];
   var released = 0;
 
+  /// Free space where the models go.
+  int free = 1 << 40;
+
+  @override
+  Future<int> freeBytes() async => free;
+
   @override
   Future<String> modelsDirectory() async => root.path;
 
@@ -126,6 +136,7 @@ VoiceModel _model(Uint8List bytes) => VoiceModel(
   locale: 'es',
   name: 'vosk-model-small-es-0.42',
   bytes: bytes.length,
+  unzippedBytes: bytes.length * 2,
   sha256: sha256.convert(bytes).toString(),
 );
 
@@ -163,6 +174,7 @@ void main() {
     for (final model in voiceModels.values) {
       expect(model.sha256, matches(RegExp(r'^[0-9a-f]{64}$')));
       expect(model.bytes, greaterThan(30 * 1000 * 1000));
+      expect(model.unzippedBytes, greaterThan(model.bytes));
     }
   });
 
@@ -259,6 +271,56 @@ void main() {
     expect(kept, inExclusiveRange(0, _payload.length));
   });
 
+  test('a file error while writing (a full disk, say) is a ModelDownloadFailure', () async {
+    // The partial file's path is taken by a folder: writing fails, and the error surfaces when
+    // the file is closed.
+    await Directory('${root.path}/voice/vosk-model-small-es-0.42.zip.part').create(recursive: true);
+    await expectLater(
+      store().download('es'),
+      throwsA(isA<ModelDownloadFailure>().having((f) => f.cancelled, 'cancelled', isFalse)),
+    );
+    expect(await store().installedPath('es'), isNull);
+  });
+
+  test('a models folder that cannot be made is a ModelDownloadFailure too', () async {
+    await File('${root.path}/voice').writeAsString('not a folder');
+    await expectLater(store().download('es'), throwsA(isA<ModelDownloadFailure>()));
+  });
+
+  test('not enough free space for the zip and the model refuses before downloading', () async {
+    files.free = _payload.length * 2;
+    await expectLater(
+      store().download('es'),
+      throwsA(isA<ModelDownloadFailure>().having((f) => f.noSpace, 'noSpace', isTrue)),
+    );
+    expect(server.requests, isEmpty);
+    files.free = _payload.length * 3;
+    await store().download('es');
+    expect(await store().installedPath('es'), isNotNull);
+  });
+
+  test(
+    'a 206 that starts somewhere else than asked is refused, and the next try starts over',
+    () async {
+      final s = store();
+      server.cutAfter = 100 * 1024;
+      await expectLater(s.download('es'), throwsA(isA<ModelDownloadFailure>()));
+      server.wrongRangeStart = 50 * 1024;
+      await expectLater(s.download('es'), throwsA(isA<ModelDownloadFailure>()));
+      await s.download('es');
+      expect(server.requests.last.range, isNull, reason: 'started over');
+      expect(await s.installedPath('es'), isNotNull);
+    },
+  );
+
+  test('a server sending more than the model\'s size is cut at the size', () async {
+    server.body = Uint8List.fromList([..._payload, ...List<int>.filled(64 * 1024, 7)]);
+    // The model is the payload: what comes after it is never written.
+    final s = store(model: _model(_payload));
+    await s.download('es');
+    expect(await s.installedPath('es'), isNotNull);
+  });
+
   test('deleteModels removes every model and frees the loaded one', () async {
     final s = store();
     await s.download('es');
@@ -273,6 +335,7 @@ void main() {
       locale: 'en',
       name: 'vosk-model-small-en-us-0.15',
       bytes: _payload.length,
+      unzippedBytes: _payload.length * 2,
       sha256: sha256.convert(_payload).toString(),
     );
     final s = ModelStore(

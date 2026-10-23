@@ -756,5 +756,7 @@
   "captureYesterday": "Yesterday",
   "captureSave": "SAVE {count}",
   "captureSaved": "Done! {count, plural, =1{1 movement} other{{count} movements}} for {amount}",
-  "captureUndone": "Removed: {count, plural, =1{1 movement} other{{count} movements}}"
+  "captureUndone": "Removed: {count, plural, =1{1 movement} other{{count} movements}}",
+  "capturePreparing": "Getting the microphone ready…",
+  "captureDownloadNoSpace": "There isn't enough space on the phone: the voice needs about {megabytes} MB free."
 }

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:dio/dio.dart' show CancelToken;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../add/add_repository.dart';
@@ -10,7 +9,6 @@ import '../add/add_sheet.dart' show canRetrySave;
 import '../add/idempotency_key.dart';
 import '../api/gen/lukitas_api.dart';
 import '../api/session.dart';
-import '../home/category_look.dart';
 import '../home/home_controller.dart';
 import '../home/home_repository.dart';
 import '../home/home_widgets.dart' show QuietSpinner;
@@ -22,8 +20,8 @@ import '../theme/tokens.g.dart';
 import 'capture_repository.dart';
 import 'engine/speech_engine.dart';
 import 'models_download.dart';
-import 'parser/dates.dart' show addDays;
 import 'parser/parse.dart' as p;
+import 'preview/capture_cards.dart';
 import 'preview/capture_preview.dart';
 
 /// Told about every batch saved, with its rows, once the sheet closes: the hook for Task 13's
@@ -74,7 +72,7 @@ class CaptureSheet extends ConsumerStatefulWidget {
   ConsumerState<CaptureSheet> createState() => _CaptureSheetState();
 }
 
-class _CaptureSheetState extends ConsumerState<CaptureSheet> {
+class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBindingObserver {
   var _stage = _Stage.starting;
   _Note? _note;
   var _canListen = false;
@@ -83,6 +81,10 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
 
   StreamSubscription<String>? _listening;
   var _heard = '';
+
+  /// The engine has loaded its model and the microphone records: "¿En qué gastaste?" shows only
+  /// then, so the start of a sentence is not lost.
+  var _ready = false;
 
   /// A transcript that came before home's figures did: read once they are here.
   String? _pending;
@@ -98,28 +100,40 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   var _saving = false;
   HomeFailure? _failure;
 
-  /// The batch attempt's key: made at the first press, the same for Reintentar, new after any
-  /// change to the cards (a different body).
+  /// The batch attempt's key: made at the first press, the same for Reintentar and for a change
+  /// that changes nothing, new for any other request body ([batchFingerprint]).
   String? _key;
-  int? _keyVersion;
+  String? _keyBody;
 
   SpeechEngine get _engine => ref.read(speechEngineProvider);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_fetchUsual());
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_start()));
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(_listening?.cancel());
     _download?.cancel();
     _preview?.dispose();
     _field.dispose();
     _fieldFocus.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // In the background the microphone is let go at once (Kotlin also stops on onStop); what was
+    // heard stays in the typing field. Coming back does not listen by itself.
+    if ((state == AppLifecycleState.hidden || state == AppLifecycleState.paused) &&
+        _stage == _Stage.listening) {
+      _type(null, text: _heard);
+    }
   }
 
   void _set(VoidCallback change) {
@@ -159,11 +173,15 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
       _stage = _Stage.listening;
       _note = null;
       _heard = '';
+      _ready = false;
     });
     _listening = _engine
         .listen(locale: _locale)
         .listen(
-          (text) => _set(() => _heard = text),
+          (text) => _set(() {
+            _ready = true;
+            _heard = text;
+          }),
           onError: (Object error) {
             _listening = null;
             final kind = error is SpeechFailure ? error.kind : SpeechFailureKind.failed;
@@ -231,8 +249,9 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
             cancel: cancel,
             onProgress: (received, _) => _set(() => _downloaded = received),
           );
-    } on ModelDownloadFailure catch (failure) {
+    } on Object catch (error) {
       if (!mounted) return;
+      final failure = error is ModelDownloadFailure ? error : const ModelDownloadFailure();
       _set(() {
         _download = null;
         _stage = _Stage.offer;
@@ -313,10 +332,11 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
     final navigator = Navigator.of(context);
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
 
-    if (_keyVersion != preview.version) _key = null;
-    final key = _key ??= newIdempotencyKey();
-    _keyVersion = preview.version;
     final drafts = preview.drafts(categoryName: (id) => data.categories[id]?.name ?? '');
+    final body = batchFingerprint(drafts);
+    if (_keyBody != body) _key = null;
+    final key = _key ??= newIdempotencyKey();
+    _keyBody = body;
     final total = preview.total;
 
     _set(() {
@@ -450,7 +470,8 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
   );
 
   Widget _offer(AppLocalizations l10n, LukitasColors colors) {
-    final megabytes = (ref.read(modelStoreProvider).modelFor(_locale).bytes / 1e6).round();
+    final model = ref.read(modelStoreProvider).modelFor(_locale);
+    final megabytes = (model.bytes / 1e6).round();
     final failure = _downloadFailure;
     return _padded([
       Text(
@@ -467,7 +488,11 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
         Semantics(
           liveRegion: true,
           child: Text(
-            failure.corrupt ? l10n.captureDownloadCorrupt : l10n.captureDownloadFailed,
+            failure.noSpace
+                ? l10n.captureDownloadNoSpace(((model.bytes + model.unzippedBytes) / 1e6).round())
+                : failure.corrupt
+                ? l10n.captureDownloadCorrupt
+                : l10n.captureDownloadFailed,
             style: TextStyle(color: colors.over, fontWeight: FontWeight.w800),
           ),
         ),
@@ -476,7 +501,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
       FilledButton(
         key: const Key('capture.offer.download'),
         onPressed: () => unawaited(_downloadModel()),
-        child: Text(l10n.captureOfferDownload(megabytes)),
+        child: Text(failure == null ? l10n.captureOfferDownload(megabytes) : l10n.retry),
       ),
       const SizedBox(height: LukitasTokens.space2),
       TextButton(
@@ -511,12 +536,15 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
 
   Widget _listeningView(AppLocalizations l10n, LukitasColors colors) => _padded([
     const SizedBox(height: LukitasTokens.space2),
-    Icon(Icons.mic, size: 48, color: colors.brand),
+    if (_ready)
+      Icon(Icons.mic, size: 48, color: colors.brand)
+    else
+      const Center(child: QuietSpinner(size: 48)),
     const SizedBox(height: LukitasTokens.space2),
     Semantics(
       liveRegion: true,
       child: Text(
-        l10n.captureListeningPrompt,
+        _ready ? l10n.captureListeningPrompt : l10n.capturePreparing,
         textAlign: TextAlign.center,
         style: TextStyle(color: colors.ink, fontSize: 22, fontWeight: FontWeight.w800),
       ),
@@ -650,7 +678,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> {
             ),
             const SizedBox(height: LukitasTokens.space2),
             for (var i = 0; i < cards.length; i++) ...[
-              _CardView(
+              CaptureCardView(
                 key: ValueKey('card-${cards[i].id}'),
                 index: i,
                 card: cards[i],
@@ -857,323 +885,6 @@ class _Header extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-typedef _CardChange = void Function({
-  int? amount,
-  p.Kind? kind,
-  String? name,
-  String? categoryId,
-  String? date,
-});
-
-/// One movement of the preview: its amount, name and category at a glance, a remove button, and,
-/// open, the fields to change it.
-class _CardView extends StatelessWidget {
-  const _CardView({
-    super.key,
-    required this.index,
-    required this.card,
-    required this.open,
-    required this.categories,
-    required this.currency,
-    required this.today,
-    required this.enabled,
-    required this.onToggle,
-    required this.onPick,
-    required this.onRemove,
-    required this.onChange,
-    required this.onPicked,
-  });
-
-  final int index;
-  final CaptureCard card;
-  final bool open;
-  final List<Category> categories;
-  final String currency;
-  final String today;
-  final bool enabled;
-  final VoidCallback onToggle;
-  final VoidCallback onPick;
-  final VoidCallback onRemove;
-  final _CardChange onChange;
-  final VoidCallback onPicked;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
-    final locale = l10n.localeName;
-    final category = categories.where((c) => c.id == card.categoryId).firstOrNull;
-    final hasAmount = (card.amount ?? 0) > 0;
-    final expense = card.kind == p.Kind.expense;
-
-    return Container(
-      key: Key('capture.card.$index'),
-      decoration: BoxDecoration(
-        color: colors.surfaceSunken,
-        borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
-        border: Border.all(color: card.complete ? colors.stroke : colors.near, width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
-            onTap: enabled ? onToggle : null,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(LukitasTokens.space3, LukitasTokens.space2, 0, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          hasAmount
-                              ? formatMoney(card.amount!, currency, locale)
-                              : l10n.captureNeedsAmount,
-                          style: TextStyle(
-                            color: hasAmount ? (expense ? colors.over : colors.good) : colors.near,
-                            fontSize: hasAmount ? 20 : 15,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        if (card.name.isNotEmpty)
-                          Text(
-                            card.name,
-                            style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
-                          ),
-                        const SizedBox(height: 4),
-                        if (category != null)
-                          Text(
-                            '${categoryLook(icon: category.icon, color: category.color).glyph} '
-                            '${category.name}',
-                            style: TextStyle(color: colors.inkMuted, fontWeight: FontWeight.w700),
-                          )
-                        else
-                          OutlinedButton(
-                            key: Key('capture.card.$index.pick'),
-                            onPressed: enabled ? onPick : null,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: colors.near,
-                              side: BorderSide(color: colors.near, width: 2),
-                              visualDensity: VisualDensity.compact,
-                            ),
-                            child: Text(l10n.capturePickCategory),
-                          ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    key: Key('capture.card.$index.remove'),
-                    tooltip: l10n.captureRemove,
-                    onPressed: enabled ? onRemove : null,
-                    icon: Icon(Icons.close, color: colors.inkMuted),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (open)
-            _CardEditor(
-              key: ValueKey('editor-${card.id}'),
-              index: index,
-              card: card,
-              categories: categories,
-              currency: currency,
-              today: today,
-              onChange: onChange,
-              onPicked: onPicked,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CardEditor extends StatefulWidget {
-  const _CardEditor({
-    super.key,
-    required this.index,
-    required this.card,
-    required this.categories,
-    required this.currency,
-    required this.today,
-    required this.onChange,
-    required this.onPicked,
-  });
-
-  final int index;
-  final CaptureCard card;
-  final List<Category> categories;
-  final String currency;
-  final String today;
-  final _CardChange onChange;
-  final VoidCallback onPicked;
-
-  @override
-  State<_CardEditor> createState() => _CardEditorState();
-}
-
-class _CardEditorState extends State<_CardEditor> {
-  late final _amount = TextEditingController(text: _amountText(widget.card.amount));
-  late final _name = TextEditingController(text: widget.card.name);
-
-  bool get _whole => widget.currency == 'COP';
-
-  String _amountText(int? cents) {
-    if (cents == null || cents == 0) return '';
-    if (_whole || cents % 100 == 0) return '${cents ~/ 100}';
-    return (cents / 100).toStringAsFixed(2);
-  }
-
-  /// What is typed, in cents: whole pesos in COP, up to two decimals (comma or dot) elsewhere.
-  int _cents(String text) {
-    final cleaned = text.trim().replaceAll(',', '.');
-    if (cleaned.isEmpty) return 0;
-    if (_whole) return (int.tryParse(cleaned) ?? 0) * 100;
-    final value = double.tryParse(cleaned);
-    return value == null ? 0 : (value * 100).round();
-  }
-
-  @override
-  void dispose() {
-    _amount.dispose();
-    _name.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
-    final card = widget.card;
-    final i = widget.index;
-    final kind = card.kind == p.Kind.income ? CategoryKindEnum.income : CategoryKindEnum.expense;
-    final ofKind = widget.categories.where((c) => c.kind == kind).toList();
-    final yesterday = addDays(widget.today, -1);
-    InputDecoration field(String label) => InputDecoration(
-      labelText: label,
-      isDense: true,
-      counterText: '',
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(LukitasTokens.radiusMd),
-        borderSide: BorderSide(color: colors.stroke, width: 2),
-      ),
-    );
-    Widget chip(Key key, String label, bool selected, VoidCallback onTap) => ChoiceChip(
-      key: key,
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onTap(),
-      selectedColor: colors.brand,
-      labelStyle: TextStyle(
-        color: selected ? colors.onBrand : colors.ink,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        LukitasTokens.space3,
-        0,
-        LukitasTokens.space3,
-        LukitasTokens.space3,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  key: Key('capture.card.$i.amount'),
-                  controller: _amount,
-                  keyboardType: TextInputType.numberWithOptions(decimal: !_whole),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(_whole ? r'[0-9]' : r'[0-9.,]')),
-                  ],
-                  maxLength: 12,
-                  onChanged: (text) => widget.onChange(amount: _cents(text)),
-                  style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
-                  decoration: field(l10n.captureAmountLabel),
-                ),
-              ),
-              const SizedBox(width: LukitasTokens.space2),
-              Expanded(
-                flex: 2,
-                child: TextField(
-                  key: Key('capture.card.$i.name'),
-                  controller: _name,
-                  maxLength: 120,
-                  onChanged: (text) => widget.onChange(name: text),
-                  style: TextStyle(color: colors.ink, fontWeight: FontWeight.w700),
-                  decoration: field(l10n.captureNameLabel),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: LukitasTokens.space2),
-          Wrap(
-            spacing: LukitasTokens.space2,
-            runSpacing: LukitasTokens.space1,
-            children: [
-              chip(
-                Key('capture.card.$i.kind.expense'),
-                l10n.addKindExpense,
-                card.kind == p.Kind.expense,
-                () => widget.onChange(kind: p.Kind.expense),
-              ),
-              chip(
-                Key('capture.card.$i.kind.income'),
-                l10n.addKindIncome,
-                card.kind == p.Kind.income,
-                () => widget.onChange(kind: p.Kind.income),
-              ),
-              chip(
-                Key('capture.card.$i.date.today'),
-                l10n.addToday,
-                card.date == widget.today,
-                () => widget.onChange(date: widget.today),
-              ),
-              chip(
-                Key('capture.card.$i.date.yesterday'),
-                l10n.captureYesterday,
-                card.date == yesterday,
-                () => widget.onChange(date: yesterday),
-              ),
-              if (card.date != widget.today && card.date != yesterday)
-                chip(Key('capture.card.$i.date.other'), card.date, true, () {}),
-            ],
-          ),
-          const SizedBox(height: LukitasTokens.space2),
-          if (ofKind.isEmpty)
-            Text(
-              card.kind == p.Kind.income ? l10n.addNoCategoriesIncome : l10n.addNoCategoriesExpense,
-              style: TextStyle(color: colors.inkMuted, fontWeight: FontWeight.w700),
-            )
-          else
-            Wrap(
-              spacing: LukitasTokens.space2,
-              runSpacing: LukitasTokens.space1,
-              children: [
-                for (final c in ofKind)
-                  chip(
-                    Key('capture.card.$i.category.${c.id}'),
-                    '${categoryLook(icon: c.icon, color: c.color).glyph} ${c.name}',
-                    c.id == card.categoryId,
-                    () {
-                      widget.onChange(categoryId: c.id);
-                      widget.onPicked();
-                    },
-                  ),
-              ],
-            ),
-        ],
-      ),
     );
   }
 }

@@ -10,6 +10,9 @@ enum VoicePass { free, grammar }
 sealed class VoiceEvent {
   const VoiceEvent();
 
+  /// The model is loaded and the microphone records: the person can start talking.
+  const factory VoiceEvent.ready() = VoiceReady;
+
   /// The free pass's guess at the words being said right now.
   const factory VoiceEvent.partial(String text) = VoicePartial;
 
@@ -25,6 +28,7 @@ sealed class VoiceEvent {
   static VoiceEvent? fromMap(Object? map) {
     if (map is! Map) return null;
     return switch (map['type']) {
+      'ready' => const VoiceEvent.ready(),
       'partial' => VoiceEvent.partial(map['text'] as String? ?? ''),
       'result' => VoiceEvent.result(
         map['pass'] == 'grammar' ? VoicePass.grammar : VoicePass.free,
@@ -35,6 +39,10 @@ sealed class VoiceEvent {
       _ => null,
     };
   }
+}
+
+class VoiceReady extends VoiceEvent {
+  const VoiceReady();
 }
 
 class VoicePartial extends VoiceEvent {
@@ -115,6 +123,9 @@ class VoiceChannel implements VoicePlatform {
 
   @override
   Future<void> releaseModels() => _methods.invokeMethod<void>('releaseModels');
+
+  @override
+  Future<int> freeBytes() async => (await _methods.invokeMethod<int>('freeBytes'))!;
 }
 
 final voiceChannelProvider = Provider<VoicePlatform>((ref) => const VoiceChannel());

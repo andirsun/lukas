@@ -61,4 +61,6 @@ dependencies {
     // (Apache-2.0 / LGPL-2.1). Never Android's SpeechRecognizer, which hands the audio to the
     // phone's recognition service (Google's, mostly).
     implementation("com.alphacephei:vosk-android:0.3.75")
+    // JVM unit tests of plain Kotlin (src/test): the voice model unzip. EPL-1.0, tests only.
+    testImplementation("junit:junit:4.13.2")
 }

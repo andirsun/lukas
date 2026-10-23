@@ -86,7 +86,11 @@ int _distance(String a, String b) {
 /// - a grammar currency, kind, date or separator word replaces the free words it overlaps only if
 ///   each of them is grammar vocabulary itself or looks like it (similarity ≥ 0.5, such as
 ///   "este"/"gasté"); otherwise the free words stay, as part of a name, and the grammar word goes;
-/// - free words that overlap nothing are kept, and so are grammar words that overlap nothing;
+/// - free words that overlap nothing are kept, and so are grammar words that overlap nothing.
+///   For number words that follows from "always win" (s08 needs a "doce" the free pass lost). For
+///   currency, kind, date and separator words it is a deliberate extension of v2, which says
+///   nothing about them: it can add a "y", "me" or "hoy" only the grammar pass heard. Revisit it
+///   at the phone test with real voices;
 /// - `[unk]` grammar words are ignored.
 ///
 /// The result is the kept words in time order, separated by spaces.

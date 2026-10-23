@@ -23,11 +23,27 @@ class FakeSpeechEngine implements SpeechEngine {
   var listens = 0;
   var stops = 0;
 
+  /// When set, listen keeps its stream open and silent: the test drives it through [held].
+  var hold = false;
+  StreamController<String>? held;
+
+  /// How many times a listener let go of a held stream (the sheet closed, the app went away).
+  var cancels = 0;
+
   @override
   Future<bool> available() async => availableAnswer;
 
   @override
-  Stream<String> listen({required String locale}) async* {
+  Stream<String> listen({required String locale}) {
+    if (hold) {
+      listens++;
+      final controller = held = StreamController<String>(onCancel: () => cancels++);
+      return controller.stream;
+    }
+    return _heard();
+  }
+
+  Stream<String> _heard() async* {
     listens++;
     final failed = failure;
     if (failed != null) {
@@ -35,6 +51,8 @@ class FakeSpeechEngine implements SpeechEngine {
       throw failed;
     }
     final heard = transcripts.isEmpty ? <String>[''] : transcripts.removeAt(0);
+    // The engine is ready: an empty first event.
+    yield '';
     for (final text in heard) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
       yield text;
@@ -114,6 +132,9 @@ class FakeModelStore extends ModelStore {
   var downloads = 0;
   ModelDownloadFailure? failure;
 
+  /// Something else the next download throws (then cleared): a file error, say.
+  Object? error;
+
   @override
   Future<String?> installedPath(String locale) async => null;
 
@@ -132,6 +153,11 @@ class FakeModelStore extends ModelStore {
       failure = null;
       throw failed;
     }
+    final other = error;
+    if (other != null) {
+      error = null;
+      throw other;
+    }
     onProgress?.call(total, total);
   }
 }
@@ -142,6 +168,9 @@ class _NoFiles implements ModelFiles {
 
   @override
   Future<void> releaseModels() async {}
+
+  @override
+  Future<int> freeBytes() async => 1 << 40;
 
   @override
   Future<void> unzip(String zip, String into) async {}

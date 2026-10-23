@@ -47,6 +47,25 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    override fun onStop() {
+        // In the background the microphone is let go at once; Dart also cancels listening.
+        voice?.stopRecording()
+        super.onStop()
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        // The engine goes away (the activity is destroyed): no Dart is left to stop a recording.
+        voice?.dispose()
+        voice = null
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
+    override fun onDestroy() {
+        voice?.dispose()
+        voice = null
+        super.onDestroy()
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,

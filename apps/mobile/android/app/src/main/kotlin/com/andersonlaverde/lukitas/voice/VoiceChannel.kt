@@ -8,6 +8,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Handler
 import android.os.Looper
+import android.os.StatFs
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
@@ -19,7 +20,6 @@ import org.vosk.Model
 import org.vosk.Recognizer
 import java.io.File
 import java.util.concurrent.Executors
-import java.util.zip.ZipInputStream
 
 /**
  * Quick capture's ears (lib/capture/engine/voice_channel.dart), on the `lukitas/voice` method channel
@@ -33,8 +33,9 @@ import java.util.zip.ZipInputStream
  * the final one: the grammar recognizer hits endpoints mid-sentence. Dart merges the two.
  *
  * Methods: `supported` → Boolean (the native library loads); `requestPermission` → Boolean;
- * `stop`; `modelsDirectory` → String; `unzip({zip, into})`; `releaseModels`.
- * Events, after listening with `{modelPath, grammar}`: `{type: partial, text}`,
+ * `stop`; `modelsDirectory` → String; `freeBytes` → Long; `unzip({zip, into})`; `releaseModels`.
+ * Events, after listening with `{modelPath, grammar}`: `{type: ready}` once the model is loaded
+ * and the microphone records, `{type: partial, text}`,
  * `{type: result, pass: free|grammar, json}`, `{type: done}` (then the stream ends) or
  * `{type: error, code}`.
  */
@@ -51,6 +52,7 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
 
     @Volatile private var stopRequested = false
     @Volatile private var session: Int = 0
+    @Volatile private var disposed = false
 
     // Kept loaded between sentences (loading takes about 300 ms); freed by releaseModels.
     private var model: Model? = null
@@ -65,6 +67,10 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
+        if (disposed) {
+            result.error("failed", "Voice channel disposed", null)
+            return
+        }
         when (call.method) {
             "supported" -> files.execute {
                 val ok = try {
@@ -81,6 +87,7 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
                 result.success(null)
             }
             "modelsDirectory" -> result.success(activity.noBackupFilesDir.absolutePath)
+            "freeBytes" -> result.success(StatFs(activity.noBackupFilesDir.absolutePath).availableBytes)
             "unzip" -> {
                 val zip = call.argument<String>("zip")
                 val into = call.argument<String>("into")
@@ -90,7 +97,7 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
                 }
                 files.execute {
                     try {
-                        unzip(File(zip), File(into))
+                        ZipExtract.unzip(File(zip), File(into))
                         main.post { result.success(null) }
                     } catch (error: Exception) {
                         main.post { result.error("failed", error.message, null) }
@@ -100,14 +107,46 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
             "releaseModels" -> {
                 stopRequested = true
                 worker.execute {
-                    model?.close()
-                    model = null
-                    modelPath = null
+                    closeModel()
                     main.post { result.success(null) }
                 }
             }
             else -> result.notImplemented()
         }
+    }
+
+    /** Stops recording now (the app went to the background): the loop ends within one chunk. */
+    fun stopRecording() {
+        stopRequested = true
+    }
+
+    /**
+     * The activity or engine is going away: end the recording loop (it holds the microphone and two
+     * recognizers), close the model, shut the threads down, and answer nothing more. Safe to call
+     * twice.
+     */
+    fun dispose() {
+        if (disposed) return
+        disposed = true
+        stopRequested = true
+        session++
+        pendingPermission?.success(false)
+        pendingPermission = null
+        methods.setMethodCallHandler(null)
+        events.setStreamHandler(null)
+        // Queued behind a running recording, which ends within 100 ms now that it is stopped.
+        worker.execute { closeModel() }
+        worker.shutdown()
+        files.shutdown()
+    }
+
+    /** On the worker thread only. Forgets the model as it frees it, so a failed load that follows
+     *  can never leave a freed model in use. */
+    private fun closeModel() {
+        val loaded = model
+        model = null
+        modelPath = null
+        loaded?.close()
     }
 
     private fun requestPermission(result: MethodChannel.Result) {
@@ -135,7 +174,7 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
         val args = arguments as? Map<*, *>
         val path = args?.get("modelPath") as? String
         val grammar = args?.get("grammar") as? String
-        if (path == null || grammar == null) {
+        if (disposed || path == null || grammar == null) {
             sink.success(mapOf("type" to "error", "code" to "bad_arguments"))
             sink.endOfStream()
             return
@@ -160,10 +199,8 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
         var biased: Recognizer? = null
         var audio: AudioRecord? = null
         try {
-            val loaded = if (modelPath == path && model != null) {
-                model!!
-            } else {
-                model?.close()
+            val loaded = model.takeIf { modelPath == path } ?: run {
+                closeModel()
                 Model(path).also {
                     model = it
                     modelPath = path
@@ -189,6 +226,7 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
             )
             if (audio.state != AudioRecord.STATE_INITIALIZED) throw IllegalStateException("mic")
             audio.startRecording()
+            send(id, sink, mapOf("type" to "ready"))
 
             val chunk = ShortArray(CHUNK)
             var lastPartial = ""
@@ -229,27 +267,6 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
             audio?.release()
             free?.close()
             biased?.close()
-        }
-    }
-
-    /** Unzips [zip] into [into], refusing entries that would land outside it. */
-    private fun unzip(zip: File, into: File) {
-        val root = into.canonicalFile
-        root.mkdirs()
-        ZipInputStream(zip.inputStream().buffered()).use { stream ->
-            while (true) {
-                val entry = stream.nextEntry ?: break
-                val target = File(root, entry.name).canonicalFile
-                if (!target.path.startsWith(root.path + File.separator)) {
-                    throw SecurityException("Zip entry outside the target: ${entry.name}")
-                }
-                if (entry.isDirectory) {
-                    target.mkdirs()
-                } else {
-                    target.parentFile?.mkdirs()
-                    target.outputStream().use { stream.copyTo(it) }
-                }
-            }
         }
     }
 

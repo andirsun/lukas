@@ -47,6 +47,9 @@ class _FakeChannel implements VoicePlatform {
   @override
   Future<void> releaseModels() async {}
 
+  @override
+  Future<int> freeBytes() async => 1 << 40;
+
   void send(VoiceEvent event) => events!.add(event);
 
   /// What the platform does on stop: the last results of both passes, then the end.
@@ -174,6 +177,28 @@ void main() {
     answer.complete(true);
     await pumpEventQueue();
     expect(channel.starts, isEmpty);
+  });
+
+  test('the platform being ready shows as an empty first event', () async {
+    final heard = <String>[];
+    final done = engine.listen(locale: 'es').listen(heard.add).asFuture<void>();
+    await pumpEventQueue();
+    expect(heard, isEmpty, reason: 'nothing before the model is loaded and the mic records');
+    channel.send(const VoiceEvent.ready());
+    await pumpEventQueue();
+    expect(heard, ['']);
+    await channel.finish();
+    await done;
+  });
+
+  test('stopping twice asks the platform once', () async {
+    final heard = engine.listen(locale: 'es').toList();
+    await pumpEventQueue();
+    await engine.stop();
+    await engine.stop();
+    expect(channel.stops, 1);
+    await channel.finish();
+    await heard;
   });
 
   test('stop asks the platform to stop (it then sends the last results)', () async {

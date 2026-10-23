@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import '../parser/parse.dart';
@@ -58,7 +60,6 @@ class CapturePreview extends ChangeNotifier {
   var _unread = <String>[];
   var _sentence = '';
   var _nextId = 0;
-  var _version = 0;
 
   List<CaptureCard> get cards => List.unmodifiable(_cards);
   List<String> get unread => List.unmodifiable(_unread);
@@ -66,19 +67,13 @@ class CapturePreview extends ChangeNotifier {
   /// The sentence the cards come from, as heard or typed.
   String get sentence => _sentence;
 
-  /// Grows with every change: a save attempt's idempotency key is good for one version only.
-  int get version => _version;
-
   /// GUARDAR can be pressed: at least one card, and every card has an amount and a category.
   bool get ready => _cards.isNotEmpty && _cards.every((c) => c.complete);
 
   /// The cards' amounts added up, in cents.
   int get total => _cards.fold(0, (sum, c) => sum + (c.amount ?? 0));
 
-  void _changed() {
-    _version++;
-    notifyListeners();
-  }
+  void _changed() => notifyListeners();
 
   /// Shows what [sentence] was read as, replacing what was there.
   void read(String sentence, ParseResult result) {
@@ -164,4 +159,38 @@ String savedName(String name, String fallback) {
   final trimmed = name.trim();
   if (trimmed.isEmpty) return fallback;
   return trimmed[0].toUpperCase() + trimmed.substring(1);
+}
+
+/// What a batch of [drafts] would send, as one string: the same drafts give the same string, so a
+/// save attempt's Idempotency-Key is kept for exactly the same request body (Reintentar, or a
+/// change that changes nothing), and a new one is made for any other.
+String batchFingerprint(List<Draft> drafts) => jsonEncode([
+  for (final d in drafts) [d.amount, d.kind.name, d.name, d.categoryId, d.date],
+]);
+
+/// An amount typed by hand on a card, in cents, read as strings (never through floating point):
+/// in es dots group thousands and a comma starts the cents (`1.234,50`), in en the other way round
+/// (`1,234.50`). COP is whole pesos. Anything else, or nothing, is 0: no amount yet.
+int parseCardAmount(String text, {required String currency, required String locale}) {
+  final decimal = locale == 'en' ? '.' : ',';
+  final grouping = locale == 'en' ? ',' : '.';
+  final cleaned = text.trim().replaceAll(grouping, '');
+  if (!RegExp(r'^\d*(?:' + RegExp.escape(decimal) + r'\d{0,2})?$').hasMatch(cleaned)) return 0;
+  final parts = cleaned.split(decimal);
+  final whole = parts[0];
+  final fraction = parts.length > 1 ? parts[1] : '';
+  if (whole.isEmpty && fraction.isEmpty) return 0;
+  if (whole.length > 12) return 0;
+  if (currency == 'COP' && fraction.replaceAll('0', '').isNotEmpty) return 0;
+  return int.parse(whole.isEmpty ? '0' : whole) * 100 + int.parse(fraction.padRight(2, '0'));
+}
+
+/// [cents] as a card's amount field shows it, ready to be changed: no grouping, the locale's
+/// decimal mark, cents only when there are some (and never in COP).
+String cardAmountText(int? cents, {required String currency, required String locale}) {
+  if (cents == null || cents <= 0) return '';
+  final whole = '${cents ~/ 100}';
+  final rest = cents % 100;
+  if (currency == 'COP' || rest == 0) return whole;
+  return '$whole${locale == 'en' ? '.' : ','}${rest.toString().padLeft(2, '0')}';
 }

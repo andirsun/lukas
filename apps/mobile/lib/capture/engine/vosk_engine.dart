@@ -90,6 +90,9 @@ class _Session {
   void _onEvent(VoiceEvent event) {
     if (out.isClosed) return;
     switch (event) {
+      case VoiceReady():
+        // An empty first event: listening has really started (SpeechEngine.listen).
+        out.add('');
       case VoicePartial(:final text):
         _partial = text;
         if (text.trim().isNotEmpty) {

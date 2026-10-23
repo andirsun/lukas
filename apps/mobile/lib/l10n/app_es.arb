@@ -1085,5 +1085,18 @@
         "type": "int"
       }
     }
+  },
+  "capturePreparing": "Preparando el micrófono…",
+  "@capturePreparing": {
+    "description": "Quick capture: while the speech model loads and the microphone starts; the prompt shows after."
+  },
+  "captureDownloadNoSpace": "No hay espacio en el teléfono: la voz necesita unos {megabytes} MB libres.",
+  "@captureDownloadNoSpace": {
+    "description": "Quick capture: too little free space for the voice download (zip plus unzipped model).",
+    "placeholders": {
+      "megabytes": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -65,11 +65,16 @@ void main() {
     expect(p.cards.single.categoryId, isNull);
   });
 
-  test('every change moves the version on (a new idempotency key)', () {
-    final p = _preview('gasté 15 mil en almuerzo');
-    final before = p.version;
-    p.update(p.cards.single.id, name: 'almuerzo rico');
-    expect(p.version, greaterThan(before));
+  test('the batch fingerprint follows what would be sent, not how it got there', () {
+    final p = _preview('gasté 15 mil en almuerzo y 3 lukas en uber');
+    p.update(p.cards[0].id, categoryId: 'food');
+    String name(String id) => id;
+    final before = batchFingerprint(p.drafts(categoryName: name));
+    p.update(p.cards[0].id, categoryId: 'food');
+    p.update(p.cards[1].id, name: 'uber');
+    expect(batchFingerprint(p.drafts(categoryName: name)), before);
+    p.update(p.cards[1].id, amount: 300100);
+    expect(batchFingerprint(p.drafts(categoryName: name)), isNot(before));
   });
 
   test('drafts to save: names start with a capital, or are the category\'s when empty', () {
@@ -97,5 +102,46 @@ void main() {
   test('the total adds up the cards', () {
     final p = _preview('gasté 15 mil en almuerzo y 3 lukas en uber');
     expect(p.total, 1800000);
+  });
+
+  group('a card amount typed by hand', () {
+    test('es: dots group thousands, a comma starts the cents', () {
+      expect(parseCardAmount('1.234,50', currency: 'EUR', locale: 'es'), 123450);
+      expect(parseCardAmount('9,5', currency: 'EUR', locale: 'es'), 950);
+      expect(parseCardAmount('12', currency: 'EUR', locale: 'es'), 1200);
+      expect(parseCardAmount('0,07', currency: 'EUR', locale: 'es'), 7);
+    });
+
+    test('en: commas group thousands, a dot starts the cents', () {
+      expect(parseCardAmount('1,234.50', currency: 'USD', locale: 'en'), 123450);
+      expect(parseCardAmount('9.5', currency: 'USD', locale: 'en'), 950);
+      expect(parseCardAmount('0.07', currency: 'USD', locale: 'en'), 7);
+    });
+
+    test('COP is whole pesos, with or without thousands dots', () {
+      expect(parseCardAmount('15000', currency: 'COP', locale: 'es'), 1500000);
+      expect(parseCardAmount('15.000', currency: 'COP', locale: 'es'), 1500000);
+      expect(parseCardAmount('15,000', currency: 'COP', locale: 'en'), 1500000);
+    });
+
+    test('anything else is no amount (0), never a guess', () {
+      for (final text in ['', ',', '1,2,3', '1,234', '9,505', 'abc', '1.2.3,4,5']) {
+        expect(
+          parseCardAmount(text, currency: 'EUR', locale: 'es'),
+          0,
+          reason: text,
+        );
+      }
+      expect(parseCardAmount('9,50', currency: 'COP', locale: 'es'), 0);
+      expect(parseCardAmount('99999999999999999999', currency: 'COP', locale: 'es'), 0);
+    });
+
+    test('an amount shows back the way it is typed', () {
+      expect(cardAmountText(123450, currency: 'EUR', locale: 'es'), '1234,50');
+      expect(cardAmountText(123450, currency: 'USD', locale: 'en'), '1234.50');
+      expect(cardAmountText(1500000, currency: 'COP', locale: 'es'), '15000');
+      expect(cardAmountText(1200, currency: 'EUR', locale: 'es'), '12');
+      expect(cardAmountText(null, currency: 'EUR', locale: 'es'), '');
+    });
   });
 }

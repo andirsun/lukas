@@ -1,4 +1,6 @@
 // Quick capture (spec section 6.1.4) on home, with a fixed transcript in place of audio.
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
@@ -67,6 +69,13 @@ Future<_Env> _pump(
 Future<void> _open(WidgetTester tester) async {
   await tester.tap(find.byKey(const Key('home.capture')));
   await tester.pumpAndSettle();
+}
+
+/// Opens it while something keeps moving (a spinner), so it never settles.
+Future<void> _openMoving(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('home.capture')));
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 FilledButton _save(WidgetTester tester) =>
@@ -309,5 +318,131 @@ void main() {
     await _open(tester);
     expect(find.text('SAVE 2'), findsOneWidget);
     expect(find.text('Pick a category'), findsOneWidget);
+  });
+
+  testWidgets('"¿En qué gastaste?" shows only once the engine is ready', (tester) async {
+    final env = await _pump(tester);
+    env.engine.hold = true;
+    await _openMoving(tester);
+    expect(find.text('¿En qué gastaste?'), findsNothing);
+    expect(find.text('Preparando el micrófono…'), findsOneWidget);
+    env.engine.held!.add('');
+    await tester.pump();
+    expect(find.text('¿En qué gastaste?'), findsOneWidget);
+    expect(find.text('Preparando el micrófono…'), findsNothing);
+    await env.engine.held!.close();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('going to the background stops listening at once and keeps what was heard', (
+    tester,
+  ) async {
+    final env = await _pump(tester);
+    env.engine.hold = true;
+    await _openMoving(tester);
+    env.engine.held!
+      ..add('')
+      ..add('gasté 15 mil');
+    await tester.pump();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(env.engine.cancels, 0, reason: 'a dialog over the app is not the background');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pumpAndSettle();
+    expect(env.engine.cancels, 1);
+    expect(env.engine.stops, greaterThanOrEqualTo(1));
+    expect(find.byKey(const Key('capture.field')), findsOneWidget);
+    expect(find.text('gasté 15 mil'), findsOneWidget);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(env.engine.listens, 1, reason: 'coming back does not listen by itself');
+  });
+
+  testWidgets('a download that fails leaves Descargando with a message and Reintentar', (
+    tester,
+  ) async {
+    final env = await _pump(tester, failure: const SpeechFailure(SpeechFailureKind.noModel));
+    env.models.failure = const ModelDownloadFailure();
+    await _open(tester);
+    await tester.tap(find.byKey(const Key('capture.offer.download')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Descargando'), findsNothing);
+    expect(
+      find.text(
+        'No se pudo descargar la voz. Revisa tu internet e inténtalo de nuevo; seguirá donde quedó.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('capture.offer.download')),
+        matching: find.text('Reintentar'),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const Key('capture.offer.download')));
+    await tester.pumpAndSettle();
+    expect(env.models.downloads, 2);
+    expect(find.text('GUARDAR 2'), findsOneWidget);
+  });
+
+  testWidgets('any other error from the download comes back to the offer too', (tester) async {
+    final env = await _pump(tester, failure: const SpeechFailure(SpeechFailureKind.noModel));
+    env.models.error = const FileSystemException('No space left on device');
+    await _open(tester);
+    await tester.tap(find.byKey(const Key('capture.offer.download')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Descargando'), findsNothing);
+    expect(find.byKey(const Key('capture.offer.download')), findsOneWidget);
+  });
+
+  testWidgets('too little free space says how much the voice needs', (tester) async {
+    final env = await _pump(tester, failure: const SpeechFailure(SpeechFailureKind.noModel));
+    env.models.failure = const ModelDownloadFailure(noSpace: true);
+    await _open(tester);
+    await tester.tap(find.byKey(const Key('capture.offer.download')));
+    await tester.pumpAndSettle();
+    final model = voiceModels['es']!;
+    final mb = ((model.bytes + model.unzippedBytes) / 1e6).round();
+    expect(
+      find.text('No hay espacio en el teléfono: la voz necesita unos $mb MB libres.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('in English a failed download says so and offers Retry', (tester) async {
+    final env = await _pump(
+      tester,
+      locale: const Locale('en'),
+      failure: const SpeechFailure(SpeechFailureKind.noModel),
+    );
+    env.models.failure = const ModelDownloadFailure();
+    await _open(tester);
+    await tester.tap(find.byKey(const Key('capture.offer.download')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining("The voice didn't download"), findsOneWidget);
+    expect(find.text('Try again'), findsOneWidget);
+  });
+
+  testWidgets('after a lost answer, a change that changes nothing keeps the key: 2 rows', (
+    tester,
+  ) async {
+    final env = await _pump(tester);
+    await _open(tester);
+    await _pickCategory(tester, 0, 'cat-food');
+    env.capture.loseNextAnswer = true;
+    await tester.tap(find.byKey(const Key('capture.save')));
+    await tester.pumpAndSettle();
+    // The same category picked again: the batch is what it was.
+    await tester.tap(find.text('almuerzo'));
+    await tester.pumpAndSettle();
+    await _pickCategory(tester, 0, 'cat-food');
+    await tester.tap(find.byKey(const Key('capture.save')));
+    await tester.pumpAndSettle();
+    expect(env.capture.keys, hasLength(2));
+    expect(env.capture.keys[0], env.capture.keys[1]);
+    expect(env.server.items.where((t) => t.id.startsWith('batch-')), hasLength(2));
+    await _letTimersEnd(tester);
   });
 }
