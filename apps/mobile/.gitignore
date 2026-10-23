@@ -55,3 +55,6 @@ app.*.map.json
 # A signing keystore never belongs in the checkout (docs/mobile/release.md keeps it outside).
 *.p12
 *.pfx
+
+# What a failed golden test leaves beside its goldens (test/**/failures/).
+**/failures/

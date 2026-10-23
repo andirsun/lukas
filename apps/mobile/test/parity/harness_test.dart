@@ -10,13 +10,17 @@ import '../support/parity.dart';
 /// The parity harness itself (test/support/parity.dart, docs/mobile/parity.md): its pairs, its
 /// fixtures and the emoji it draws with.
 void main() {
-  test('every pair has its web shot, its fixture and its app test', () {
+  test('every pair has its web shot, its golden, its fixture and an app test that renders it', () {
     final pairs = parityPairs();
     expect(pairs, isNotEmpty);
     for (final pair in pairs) {
       expect(['night', 'day'], contains(pair.theme));
-      expect(File('test/parity/web/${pair.id}-${pair.theme}.png').existsSync(), isTrue);
+      final name = '${pair.id}-${pair.theme}';
+      expect(File('test/parity/web/$name.png').existsSync(), isTrue, reason: 'web/$name.png');
+      expect(File('test/parity/app/$name.png').existsSync(), isTrue, reason: 'app/$name.png');
       expect(File(pair.appTest).existsSync(), isTrue, reason: pair.appTest);
+      // The app test renders the pair: it names it in a parityGolden call.
+      expect(File(pair.appTest).readAsStringSync(), contains("'${pair.id}'"), reason: name);
       expect(ParityFixtures.load(pair.storyId).storyId, pair.storyId);
     }
   });

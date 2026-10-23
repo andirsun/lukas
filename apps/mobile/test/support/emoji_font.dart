@@ -15,13 +15,40 @@ import 'dart:typed_data';
 Uint8List sbixFromCbdt(Uint8List font) {
   final data = ByteData.sublistView(font);
   final tables = _tables(data);
+  final numGlyphs = data.getUint16(tables['maxp']!.offset + 4);
+  final (glyphs, bestPpem) = _bitmaps(data, tables);
+
+  final out = Map.of({
+    for (final MapEntry(:key, :value) in tables.entries)
+      if (key != 'CBLC' && key != 'CBDT') key: Uint8List.sublistView(font, value.offset, value.end),
+  });
+  out['sbix'] = _sbix(glyphs, numGlyphs, bestPpem);
+  final head = Uint8List.fromList(out['head']!);
+  final upem = ByteData.sublistView(head).getUint16(18);
+  final (glyf, loca) = _boxes(glyphs, numGlyphs, upem / bestPpem);
+  out['glyf'] = glyf;
+  out['loca'] = loca;
+  ByteData.sublistView(head)
+    ..setUint32(8, 0) // checkSumAdjustment: not checked by the engine.
+    ..setInt16(50, 1); // indexToLocFormat: long offsets.
+  out['head'] = head;
+  out['maxp'] =
+      (ByteData(32)
+            ..setUint32(0, 0x00010000)
+            ..setUint16(4, numGlyphs)
+            ..setUint16(14, 2)) // maxZones
+          .buffer
+          .asUint8List();
+  return _assemble(out);
+}
+
+/// The PNG of each glyph at the font's largest strike, and that strike's ppem.
+(Map<int, _Bitmap>, int) _bitmaps(ByteData data, Map<String, _Table> tables) {
   final cblc = tables['CBLC'];
   final cbdt = tables['CBDT'];
   if (cblc == null || cbdt == null) {
     throw ArgumentError('The font has no CBLC/CBDT tables to convert.');
   }
-  final numGlyphs = data.getUint16(tables['maxp']!.offset + 4);
-
   // The largest strike: Noto ships one, at 109 ppem.
   final numSizes = data.getUint32(cblc.offset + 4);
   var best = 0;
@@ -85,28 +112,80 @@ Uint8List sbixFromCbdt(Uint8List font) {
     }
   }
 
-  final out = Map.of({
-    for (final MapEntry(:key, :value) in tables.entries)
-      if (key != 'CBLC' && key != 'CBDT') key: Uint8List.sublistView(font, value.offset, value.end),
-  });
-  out['sbix'] = _sbix(glyphs, numGlyphs, bestPpem);
-  final head = Uint8List.fromList(out['head']!);
-  final upem = ByteData.sublistView(head).getUint16(18);
-  final (glyf, loca) = _boxes(glyphs, numGlyphs, upem / bestPpem);
-  out['glyf'] = glyf;
-  out['loca'] = loca;
-  ByteData.sublistView(head)
-    ..setUint32(8, 0) // checkSumAdjustment: not checked by the engine.
-    ..setInt16(50, 1); // indexToLocFormat: long offsets.
-  out['head'] = head;
-  out['maxp'] =
-      (ByteData(32)
-            ..setUint32(0, 0x00010000)
-            ..setUint16(4, numGlyphs)
-            ..setUint16(14, 2)) // maxZones
-          .buffer
-          .asUint8List();
-  return _assemble(out);
+  return (glyphs, bestPpem);
+}
+
+/// The characters [font] (a CBDT colour font) draws a picture for: those its `cmap` maps to a
+/// glyph that has a bitmap.
+Set<int> emojiWithPictures(Uint8List font) {
+  final data = ByteData.sublistView(font);
+  final tables = _tables(data);
+  final (glyphs, _) = _bitmaps(data, tables);
+  return {
+    for (final MapEntry(key: char, value: glyph) in _cmap(data, tables['cmap']!).entries)
+      if (glyphs.containsKey(glyph)) char,
+  };
+}
+
+/// The emoji in [text] that [font] has no picture for. Emoji are the characters an emoji font
+/// draws (apps/web/scripts/parity-storybook.ts EMOJI_UNICODE_RANGE, less the joiners and
+/// selectors, which have no picture of their own, and the dingbats a text font draws, ✓ ✎).
+Set<String> emojiWithoutPicture(String text, Uint8List font) {
+  final pictures = emojiWithPictures(font);
+  return {
+    for (final rune in text.runes)
+      if (_isEmoji(rune) && !pictures.contains(rune)) String.fromCharCode(rune),
+  };
+}
+
+bool _isEmoji(int rune) =>
+    (rune >= 0x1F000 && rune <= 0x1FAFF) ||
+    (rune >= 0x2600 && rune <= 0x27BF && !_textDingbats.contains(rune)) ||
+    const {0x231A, 0x231B, 0x23F0, 0x23F3, 0x2B50, 0x2B55}.contains(rune);
+
+/// Dingbats with text presentation that Noto Color Emoji does not draw: check marks, pencils.
+const _textDingbats = {0x2713, 0x2714, 0x2717, 0x270E, 0x2710};
+
+/// `cmap` format 12 (the full Unicode one emoji fonts carry) and format 4: character → glyph.
+Map<int, int> _cmap(ByteData data, _Table cmap) {
+  final out = <int, int>{};
+  final count = data.getUint16(cmap.offset + 2);
+  for (var i = 0; i < count; i++) {
+    final sub = cmap.offset + data.getUint32(cmap.offset + 4 + i * 8 + 4);
+    switch (data.getUint16(sub)) {
+      case 12:
+        final groups = data.getUint32(sub + 12);
+        for (var g = 0; g < groups; g++) {
+          final at = sub + 16 + g * 12;
+          final start = data.getUint32(at);
+          final end = data.getUint32(at + 4);
+          final glyph = data.getUint32(at + 8);
+          for (var c = start; c <= end; c++) {
+            out[c] = glyph + c - start;
+          }
+        }
+      case 4:
+        final segments = data.getUint16(sub + 6) ~/ 2;
+        final ends = sub + 14;
+        final starts = ends + segments * 2 + 2;
+        final deltas = starts + segments * 2;
+        final ranges = deltas + segments * 2;
+        for (var s = 0; s < segments; s++) {
+          final start = data.getUint16(starts + s * 2);
+          final end = data.getUint16(ends + s * 2);
+          final delta = data.getInt16(deltas + s * 2);
+          final range = data.getUint16(ranges + s * 2);
+          for (var c = start; c <= end && c != 0xFFFF; c++) {
+            final fromArray = range == 0
+                ? c
+                : data.getUint16(ranges + s * 2 + range + (c - start) * 2);
+            final glyph = fromArray == 0 ? 0 : (fromArray + delta) & 0xFFFF;
+            if (glyph != 0) out.putIfAbsent(c, () => glyph);
+          }
+        }
+    }
+  }
+  return out;
 }
 
 class _Table {

@@ -15,7 +15,7 @@ pnpm --filter @lukas/web parity:fixtures        # the stories' data → apps/mob
 pnpm --filter @lukas/web parity:shots           # the stories' pictures → apps/mobile/test/parity/web
 cd apps/mobile
 flutter test --update-goldens test/parity       # the app's pictures → test/parity/app
-dart run tool/parity/compose.dart               # side by side → build/parity
+dart run tool/parity/compose.dart --max 2       # side by side → build/parity; fails over 2% of ink
 ```
 
 Each command takes an optional id filter, e.g. `parity:shots money` or `compose.dart money`.
@@ -24,13 +24,39 @@ Then open `apps/mobile/build/parity/<id>-<theme>.png`:
 
 - top left: the web;
 - top right: the app;
-- underneath: the web in grey, with every differing pixel in magenta, and the share of pixels that
-  differ.
+- underneath: the web in grey, with every differing pixel in magenta, and the two shares below.
 
-`compose.dart` prints the shares, and writes them to `build/parity/summary.json` too. A pair passes
-when it shows no visible difference except those spec §5 allows: the system bars, the 🎤 next to
-the ＋, the web-only demo banner, and text antialiasing. Antialiasing is a one-pixel wobble, not a
-different size or weight. In practice that is well under 1% of pixels.
+### What differs, and the pass rule
+
+- **A pixel differs** when its colour on one side is nowhere within one logical pixel (two physical
+  pixels, at the parity's ratio of 2) of the same place on the other side. Colours count as the
+  same within 24 of 255 per channel.
+  - That forgives what spec §5 allows: antialiasing, and text that Chrome and Flutter round to
+    different pixels (see "Known differences").
+  - It does not forgive a wrong size, weight, colour or spacing.
+- **The ink share** is the measure: differing pixels over the pixels that are not the page's
+  background on either side. The share of the whole page is printed too, but a small component on
+  an empty page is almost all background, so that number says little.
+- **A pair passes** when:
+  - the picture shows no visible difference except those spec §5 allows: the system bars, the 🎤
+    next to the ＋, the web-only demo banner, and text antialiasing; and
+  - **under 2% of its ink differs.** `compose.dart --max 2` exits non-zero when a pair is over.
+- Look at the picture first. The number backs it up; it does not replace it.
+
+How the rule was set, on Money (compose's unit tests pin the tolerances):
+
+| | Ink that differs |
+| --- | --- |
+| The true Money pairs | 0.00% on all 7 |
+| Probe: Money's colour at 85% alpha | 64% to 85% (all 7 over) |
+| Probe: Money's font 1 px bigger | 26% to 35% (all 7 over) |
+| A tolerance of ±1 physical pixel instead, true pairs | 20–22% for the hero amount |
+
+The last row is why the shift tolerance is a logical pixel, not a physical one. Blink rounds line
+metrics to whole CSS pixels, so the hero amount sits 2 physical pixels away. With ±1 physical
+pixel, the true pair would fail the 2% rule.
+
+`compose.dart` writes both shares for every pair to `build/parity/summary.json`.
 
 Once the app's side is right, plain `flutter test test/parity` is the regression test: it fails
 when the app's picture changes. The web shots are regenerated only when the web changes.
@@ -67,7 +93,8 @@ when the app's picture changes. The web shots are regenerated only when the web 
      to it.
 
 4. Run the loop, look at the picture, and fix the app until the picture shows no visible
-   difference. Commit the web shot, the fixture and the golden. `build/parity` stays out of git.
+   difference and `compose.dart --max 2` passes. Commit the web shot, the fixture and the golden.
+   `build/parity` stays out of git.
 
 ## How the two sides are made the same
 
@@ -108,9 +135,13 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - The font keeps its pictures as PNGs in `CBDT` tables. `flutter test` on macOS draws through Core
     Text, which only draws Apple's `sbix` tables. So `test/support/emoji_font.dart` moves the same
     PNGs into an `sbix` table, in memory, for the goldens.
-  - The file is the 2017 build that ships in the Flutter SDK's engine sources. Emoji newer than
-    Unicode 10 (🧾, for example) are not in it: Chrome falls back to Apple's for those and the app
-    draws a box. Newer emoji need a newer font in that folder.
+  - The file is the 2017 build (v1.39) that ships in the Flutter SDK's engine sources. Emoji newer
+    than Unicode 10 are not in it: of those the web uses, 🧪 and 🧾. Chrome falls back to Apple's
+    for those and the app draws a box. The current CBDT `NotoColorEmoji.ttf` from
+    googlefonts/noto-emoji can replace it in that folder, with its OFL; nothing else changes.
+  - `test/parity/emoji_font_test.dart` checks that `sbixFromCbdt` converts the committed file. It
+    also fails when an emoji in any fixture has no picture in it, so a missing emoji is reported
+    rather than drawn as a box.
 - **Icons.** Material icons draw with the Flutter SDK's own `MaterialIcons-Regular.otf`
   (`loadMaterialIcons` in `test/support/fonts.dart`), the file `flutter build` bundles. The Stage 3
   goldens load it too.
@@ -122,8 +153,10 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - `ParityStoryFrame` places its child on the body's line the way Blink does (`cssStrutAscent`).
   - A text style whose line height is smaller than its font's own (`.lk-hero-amount` at 1.05) still
     sits up to one logical pixel lower in the app than in Chrome.
-  - That is within spec §5's one-pixel wobble, and it shows as a magenta edge on the glyphs.
+  - That is within spec §5's one-pixel wobble. compose's one-logical-pixel tolerance forgives it.
 - **Glyph rasterising.** Chrome and `flutter test` rasterise the same glyphs a little differently:
-  edges differ by a physical pixel here and there.
+  edges differ by a physical pixel here and there, which the tolerance forgives too.
+- **What the tolerance hides.** An element off by one logical pixel, such as padding of 15 instead
+  of 16, is not counted. Two pixels or more is.
 - **Pictures are the Mac's.** Text and shadows rasterise differently on Linux. The parity goldens
   are tagged `golden`, so CI skips them (`dart_test.yaml`), as it skips the other goldens.
