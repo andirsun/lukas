@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -137,6 +138,97 @@ void main() {
       for (final entry in await _extras()) {
         expect(entry.packages, isNotEmpty);
         expect(_text(entry).length, greaterThan(200));
+      }
+    });
+
+    test('the speech engine names Kaldi and OpenFST, which libvosk.so is built from', () async {
+      for (final language in ['es', 'en']) {
+        final vosk = (await _extras(language)).singleWhere(
+          (e) => e.packages.any((p) => p.startsWith('vosk-android ')),
+        );
+        expect(_text(vosk), contains('Kaldi'), reason: language);
+        expect(_text(vosk), contains('OpenFST'), reason: language);
+      }
+    });
+
+    // What libvosk.so links statically (OpenBLAS without its LAPACK, CLAPACK with libf2c; vosk-api's
+    // android/lib/build-vosk.sh) and what libjnidispatch.so embeds (libffi), each with the text its
+    // project publishes.
+    for (final (name, notice, text) in [
+      ('OpenBLAS 0.3.20', 'OpenBLAS', 'Copyright (c) 2011-2014, The OpenBLAS Project'),
+      ('CLAPACK 3.2.1', 'CLAPACK', 'Copyright (c) 1992-2008 The University of Tennessee'),
+      ('libffi 3.4.4', 'libffi', 'Permission is hereby granted, free of charge'),
+    ]) {
+      test('$name is listed with its own published text', () async {
+        for (final language in ['es', 'en']) {
+          final entry = (await _extras(language)).singleWhere((e) => e.packages.contains(name));
+          expect(entry.packages, [name]);
+          expect(_text(entry), contains(notice), reason: language);
+          expect(_text(entry), contains(text), reason: language);
+          expect(_text(entry), isNot(contains('Apache License')), reason: language);
+        }
+      });
+    }
+
+    test('CLAPACK also carries the libf2c notice it is built with', () async {
+      final entry = (await _extras()).singleWhere((e) => e.packages.contains('CLAPACK 3.2.1'));
+      expect(_text(entry), contains('AT&T, Lucent Technologies and Bellcore'));
+    });
+
+    test('those versions are the ones of the vosk-android and JNA in the build', () async {
+      // OpenBLAS 0.3.20 and CLAPACK 3.2.1 are what vosk-android 0.3.75 is built with, and libffi
+      // 3.4.4 what JNA 5.18.1 bundles: upgrading either means checking these entries again.
+      final libraries = await _libraries();
+      String version(String id) => libraries.singleWhere((l) => l.id == id).version;
+      expect(version('com.alphacephei:vosk-android'), '0.3.75');
+      expect(version('net.java.dev.jna:jna'), '5.18.1');
+    });
+
+    test('the list never silently shrinks', () async {
+      final packages = {for (final e in await _extras()) ...e.packages};
+      for (final name in [
+        'vosk-model-small-es-0.42',
+        'vosk-model-small-en-us-0.15',
+        'OpenBLAS 0.3.20',
+        'CLAPACK 3.2.1',
+        'libffi 3.4.4',
+        'Lukitas feedback sounds',
+        'Lukitas',
+      ]) {
+        expect(packages, contains(name));
+      }
+      expect(packages.any((p) => p.startsWith('vosk-android ')), isTrue);
+      expect(packages.any((p) => p.startsWith('JNA ')), isTrue);
+      expect(
+        packages.any((p) => p.startsWith('androidx.glance:glance-appwidget-external-protobuf ')),
+        isTrue,
+      );
+    });
+
+    test('every licence text in assets/licenses is bundled and shown', () async {
+      final texts = Directory('assets/licenses')
+          .listSync()
+          .whereType<File>()
+          .map((f) => f.uri.pathSegments.last)
+          .where((name) => name.endsWith('.txt'))
+          .toList();
+      expect(
+        texts,
+        containsAll([
+          'apache-2.0.txt',
+          'agpl-3.0.txt',
+          'glance-protobuf-bsd-3-clause.txt',
+          'openblas-bsd-3-clause.txt',
+          'clapack-bsd.txt',
+          'libf2c-notice.txt',
+          'libffi-mit.txt',
+        ]),
+      );
+      final shown = [for (final e in await _extras()) _text(e)].join('\n');
+      for (final name in texts) {
+        final text = await rootBundle.loadString('assets/licenses/$name');
+        final firstLine = text.split('\n').firstWhere((l) => l.trim().isNotEmpty).trim();
+        expect(shown, contains(firstLine), reason: '$name is not shown in About');
       }
     });
 

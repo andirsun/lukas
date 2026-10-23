@@ -4,9 +4,10 @@
 # Flutter collects the LICENSE file of every package into assets/flutter_assets/NOTICES.Z when it
 # builds (unit and integration tests never see them), and About's licence page is made from that
 # file. This reads it from the release APK, and fails when a package listed under `dependencies:`
-# in pubspec.yaml has no entry. (The app's own extras, the voice models, the speech engine, the
-# Android libraries and the sounds, are added in code: lib/settings/licenses.dart, and a widget
-# test checks them.) It then checks that the Android libraries About lists
+# in pubspec.yaml has no entry. (The app's own extras, the voice models, the speech engine with
+# what its native library carries (OpenBLAS, CLAPACK and libf2c), JNA with libffi, the Android
+# libraries and the sounds, are added in code: lib/settings/licenses.dart, and a widget test
+# checks them.) It then checks that the Android libraries About lists
 # (assets/licenses/android-libraries.json) are exactly the release classpath's, each with the
 # licence its POM declares: scripts/gen-android-licenses.dart --check, which fails when the file
 # is stale. That part needs Gradle and the POMs it cached while building.

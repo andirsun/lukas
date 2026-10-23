@@ -12,7 +12,8 @@ import 'android_libraries.dart';
 ///  * the Android (Kotlin and Java) libraries, from assets/licenses/android-libraries.json, which
 ///    scripts/gen-android-licenses.dart writes from the POMs of the release classpath (and CI
 ///    checks is not stale), each under the licence its POM declares;
-///  * the speech engine, JNA and the voice models;
+///  * the speech engine, JNA and the voice models, and what their native libraries carry inside:
+///    OpenBLAS and CLAPACK (with libf2c) in libvosk.so, libffi in libjnidispatch.so;
 ///  * the app's own sounds, and the app.
 /// The notices are in the ARB files; the licence texts are as their authors published them.
 
@@ -20,6 +21,15 @@ const _apache = 'assets/licenses/apache-2.0.txt';
 const _agpl = 'assets/licenses/agpl-3.0.txt';
 const _bsdGlance = 'assets/licenses/glance-protobuf-bsd-3-clause.txt';
 const _libraries = 'assets/licenses/android-libraries.json';
+
+// Inside the native libraries of vosk-android 0.3.75 (vosk-api's android/lib/build-vosk.sh) and of
+// JNA 5.18.1 (its native/libffi), as the projects publish them: OpenBLAS v0.3.20's LICENSE,
+// netlib's CLAPACK 3.2.1 COPYING and its F2CLIBS/libf2c/Notice, libffi v3.4.4's LICENSE. A test
+// pins those two versions: upgrading either means checking these again.
+const _openBlas = 'assets/licenses/openblas-bsd-3-clause.txt';
+const _clapack = 'assets/licenses/clapack-bsd.txt';
+const _libf2c = 'assets/licenses/libf2c-notice.txt';
+const _libffi = 'assets/licenses/libffi-mit.txt';
 
 const _vosk = 'com.alphacephei:vosk-android';
 const _jna = 'net.java.dev.jna:jna';
@@ -58,10 +68,19 @@ Stream<LicenseEntry> extraLicenseEntries(AssetBundle bundle, AppLocalizations l1
     yield LicenseEntryWithLineBreaks([
       'vosk-android ${vosk.version}',
     ], '${l10n.licenseNoticeVosk}\n\n$apache');
+    yield LicenseEntryWithLineBreaks([
+      'OpenBLAS 0.3.20',
+    ], '${l10n.licenseNoticeOpenBlas}\n\n${await load(_openBlas)}');
+    yield LicenseEntryWithLineBreaks([
+      'CLAPACK 3.2.1',
+    ], '${l10n.licenseNoticeClapack}\n\n${await load(_clapack)}\n\n${await load(_libf2c)}');
   }
   final jna = find(_jna);
   if (jna != null) {
     yield LicenseEntryWithLineBreaks(['JNA ${jna.version}'], '${l10n.licenseNoticeJna}\n\n$apache');
+    yield LicenseEntryWithLineBreaks([
+      'libffi 3.4.4',
+    ], '${l10n.licenseNoticeLibffi}\n\n${await load(_libffi)}');
   }
   // The rest, one entry per licence text: every library under what its own POM declares.
   const handled = {_vosk, _jna};

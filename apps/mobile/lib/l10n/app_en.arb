@@ -848,7 +848,10 @@
       }
     }
   },
-  "licenseNoticeVosk": "The Vosk speech engine (https://github.com/alphacep/vosk-api), by Alpha Cephei Inc., under the Apache License 2.0.",
+  "licenseNoticeVosk": "The Vosk speech engine (https://github.com/alphacep/vosk-api), by Alpha Cephei Inc., under the Apache License 2.0. Its native library, libvosk.so, contains Kaldi (https://github.com/kaldi-asr/kaldi) and OpenFST (https://www.openfst.org), also under the Apache License 2.0, and OpenBLAS and CLAPACK, which are listed separately with their own licences.",
+  "licenseNoticeOpenBlas": "OpenBLAS (https://github.com/OpenMathLib/OpenBLAS), the linear algebra routines inside Vosk's native library, under the BSD 3-Clause licence.",
+  "licenseNoticeClapack": "CLAPACK (https://www.netlib.org/clapack), the C version of LAPACK inside Vosk's native library, under a BSD licence. It comes with libf2c, whose notice follows the licence.",
+  "licenseNoticeLibffi": "libffi (https://github.com/libffi/libffi), inside JNA's native library, under the MIT licence.",
   "licenseNoticeJna": "Java Native Access (https://github.com/java-native-access/jna), which Vosk reaches its native library through. It is dual-licensed: Apache 2.0 or LGPL 2.1. Lukitas uses it under the Apache License 2.0.",
   "licenseNoticeLibraries": "Android libraries the app is built with. Each declares its licence in its own POM; this group's is {license}. None of them is Google Play Services or Firebase.",
   "@licenseNoticeLibraries": {
