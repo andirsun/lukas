@@ -90,8 +90,15 @@ Future<void> _startAsGuest(WidgetTester tester, {List<Override> overrides = cons
   await SessionStore().clear();
   await tester.pumpWidget(await app.bootstrap(overrides: overrides));
   await _pumpUntil(tester, find.byKey(const Key('entry.guest')));
-  await tester.tap(find.byKey(const Key('entry.guest')));
-  await _pumpUntil(tester, find.byType(HomeScreen));
+  // The API limits new guests from one address to a few in a row: wait and try again.
+  for (var attempt = 0; find.byType(HomeScreen).evaluate().isEmpty; attempt++) {
+    if (attempt == 8) throw TestFailure('Could not start a guest');
+    await tester.tap(find.byKey(const Key('entry.guest')));
+    final end = DateTime.now().add(const Duration(seconds: 8));
+    while (DateTime.now().isBefore(end) && find.byType(HomeScreen).evaluate().isEmpty) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
   await _pumpUntil(tester, find.byKey(const Key('home.add')));
 }
 
@@ -117,6 +124,36 @@ void main() {
     debugPrint('widget 🎤 to listening (warm, emulator): ${clock.elapsedMilliseconds} ms');
     expect(tester.widget<CaptureSheet>(find.byType(CaptureSheet)).listen, isTrue);
   });
+
+  testWidgets('lukitas://capture sent to the exported launcher activity opens nothing', (
+    tester,
+  ) async {
+    await _startAsGuest(tester, overrides: [speechEngineProvider.overrideWithValue(_Listening())]);
+    // What another app can do: start the launcher activity explicitly with the link.
+    await _test.invokeMethod<void>('openOnLauncherActivity', 'lukitas://capture');
+    for (var i = 0; i < 40; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(CaptureSheet), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets(
+    'a token the job cannot decrypt: nothing is sent and secure storage stays exactly as it was',
+    (tester) async {
+      await _startAsGuest(tester);
+      final before = await _snapshotWhere(tester, (doc) => doc['signedIn'] == true);
+      // The stored ciphertext with one byte changed: its GCM tag no longer checks out, as with a
+      // Keystore that lost its key. The app's own plugin would reset; the job must not.
+      await _test.invokeMethod<void>('corruptStoredToken');
+      final stored = await _test.invokeMethod<Map<Object?, Object?>>('secureStorageFiles');
+
+      expect(await _test.invokeMethod<String>('refreshWidget'), 'token unreadable');
+      expect(await _test.invokeMethod<Map<Object?, Object?>>('secureStorageFiles'), stored);
+      expect(await _snapshot(), before);
+      await SessionStore().clear();
+    },
+  );
 
   testWidgets(
     'RefreshWorker updates the snapshot from GET /v1/summary with the stored session, '

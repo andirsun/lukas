@@ -72,8 +72,14 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             // writes everything at its next start.
             val known = WidgetSnapshot.read(context)
             if (known == null || !known.signedIn) return "nothing from the app yet"
+            // A server setting that cannot be read is never replaced by the default: for someone
+            // on their own server, that would send their token to ours.
+            val server = when (val setting = session.server()) {
+                ServerSetting.Default -> context.getString(R.string.default_server)
+                is ServerSetting.Chosen -> setting.url
+                ServerSetting.Unreadable -> return "server unreadable"
+            }
             val token = session.token() ?: return "token unreadable"
-            val server = session.server() ?: context.getString(R.string.default_server)
             val asked = dependencies.clock()
             val result = dependencies.fetcher.fetch(server, token)
             return withContext(dependencies.writeContext) {

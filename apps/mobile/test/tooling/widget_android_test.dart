@@ -47,13 +47,21 @@ void main() {
     expect(entries.map((e) => e.group(1)).toSet(), tokens.keys.toSet());
   });
 
-  test('the refresh job reads secure storage with the very options Dart sends', () {
+  Map<String, String> pairs(String block) => {
+    for (final m in RegExp(r'"(\w+)" to "([^"]*)"').allMatches(block)) m.group(1)!: m.group(2)!,
+  };
+
+  test('the refresh job reads secure storage where and how Dart writes it', () {
     final source = _kotlin('SecureSession.kt');
-    final block = source.substring(source.indexOf('DART_DEFAULT_OPTIONS'));
-    final kotlin = {
-      for (final m in RegExp(r'"(\w+)" to "([^"]*)"').allMatches(block)) m.group(1)!: m.group(2)!,
-    };
-    expect(kotlin, AndroidOptions.defaultOptions.toMap());
+    final start = source.indexOf('val DART_DEFAULT_OPTIONS');
+    final workerStart = source.indexOf('val WORKER_OPTIONS');
+    expect(pairs(source.substring(start, workerStart)), AndroidOptions.defaultOptions.toMap());
+  });
+
+  test('but the refresh job never lets the plugin delete or migrate anything', () {
+    final source = _kotlin('SecureSession.kt');
+    final worker = pairs(source.substring(source.indexOf('val WORKER_OPTIONS')));
+    expect(worker, {'resetOnError': 'false', 'migrateOnAlgorithmChange': 'false'});
   });
 
   test('the refresh job reads the keys the app writes', () {
@@ -76,15 +84,54 @@ void main() {
     }
   });
 
-  test('the deep links: lukitas://add and capture, on the app, not openable from a web page', () {
-    final filter = RegExp(
-      r'<intent-filter>((?:(?!</intent-filter>).)*android:scheme="lukitas"(?:(?!</intent-filter>).)*)</intent-filter>',
+  test('the deep links: lukitas://add and capture, only through a not-exported alias', () {
+    final alias = RegExp(
+      r'<activity-alias((?:(?!</activity-alias>).)*)</activity-alias>',
       dotAll: true,
     ).firstMatch(_manifest)!.group(1)!;
-    expect(filter, contains('android:host="add"'));
-    expect(filter, contains('android:host="capture"'));
-    expect(filter, contains('android.intent.action.VIEW'));
-    expect(filter, isNot(contains('BROWSABLE')));
+    expect(alias, contains('android:name=".LaunchLinkAlias"'));
+    expect(alias, contains('android:exported="false"'));
+    expect(alias, contains('android:targetActivity=".MainActivity"'));
+    expect(alias, contains('android:scheme="lukitas" android:host="add"'));
+    expect(alias, contains('android:scheme="lukitas" android:host="capture"'));
+    expect(alias, isNot(contains('BROWSABLE')));
+    // The exported launcher activity takes no lukitas:// link: other apps can start it.
+    final main = RegExp(
+      r'<activity\s((?:(?!</activity>).)*)</activity>',
+      dotAll: true,
+    ).firstMatch(_manifest)!.group(1)!;
+    expect(main, contains('android:name=".MainActivity"'));
+    expect(main, isNot(contains('lukitas')));
+  });
+
+  test('a cold start is night: the launch window and the Android 12 splash', () {
+    const res = 'android/app/src/main/res';
+    final colors = File('$res/values/colors.xml').readAsStringSync();
+    final hex = RegExp(r'<color name="lukitas_night_bg">#([0-9A-Fa-f]{6})</color>')
+        .firstMatch(colors)!
+        .group(1)!;
+    expect(0xFF000000 | int.parse(hex, radix: 16), _argb(LukitasColors.night.bg));
+    for (final file in ['drawable/launch_background.xml', 'drawable-v21/launch_background.xml']) {
+      expect(File('$res/$file').readAsStringSync(), contains('@color/lukitas_night_bg'));
+    }
+    final styles = File('$res/values/styles.xml').readAsStringSync();
+    expect(styles, isNot(contains('Theme.Light')));
+    expect(
+      styles,
+      contains('<item name="android:windowBackground">@color/lukitas_night_bg</item>'),
+    );
+    expect(File('$res/values-night/styles.xml').existsSync(), isFalse, reason: 'one night theme');
+    final splash = File('$res/values-v31/styles.xml').readAsStringSync();
+    expect(
+      splash,
+      contains('<item name="android:windowSplashScreenBackground">@color/lukitas_night_bg</item>'),
+    );
+    expect(
+      splash,
+      contains(
+        '<item name="android:windowSplashScreenIconBackgroundColor">@color/lukitas_night_bg</item>',
+      ),
+    );
   });
 
   test('the Quick Settings tile only the system can bind', () {

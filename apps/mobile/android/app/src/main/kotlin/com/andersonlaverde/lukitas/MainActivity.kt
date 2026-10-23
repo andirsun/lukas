@@ -43,12 +43,17 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
     }
 
-    /** Keeps [intent]'s `lukitas://` link for Dart (when [act]) and strips it from the intent. */
+    /**
+     * Keeps [intent]'s `lukitas://` link for Dart (when [act]) and strips it from the intent. A
+     * `lukitas://` link that did not come through the app's own entry (another app starting this
+     * exported activity with one) is stripped too, and only opens the app.
+     */
     private fun takeLink(intent: Intent?, act: Boolean): Boolean {
-        val link = LaunchLinks.linkOf(intent) ?: return false
-        intent?.data = null
-        if (act) pendingLink = link
-        return act
+        val link = LaunchLinks.linkOf(intent)
+        if (intent?.data?.scheme == LaunchLinks.SCHEME) intent.data = null
+        if (link == null || !act) return false
+        pendingLink = link
+        return true
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -109,6 +114,33 @@ class MainActivity : FlutterActivity() {
                     "openWidgetButton" -> {
                         val link = if (call.arguments == "add") LaunchLinks.ADD else LaunchLinks.CAPTURE
                         startActivity(LaunchLinks.intent(this, link))
+                        result.success(null)
+                    }
+                    // What another app can do: the exported launcher activity, explicitly, on a link.
+                    "openOnLauncherActivity" -> {
+                        startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(call.arguments as String))
+                                .setClass(this, MainActivity::class.java),
+                        )
+                        result.success(null)
+                    }
+                    // Every SharedPreferences file flutter_secure_storage uses, as stored.
+                    "secureStorageFiles" -> result.success(
+                        listOf(
+                            "FlutterSecureStorage",
+                            "FlutterSecureKeyStorage",
+                            "FlutterSecureStorageConfiguration:FlutterSecureStorage",
+                        ).associateWith { name ->
+                            getSharedPreferences(name, MODE_PRIVATE).all.mapValues { it.value.toString() }
+                        },
+                    )
+                    // Changes one byte of the stored session token's ciphertext (a decrypt failure).
+                    "corruptStoredToken" -> {
+                        val prefs = getSharedPreferences("FlutterSecureStorage", MODE_PRIVATE)
+                        val key = prefs.all.keys.single { it.endsWith("_session.token") }
+                        val bytes = android.util.Base64.decode(prefs.getString(key, null), 0)
+                        bytes[bytes.size / 2] = (bytes[bytes.size / 2].toInt() xor 0x5A).toByte()
+                        prefs.edit().putString(key, android.util.Base64.encodeToString(bytes, 0)).commit()
                         result.success(null)
                     }
                     // Runs the widget's refresh job once through WorkManager and answers what it

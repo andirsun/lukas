@@ -20,18 +20,30 @@ class LaunchLinksTest {
         val add = LaunchLinks.intent(context, LaunchLinks.ADD)
         assertEquals(Intent.ACTION_VIEW, add.action)
         assertEquals("lukitas://add", add.dataString)
-        assertEquals(MainActivity::class.java.name, add.component?.className)
+        // The app's own, not-exported entry for its links: no other app can start it.
+        assertEquals("com.andersonlaverde.lukitas.LaunchLinkAlias", add.component?.className)
         assertEquals("lukitas://capture", LaunchLinks.intent(context, LaunchLinks.CAPTURE).dataString)
     }
 
+    private fun viaAlias(link: String) =
+        Intent(Intent.ACTION_VIEW, Uri.parse(link)).setClassName(context, "com.andersonlaverde.lukitas.LaunchLinkAlias")
+
     @Test
-    fun `only lukitas add and capture links are taken`() {
+    fun `only lukitas add and capture links are taken, and only through the app's own entry`() {
         assertEquals("lukitas://add", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.ADD)))
-        assertEquals("lukitas://capture", LaunchLinks.linkOf(Intent(Intent.ACTION_VIEW, Uri.parse("lukitas://capture"))))
-        assertNull(LaunchLinks.linkOf(Intent(Intent.ACTION_VIEW, Uri.parse("lukitas://settings"))))
-        assertNull(LaunchLinks.linkOf(Intent(Intent.ACTION_VIEW, Uri.parse("https://app-lukas.andersonlaverde.com/auth/verify"))))
+        assertEquals("lukitas://capture", LaunchLinks.linkOf(viaAlias("lukitas://capture")))
+        assertNull(LaunchLinks.linkOf(viaAlias("lukitas://settings")))
+        assertNull(LaunchLinks.linkOf(viaAlias("https://app-lukas.andersonlaverde.com/auth/verify")))
         assertNull(LaunchLinks.linkOf(Intent(Intent.ACTION_MAIN)))
         assertNull(LaunchLinks.linkOf(null))
+    }
+
+    @Test
+    fun `another app starting the exported launcher activity with the link does not open capture`() {
+        val explicit = Intent(Intent.ACTION_VIEW, Uri.parse("lukitas://capture"))
+            .setClass(context, MainActivity::class.java)
+        assertNull(LaunchLinks.linkOf(explicit))
+        assertNull(LaunchLinks.linkOf(Intent(Intent.ACTION_VIEW, Uri.parse("lukitas://capture"))))
     }
 
     @Test

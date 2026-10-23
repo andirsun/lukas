@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The night page background (LukitasColors.night.bg, from the design tokens): the window
+         behind a cold start, so the app opens night, its default, with no white flash.
+         test/tooling/widget_android_test.dart pins it to the token. -->
+    <color name="lukitas_night_bg">#15122B</color>
+</resources>

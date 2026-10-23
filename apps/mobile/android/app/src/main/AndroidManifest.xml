@@ -63,19 +63,25 @@
                 <data android:host="app-lukas.andersonlaverde.com"/>
                 <data android:path="/auth/verify"/>
             </intent-filter>
-            <!-- The widget's ＋ (lukitas://add) and 🎤 and the Quick Settings tile
-                 (lukitas://capture), spec section 7.1. MainActivity hands them to Dart
-                 (launch/LaunchLinks.kt). Not BROWSABLE: a web page cannot open the microphone
-                 sheet with a link; apps on the phone (the widget, the tile) can. -->
+            <!-- Flutter hands an opened link to the router (go_router reads /auth/verify?...). -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
+        </activity>
+        <!-- The widget's ＋ (lukitas://add) and 🎤 and the Quick Settings tile
+             (lukitas://capture), spec section 7.1, open MainActivity through this alias, which is
+             not exported: only the app itself (its widget's and tile's PendingIntents) can start
+             it, so no other app and no web page can open the microphone sheet. MainActivity hands
+             the link to Dart (launch/LaunchLinks.kt). -->
+        <activity-alias
+            android:name=".LaunchLinkAlias"
+            android:exported="false"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:scheme="lukitas" android:host="add"/>
                 <data android:scheme="lukitas" android:host="capture"/>
             </intent-filter>
-            <!-- Flutter hands an opened link to the router (go_router reads /auth/verify?...). -->
-            <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
-        </activity>
+        </activity-alias>
         <!-- The home-screen widget, small (2×1) and medium (4×2), drawn with Jetpack Glance
              (widget/). The app and the refresh job ask them to redraw. -->
         <receiver

@@ -27,9 +27,16 @@ import java.util.concurrent.TimeUnit
 
 /** A stored session in memory, which the test can sign out. */
 private class FakeSession(var stored: String?, var serverUrl: String?) : SessionSource {
+    /** The server setting is stored but cannot be decrypted. */
+    var serverUnreadable = false
+
     override fun token(): String? = stored
     override fun mark(): String? = stored?.let { "mark:$it" }
-    override fun server(): String? = serverUrl
+    override fun server(): ServerSetting = when {
+        serverUnreadable -> ServerSetting.Unreadable
+        serverUrl == null -> ServerSetting.Default
+        else -> ServerSetting.Chosen(serverUrl!!)
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
@@ -133,6 +140,51 @@ class RefreshWorkerTest {
         store(earlier)
         runWorker()
         assertEquals("/lukitas/api/v1/summary", headers[0]["path"])
+    }
+
+    @Test
+    fun `a server setting that cannot be read sends nothing, never the token to the default server`() {
+        store(earlier)
+        session.serverUnreadable = true
+        val outcome = runBlocking {
+            RefreshWorker.refresh(context, RefreshWorker.dependencies!!(context))
+        }
+        assertEquals("server unreadable", outcome)
+        assertTrue(requests.isEmpty())
+        assertEquals(earlier, stored())
+    }
+
+    @Test
+    fun `a token that cannot be read sends nothing and changes nothing`() {
+        store(earlier)
+        val unreadable = object : SessionSource {
+            override fun token(): String? = null
+            override fun mark(): String = "mark:stored"
+            override fun server(): ServerSetting = ServerSetting.Default
+        }
+        val outcome = runBlocking {
+            RefreshWorker.refresh(
+                context,
+                RefreshDependencies(unreadable, SummaryFetcher(), { now }, Dispatchers.Unconfined),
+            )
+        }
+        assertEquals("token unreadable", outcome)
+        assertTrue(requests.isEmpty())
+        assertEquals(earlier, stored())
+    }
+
+    @Test
+    fun `a midnight run schedules the next midnight`() {
+        WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        store(earlier)
+        runBlocking {
+            TestListenableWorkerBuilder<RefreshWorker>(context)
+                .setTags(listOf(RefreshScheduler.MIDNIGHT))
+                .build()
+                .doWork()
+        }
+        val next = WorkManager.getInstance(context).getWorkInfosForUniqueWork(RefreshScheduler.MIDNIGHT).get()
+        assertEquals(1, next.count { it.state == WorkInfo.State.ENQUEUED })
     }
 
     @Test
