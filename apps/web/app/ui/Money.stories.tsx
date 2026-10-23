@@ -38,6 +38,14 @@ export const Negative: Story = {
   },
 };
 
+/** Pesos are written whole, and a $1.500.000.000 budget still fits the hero's line. */
+export const HugeAmount: Story = {
+  args: { cents: 150_000_000_000, currency: "COP" },
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement).toHaveTextContent("$1.500.000.000");
+  },
+};
+
 export const NegativeDayEnglish: Story = {
   ...Negative,
   globals: { theme: "day", locale: "en" },

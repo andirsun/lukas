@@ -132,8 +132,10 @@ export async function serveStorybook(): Promise<{ base: string; close: () => Pro
     const file =
       pathname === EMOJI_FONT_PATH
         ? EMOJI_FONT_FILE
-        : normalize(join(root, decodeURIComponent(pathname)));
-    if (file !== EMOJI_FONT_FILE && !file.startsWith(root + sep)) {
+        : pathname === DINGBATS_FONT_PATH
+          ? DINGBATS_FONT_FILE
+          : normalize(join(root, decodeURIComponent(pathname)));
+    if (file !== EMOJI_FONT_FILE && file !== DINGBATS_FONT_FILE && !file.startsWith(root + sep)) {
       res.writeHead(403).end();
       return;
     }
@@ -158,6 +160,17 @@ export async function serveStorybook(): Promise<{ base: string; close: () => Pro
  */
 export const EMOJI_FONT_FILE = join(PARITY_DIR, "fonts", "NotoColorEmoji.ttf");
 const EMOJI_FONT_PATH = "/__parity/emoji.ttf";
+
+/**
+ * The ✓ of the "Pagado" badge is in no web font of the app, so Chrome on the Mac falls back to
+ * Zapf Dingbats and thickens it, because the badge asks for weight 900 and that font has one
+ * weight. Flutter's tests thicken nothing, so both sides draw the check from this one file at its
+ * own weight, as they draw emoji from the shared emoji font. It is Apple's, so it is read from
+ * the Mac the shots are taken on (the pictures are the Mac's, docs/mobile/parity.md), never
+ * committed.
+ */
+export const DINGBATS_FONT_FILE = "/System/Library/Fonts/ZapfDingbats.ttf";
+const DINGBATS_FONT_PATH = "/__parity/dingbats.ttf";
 
 /**
  * The emoji code points (Unicode's emoji blocks, the dingbats and arrows that have emoji forms,
@@ -267,7 +280,7 @@ export async function openStory(context: BrowserContext, base: string, pair: Par
  */
 export async function useParityEmoji(page: Page): Promise<void> {
   await page.evaluate(
-    async ({ url, range }) => {
+    async ({ url, range, dingbatsUrl }) => {
       await document.fonts.ready;
       const faces = new Map<string, FontFace>();
       for (const face of document.fonts) {
@@ -284,8 +297,20 @@ export async function useParityEmoji(page: Page): Promise<void> {
         document.fonts.add(emoji);
         await emoji.load();
       }
+      // The check mark (U+2713) comes from the dingbats font; declared after the emoji one, it is
+      // tried first, and it is the face's own weight, so nothing is thickened.
+      for (const face of faces.values()) {
+        const dingbats = new FontFace(face.family, `url(${dingbatsUrl})`, {
+          weight: face.weight,
+          style: face.style,
+          stretch: face.stretch,
+          unicodeRange: "U+2713",
+        });
+        document.fonts.add(dingbats);
+        await dingbats.load();
+      }
       await document.fonts.ready;
     },
-    { url: EMOJI_FONT_PATH, range: EMOJI_UNICODE_RANGE },
+    { url: EMOJI_FONT_PATH, range: EMOJI_UNICODE_RANGE, dingbatsUrl: DINGBATS_FONT_PATH },
   );
 }

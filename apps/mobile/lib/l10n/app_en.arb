@@ -164,6 +164,18 @@
   "@pendingPayLabel": {
     "description": "Screen-reader label of the Pendiente badge, which marks the transaction paid."
   },
+  "monthPickerLabel": "Month",
+  "@monthPickerLabel": {
+    "description": "Screen-reader name of the group that holds the month picker's arrows and the month's name."
+  },
+  "monthPickerPrevious": "Previous month",
+  "@monthPickerPrevious": {
+    "description": "Screen-reader name of the month picker's ‹ button."
+  },
+  "monthPickerNext": "Next month",
+  "@monthPickerNext": {
+    "description": "Screen-reader name of the month picker's › button."
+  },
   "undo": "Undo",
   "@undo": {
     "description": "Brings back what was just deleted."

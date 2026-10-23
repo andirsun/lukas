@@ -28,6 +28,16 @@ const parityPixelRatio = 2.0;
 /// The family the parity goldens draw emoji with: Noto Color Emoji, as the web shots do.
 const parityEmojiFamily = 'Noto Color Emoji';
 
+/// The family the parity goldens draw ✓ with. Nunito has no ✓, so Chrome on the Mac falls back to
+/// Zapf Dingbats (checked with CDP's `CSS.getPlatformFontsForNode`); `flutter test` has no fallback
+/// of its own, so the same system file is named. On a phone, Android's fallback draws it.
+const parityDingbatsFamily = 'Parity Zapf Dingbats';
+
+const _zapfDingbats = '/System/Library/Fonts/ZapfDingbats.ttf';
+
+/// The fallbacks behind every text style of a parity golden.
+const parityFallbackFamilies = [parityEmojiFamily, parityDingbatsFamily];
+
 /// test/parity, relative to apps/mobile (where `flutter test` runs).
 const _parityDir = 'test/parity';
 
@@ -168,6 +178,11 @@ Future<void> loadParityFonts() async {
   final emoji = sbixFromCbdt(File('$_parityDir/fonts/NotoColorEmoji.ttf').readAsBytesSync());
   await (FontLoader(parityEmojiFamily)..addFont(Future.value(ByteData.sublistView(emoji)))).load();
   await loadMaterialIcons();
+  final dingbats = File(_zapfDingbats);
+  if (!dingbats.existsSync()) fail('Parity draws ✓ with $_zapfDingbats, a macOS system font');
+  await (FontLoader(
+    parityDingbatsFamily,
+  )..addFont(Future.value(ByteData.sublistView(dingbats.readAsBytesSync())))).load();
   _fontsLoaded = true;
 }
 
@@ -180,9 +195,7 @@ ThemeData parityTheme(String theme) {
     'day' => dayTheme,
     _ => throw ArgumentError.value(theme, 'theme', 'must be "night" or "day"'),
   };
-  return base.copyWith(
-    textTheme: base.textTheme.apply(fontFamilyFallback: const [parityEmojiFamily]),
-  );
+  return base.copyWith(textTheme: base.textTheme.apply(fontFamilyFallback: parityFallbackFamilies));
 }
 
 /// The app's side of the parity pair [id] in [theme] (`night` or `day`): [screen] in the app's
@@ -191,22 +204,49 @@ ThemeData parityTheme(String theme) {
 /// `test/parity/app/<id>-<theme>.png`. The pair must be listed in parity.json.
 ///
 /// [screen] is what the story shows: a screen, or a component in [ParityStoryFrame].
+///
+/// [act] does what the story's `play` function does before the web's picture is taken (taps,
+/// keys), once the screen has settled; the picture is taken after it has settled again. Do the
+/// taps first and the keys last: a key puts the app in keyboard mode, where the focused control
+/// shows its focus ring, and a tap puts it back.
 Future<void> parityGolden(
   WidgetTester t,
   String id,
   Widget screen, {
   required String theme,
   Locale locale = const Locale('es'),
+  Future<void> Function(WidgetTester t)? act,
 }) async {
   final pair = parityPairs().where((p) => p.id == id && p.theme == theme).firstOrNull;
   if (pair == null) fail('$id-$theme is not a pair in test/parity/parity.json');
-  final fixture = ParityFixtures.load(pair.storyId);
   await t.runAsync(loadParityFonts);
 
   t.view
     ..physicalSize = parityViewSize * parityPixelRatio
     ..devicePixelRatio = parityPixelRatio;
   addTearDown(t.view.reset);
+
+  // `flutter test` draws shadows hard-edged (so goldens do not flake across machines); the web's
+  // glow under a primary button is a 24px blur, so the parity pictures draw it blurred.
+  debugDisableShadows = false;
+  try {
+    await _pumpAndCompare(t, id, screen, pair, locale, act);
+  } finally {
+    // The test framework checks it is back as it set it, before it runs the tear-downs.
+    debugDisableShadows = true;
+  }
+}
+
+Future<void> _pumpAndCompare(
+  WidgetTester t,
+  String id,
+  Widget screen,
+  ParityPair pair,
+  Locale locale,
+  Future<void> Function(WidgetTester t)? act,
+) async {
+  final fixture = ParityFixtures.load(pair.storyId);
+  final theme = pair.theme;
 
   await t.pumpWidget(
     ProviderScope(
@@ -222,6 +262,10 @@ Future<void> parityGolden(
     ),
   );
   await t.pumpAndSettle();
+  if (act != null) {
+    await act(t);
+    await t.pumpAndSettle();
+  }
   await expectLater(
     find.byType(MaterialApp),
     matchesGoldenFile(Uri.file('${Directory.current.path}/$_parityDir/app/$id-$theme.png')),
@@ -237,10 +281,16 @@ Future<void> parityGolden(
 /// baseline goes on the line's, and the line is at least as tall above it as the body's text
 /// makes it (CSS's strut). Blink rounds a font's ascent and descent to whole pixels and floors
 /// the half-leading, so the strut is worked out that way; see [cssStrutAscent].
+///
+/// A story whose root is a block (a `div`: a flex column, a grid, a `max-w` box) is not inline: it
+/// starts at the top of the frame and is as wide as it, with no line around it. Pass [block].
 class ParityStoryFrame extends StatelessWidget {
-  const ParityStoryFrame({super.key, required this.child});
+  const ParityStoryFrame({super.key, required this.child, this.block = false});
 
   final Widget child;
+
+  /// The story's root is a block, not an inline element on the body's line.
+  final bool block;
 
   /// The browser's default size, which the web never changes on `html` or `body`.
   static const _bodySize = 16.0;
@@ -250,7 +300,7 @@ class ParityStoryFrame extends StatelessWidget {
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     final body = TextStyle(
       fontFamily: LkText.textFamily,
-      fontFamilyFallback: const [parityEmojiFamily],
+      fontFamilyFallback: parityFallbackFamilies,
       fontSize: _bodySize,
       fontWeight: FontWeight.w700,
       height: 1.5,
@@ -266,7 +316,9 @@ class ParityStoryFrame extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: DefaultTextStyle(
               style: body,
-              child: _CssLine(strutAscent: cssStrutAscent(body), child: child),
+              child: block
+                  ? Align(alignment: Alignment.topLeft, child: child)
+                  : _CssLine(strutAscent: cssStrutAscent(body), child: child),
             ),
           ),
         ),
@@ -274,6 +326,33 @@ class ParityStoryFrame extends StatelessWidget {
     );
   }
 }
+
+/// A block-level box: as wide as its container, up to [maxWidth] (Tailwind's `max-w-[...]`).
+Widget cssBlock({double? maxWidth, required Widget child}) => ConstrainedBox(
+  constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+  child: SizedBox(width: double.infinity, child: child),
+);
+
+/// `.lk-pad` (app.css): a flex column with 16px of padding and a 12px gap, as a block.
+Widget lkPad(List<Widget> children) => cssBlock(
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 12,
+      mainAxisSize: MainAxisSize.min,
+      children: children,
+    ),
+  ),
+);
+
+/// `.lk-row-flex` (app.css): a wrapping flex row, centred, with a 12px gap.
+Widget lkRowFlex(List<Widget> children) => Wrap(
+  spacing: 12,
+  runSpacing: 12,
+  crossAxisAlignment: WrapCrossAlignment.center,
+  children: children,
+);
 
 /// How far a line's baseline sits below its top in Blink when the line's strut is [style] with a
 /// line height of `height × fontSize`: the font's ascent rounded to a whole pixel, plus half the

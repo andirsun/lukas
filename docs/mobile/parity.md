@@ -85,7 +85,17 @@ when the app's picture changes. The web shots are regenerated only when the web 
    - Pass `locale: const Locale('en')` for a story with `globals: { locale: "en" }`.
    - A component's story goes in `ParityStoryFrame`, which is what Storybook's decorator puts
      around it: the page background, 16px padding, and the body's text as the line it sits on.
+   - A story whose root is a block (a `div`: a flex column, a grid, a `max-w` box) is not an inline element on
+     the body's line: pass `ParityStoryFrame(block: true, ...)`, and make the box as a CSS block is
+     with `cssBlock(maxWidth: ...)`, `lkPad` and `lkRowFlex` (`.lk-pad`, `.lk-row-flex`).
    - A full-screen story (`layout: "fullscreen"`, its own screen) is passed as is.
+
+   A story's `play` function leaves the page in a state (a focus ring after `userEvent.click`, a
+   month stepped back, a button held with `is-pressed`). Pass `act:` to `parityGolden` to do the same
+   in the app, with real taps, keys and held fingers: `t.sendKeyEvent(LogicalKeyboardKey.tab)`
+   puts the app in keyboard mode, where the focused control draws its ring, as the story's click
+   does in Chrome (`userEvent` focuses from script, which counts as keyboard). Do the taps first and
+   the keys last: a tap puts the app back in touch mode, where no ring shows.
 
 3. Read the story's data from its fixture: `ParityFixtures.load(storyId)`.
    - `fixture.get('/v1/summary?month=2026-10').body` is the JSON the story's fake API answered.
@@ -148,6 +158,15 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - `test/parity/emoji_font_test.dart` checks that `sbixFromCbdt` converts the committed file. It
     also fails when an emoji in any fixture, or anywhere in the web's and the app's code, has no
     picture in it, so a missing emoji is reported rather than drawn as a box.
+- **Shadows.** `flutter test` draws every shadow hard-edged, to keep goldens from flaking. The web's
+  glow under a primary button is a 24px blur, so `parityGolden` turns `debugDisableShadows` off for
+  the picture and back on before the test ends.
+- **The ✓ of "Pagado".** Nunito has no ✓. Chrome on the Mac falls back to Zapf Dingbats (found with
+  CDP's `CSS.getPlatformFontsForNode`) and thickens it, because the badge asks for weight 900 and that
+  font has one. Flutter's tests thicken nothing. So both sides draw U+2713 from the Mac's own
+  `/System/Library/Fonts/ZapfDingbats.ttf`, at the face's own weight (`useParityEmoji`,
+  `loadParityFonts`). It is Apple's, so it is read from the Mac, never committed. On a phone, Android's
+  fallback font draws it, and thickens it in both Chrome and Flutter.
 - **Icons.** Material icons draw with the Flutter SDK's own `MaterialIcons-Regular.otf`
   (`loadMaterialIcons` in `test/support/fonts.dart`), the file `flutter build` bundles. The Stage 3
   goldens load it too.
@@ -164,5 +183,18 @@ when the app's picture changes. The web shots are regenerated only when the web 
   edges differ by a physical pixel here and there, which the tolerance forgives too.
 - **What the tolerance hides.** An element off by one logical pixel, such as padding of 15 instead
   of 16, is not counted. Two pixels or more is.
+- **What Chrome does that Flutter does not.** `lib/ui` does these where a picture needs them (each
+  is in the widget's code with the number that shows it):
+  - Chrome lays a `1.5px` border out as 1px (the pending badge is 20.25px tall, not 21.25).
+  - Chrome puts half of a letter spacing before a glyph and half after it, and Skia places glyphs on
+    a quarter of a device pixel, so a text with a letter spacing sits a hair under a quarter pixel
+    further right in Flutter's picture (`letterSpacingShift`). Without it a 9.5px label differs by 5%.
+  - Chrome rounds a font's ascent and descent to whole pixels and floors the half-leading, so a line
+    of text inside a taller line box sits up to a pixel higher or lower than Flutter's
+    (`cssBaselineShift`, `BlinkLine`).
+  - CSS clips a box shadow inside the box, Flutter paints it under the whole box: a see-through box
+    with an edge (the pending badge) uses `OutsideShadow`.
+  - CSS paints the first shadow of a list on top, Flutter the last: the brand button's edge and glow
+    are reversed.
 - **Pictures are the Mac's.** Text and shadows rasterise differently on Linux. The parity goldens
   are tagged `golden`, so CI skips them (`dart_test.yaml`), as it skips the other goldens.

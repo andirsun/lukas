@@ -40,5 +40,353 @@
     "storyId": "ui-money--negative-day-english",
     "theme": "day",
     "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "press-button-all-variants",
+    "storyId": "ui-pressbutton--all-variants",
+    "theme": "night",
+    "appTest": "test/parity/press_button_parity_test.dart"
+  },
+  {
+    "id": "press-button-all-variants",
+    "storyId": "ui-pressbutton--all-variants",
+    "theme": "day",
+    "appTest": "test/parity/press_button_parity_test.dart"
+  },
+  {
+    "id": "press-button-pressed",
+    "storyId": "ui-pressbutton--pressed",
+    "theme": "night",
+    "appTest": "test/parity/press_button_parity_test.dart"
+  },
+  {
+    "id": "press-button-pressed",
+    "storyId": "ui-pressbutton--pressed",
+    "theme": "day",
+    "appTest": "test/parity/press_button_parity_test.dart"
+  },
+  {
+    "id": "press-button-keyboard-focus",
+    "storyId": "ui-pressbutton--keyboard-focus",
+    "theme": "night",
+    "appTest": "test/parity/press_button_parity_test.dart"
+  },
+  {
+    "id": "press-button-keyboard-focus",
+    "storyId": "ui-pressbutton--keyboard-focus",
+    "theme": "day",
+    "appTest": "test/parity/press_button_parity_test.dart"
+  },
+  {
+    "id": "press-button-day-english",
+    "storyId": "ui-pressbutton--day-english",
+    "theme": "day",
+    "appTest": "test/parity/press_button_parity_test.dart"
+  },
+  {
+    "id": "press-link-primary",
+    "storyId": "ui-presslink--primary",
+    "theme": "night",
+    "appTest": "test/parity/press_link_parity_test.dart"
+  },
+  {
+    "id": "press-link-primary",
+    "storyId": "ui-presslink--primary",
+    "theme": "day",
+    "appTest": "test/parity/press_link_parity_test.dart"
+  },
+  {
+    "id": "press-link-secondary-small",
+    "storyId": "ui-presslink--secondary-small",
+    "theme": "day",
+    "appTest": "test/parity/press_link_parity_test.dart"
+  },
+  {
+    "id": "pending-badge-idle-to-paid",
+    "storyId": "ui-pendingbadge--idle-to-paid",
+    "theme": "night",
+    "appTest": "test/parity/pending_badge_parity_test.dart"
+  },
+  {
+    "id": "pending-badge-idle-to-paid",
+    "storyId": "ui-pendingbadge--idle-to-paid",
+    "theme": "day",
+    "appTest": "test/parity/pending_badge_parity_test.dart"
+  },
+  {
+    "id": "pending-badge-paying",
+    "storyId": "ui-pendingbadge--paying",
+    "theme": "night",
+    "appTest": "test/parity/pending_badge_parity_test.dart"
+  },
+  {
+    "id": "pending-badge-paying",
+    "storyId": "ui-pendingbadge--paying",
+    "theme": "day",
+    "appTest": "test/parity/pending_badge_parity_test.dart"
+  },
+  {
+    "id": "pending-badge-pay-fails",
+    "storyId": "ui-pendingbadge--pay-fails",
+    "theme": "night",
+    "appTest": "test/parity/pending_badge_parity_test.dart"
+  },
+  {
+    "id": "pending-badge-pay-fails",
+    "storyId": "ui-pendingbadge--pay-fails",
+    "theme": "day",
+    "appTest": "test/parity/pending_badge_parity_test.dart"
+  },
+  {
+    "id": "pending-badge-day-english",
+    "storyId": "ui-pendingbadge--day-english",
+    "theme": "day",
+    "appTest": "test/parity/pending_badge_parity_test.dart"
+  },
+  {
+    "id": "category-chip-picker",
+    "storyId": "ui-categorychip--picker-4",
+    "theme": "night",
+    "appTest": "test/parity/category_chip_parity_test.dart"
+  },
+  {
+    "id": "category-chip-picker",
+    "storyId": "ui-categorychip--picker-4",
+    "theme": "day",
+    "appTest": "test/parity/category_chip_parity_test.dart"
+  },
+  {
+    "id": "category-chip-press-and-focus",
+    "storyId": "ui-categorychip--press-and-focus",
+    "theme": "night",
+    "appTest": "test/parity/category_chip_parity_test.dart"
+  },
+  {
+    "id": "category-chip-press-and-focus",
+    "storyId": "ui-categorychip--press-and-focus",
+    "theme": "day",
+    "appTest": "test/parity/category_chip_parity_test.dart"
+  },
+  {
+    "id": "category-chip-long-name",
+    "storyId": "ui-categorychip--long-name",
+    "theme": "night",
+    "appTest": "test/parity/category_chip_parity_test.dart"
+  },
+  {
+    "id": "category-chip-long-name",
+    "storyId": "ui-categorychip--long-name",
+    "theme": "day",
+    "appTest": "test/parity/category_chip_parity_test.dart"
+  },
+  {
+    "id": "category-chip-day",
+    "storyId": "ui-categorychip--day",
+    "theme": "day",
+    "appTest": "test/parity/category_chip_parity_test.dart"
+  },
+  {
+    "id": "segmented-control-default",
+    "storyId": "ui-segmentedcontrol--default",
+    "theme": "night",
+    "appTest": "test/parity/segmented_control_parity_test.dart"
+  },
+  {
+    "id": "segmented-control-default",
+    "storyId": "ui-segmentedcontrol--default",
+    "theme": "day",
+    "appTest": "test/parity/segmented_control_parity_test.dart"
+  },
+  {
+    "id": "segmented-control-day-english",
+    "storyId": "ui-segmentedcontrol--day-english",
+    "theme": "day",
+    "appTest": "test/parity/segmented_control_parity_test.dart"
+  },
+  {
+    "id": "month-picker-current-month",
+    "storyId": "ui-monthpicker--current-month",
+    "theme": "night",
+    "appTest": "test/parity/month_picker_parity_test.dart"
+  },
+  {
+    "id": "month-picker-current-month",
+    "storyId": "ui-monthpicker--current-month",
+    "theme": "day",
+    "appTest": "test/parity/month_picker_parity_test.dart"
+  },
+  {
+    "id": "month-picker-across-years",
+    "storyId": "ui-monthpicker--across-years",
+    "theme": "night",
+    "appTest": "test/parity/month_picker_parity_test.dart"
+  },
+  {
+    "id": "month-picker-across-years",
+    "storyId": "ui-monthpicker--across-years",
+    "theme": "day",
+    "appTest": "test/parity/month_picker_parity_test.dart"
+  },
+  {
+    "id": "month-picker-announced",
+    "storyId": "ui-monthpicker--announced",
+    "theme": "night",
+    "appTest": "test/parity/month_picker_parity_test.dart"
+  },
+  {
+    "id": "month-picker-announced",
+    "storyId": "ui-monthpicker--announced",
+    "theme": "day",
+    "appTest": "test/parity/month_picker_parity_test.dart"
+  },
+  {
+    "id": "month-picker-day-english",
+    "storyId": "ui-monthpicker--day-english",
+    "theme": "day",
+    "appTest": "test/parity/month_picker_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-ok",
+    "storyId": "ui-budgetbar--ok",
+    "theme": "night",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-ok",
+    "storyId": "ui-budgetbar--ok",
+    "theme": "day",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-near",
+    "storyId": "ui-budgetbar--near",
+    "theme": "night",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-near",
+    "storyId": "ui-budgetbar--near",
+    "theme": "day",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-over",
+    "storyId": "ui-budgetbar--over",
+    "theme": "night",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-over",
+    "storyId": "ui-budgetbar--over",
+    "theme": "day",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-no-budget",
+    "storyId": "ui-budgetbar--no-budget",
+    "theme": "night",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-no-budget",
+    "storyId": "ui-budgetbar--no-budget",
+    "theme": "day",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-small",
+    "storyId": "ui-budgetbar--small",
+    "theme": "night",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-small",
+    "storyId": "ui-budgetbar--small",
+    "theme": "day",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-huge-budget",
+    "storyId": "ui-budgetbar--huge-budget",
+    "theme": "night",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-huge-budget",
+    "storyId": "ui-budgetbar--huge-budget",
+    "theme": "day",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "budget-bar-over-day-english",
+    "storyId": "ui-budgetbar--over-day",
+    "theme": "day",
+    "appTest": "test/parity/budget_bar_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-happy",
+    "storyId": "lukas-lukasbubble--happy",
+    "theme": "night",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-happy",
+    "storyId": "lukas-lukasbubble--happy",
+    "theme": "day",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-worried",
+    "storyId": "lukas-lukasbubble--worried",
+    "theme": "night",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-worried",
+    "storyId": "lukas-lukasbubble--worried",
+    "theme": "day",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-celebrating-day",
+    "storyId": "lukas-lukasbubble--celebrating-day",
+    "theme": "day",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-payment-line",
+    "storyId": "lukas-lukasbubble--payment-line-then-quiet",
+    "theme": "night",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-payment-line",
+    "storyId": "lukas-lukasbubble--payment-line-then-quiet",
+    "theme": "day",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-payment-line-reduced-motion",
+    "storyId": "lukas-lukasbubble--payment-line-reduced-motion",
+    "theme": "night",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "lukas-bubble-payment-line-reduced-motion",
+    "storyId": "lukas-lukasbubble--payment-line-reduced-motion",
+    "theme": "day",
+    "appTest": "test/parity/lukas_bubble_parity_test.dart"
+  },
+  {
+    "id": "money-huge-amount",
+    "storyId": "ui-money--huge-amount",
+    "theme": "night",
+    "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "money-huge-amount",
+    "storyId": "ui-money--huge-amount",
+    "theme": "day",
+    "appTest": "test/parity/money_parity_test.dart"
   }
 ]

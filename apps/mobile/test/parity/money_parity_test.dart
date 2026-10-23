@@ -19,11 +19,14 @@ import '../support/parity.dart';
 TextStyle _heroAmount(BuildContext context) =>
     LkText.amountXl.copyWith(color: Theme.of(context).extension<LukitasTheme>()!.colors.good);
 
-Widget _story(int cents, TextStyle Function(BuildContext) style) => ParityStoryFrame(
-  child: Builder(
-    builder: (context) => Money(cents: cents, currency: 'EUR', style: style(context)),
-  ),
-);
+Widget _story(int cents, TextStyle Function(BuildContext) style) => _storyIn(cents, 'EUR', style);
+
+Widget _storyIn(int cents, String currency, TextStyle Function(BuildContext) style) =>
+    ParityStoryFrame(
+      child: Builder(
+        builder: (context) => Money(cents: cents, currency: currency, style: style(context)),
+      ),
+    );
 
 void main() {
   for (final theme in ['night', 'day']) {
@@ -43,6 +46,18 @@ void main() {
 
     testWidgets('money parity: negative, −6,08 € as a row amount ($theme)', (t) async {
       await parityGolden(t, 'money-negative', _story(-608, (_) => LkText.amount), theme: theme);
+    });
+  }
+
+  // Review Focus 1: pesos are written whole, and $1.500.000.000 fits the hero's line.
+  for (final theme in ['night', 'day']) {
+    testWidgets('money parity: \$1.500.000.000 as the hero amount ($theme)', (t) async {
+      await parityGolden(
+        t,
+        'money-huge-amount',
+        _storyIn(150000000000, 'COP', _heroAmount),
+        theme: theme,
+      );
     });
   }
 

@@ -95,6 +95,103 @@ abstract final class LkText {
     height: _inherited,
   );
 
-  /// `text-transform: uppercase`, for [eyebrow].
+  /// A button's label: app.css `.lk-btn`, Fredoka 16px 700, `letter-spacing: 0.05em` (0.8 px),
+  /// upper case ([upperCase]) and the 1.5 line height `font: inherit` takes from the page. The web
+  /// centres the half-leading, which `leadingDistribution: even` does here.
+  static const button = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.05 * 16,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A small button's label: app.css `.lk-btn-sm`, [button] at 13px (letter spacing 0.05em of it).
+  static const buttonSm = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w700,
+    letterSpacing: 0.05 * 13,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The "Pendiente" badge: app.css `.lk-badge`, Nunito 9.5px 900, `letter-spacing: 0.06em`
+  /// (0.57 px), upper case.
+  static const badge = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 9.5,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 0.06 * 9.5,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A category chip's name: app.css `.lk-chip`, Nunito 10px 800.
+  static const chip = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 10,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The note under a chip's name: CategoryChip.tsx `text-[9px]` on the chip's weight, 800.
+  static const chipNote = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 9,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The glyph in a chip's tile: app.css `.lk-chip-tile`, 20px.
+  static const chipGlyph = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 20,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A segmented control's option: app.css `.lk-seg button`, Nunito 12px 900.
+  static const segment = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w900,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The month picker's arrows: app.css `.lk-step`, Fredoka 18px 700.
+  static const step = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The month picker's name: MonthPicker.tsx `font-display text-lg font-semibold`, Fredoka 18px
+  /// 600 on Tailwind's `text-lg` line height (28 px).
+  static const monthName = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    height: 28 / 18,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// Lukitas' speech bubble: app.css `.lk-bubble`, Nunito 12px 800, line height 1.35.
+  static const bubble = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w800,
+    height: 1.35,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// `text-transform: uppercase`, for [eyebrow], [button], [buttonSm] and [badge].
   static String upperCase(String text) => text.toUpperCase();
 }
