@@ -116,6 +116,9 @@ void main() {
 
     // A tap on the row opens it to edit: drop the last digit, Guardar cambios.
     await tester.pump(const Duration(seconds: 9));
+    // On a short screen the new row can sit under the bottom bar: bring it up into the list first.
+    await Scrollable.ensureVisible(tester.element(find.text(name).first), alignment: 0.3);
+    await tester.pumpAndSettle();
     await tester.tap(find.text(name).first);
     await _pumpUntil(tester, find.byKey(const Key('add.sheet')));
     await _tap(tester, 'keypad.backspace');
