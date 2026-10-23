@@ -145,10 +145,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsNothing);
     await _test.invokeMethod<void>('openWidgetButton', 'home');
-    await _pumpUntil(tester, find.byType(HomeScreen));
+    await _pumpUntil(tester, find.byKey(const Key('home.add')));
     expect(find.text('Page Not Found'), findsNothing);
 
     // With the add sheet open and empty: it gives way.
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100)); // home has finished arriving
+    }
     await tester.tap(find.byKey(const Key('home.add')));
     await _pumpUntil(tester, find.byType(AddSheet));
     await _test.invokeMethod<void>('openWidgetButton', 'home');
