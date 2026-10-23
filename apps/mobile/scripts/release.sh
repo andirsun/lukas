@@ -206,8 +206,17 @@ for abi in "${ABIS[@]}"; do
 $(printf '%s\n' "$report" | redact)" 1
   grep -q '^Verified using v2 scheme.*: true' <<<"$report" || die "$abi: the APK has no v2 signature" 1
   if grep -q 'CN=Android Debug' <<<"$report"; then die "$abi: the APK is signed with the debug key" 1; fi
-  this="$(release_fingerprint_from_apksigner <<<"$report")" || die "$abi: could not read the certificate. apksigner's signer lines:
-$(grep '^Signer' <<<"$report" || echo '(none)')" 1
+  # Some build-tools print no "Signer … SHA-256 digest" line for --print-certs; keytool reads the
+  # same certificate straight from the signed APK, with no secret involved.
+  if ! this="$(release_fingerprint_from_apksigner <<<"$report" 2>/dev/null)"; then
+    this=""
+    if command -v keytool >/dev/null 2>&1; then
+      this="$(release_format_fingerprint "$(without_secrets keytool -printcert -jarfile "$signed" 2>/dev/null |
+        sed -n 's/^[[:space:]]*SHA256:[[:space:]]*//p' | sort -u)" 2>/dev/null || true)"
+    fi
+    [ -n "$this" ] || die "$abi: could not read the certificate. apksigner's certificate lines:
+$(grep -i -E 'certificate|digest' <<<"$report" || echo '(none)')" 1
+  fi
   if [ -z "$fingerprint" ]; then
     fingerprint="$this"
   elif [ "$this" != "$fingerprint" ]; then
