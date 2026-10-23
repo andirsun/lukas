@@ -5,6 +5,12 @@
 //   flutter test integration_test/widget_test.dart -d emulator-5554 \
 //     --dart-define=LUKITAS_SERVER=http://10.0.2.2:3000
 //
+// One test uses the real speech engine (🎤 twice, the first listen having ended by itself), and is
+// skipped unless the voice models are served as docs/mobile/setup.md describes (it also needs the
+// microphone granted: `adb shell pm grant com.andersonlaverde.lukitas android.permission.RECORD_AUDIO`):
+//
+//     --dart-define=VOICE_MODELS_URL=http://10.0.2.2:8765
+//
 // The buttons are pressed as the widget presses them: the debug-only `lukitas/test` channel starts
 // the very intent the widget's ＋ and 🎤 start (launch/LaunchLinks.kt). The refresh job runs for
 // real through WorkManager, reading the session where the app keeps it.
@@ -23,6 +29,9 @@ import 'package:lukitas/add/add_sheet.dart';
 import 'package:lukitas/api/session.dart';
 import 'package:lukitas/capture/capture_sheet.dart';
 import 'package:lukitas/capture/engine/speech_engine.dart';
+import 'package:lukitas/capture/engine/voice_channel.dart';
+import 'package:lukitas/capture/engine/vosk_engine.dart';
+import 'package:lukitas/capture/models_download.dart';
 import 'package:lukitas/entry/entry_screen.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
@@ -31,6 +40,7 @@ import 'package:lukitas/router.dart';
 
 const _server = String.fromEnvironment('LUKITAS_SERVER', defaultValue: 'http://10.0.2.2:3000');
 const _test = MethodChannel('lukitas/test');
+const _modelsUrl = String.fromEnvironment('VOICE_MODELS_URL');
 
 final _http = Dio(BaseOptions(validateStatus: (_) => true));
 
@@ -134,6 +144,48 @@ void main() {
     debugPrint('widget 🎤 to listening (warm, emulator): ${clock.elapsedMilliseconds} ms');
     expect(tester.widget<CaptureSheet>(find.byType(CaptureSheet)).listen, isTrue);
   });
+
+  testWidgets(
+    '🎤 tapped again after a listen that ended by itself listens again, with the real engine',
+    (tester) async {
+      const channel = VoiceChannel();
+      final store = ModelStore(files: channel, http: Dio(), releaseUrl: Uri.parse(_modelsUrl));
+      for (final locale in ['en', 'es']) {
+        if (await store.installedPath(locale) == null) await store.download(locale);
+      }
+      await _startAsGuest(
+        tester,
+        overrides: [
+          modelStoreProvider.overrideWithValue(store),
+          speechEngineProvider.overrideWithValue(VoskEngine(channel: channel, models: store)),
+        ],
+      );
+      final listening = find.byKey(const Key('capture.stop'));
+      final typing = find.byKey(const Key('capture.field'));
+
+      // The first tap listens; the sentence ends (here, by "stop": the emulator hears silence),
+      // Android sends `done` and the engine lets go of the stream.
+      await _test.invokeMethod<void>('openWidgetButton', 'capture');
+      await _pumpUntil(tester, listening);
+      await tester.tap(listening);
+      await _pumpUntil(tester, typing);
+
+      // The next tap, in the same process, must listen too and go on listening: with the old
+      // stream's end still waiting in the channel buffers, the new listen ended at once, unheard.
+      await _test.invokeMethod<void>('openWidgetButton', 'capture');
+      await _pumpUntil(tester, listening);
+      for (var i = 0; i < 30; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(listening, findsOneWidget, reason: 'still listening three seconds on');
+      expect(typing, findsNothing);
+      expect(find.byType(CaptureSheet), findsOneWidget);
+      await tester.tap(listening);
+      await tester.pumpAndSettle();
+    },
+    skip: _modelsUrl.isEmpty,
+    timeout: const Timeout(Duration(minutes: 5)),
+  );
 
   testWidgets('a tap on the widget itself opens home, over a screen or a sheet, with no error', (
     tester,

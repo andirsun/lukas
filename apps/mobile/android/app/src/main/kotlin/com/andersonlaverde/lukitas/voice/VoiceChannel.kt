@@ -38,8 +38,11 @@ import java.util.concurrent.Executors
  * `stop`; `modelsDirectory` → String; `freeBytes` → Long; `unzip({zip, into})`; `releaseModels`.
  * Events, after listening with `{modelPath, grammar}`: `{type: ready}` once the microphone records,
  * `{type: level, value}` (0..1, about 25 a second: only a number, never the audio),
- * `{type: partial, text}`, `{type: result, pass: free|grammar, json}`, `{type: done}` (then the
- * stream ends) or `{type: error, code}`.
+ * `{type: partial, text}`, `{type: result, pass: free|grammar, json}`, `{type: done}` or
+ * `{type: error, code}`. After `done` or `error` nothing more is sent, and the stream is not ended
+ * with `endOfStream`: Dart cancels it on seeing either, and an `endOfStream` arriving after that
+ * finds no handler and waits in the engine's channel buffers for the next listen, which it then
+ * ends at once (lib/capture/engine/voice_channel.dart `_dropStaleEvents`).
  *
  * Fast start: the microphone is opened first, the moment the person's tap reaches here, with room
  * for four seconds of audio; the model and the two recognizers attach while it records, and what was
@@ -210,7 +213,6 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
         val grammar = args?.get("grammar") as? String
         if (disposed || path == null || grammar == null) {
             sink.success(mapOf("type" to "error", "code" to "bad_arguments"))
-            sink.endOfStream()
             return
         }
         stopRequested = false
@@ -320,7 +322,6 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
                 else -> "failed"
             }
             send(id, sink, mapOf("type" to "error", "code" to code))
-            main.post { if (id == session) sink.endOfStream() }
         } finally {
             audio?.release()
             free?.close()
@@ -343,7 +344,6 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
         if (free != null) send(id, sink, mapOf("type" to "result", "pass" to "free", "json" to free.finalResult))
         if (biased != null) send(id, sink, mapOf("type" to "result", "pass" to "grammar", "json" to biased.finalResult))
         send(id, sink, mapOf("type" to "done"))
-        main.post { if (id == session) sink.endOfStream() }
     }
 
     companion object {

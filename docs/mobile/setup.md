@@ -153,6 +153,11 @@ signs out and checks the widget keeps no figure. To look at the widgets themselv
 emulator's home screen, open Widgets and drag a Lukitas one out; the Quick Settings tile is added
 with `adb -s emulator-5554 shell cmd statusbar add-tile com.andersonlaverde.lukitas/.tile.CaptureTileService`.
 
+With the voice models served as for `voice_engine_test.dart` (and the microphone granted),
+`widget_test.dart` also runs a test with the real speech engine: 🎤 tapped, the sentence ended, 🎤
+tapped again, and the second listen must go on listening (not end at once, unheard). Add
+`--dart-define=VOICE_MODELS_URL=http://10.0.2.2:8765` to run it; without it, it is skipped.
+
 `integration_test/voice_latency_test.dart` times tap to listening with the real engine (cold, then
 warm), against the same stand-in for the models as above, and prints `LATENCY` lines. The emulator
 has no microphone, so it times the plumbing. `--dart-define=VOICE_USED=true` is a person who has

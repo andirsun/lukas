@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -130,11 +132,26 @@ class VoiceChannel implements VoicePlatform {
       await _methods.invokeMethod<bool>('isWarm', {'modelPath': modelPath}) ?? false;
 
   @override
-  Stream<VoiceEvent> start({required String modelPath, required String grammar}) => _events
-      .receiveBroadcastStream({'modelPath': modelPath, 'grammar': grammar})
-      .map(VoiceEvent.fromMap)
-      .where((e) => e != null)
-      .cast<VoiceEvent>();
+  Stream<VoiceEvent> start({required String modelPath, required String grammar}) async* {
+    await _dropStaleEvents();
+    yield* _events
+        .receiveBroadcastStream({'modelPath': modelPath, 'grammar': grammar})
+        .map(VoiceEvent.fromMap)
+        .where((e) => e != null)
+        .cast<VoiceEvent>();
+  }
+
+  /// Throws away what the platform sent on the event channel while nobody listened. The engine lets
+  /// go of the stream the moment it has `done`, so the stream's own end (`endOfStream`, which
+  /// arrives a moment later) finds no handler and the engine's channel buffers keep it for the
+  /// channel's next listener: the next session's, which would end at once, unheard, with nothing
+  /// recognised (the widget's 🎤 a minute after a sentence that finished by itself opened the typing
+  /// field). Nothing the platform sends between two listens is meant for the next one.
+  Future<void> _dropStaleEvents() =>
+      // `drain` is the one call that empties a channel's buffer without listening on it; the
+      // replacement it points to (`setListener`) would hand the stale message to a listener.
+      // ignore: deprecated_member_use
+      ui.channelBuffers.drain(_events.name, (data, callback) async => callback(null));
 
   @override
   Future<void> stop() => _methods.invokeMethod<void>('stop');
