@@ -23,7 +23,6 @@ const _libraries = 'assets/licenses/android-libraries.json';
 
 const _vosk = 'com.alphacephei:vosk-android';
 const _jna = 'net.java.dev.jna:jna';
-const _jsr305 = 'com.google.code.findbugs:jsr305';
 
 /// The text of a library whose licence is not the plain Apache one: the BSD-3-Clause that
 /// `androidx.glance:glance-appwidget-external-protobuf` publishes inside its jar.
@@ -64,16 +63,8 @@ Stream<LicenseEntry> extraLicenseEntries(AssetBundle bundle, AppLocalizations l1
   if (jna != null) {
     yield LicenseEntryWithLineBreaks(['JNA ${jna.version}'], '${l10n.licenseNoticeJna}\n\n$apache');
   }
-  final jsr305 = find(_jsr305);
-  if (jsr305 != null) {
-    final bsd = await load(_bsdGlance);
-    yield LicenseEntryWithLineBreaks([
-      name(jsr305),
-    ], '${l10n.licenseNoticeJsr305}\n\n$apache\n\n--------------------\n\n$bsd');
-  }
-
   // The rest, one entry per licence text: every library under what its own POM declares.
-  const handled = {_vosk, _jna, _jsr305};
+  const handled = {_vosk, _jna};
   final groups = <String, List<AndroidLibrary>>{};
   for (final library in libraries.where((l) => !handled.contains(l.id))) {
     (groups[_textAssetFor(library)] ??= []).add(library);

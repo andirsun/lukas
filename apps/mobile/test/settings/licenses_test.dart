@@ -98,12 +98,18 @@ void main() {
       expect(packages.any((p) => p.startsWith('org.jspecify:jspecify ')), isTrue);
     });
 
-    test('JSR 305 says what its POM declares and that its project is BSD-licensed', () async {
-      final entry = (await _extras('en')).singleWhere(
+    test('JSR 305 is listed with the Apache libraries, as its POM and jar declare', () async {
+      final entries = await _extras('en');
+      final entry = entries.singleWhere(
         (e) => e.packages.any((p) => p.startsWith('com.google.code.findbugs:jsr305 ')),
       );
-      expect(_text(entry), contains('Apache'));
-      expect(_text(entry), contains('BSD'));
+      expect(_text(entry), contains('Version 2.0, January 2004'));
+      expect(_text(entry), isNot(contains('Redistribution and use in source and binary forms')));
+      expect(
+        entry.packages.any((p) => p.startsWith('androidx.core:core ')),
+        isTrue,
+        reason: 'in the same group as the other Apache libraries',
+      );
     });
 
     test('no notice claims one licence for everything', () async {

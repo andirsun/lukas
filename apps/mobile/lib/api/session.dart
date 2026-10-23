@@ -225,10 +225,9 @@ class SessionController extends Notifier<SessionState> {
         // Best effort, and never for long: a server that is down (the reason someone changes
         // server) must not hold the sign-out up. Forgetting the session here is what matters.
         await _auth.signOut(token).timeout(signOutWait);
-      } on AuthFailure {
-        // Offline or already gone.
-      } on TimeoutException {
-        // Not answering.
+      } on Object {
+        // Offline, not answering, already gone, a 5xx, a failed TLS handshake, a bug in the call:
+        // whatever went wrong there, the session is forgotten here all the same.
       }
     }
     await _store.clear();

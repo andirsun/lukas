@@ -1218,7 +1218,6 @@
     }
   },
   "licenseNoticeBsd": "Una biblioteca de Android con licencia BSD de 3 cláusulas, con el texto que se publica junto a ella. Va dentro de AndroidX Glance, que se usa para el widget.",
-  "licenseNoticeJsr305": "Anotaciones JSR 305. Su POM declara la licencia Apache 2.0 (el texto está abajo), pero el proyecto JSR 305 también se describe como de licencia BSD de 3 cláusulas; se incluyen las dos.",
   "licenseNoticeSounds": "Los sonidos de Lukitas al anotar, pagar, deshacer o acercarte a un límite son obra original hecha para Lukitas: unos pocos tonos simples, sin muestras de terceros. Se publican con la licencia de la propia app, la GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
   "licenseNoticeApp": "Lukitas es software libre, bajo la GNU Affero General Public License 3.0. Su código está en https://github.com/andirsun/lukas.",
   "aboutLegalese": "Software libre, AGPL-3.0"

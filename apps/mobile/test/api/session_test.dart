@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -299,6 +300,43 @@ void main() {
         expect(homeCache.value, isNull);
       },
     );
+
+    test('any error from the server call still signs out locally, whatever it is', () async {
+      final errors = <String, Object>{
+        'socket': const SocketException('Connection refused'),
+        'tls': const HandshakeException('bad certificate'),
+        'http': const HttpException('closed'),
+        'bug': StateError('unexpected'),
+      };
+      for (final entry in errors.entries) {
+        mockStorage(token: 'email-token-0');
+        widget.saved[widgetSnapshotKey] = '{"v":1}';
+        homeCache.value = '{"v":1}';
+        auth.failures['signOut'] = entry.value;
+        final container = containerWith();
+        final controller = await ready(container);
+
+        await controller.signOut();
+
+        expect(container.read(sessionProvider).status, SessionStatus.signedOut, reason: entry.key);
+        expect(await SessionStore().read(), isNull, reason: entry.key);
+        expect(widget.saved, isEmpty, reason: entry.key);
+        expect(homeCache.value, isNull, reason: entry.key);
+      }
+    });
+
+    test('a 5xx from the server still signs out locally', () async {
+      mockStorage(token: 'email-token-0');
+      widget.saved[widgetSnapshotKey] = '{"v":1}';
+      homeCache.value = '{"v":1}';
+      auth.failures['signOut'] = const AuthFailure(status: 503);
+      final container = containerWith();
+      final controller = await ready(container);
+      await controller.signOut();
+      expect(container.read(sessionProvider).status, SessionStatus.signedOut);
+      expect(widget.saved, isEmpty);
+      expect(homeCache.value, isNull);
+    });
 
     testWidgets('a server that never answers is waited for 10 seconds at most', (tester) async {
       mockStorage(token: 'email-token-0');
