@@ -193,13 +193,6 @@ class AddForm extends ChangeNotifier {
 
   // -- changes -------------------------------------------------------------------------------
 
-  void press(KeypadKey key) {
-    final next = pressKey(raw, key, format);
-    if (next == raw) return;
-    raw = next;
-    _changed();
-  }
-
   /// The keypad (or a keyboard, or a paste) made the amount [next], as raw text.
   void setRaw(String next) {
     if (next == raw) return;

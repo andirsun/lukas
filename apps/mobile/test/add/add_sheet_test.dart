@@ -725,11 +725,149 @@ void main() {
       await tester.tap(find.byKey(const Key('add.more')));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('add.pending')));
-      await tester.drag(find.byKey(const Key('add.pending')), const Offset(0, -150));
       await tester.pumpAndSettle();
-      await tester.drag(find.byKey(const Key('add.pending')), const Offset(0, 60));
+      final scrollable = Scrollable.of(tester.element(find.byKey(const Key('add.pending'))));
+      final scrolledTo = scrollable.position.pixels;
+      expect(scrolledTo, greaterThan(40));
+      final footer = tester.getTopLeft(find.byKey(const Key('keypad.5')));
+      // A drag down that would not close the sheet if it moved it, but moves the content back.
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('add.pending'))),
+      );
+      await tester.pump(const Duration(milliseconds: 150));
+      await gesture.moveBy(const Offset(0, 40));
+      await tester.pump();
+      await gesture.moveBy(const Offset(0, 20));
+      await tester.pump();
+      // The content went back by the finger's move, and the sheet (its keypad) did not follow it.
+      expect(scrollable.position.pixels, lessThan(scrolledTo - 15));
+      expect(tester.getTopLeft(find.byKey(const Key('keypad.5'))), footer);
+      await gesture.up();
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('add.sheet')), findsOneWidget);
+    });
+
+    testWidgets('two taps within one frame both type', (tester) async {
+      await pump(tester);
+      await openSheet(tester);
+      // No frame between the taps: the second key must start from what the first typed.
+      await tester.tap(find.byKey(const Key('keypad.1')));
+      await tester.tap(find.byKey(const Key('keypad.2')));
+      await tester.pumpAndSettle();
+      expect(amountShown(tester), contains(r'$12'));
+    });
+
+    testWidgets('a physical keyboard types nothing while a save is under way', (tester) async {
+      final env = await pump(tester);
+      await openSheet(tester);
+      await tapKeys(tester, '25000');
+      env.add.hold = Completer<void>();
+      await tester.tap(find.byKey(const Key('add.save')));
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit9, character: '9');
+      await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+      await tester.pump();
+      expect(amountShown(tester), contains(r'$25.000'));
+      expect(amountShown(tester), isNot(contains('250.009')));
+      env.add.hold!.complete();
+      await tester.pumpAndSettle();
+      expect(env.add.keys.length, 1);
+      expect(env.add.calls.where((c) => c.startsWith('create')).length, 1);
+      await letTimersEnd(tester);
+    });
+
+    testWidgets('after a lost answer, a key typed during the save cannot change the retry', (
+      tester,
+    ) async {
+      final env = await pump(tester);
+      await openSheet(tester);
+      await tapKeys(tester, '25000');
+      env.add.loseNextAnswer = true;
+      env.add.hold = Completer<void>();
+      await tester.tap(find.byKey(const Key('add.save')));
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.digit9, character: '9');
+      env.add.hold!.complete();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('add.retry')));
+      await tester.pumpAndSettle();
+      expect(env.add.keys, hasLength(2));
+      expect(env.add.keys[0], env.add.keys[1]);
+      expect(env.add.calls.where((c) => c.startsWith('create')).toSet(), hasLength(1));
+      await letTimersEnd(tester);
+    });
+
+    group('on a short phone', () {
+      double keyGap(WidgetTester tester) =>
+          tester.getRect(find.byKey(const Key('keypad.2'))).left -
+          tester.getRect(find.byKey(const Key('keypad.1'))).right;
+
+      /// The figure's size: the biggest text under the amount (its hint is smaller).
+      double amountSize(WidgetTester tester) {
+        double biggest(InlineSpan span) {
+          if (span is! TextSpan) return 0;
+          var size = span.style?.fontSize ?? 0;
+          for (final child in span.children ?? const <InlineSpan>[]) {
+            final inner = biggest(child);
+            if (inner > size) size = inner;
+          }
+          return size;
+        }
+
+        return tester
+            .widgetList<RichText>(
+              find.descendant(
+                of: find.byKey(const Key('add.amount')),
+                matching: find.byType(RichText),
+              ),
+            )
+            .map(
+              (text) =>
+                  (text.text as TextSpan).children!.map(biggest).reduce((a, b) => a > b ? a : b),
+            )
+            .reduce((a, b) => a > b ? a : b);
+      }
+
+      int chipsShown(WidgetTester tester) => find
+          .byWidgetPredicate(
+            (w) =>
+                w.key is ValueKey<String> &&
+                (w.key! as ValueKey<String>).value.startsWith('category.'),
+          )
+          .evaluate()
+          .length;
+
+      final many = [for (var i = 0; i < 12; i++) category('c$i', 'Cat $i')];
+
+      testWidgets('800px and over: 36px amount, 6px keys, two rows of categories', (tester) async {
+        await pump(tester, size: const Size(412, 915), categories: many);
+        await openSheet(tester);
+        expect(amountSize(tester), 36);
+        expect(keyGap(tester), 6);
+        expect(chipsShown(tester), 7);
+        final save = tester.getRect(find.byKey(const Key('add.save')));
+        expect(save.top - tester.getRect(find.byKey(const Key('keypad.0'))).bottom, 8);
+      });
+
+      testWidgets('under 860px: the keys and the footer tighten', (tester) async {
+        await pump(tester, size: const Size(412, 840), categories: many);
+        await openSheet(tester);
+        expect(keyGap(tester), 4);
+        expect(amountSize(tester), 36);
+        expect(chipsShown(tester), 7);
+        final save = tester.getRect(find.byKey(const Key('add.save')));
+        final five = tester.getRect(find.byKey(const Key('keypad.0')));
+        // `--space-1` between the keypad and Guardar, not `--space-2`.
+        expect(save.top - five.bottom, 4);
+      });
+
+      testWidgets('under 800px: a 28px amount and one row of categories', (tester) async {
+        await pump(tester, size: const Size(412, 760), categories: many);
+        await openSheet(tester);
+        expect(amountSize(tester), 28);
+        expect(keyGap(tester), 4);
+        expect(chipsShown(tester), 3);
+      });
     });
 
     testWidgets('a physical keyboard types the amount, and Backspace takes a digit away', (
@@ -812,10 +950,7 @@ void main() {
       await tester.tap(find.byKey(const Key('add.more')));
       await tester.pumpAndSettle();
       final label = find.bySemanticsLabel('Pendiente (aún no lo pagas)');
-      expect(
-        tester.getSemantics(label),
-        isSemantics(hasCheckedState: true, isChecked: false),
-      );
+      expect(tester.getSemantics(label), isSemantics(hasCheckedState: true, isChecked: false));
       await tester.tap(label);
       await tester.pump();
       expect(tester.getSemantics(label), isSemantics(hasCheckedState: true, isChecked: true));

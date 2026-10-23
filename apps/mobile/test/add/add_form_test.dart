@@ -34,7 +34,7 @@ void type(AddForm f, String keys) {
   for (final key in keys.split('')) {
     // A thousands separator is no key: it is ignored, as typing it is.
     final pressed = keyFromKeyboard(key, AmountFormat(f.locale, f.currency));
-    if (pressed != null) f.press(pressed);
+    if (pressed != null) f.setRaw(pressKey(f.raw, pressed, f.format));
   }
 }
 
@@ -192,7 +192,7 @@ void main() {
       type(f, '100');
       edits(f, [
         () => type(f, '5'),
-        () => f.press(const BackspaceKey()),
+        () => f.setRaw(pressKey(f.raw, const BackspaceKey(), f.format)),
         () => f.setName('Cena'),
         () => f.select('cat-home'),
         () => f.setKind(Kind.income),

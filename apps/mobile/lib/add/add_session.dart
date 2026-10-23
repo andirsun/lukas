@@ -312,7 +312,11 @@ class AddSheetState extends ConsumerState<AddSheet> {
       child: AmountKeys(
         raw: current?.raw ?? '',
         currency: current?.currency ?? '',
-        onChanged: (next) => current?.setRaw(next),
+        // Not while a save is under way, as the keypad is not: the amount (and with it the attempt's
+        // key) must not change under a request that may already have reached the server.
+        onChanged: (next) {
+          if (!saving) current?.setRaw(next);
+        },
         child: widget.child,
       ),
     );

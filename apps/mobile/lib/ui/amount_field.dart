@@ -13,6 +13,17 @@ import 'keypad.dart';
 import 'lk_theme.dart';
 import 'sheet.dart';
 
+/// Phones under 800px tall (`max-height: 799.98px`) get the add sheet's smaller amount, 28px.
+const shortPhoneBelow = 800.0;
+const shortAmountSize = 28.0;
+
+/// How far the lukas hint's baseline sits above the figure's baseline: CSS `vertical-align: middle`
+/// puts the middle of the hint's box on the parent's baseline plus half its x-height. The figure is
+/// Fredoka, whose OS/2 `sxHeight` is 0.500 em, at [figureSize]; the hint is Nunito 14px, whose box
+/// is `hhea` ascent 1.011 em and descent 0.353 em tall, so its middle is (1.011 - 0.353) / 2 em
+/// above its own baseline. At 36px that is 9.0 - 4.606 = 4.39px.
+double hintRaise(double figureSize) => figureSize * 0.500 / 2 - 14 * (1.011 - 0.353) / 2;
+
 /// How long typing must pause before the amount is announced.
 const _announceAfter = Duration(milliseconds: 500);
 
@@ -91,7 +102,15 @@ class _AmountDisplayState extends State<AmountDisplay> {
     // `.lk-sheet.has-footer .lk-sheet-amount { line-height: 1.15 }`.
     final scope = LkSheetScope.maybeOf(context);
     final tight = scope?.hasFooter ?? false;
-    final style = LkText.display.copyWith(color: color, height: tight ? 1.15 : null);
+    // `@media (max-height: 799.98px) { .lk-sheet.has-footer .lk-sheet-amount { font-size: 28px } }`.
+    final size = tight && MediaQuery.sizeOf(context).height < shortPhoneBelow
+        ? shortAmountSize
+        : LkText.display.fontSize!;
+    final style = LkText.display.copyWith(
+      color: color,
+      fontSize: size,
+      height: tight ? 1.15 : null,
+    );
     final announced = _settled(hint == null ? text : '$text $hint');
 
     final display = Stack(
@@ -106,14 +125,12 @@ class _AmountDisplayState extends State<AmountDisplay> {
                   TextSpan(text: text),
                   if (hint != null) ...[
                     const TextSpan(text: ' '),
-                    // `align-middle`: the hint's middle sits on the figure's x-height middle, which
-                    // for Fredoka at 36px and Nunito at 14px is its baseline 4.5px above the figure's
-                    // (measured against the web's picture).
+                    // `align-middle` (see [hintRaise]).
                     WidgetSpan(
                       alignment: PlaceholderAlignment.baseline,
                       baseline: TextBaseline.alphabetic,
                       child: Transform.translate(
-                        offset: const Offset(0, -4.5),
+                        offset: Offset(0, -hintRaise(size)),
                         child: Text(
                           hint,
                           style: LkText.body.copyWith(
