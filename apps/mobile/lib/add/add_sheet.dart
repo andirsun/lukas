@@ -91,6 +91,20 @@ String _failureMessage(AppLocalizations l10n, HomeFailure failure) {
   return failure.status >= 500 ? l10n.errorInternal : l10n.errorGeneric;
 }
 
+/// The add or edit sheets open now that hold the person's input. A plain registry, not state: it
+/// is read when a link arrives (lib/launch/launch_links.dart), never watched.
+class SheetsWithInput {
+  final _open = <Object>{};
+
+  /// Whether any open sheet holds input.
+  bool get any => _open.isNotEmpty;
+
+  void mark(Object sheet, {required bool hasInput}) =>
+      hasInput ? _open.add(sheet) : _open.remove(sheet);
+}
+
+final sheetsWithInputProvider = Provider<SheetsWithInput>((ref) => SheetsWithInput());
+
 /// The sheet itself. Built by [openAddSheet] and [openEditSheet].
 class AddSheet extends ConsumerStatefulWidget {
   const AddSheet({super.key, required this.request});
@@ -118,8 +132,18 @@ class _AddSheetState extends ConsumerState<AddSheet> {
   var _suggestionSeq = 0;
   Timer? _pause;
 
+  /// Read once here: dispose may not use ref.
+  late final SheetsWithInput _withInput;
+
+  @override
+  void initState() {
+    super.initState();
+    _withInput = ref.read(sheetsWithInputProvider);
+  }
+
   @override
   void dispose() {
+    _withInput.mark(this, hasInput: false);
     _pause?.cancel();
     _form?.dispose();
     _name.dispose();
@@ -154,6 +178,7 @@ class _AddSheetState extends ConsumerState<AddSheet> {
 
   void _onFormChanged() {
     final form = _form!;
+    _withInput.mark(this, hasInput: form.hasInput);
     if (_name.text != form.name) _name.text = form.name;
     _askSuggestions(form);
     setState(() {});

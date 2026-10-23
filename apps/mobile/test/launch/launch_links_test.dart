@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/add/add_sheet.dart';
 import 'package:lukitas/capture/capture_sheet.dart';
@@ -197,6 +198,58 @@ void main() {
     expect(find.byType(CaptureSheet), findsOneWidget);
     expect(engine.listens, 1);
     await engine.held!.close();
+  });
+
+  group('an add sheet with the person\'s input in it is kept', () {
+    Future<FakeLaunchLinks> typedInSheet(WidgetTester tester, FakeSpeechEngine engine) async {
+      final links = FakeLaunchLinks('lukitas://add');
+      await pumpSettingsApp(
+        tester,
+        overrides: [
+          launchLinkSourceProvider.overrideWithValue(links),
+          speechEngineProvider.overrideWithValue(engine),
+        ],
+      );
+      expect(find.byType(AddSheet), findsOneWidget);
+      await tester.tap(find.byKey(const Key('keypad.4')));
+      await tester.tap(find.byKey(const Key('keypad.2')));
+      await tester.pumpAndSettle();
+      return links;
+    }
+
+    for (final link in ['lukitas://capture', 'lukitas://add', 'lukitas://due', 'lukitas://progress']) {
+      testWidgets('$link leaves it as it is', (tester) async {
+        final engine = FakeSpeechEngine()..hold = true;
+        final links = await typedInSheet(tester, engine);
+        final typed = find.descendant(of: find.byType(AddSheet), matching: find.textContaining('42'));
+        expect(typed, findsWidgets);
+
+        links.open(link);
+        for (var i = 0; i < 20; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(find.byType(AddSheet), findsOneWidget);
+        expect(typed, findsWidgets, reason: 'what was typed is still there');
+        expect(find.byType(CaptureSheet), findsNothing);
+        expect(find.byType(ProgressScreen), findsNothing);
+        expect(engine.listens, 0, reason: 'the microphone never opened');
+      });
+    }
+
+    testWidgets('once it closes, the next link opens again', (tester) async {
+      final engine = FakeSpeechEngine()..hold = true;
+      final links = await typedInSheet(tester, engine);
+      Navigator.of(tester.element(find.byType(AddSheet))).pop();
+      await tester.pumpAndSettle();
+      expect(find.byType(AddSheet), findsNothing);
+
+      links.open('lukitas://capture');
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.byType(CaptureSheet), findsOneWidget);
+      await engine.held!.close();
+    });
   });
 
   testWidgets('signed out, a link lands on the entry screen and opens nothing', (tester) async {

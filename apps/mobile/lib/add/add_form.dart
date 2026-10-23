@@ -96,8 +96,15 @@ class AddForm extends ChangeNotifier {
 
   void _changed() {
     _key = null;
+    _hasInput = true;
     notifyListeners();
   }
+
+  bool _hasInput = false;
+
+  /// The person has typed, picked or switched something here (every change comes from them): a
+  /// widget or tile link then leaves the sheet alone (lib/launch/launch_links.dart).
+  bool get hasInput => _hasInput;
 
   // -- getters -------------------------------------------------------------------------------
 
