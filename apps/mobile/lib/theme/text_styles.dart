@@ -42,6 +42,16 @@ abstract final class LkText {
     fontFeatures: _tabular,
   );
 
+  /// A row's amount: app.css `.lk-amount`, Fredoka 14px 600, tabular figures. The web's
+  /// `white-space: nowrap` is the widget's (`softWrap: false`), not the style's.
+  static const amount = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    height: _inherited,
+    fontFeatures: _tabular,
+  );
+
   /// A sheet's title: apps/web/app/ui/Sheet.tsx `font-display text-[24px] leading-[1.15]
   /// font-bold`, Fredoka 24px 700.
   static const title = TextStyle(

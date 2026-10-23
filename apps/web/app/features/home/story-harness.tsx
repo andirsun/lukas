@@ -13,6 +13,7 @@ import {
 import { type ReactNode, useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { OCTOBER_2026 } from "../../../../../packages/core/test/fixtures/october-2026.ts";
+import { exposeStoryFetch } from "../../../.storybook/parity.ts";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import type { PasskeyOutcome } from "../../auth/passkey.ts";
 import { AppMessages } from "../../i18n/AppMessages.tsx";
@@ -755,7 +756,7 @@ export function HomeStage({
   const [passkeys] = useState(() => passkeysProp ?? storyPasskeys());
   const [fetchImpl] = useState(() => {
     clearHomeStorage(STORY_USER_ID);
-    return homeFetch({ locale: storyLocale, ...api });
+    return exposeStoryFetch(homeFetch({ locale: storyLocale, ...api }));
   });
   const [reloads, setReloads] = useState(0);
   const shell = (screen: ReactNode) => <AppShell>{screen}</AppShell>;

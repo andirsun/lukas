@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 
 /// The app's bundled fonts, as the web loads them (assets/fonts, declared in pubspec.yaml):
@@ -15,4 +17,24 @@ Future<void> loadAppFonts() async {
     final loader = FontLoader(family)..addFont(rootBundle.load(asset));
     await loader.load();
   }
+}
+
+/// Material's icon font (`Icons.*`), which `flutter test` leaves out: the one `flutter build`
+/// bundles, from the SDK's cache (bin/cache/artifacts/material_fonts).
+Future<void> loadMaterialIcons() async {
+  final file = File('${_flutterCache()}/artifacts/material_fonts/MaterialIcons-Regular.otf');
+  final bytes = file.readAsBytesSync();
+  await (FontLoader('MaterialIcons')..addFont(Future.value(ByteData.sublistView(bytes)))).load();
+}
+
+/// The SDK's bin/cache: `flutter test` runs the tests in bin/cache/artifacts/engine/*/flutter_tester.
+String _flutterCache() {
+  final root = Platform.environment['FLUTTER_ROOT'];
+  if (root != null && Directory('$root/bin/cache').existsSync()) return '$root/bin/cache';
+  var dir = File(Platform.resolvedExecutable).parent;
+  while (dir.parent.path != dir.path) {
+    if (dir.path.endsWith('/bin/cache')) return dir.path;
+    dir = dir.parent;
+  }
+  throw StateError('Cannot find the Flutter SDK cache from ${Platform.resolvedExecutable}');
 }

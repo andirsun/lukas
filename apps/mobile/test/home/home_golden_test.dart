@@ -27,7 +27,11 @@ Future<void> pumpGoldenHome(WidgetTester tester, ThemeMode mode, FakeHomeReposit
 }
 
 void main() {
-  setUpAll(loadAppFonts);
+  setUpAll(() async {
+    await loadAppFonts();
+    // The ＋, the 🎤 and the sheet's close button are Material icons: draw them, not boxes.
+    await loadMaterialIcons();
+  });
 
   testWidgets('home at night, with budgets', (tester) async {
     await pumpGoldenHome(tester, ThemeMode.dark, monthWithBudgets());

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "money-spanish",
+    "storyId": "ui-money--spanish",
+    "theme": "night",
+    "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "money-spanish",
+    "storyId": "ui-money--spanish",
+    "theme": "day",
+    "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "money-english",
+    "storyId": "ui-money--english",
+    "theme": "night",
+    "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "money-english",
+    "storyId": "ui-money--english",
+    "theme": "day",
+    "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "money-negative",
+    "storyId": "ui-money--negative",
+    "theme": "night",
+    "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "money-negative",
+    "storyId": "ui-money--negative",
+    "theme": "day",
+    "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "money-negative-day-english",
+    "storyId": "ui-money--negative-day-english",
+    "theme": "day",
+    "appTest": "test/parity/money_parity_test.dart"
+  }
+]

@@ -43,7 +43,11 @@ Future<void> pumpSheet(WidgetTester tester, ThemeMode mode) async {
 }
 
 void main() {
-  setUpAll(loadAppFonts);
+  setUpAll(() async {
+    await loadAppFonts();
+    // The ＋, the 🎤 and the sheet's close button are Material icons: draw them, not boxes.
+    await loadMaterialIcons();
+  });
 
   testWidgets('the add sheet at night', (tester) async {
     await pumpSheet(tester, ThemeMode.dark);

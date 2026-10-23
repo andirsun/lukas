@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { fn } from "storybook/test";
+import { exposeStoryFetch } from "../../../.storybook/parity.ts";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import type { PasskeyOutcome } from "../../auth/passkey.ts";
 import { ToastProvider } from "../../ui/Toast.tsx";
@@ -119,7 +120,7 @@ export function SignInStage({
   onPatchMe = () => {},
   resendDelayMs,
 }: SignInStageProps) {
-  const [fetchImpl] = useState(() => profileFetch(profileUser, onPatchMe));
+  const [fetchImpl] = useState(() => exposeStoryFetch(profileFetch(profileUser, onPatchMe)));
   const [fallbackOffer] = useState(() => fakeOffer());
   return (
     <MemoryRouter initialEntries={[initialEntry]}>

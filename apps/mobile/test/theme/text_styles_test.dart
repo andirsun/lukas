@@ -108,6 +108,22 @@ void main() {
       expect(LkText.amountXl.fontFeatures, contains(const FontFeature.tabularFigures()));
     });
 
+    test('amount: a row\'s amount, Fredoka 14px 600, tabular', () {
+      // app.css:271-277 .lk-amount
+      final css = _rule('.lk-amount');
+      expect(css['font-family'], 'var(--font-display)');
+      expect(css['font-size'], '14px');
+      expect(css['font-weight'], '600');
+      expect(css['font-variant-numeric'], 'tabular-nums');
+      expect(css['white-space'], 'nowrap');
+      expect(LkText.amount.fontFamily, 'Fredoka');
+      expect(LkText.amount.fontSize, 14);
+      expect(LkText.amount.fontWeight, FontWeight.w600);
+      // No line-height declared: it inherits Tailwind's preflight 1.5.
+      expect(LkText.amount.height, 1.5);
+      expect(LkText.amount.fontFeatures, contains(const FontFeature.tabularFigures()));
+    });
+
     test('title: a sheet\'s title, Fredoka 24px 700, line height 1.15', () {
       // Sheet.tsx:295 className="m-0 font-display text-[24px] leading-[1.15] font-bold"
       final source = File(_sheetTsx).readAsStringSync();

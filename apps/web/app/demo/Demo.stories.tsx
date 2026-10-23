@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState } from "react";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { expect, userEvent, waitFor, within } from "storybook/test";
+import { exposeStoryFetch } from "../../.storybook/parity.ts";
 import { ApiProvider } from "../api/ApiProvider.tsx";
 import { CategoriesPage } from "../features/categories/CategoriesPage.tsx";
 import { CategoryDetail } from "../features/categories/CategoryDetail.tsx";
@@ -41,11 +42,12 @@ function DemoStage({ path }: { path: string }) {
   const [locale, setLocale] = useState<Locale>(storyLocale);
   // The backend reads the same (faked) clock as the screens: `new Date()`.
   const [backend] = useState(() => createDemoBackend(DEMO_SEED[storyLocale]));
+  const [fetchImpl] = useState(() => exposeStoryFetch(backend.fetch));
   return (
     <IntlProvider locale={locale} onLocaleChange={setLocale}>
       <AppMessages>
         <MemoryRouter initialEntries={[path]}>
-          <ApiProvider mode="demo" fetch={backend.fetch}>
+          <ApiProvider mode="demo" fetch={fetchImpl}>
             <ToastProvider>
               <Routes>
                 <Route
