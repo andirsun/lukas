@@ -12,12 +12,20 @@ const transactionsPageSize = 50;
 /// What home needs of the profile: the currency amounts are written in and the zone "today" is
 /// read in.
 class HomeProfile {
-  const HomeProfile({required this.id, required this.currency, required this.timezone});
+  const HomeProfile({
+    required this.id,
+    required this.currency,
+    required this.timezone,
+    this.email = '',
+  });
 
   /// The user's id.
   final String id;
   final String currency;
   final String timezone;
+
+  /// The account's email ("Entraste como…" in Settings); a guest's account has none worth showing.
+  final String email;
 }
 
 /// A page of a month's transactions, newest first. [nextCursor] is null on the last page.
@@ -101,7 +109,7 @@ class ApiHomeRepository implements HomeRepository {
   @override
   Future<HomeProfile> profile() async {
     final me = await _settle(() => _api.getMe());
-    return HomeProfile(id: me.id, currency: me.currency, timezone: me.timezone);
+    return HomeProfile(id: me.id, currency: me.currency, timezone: me.timezone, email: me.email);
   }
 
   @override

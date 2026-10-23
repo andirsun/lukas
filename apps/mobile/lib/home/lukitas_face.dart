@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/app_localizations.dart';
-import '../theme/tokens.g.dart';
 
 /// How Lukitas feels about the month (the web's `moodFor`): celebrating right after a save or a
 /// payment, worried while any category is near or over its limit, happy otherwise.
 enum LukitasMood {
   happy('assets/lukas/wave.webp', Duration(milliseconds: 1200), 2, 0),
-  worried('assets/lukas/worried.webp', LukitasTokens.durationShiver, 1, 3),
-  celebrating('assets/lukas/celebrate.webp', LukitasTokens.durationCelebrate, 2, 4);
+  worried('assets/lukas/worried.webp', Duration(milliseconds: 2000), 1, 3),
+  celebrating('assets/lukas/celebrate.webp', Duration(milliseconds: 1000), 2, 4);
 
   const LukitasMood(this.sheet, this.loop, this.loops, this.stillFrame);
 
   /// The web's own sprite sheet: 4x2 frames of 500 px.
   final String sheet;
 
-  /// One pass over the eight frames.
+  /// One pass over the eight frames: the web's `LukasSprite.loopMs` (wave 1200, worried 2000,
+  /// celebrate 1000 in apps/web/app/lukas/Lukas.tsx).
   final Duration loop;
 
   /// How many passes it plays before it rests on the first frame.
@@ -37,6 +37,7 @@ class LukitasFace extends StatefulWidget {
     this.size = 72,
     this.decorative = false,
     this.label,
+    this.endless = false,
   });
 
   final LukitasMood mood;
@@ -48,6 +49,10 @@ class LukitasFace extends StatefulWidget {
 
   /// How he is named for assistive technology (the web's `mascot.<mood>`); "Lukitas" when null.
   final String? label;
+
+  /// Plays the loop for as long as he is on screen, as the web's does (the celebration's Lukitas
+  /// is there for one stay), instead of a couple of passes.
+  final bool endless;
 
   @override
   State<LukitasFace> createState() => _LukitasFaceState();
@@ -82,7 +87,7 @@ class _LukitasFaceState extends State<LukitasFace> with SingleTickerProviderStat
       ..stop()
       ..value = 0
       ..duration = widget.mood.loop;
-    if (_animate) _controller.repeat(count: widget.mood.loops);
+    if (_animate) _controller.repeat(count: widget.endless ? null : widget.mood.loops);
   }
 
   @override

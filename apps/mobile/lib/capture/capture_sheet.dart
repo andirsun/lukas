@@ -14,11 +14,11 @@ import '../home/home_controller.dart';
 import '../home/home_repository.dart';
 import '../home/saved_feedback.dart';
 import '../home/home_widgets.dart' show QuietSpinner;
-import '../home/toast.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.g.dart';
+import '../ui/toast.dart';
 import 'capture_note.dart';
 import 'capture_repository.dart';
 import 'engine/speech_engine.dart';
@@ -446,9 +446,8 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet>
     final repo = ref.read(captureRepositoryProvider);
     // What outlives the sheet: the toast, Deshacer, the home update and the feedback hook.
     final container = ProviderScope.containerOf(context);
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final navigator = Navigator.of(context);
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
 
     final drafts = preview.drafts(categoryName: (id) => data.categories[id]?.name ?? '');
     final key = _keys.putIfAbsent(batchFingerprint(drafts), newIdempotencyKey);
@@ -471,8 +470,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet>
       if (mounted) navigator.pop();
       _celebrate(
         container: container,
-        messenger: messenger,
-        colors: colors,
+        toasts: toasts,
         l10n: l10n,
         saved: saved,
         total: formatMoney(total, data.currency, l10n.localeName),
@@ -934,33 +932,25 @@ String _failureMessage(AppLocalizations l10n, HomeFailure failure) {
 /// all away. Everything it needs is passed in: the sheet is gone by the time anyone taps.
 void _celebrate({
   required ProviderContainer container,
-  required ScaffoldMessengerState messenger,
-  required LukitasColors colors,
+  required ToastController toasts,
   required AppLocalizations l10n,
   required List<Transaction> saved,
   required String total,
 }) {
   final ids = [for (final t in saved) t.id];
-  showToast(
-    messenger,
-    colors,
+  toasts.say(
     l10n.captureSaved(saved.length, total),
     actionLabel: l10n.undo,
     onAction: () => unawaited(() async {
       try {
         await container.read(captureRepositoryProvider).undoBatch(ids);
       } on HomeFailure catch (failure) {
-        showToast(
-          messenger,
-          colors,
-          failure.offline ? l10n.errorNetwork : l10n.errorGeneric,
-          error: true,
-        );
+        toasts.say(failure.offline ? l10n.errorNetwork : l10n.errorGeneric, error: true);
         return;
       }
       unawaited(container.read(homeProvider.notifier).forget(ids));
       container.read(feedbackProvider)(FeedbackEvent.undo);
-      showToast(messenger, colors, l10n.captureUndone(ids.length));
+      toasts.say(l10n.captureUndone(ids.length));
     }()),
   );
 }

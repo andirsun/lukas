@@ -20,6 +20,8 @@ import 'package:lukitas/capture/parser/parse.dart' show Draft;
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/main.dart' as app;
+import 'package:lukitas/ui/pressable.dart';
+import 'package:lukitas/ui/toast.dart';
 
 const _server = String.fromEnvironment('LUKITAS_SERVER', defaultValue: 'http://10.0.2.2:3000');
 
@@ -172,14 +174,18 @@ void main() {
     await _tap(tester, 'capture.save');
     await _pumpUntilGone(tester, find.byKey(const Key('capture.sheet')));
 
+    // One toast, one Deshacer: it takes both away. (It stays 8 seconds on a timer of its own, so
+    // it is looked for before the server is asked.)
+    // (The phone's language names its action; it is the toast's one button.)
+    final undo = find.descendant(of: find.byType(ToastLayer), matching: find.byType(Pressable));
+    await _pumpUntil(tester, undo);
+    expect(find.byType(ToastLayer), findsOneWidget);
+
     var rows = await _rows(token, categoryId);
     expect(rows.map((r) => r['amount']).toList()..sort(), [-1500000, -300000]);
     expect(rows.every((r) => r['source'] == 'app'), isTrue);
 
-    // One toast, one Deshacer: it takes both away.
-    await _pumpUntil(tester, find.byType(SnackBarAction));
-    expect(find.byType(SnackBar), findsOneWidget);
-    await tester.tap(find.byType(SnackBarAction));
+    await tester.tap(undo);
     await tester.pump(const Duration(seconds: 2));
     final end = DateTime.now().add(const Duration(seconds: 20));
     while ((rows = await _rows(token, categoryId)).isNotEmpty && DateTime.now().isBefore(end)) {

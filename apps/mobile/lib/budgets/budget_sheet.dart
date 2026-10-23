@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../add/keypad_input.dart';
 import '../home/home_repository.dart';
-import '../home/toast.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../theme/text_styles.dart';
@@ -17,6 +16,7 @@ import '../ui/amount_field.dart';
 import '../ui/lk_theme.dart';
 import '../ui/press_button.dart';
 import '../ui/sheet.dart';
+import '../ui/toast.dart';
 import 'category_detail_controller.dart';
 
 /// What the budget sheet says when saving fails: the server's own words for the cases the web's
@@ -54,8 +54,7 @@ Future<void> openBudgetSheet(
     locale: l10n.localeName,
     l10n: l10n,
     container: ProviderScope.containerOf(context),
-    messenger: ScaffoldMessenger.of(context),
-    colors: context.lkColors,
+    toasts: ToastHost.of(context),
     initial: budget,
   );
   return LkSheet.show<void>(
@@ -76,8 +75,7 @@ class _BudgetForm extends ChangeNotifier {
     required this.locale,
     required this.l10n,
     required this.container,
-    required this.messenger,
-    required this.colors,
+    required this.toasts,
     required int? initial,
   }) : raw = initial == null || initial == 0 ? '' : keypadText(initial, locale, currency);
 
@@ -88,8 +86,7 @@ class _BudgetForm extends ChangeNotifier {
   final String locale;
   final AppLocalizations l10n;
   final ProviderContainer container;
-  final ScaffoldMessengerState messenger;
-  final LukitasColors colors;
+  final ToastController toasts;
 
   String raw;
   String? error;
@@ -141,11 +138,7 @@ class _BudgetForm extends ChangeNotifier {
     if (!_closed) navigator.pop();
     final money = formatMoney(cents, currency, locale);
     final hint = lukasHint(cents, locale, currency: currency);
-    showToast(
-      messenger,
-      colors,
-      l10n.budgetSheetSaved(categoryName, hint == null ? money : '$money $hint'),
-    );
+    toasts.say(l10n.budgetSheetSaved(categoryName, hint == null ? money : '$money $hint'));
   }
 }
 

@@ -7,10 +7,9 @@ import '../api/gen/lukitas_api.dart';
 import '../feedback/feedback.dart';
 import '../home/home_controller.dart';
 import '../home/home_repository.dart';
-import '../home/toast.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
-import '../theme/tokens.g.dart';
+import '../ui/toast.dart';
 import 'add_form.dart';
 
 /// What follows a save, apart from the sheet itself: when sending the same request again can work,
@@ -41,9 +40,8 @@ String saveFailureMessage(AppLocalizations l10n, HomeFailure failure) {
 /// needs is passed in: the sheet is gone by the time anyone taps.
 void toastCreated({
   required ProviderContainer container,
-  required ScaffoldMessengerState messenger,
+  required ToastController toasts,
   required NavigatorState navigator,
-  required LukitasColors colors,
   required AppLocalizations l10n,
   required Transaction created,
   required Kind kind,
@@ -58,12 +56,10 @@ void toastCreated({
   final line = kind == Kind.income
       ? l10n.addSavedIncome(categoryName, amount)
       : l10n.addSavedExpense(categoryName, amount);
-  showToast(
-    messenger,
-    colors,
+  toasts.say(
     hint == null ? line : '$line $hint',
     actionLabel: l10n.undo,
-    onAction: () => unawaited(_undoCreated(container, messenger, colors, l10n, created)),
+    onAction: () => unawaited(_undoCreated(container, toasts, l10n, created)),
     extraLabel: unnamed ? l10n.addNameIt : null,
     onExtra: unnamed
         ? () {
@@ -75,24 +71,18 @@ void toastCreated({
 
 Future<void> _undoCreated(
   ProviderContainer container,
-  ScaffoldMessengerState messenger,
-  LukitasColors colors,
+  ToastController toasts,
   AppLocalizations l10n,
   Transaction created,
 ) async {
   try {
     await container.read(homeProvider.notifier).remove(created);
   } on HomeFailure catch (failure) {
-    showToast(
-      messenger,
-      colors,
-      failure.offline ? l10n.errorNetwork : l10n.errorGeneric,
-      error: true,
-    );
+    toasts.say(failure.offline ? l10n.errorNetwork : l10n.errorGeneric, error: true);
     return;
   }
   container.read(feedbackProvider)(FeedbackEvent.undo);
-  showToast(messenger, colors, l10n.addUndone(created.name));
+  toasts.say(l10n.addUndone(created.name));
 }
 
 /// Eliminar on an edited movement: it goes at once (home does the same for a swipe) and the toast
@@ -100,8 +90,7 @@ Future<void> _undoCreated(
 /// gone by then, so everything it needs is passed in.
 Future<void> deleteMovement({
   required ProviderContainer container,
-  required ScaffoldMessengerState messenger,
-  required LukitasColors colors,
+  required ToastController toasts,
   required AppLocalizations l10n,
   required Transaction transaction,
 }) async {
@@ -110,41 +99,28 @@ Future<void> deleteMovement({
   try {
     await home.remove(transaction);
   } on HomeFailure catch (failure) {
-    showToast(
-      messenger,
-      colors,
-      failure.offline ? l10n.errorNetwork : l10n.errorGeneric,
-      error: true,
-    );
+    toasts.say(failure.offline ? l10n.errorNetwork : l10n.errorGeneric, error: true);
     return;
   }
-  showToast(
-    messenger,
-    colors,
+  toasts.say(
     l10n.transactionDeleted(transaction.name),
     actionLabel: l10n.undo,
-    onAction: () => unawaited(_bringBack(container, messenger, colors, l10n, transaction)),
+    onAction: () => unawaited(_bringBack(container, toasts, l10n, transaction)),
   );
 }
 
 Future<void> _bringBack(
   ProviderContainer container,
-  ScaffoldMessengerState messenger,
-  LukitasColors colors,
+  ToastController toasts,
   AppLocalizations l10n,
   Transaction transaction,
 ) async {
   try {
     await container.read(homeProvider.notifier).restore(transaction);
   } on HomeFailure catch (failure) {
-    showToast(
-      messenger,
-      colors,
-      failure.offline ? l10n.errorNetwork : l10n.errorGeneric,
-      error: true,
-    );
+    toasts.say(failure.offline ? l10n.errorNetwork : l10n.errorGeneric, error: true);
     return;
   }
   container.read(feedbackProvider)(FeedbackEvent.undo);
-  showToast(messenger, colors, l10n.transactionRestored(transaction.name));
+  toasts.say(l10n.transactionRestored(transaction.name));
 }

@@ -420,6 +420,26 @@ abstract final class LkText {
     leadingDistribution: TextLeadingDistribution.even,
   );
 
+  /// A manage page's title: Settings.tsx `<h1 className="m-0 font-display text-[28px] font-bold
+  /// text-ink">`, Fredoka 28px 700 on the inherited 1.5 (it has no leading of its own).
+  static const pageTitle = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A settings card's title: parts.tsx `SettingsSection`, `font-display text-[20px] font-bold
+  /// leading-tight`, Fredoka 20px 700 on Tailwind's 1.25.
+  static const sectionTitle = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    height: 1.25,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
   /// `text-transform: uppercase`, for [eyebrow], [button], [buttonSm] and [badge].
   static String upperCase(String text) => text.toUpperCase();
 }

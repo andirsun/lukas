@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/ui/confirm_sheet.dart' show flexOneRow;
 import 'package:lukitas/ui/css_text.dart';
 import 'package:lukitas/ui/lk_theme.dart';
 import 'package:lukitas/ui/outset_box.dart';
@@ -128,5 +129,74 @@ void main() {
       t.getRect(find.byType(SnappedDecoratedBox)),
       const Rect.fromLTWH(10.3, 10.3, 20.4, 20.4),
     );
+  });
+
+  testWidgets('CssParagraph: breaks where Blink does, reads as one text, and is as tall as CSS', (
+    t,
+  ) async {
+    final handle = t.ensureSemantics();
+    const style = TextStyle(
+      fontFamily: 'Nunito',
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      height: 1.5,
+    );
+    const text = 'Suenan al anotar y al celebrar. La vibración sigue igual.';
+    late BuildContext context;
+    // As wide as the first line takes, to the hundredth: the words' own widths, each rounded up.
+    Future<void> pump(double width) => t.pumpWidget(
+      uiApp(
+        Builder(
+          builder: (c) {
+            context = c;
+            return Align(
+              alignment: Alignment.topLeft,
+              child: SizedBox(
+                width: width,
+                child: const CssParagraph(text, style: style),
+              ),
+            );
+          },
+        ),
+        width: 600,
+      ),
+    );
+    await pump(500);
+    final line = CssText.widthOf(context, const TextSpan(text: text, style: style));
+    expect(
+      t.getSize(find.byType(CssParagraph)).height,
+      closeTo(13 * 1.5, 1e-9),
+      reason: 'one line',
+    );
+
+    // A hair narrower than the first words need: the last word goes down.
+    const firstLine = 'Suenan al anotar y al celebrar. La vibración';
+    final first = CssText.widthOf(context, const TextSpan(text: firstLine, style: style));
+    await pump(first - 0.01);
+    expect(t.getSize(find.byType(CssParagraph)).height, closeTo(2 * 13 * 1.5, 1e-9));
+    expect(find.bySemanticsLabel(text), findsOneWidget);
+    expect(line, greaterThan(first));
+    handle.dispose();
+  });
+
+  testWidgets('flexOneRow: each item is its own padding and an equal share of what is left', (
+    t,
+  ) async {
+    await t.pumpWidget(
+      uiApp(
+        flexOneRow(
+          gap: 8,
+          items: [
+            (16, Container(key: const Key('a'), height: 10)),
+            (52, Container(key: const Key('b'), height: 10)),
+          ],
+        ),
+        width: 412,
+      ),
+    );
+    // 412 − 8 − 16 − 52 = 336 left: 168 each.
+    expect(t.getSize(find.byKey(const Key('a'))).width, 16 + 168);
+    expect(t.getSize(find.byKey(const Key('b'))).width, 52 + 168);
+    expect(t.getTopLeft(find.byKey(const Key('b'))).dx, 16 + 168 + 8);
   });
 }

@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import '../feedback/celebration.dart';
 import '../theme/surfaces.dart';
 import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
@@ -50,6 +51,30 @@ class ToastOptions {
   final bool persistent;
 }
 
+/// A message, as a screen says it (the web's `toast.show({ message })`), with up to two actions: an
+/// [extraLabel] ("Ponerle nombre") and, after it, the [actionLabel] ("Deshacer").
+extension ToastSay on ToastController {
+  void say(
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+    String? extraLabel,
+    VoidCallback? onExtra,
+    bool error = false,
+  }) => show(
+    ToastOptions.text(
+      message,
+      tone: error ? ToastTone.error : ToastTone.info,
+      actions: [
+        if (extraLabel != null && onExtra != null)
+          ToastAction(label: extraLabel, onPressed: onExtra),
+        if (actionLabel != null && onAction != null)
+          ToastAction(label: actionLabel, onPressed: onAction),
+      ],
+    ),
+  );
+}
+
 /// How long a toast without actions stays, unless a finger or focus is on it.
 const _toastLife = Duration(seconds: 5);
 
@@ -66,9 +91,20 @@ typedef _Leave = Offset;
 /// they are open ([LkSheet] does: outside a modal sheet a toast would be unreachable for assistive
 /// technology). Show one with `ToastHost.of(context).show(...)`.
 class ToastHost extends StatefulWidget {
-  const ToastHost({super.key, required this.child, this.dismissAfter, this.lift = 0});
+  const ToastHost({
+    super.key,
+    required this.child,
+    this.dismissAfter,
+    this.lift = 0,
+    this.animateBar = true,
+  });
 
   final Widget child;
+
+  /// Whether the time bar runs. For tests only: a running bar asks for a frame all the way to the
+  /// toast's end, so a test that waits for the frames to stop (`pumpAndSettle`) waits the whole
+  /// life of the toast out. Without it the toast leaves on its timer alone, as a snackbar did.
+  final bool animateBar;
 
   /// Replaces how long every toast stays. For tests only (the web's `dismissAfterMs`); the bar
   /// keeps showing the real time.
@@ -110,6 +146,7 @@ class _ToastHostState extends State<ToastHost> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     _controller._dismissAfter = widget.dismissAfter;
+    _controller._animateBar = widget.animateBar;
     return _ToastScope(
       controller: _controller,
       child: Stack(
@@ -133,7 +170,9 @@ class _ToastHostState extends State<ToastHost> with TickerProviderStateMixin {
                     LukitasTokens.space4,
                     0,
                     LukitasTokens.space4,
-                    (safe > LukitasTokens.space4 ? safe : LukitasTokens.space4) + widget.lift,
+                    (safe > LukitasTokens.space4 ? safe : LukitasTokens.space4) +
+                        widget.lift +
+                        _controller._lift,
                   ),
                   child: Center(
                     child: ConstrainedBox(
@@ -182,7 +221,9 @@ class ToastController extends ChangeNotifier {
   Duration? _dismissAfter;
   bool _reduceMotion = false;
   bool _paused = false;
+  bool _animateBar = true;
   int _sheets = 0;
+  double _lift = 0;
 
   /// How far the toast is dragged from where it rests.
   Offset _drag = Offset.zero;
@@ -221,7 +262,8 @@ class ToastController extends ChangeNotifier {
     if (!options.persistent) {
       _bar
         ..duration = _life(options)
-        ..forward(from: 0);
+        ..value = 0;
+      if (_animateBar) _bar.forward();
       _schedule(options);
     }
     notifyListeners();
@@ -270,7 +312,7 @@ class ToastController extends ChangeNotifier {
     final options = toast;
     if (options == null || options.persistent || !_paused) return;
     _paused = false;
-    _bar.forward();
+    if (_animateBar) _bar.forward();
     _schedule(options);
   }
 
@@ -317,6 +359,20 @@ class ToastController extends ChangeNotifier {
     };
   }
 
+  /// The app's bottom bar is on screen: the toasts sit [by] higher, above it (the web's
+  /// `--toast-lift`, set while `.lk-app-shell` is on the page); returns what to call when it goes.
+  VoidCallback liftBy(double by) {
+    _lift += by;
+    _notifyAfterBuild();
+    var lifted = true;
+    return () {
+      if (!lifted) return;
+      lifted = false;
+      _lift -= by;
+      _notifyAfterBuild();
+    };
+  }
+
   var _disposed = false;
 
   /// A sheet comes and goes while the tree is building or being torn down: the layers hear of it
@@ -359,14 +415,17 @@ class ToastLayer extends StatelessWidget {
         final rest = controller._reduceMotion ? Offset.zero : const Offset(0, 16);
         final gone = away != null && !controller._reduceMotion ? away : rest;
         final offset = Offset.lerp(gone, controller._drag, t)!;
-        return Semantics(
-          container: true,
-          liveRegion: true,
-          child: Opacity(
-            opacity: t,
-            child: Transform.translate(
-              offset: offset,
-              child: _ToastBox(controller: controller, options: options),
+        // Lukitas celebrates clear of the toasts: their layout box, not where a slide puts them.
+        return CelebrationAvoid(
+          child: Semantics(
+            container: true,
+            liveRegion: true,
+            child: Opacity(
+              opacity: t,
+              child: Transform.translate(
+                offset: offset,
+                child: _ToastBox(controller: controller, options: options),
+              ),
             ),
           ),
         );

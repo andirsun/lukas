@@ -489,3 +489,54 @@ export const English: Story = {
     await expect(canvas.getByRole("button", { name: "Delete my account" })).toBeVisible();
   },
 };
+
+/**
+ * The phone app has the page's header, who is signed in and Preferencias (language, theme, sounds)
+ * as the web draws them; the rest of the web's sections (time and money, passkeys, data, deleting
+ * the account) stay on the web, behind the app's "Más en la web". These stories leave only what
+ * the app also has on the page, for the mobile parity pairs (docs/mobile/parity.md).
+ */
+async function onlyWhatTheAppHas(canvas: Canvas, heading = "Ajustes") {
+  await title(canvas, heading);
+  for (const section of canvas.getAllByRole("region")) {
+    const name = within(section).getByRole("heading", { level: 2 }).textContent;
+    if (name !== "Preferencias" && name !== "Preferences") section.style.display = "none";
+  }
+}
+
+/** The page as the phone app has it: Preferencias, with the other sections out of the picture. */
+export const AppSections: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas);
+    await expect(canvas.getByRole("switch", { name: "Sonidos" })).toBeChecked();
+  },
+};
+
+/** The same by day and in English. */
+export const AppSectionsDayEnglish: Story = {
+  globals: { theme: "day", locale: "en" },
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas, "Settings");
+    await expect(canvas.getByRole("switch", { name: "Sounds" })).toBeChecked();
+  },
+};
+
+/** Sounds turned off with a tap: the switch is off, and the keyboard's ring is on it. */
+export const AppSectionsSoundOff: Story = {
+  render: (args) => stage(args),
+  beforeEach: () => {
+    localStorage.removeItem(SOUND_STORAGE_KEY);
+    return () => localStorage.removeItem(SOUND_STORAGE_KEY);
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas);
+    const sound = canvas.getByRole("switch", { name: "Sonidos" });
+    await userEvent.click(sound);
+    await expect(sound).not.toBeChecked();
+  },
+};

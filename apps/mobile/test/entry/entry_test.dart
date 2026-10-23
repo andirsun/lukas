@@ -285,7 +285,7 @@ void main() {
       expect(auth.calls.where((c) => c.startsWith('sendCode')), isEmpty);
       expect(find.text('¿Guardamos lo que ya anotaste?'), findsOneWidget);
 
-      await tester.tap(find.text('Guardar mi progreso'));
+      await tester.tap(find.text('GUARDAR MI PROGRESO'));
       await tester.pumpAndSettle();
       expect(auth.calls, ['claimSend guest-token-0 ana@correo.com']);
       expect(find.text('Revisa tu correo'), findsOneWidget);
@@ -310,7 +310,7 @@ void main() {
       final container = await openEmail(tester);
       await _enterEmail(tester, 'ana@correo.com');
 
-      await tester.tap(find.text('Entrar con otra cuenta'));
+      await tester.tap(find.text('ENTRAR CON OTRA CUENTA'));
       await tester.pumpAndSettle();
       expect(find.text('¿Dejar tu cuenta de invitado?'), findsOneWidget);
       expect(
@@ -318,7 +318,7 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.text('Cancelar'));
+      await tester.tap(find.text('CANCELAR'));
       await tester.pumpAndSettle();
       expect(auth.calls, isEmpty);
       expect(_stored(container)?.token, 'guest-token-0');
@@ -327,10 +327,10 @@ void main() {
     testWidgets('who confirms the warning signs in with the email', (tester) async {
       final container = await openEmail(tester);
       await _enterEmail(tester, 'ana@correo.com');
-      await tester.tap(find.text('Entrar con otra cuenta'));
+      await tester.tap(find.text('ENTRAR CON OTRA CUENTA'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Entrar de todos modos'));
+      await tester.tap(find.text('ENTRAR DE TODOS MODOS'));
       await tester.pumpAndSettle();
       expect(auth.calls, ['sendCode ana@correo.com']);
 
@@ -343,9 +343,9 @@ void main() {
     testWidgets('who goes back to change the email is asked again', (tester) async {
       await openEmail(tester);
       await _enterEmail(tester, 'ana@correo.com');
-      await tester.tap(find.text('Entrar con otra cuenta'));
+      await tester.tap(find.text('ENTRAR CON OTRA CUENTA'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Entrar de todos modos'));
+      await tester.tap(find.text('ENTRAR DE TODOS MODOS'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('USAR OTRO CORREO'));
@@ -361,7 +361,7 @@ void main() {
       auth.failures['claimSend'] = const AuthFailure(code: 'email_taken', status: 409);
       await _enterEmail(tester, 'ana@correo.com');
 
-      await tester.tap(find.text('Guardar mi progreso'));
+      await tester.tap(find.text('GUARDAR MI PROGRESO'));
       await tester.pumpAndSettle();
 
       expect(find.text('Ese correo ya tiene una cuenta. Entra con él.'), findsOneWidget);
@@ -608,7 +608,7 @@ void main() {
         await tester.tap(find.text('USAR PASSKEY'));
         await tester.pumpAndSettle();
         expect(find.text('¿Dejar tu cuenta de invitado?'), findsOneWidget);
-        await tester.tap(find.text('Cancelar'));
+        await tester.tap(find.text('CANCELAR'));
         await tester.pumpAndSettle();
 
         expect(passkeys.calls, isEmpty);

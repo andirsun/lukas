@@ -14,6 +14,7 @@ import 'package:lukitas/capture/mic_level.dart';
 import 'package:lukitas/capture/models_download.dart';
 import 'package:lukitas/feedback/stored_flag.dart';
 import 'package:lukitas/home/home_repository.dart';
+import 'package:lukitas/ui/toast.dart';
 
 import '../home/fakes.dart';
 import '../home/fixtures.dart';
@@ -71,7 +72,8 @@ Future<_Env> _pump(
       batchSavedFeedbackProvider.overrideWithValue(celebrated.add),
       // Where the first-use note's flag is kept: nothing kept yet unless a test says so.
       flagStoreProvider.overrideWith(
-        (ref, key) => key == 'setting.capture.note' ? (noteFlag ?? FakeFlagStore()) : FakeFlagStore(),
+        (ref, key) =>
+            key == 'setting.capture.note' ? (noteFlag ?? FakeFlagStore()) : FakeFlagStore(),
       ),
     ],
   );
@@ -192,7 +194,7 @@ void main() {
     // The sheet closed; home has both rows; one toast, with the total.
     expect(find.byKey(const Key('capture.sheet')), findsNothing);
     expect(env.capture.calls, hasLength(1));
-    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.byType(ToastLayer), findsOneWidget);
     expect(find.text(r'¡Listo! 2 movimientos por $18.000'), findsOneWidget);
     expect(find.text('Deshacer'), findsOneWidget);
     expect(find.text('Almuerzo'), findsOneWidget);
@@ -648,7 +650,8 @@ void main() {
       env.engine.hold = true;
       await _openMoving(tester);
       final bars = find.byWidgetPredicate(
-        (w) => w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('mic.bar.'),
+        (w) =>
+            w.key is ValueKey<String> && (w.key! as ValueKey<String>).value.startsWith('mic.bar.'),
       );
       expect(bars, findsWidgets);
       final last = find.byKey(const Key('mic.bar.${MicLevel.defaultBars - 1}'));

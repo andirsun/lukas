@@ -1285,5 +1285,134 @@
     "storyId": "sign-in-passkeyoffer--failed",
     "theme": "day",
     "appTest": "test/parity/passkey_offer_parity_test.dart"
+  },
+  {
+    "id": "settings-app-sections",
+    "storyId": "manage-settings--app-sections",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart",
+    "knownDifferences": [
+      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+    ]
+  },
+  {
+    "id": "settings-app-sections",
+    "storyId": "manage-settings--app-sections",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart",
+    "knownDifferences": [
+      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+    ]
+  },
+  {
+    "id": "settings-app-sections-day-english",
+    "storyId": "manage-settings--app-sections-day-english",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart",
+    "knownDifferences": [
+      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+    ]
+  },
+  {
+    "id": "settings-app-sections-sound-off",
+    "storyId": "manage-settings--app-sections-sound-off",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart",
+    "knownDifferences": [
+      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+    ]
+  },
+  {
+    "id": "settings-app-sections-sound-off",
+    "storyId": "manage-settings--app-sections-sound-off",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart",
+    "knownDifferences": [
+      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+    ]
+  },
+  {
+    "id": "confirm-sheet-open",
+    "storyId": "ui-confirmsheet--open",
+    "theme": "night",
+    "appTest": "test/parity/confirm_sheet_parity_test.dart"
+  },
+  {
+    "id": "confirm-sheet-open",
+    "storyId": "ui-confirmsheet--open",
+    "theme": "day",
+    "appTest": "test/parity/confirm_sheet_parity_test.dart"
+  },
+  {
+    "id": "confirm-sheet-open-day-english",
+    "storyId": "ui-confirmsheet--open-day-english",
+    "theme": "day",
+    "appTest": "test/parity/confirm_sheet_parity_test.dart"
+  },
+  {
+    "id": "celebration-mid-flight",
+    "storyId": "feedback-celebration--mid-flight",
+    "theme": "night",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-mid-flight",
+    "storyId": "feedback-celebration--mid-flight",
+    "theme": "day",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-clear-of-the-toast",
+    "storyId": "feedback-celebration--mid-flight-clear-of-the-toast",
+    "theme": "night",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-clear-of-the-toast",
+    "storyId": "feedback-celebration--mid-flight-clear-of-the-toast",
+    "theme": "day",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-no-spot",
+    "storyId": "feedback-celebration--mid-flight-no-spot",
+    "theme": "night",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-no-spot",
+    "storyId": "feedback-celebration--mid-flight-no-spot",
+    "theme": "day",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-early",
+    "storyId": "feedback-celebration--mid-flight-early",
+    "theme": "night",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-early",
+    "storyId": "feedback-celebration--mid-flight-early",
+    "theme": "day",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-day-english",
+    "storyId": "feedback-celebration--mid-flight-day-english",
+    "theme": "day",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-reduced-motion",
+    "storyId": "feedback-celebration--mid-flight-reduced-motion",
+    "theme": "night",
+    "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "celebration-reduced-motion",
+    "storyId": "feedback-celebration--mid-flight-reduced-motion",
+    "theme": "day",
+    "appTest": "test/parity/celebration_parity_test.dart"
   }
 ]

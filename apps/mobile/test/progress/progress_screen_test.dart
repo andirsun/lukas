@@ -118,7 +118,7 @@ void main() {
       await tester.tap(find.text('ENTRAR CON ESE CORREO'));
       await tester.pumpAndSettle();
       expect(find.text('¿Dejar tu cuenta de invitado?'), findsOneWidget);
-      await tester.tap(find.text('Cancelar'));
+      await tester.tap(find.text('CANCELAR'));
       await tester.pumpAndSettle();
       expect(env.stored?.guest, isTrue);
       expect(env.auth.calls.where((c) => c.startsWith('sendCode')), isEmpty);

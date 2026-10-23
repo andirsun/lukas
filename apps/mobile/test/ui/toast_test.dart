@@ -211,4 +211,57 @@ void main() {
     expect(find.bySemanticsLabel('Sin conexión'), findsWidgets);
     handle.dispose();
   });
+
+  testWidgets('say: a message with up to two actions, the extra one first; an error is outlined', (
+    t,
+  ) async {
+    await t.pumpWidget(_app());
+    var named = 0;
+    var undone = 0;
+    _toasts(t).say(
+      'Supermercado · −6,08 €',
+      actionLabel: 'Deshacer',
+      onAction: () => undone++,
+      extraLabel: 'Ponerle nombre',
+      onExtra: () => named++,
+    );
+    await t.pumpAndSettle();
+    expect(
+      t.getTopLeft(find.text('Ponerle nombre')).dx,
+      lessThan(t.getTopLeft(find.text('Deshacer')).dx),
+    );
+    await t.tap(find.text('Ponerle nombre'));
+    await t.pumpAndSettle();
+    expect((named, undone), (1, 0));
+    expect(find.text('Supermercado · −6,08 €'), findsNothing, reason: 'an action takes it away');
+
+    _toasts(t).say('Sin conexión', error: true);
+    await t.pumpAndSettle();
+    expect(find.text('Sin conexión'), findsOneWidget);
+  });
+
+  testWidgets(
+    'a toast with no time bar running leaves on its timer alone, with no frames waiting',
+    (t) async {
+      await t.pumpWidget(
+        MaterialApp(
+          theme: nightTheme,
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, home) => ToastHost(animateBar: false, child: home!),
+          home: const Scaffold(body: SizedBox.expand()),
+        ),
+      );
+      _toasts(t).say('Hecho');
+      // Settling does not run the five seconds out, as it would with the bar moving.
+      await t.pumpAndSettle();
+      expect(find.text('Hecho'), findsOneWidget);
+      await t.pump(const Duration(seconds: 4));
+      expect(find.text('Hecho'), findsOneWidget);
+      await t.pump(const Duration(seconds: 2));
+      await t.pumpAndSettle();
+      expect(find.text('Hecho'), findsNothing);
+    },
+  );
 }

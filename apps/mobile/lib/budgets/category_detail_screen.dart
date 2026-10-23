@@ -22,7 +22,6 @@ import '../home/home_format.dart';
 import '../home/home_repository.dart';
 import '../home/home_widgets.dart';
 import '../home/screen_error.dart';
-import '../home/toast.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../settings/url_opener.dart';
@@ -38,6 +37,7 @@ import '../ui/page_header.dart';
 import '../ui/press_button.dart';
 import '../ui/press_link.dart';
 import '../ui/swipe_row.dart';
+import '../ui/toast.dart';
 import '../ui/transaction_row.dart';
 import 'budget_sheet.dart';
 import 'budgets_tab.dart';
@@ -108,11 +108,10 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
       failure.offline ? l10n.errorNetwork : l10n.errorGeneric;
 
   Future<void> _openWeb() async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
-    final colors = context.lkColors;
     final opened = await ref.read(urlOpenerProvider).open(ref.read(serverUrlProvider));
-    if (!opened && mounted) showToast(messenger, colors, l10n.settingsWebFailed, error: true);
+    if (!opened && mounted) toasts.say(l10n.settingsWebFailed, error: true);
   }
 
   @override
@@ -323,68 +322,56 @@ class _DetailViewState extends ConsumerState<_DetailView> {
   Future<void> _edit(Transaction tx) => openEditSheet(context, tx);
 
   Future<void> _delete(Transaction tx) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
-    final colors = context.lkColors;
     ref.read(feedbackProvider)(FeedbackEvent.deleted);
     try {
       await _controller.remove(tx);
     } on HomeFailure catch (failure) {
-      showToast(messenger, colors, _failureMessage(l10n, failure), error: true);
+      toasts.say(_failureMessage(l10n, failure), error: true);
       return;
     }
-    showToast(
-      messenger,
-      colors,
+    toasts.say(
       l10n.transactionDeleted(tx.name),
       actionLabel: l10n.undo,
-      onAction: () => unawaited(_restore(tx, messenger, l10n, colors)),
+      onAction: () => unawaited(_restore(tx, toasts, l10n)),
     );
   }
 
-  Future<void> _restore(
-    Transaction tx,
-    ScaffoldMessengerState messenger,
-    AppLocalizations l10n,
-    LukitasColors colors,
-  ) async {
+  Future<void> _restore(Transaction tx, ToastController toasts, AppLocalizations l10n) async {
     try {
       await _controller.restore(tx);
     } on HomeFailure catch (failure) {
-      showToast(messenger, colors, _failureMessage(l10n, failure), error: true);
+      toasts.say(_failureMessage(l10n, failure), error: true);
       return;
     }
     if (mounted) ref.read(feedbackProvider)(FeedbackEvent.undo);
-    showToast(messenger, colors, l10n.transactionRestored(tx.name));
+    toasts.say(l10n.transactionRestored(tx.name));
   }
 
   /// Marks [tx] paid. Rethrows a failure after saying it, so the badge goes back to "Pendiente".
   Future<void> _pay(Transaction tx) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
-    final colors = context.lkColors;
     try {
       await _controller.markPaid(tx);
     } on HomeFailure catch (failure) {
-      showToast(messenger, colors, _failureMessage(l10n, failure), error: true);
+      toasts.say(_failureMessage(l10n, failure), error: true);
       rethrow;
     }
     if (mounted) ref.read(feedbackProvider)(FeedbackEvent.paid);
-    showToast(
-      messenger,
-      colors,
+    toasts.say(
       l10n.transactionPaid(tx.name, formatMoney(tx.amount, widget.currency, l10n.localeName)),
     );
   }
 
   Future<void> _loadMore() async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
-    final colors = context.lkColors;
     try {
       await _controller.loadMore();
     } on HomeFailure catch (failure) {
-      showToast(messenger, colors, _failureMessage(l10n, failure), error: true);
+      toasts.say(_failureMessage(l10n, failure), error: true);
     }
   }
 

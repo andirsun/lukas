@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'feedback/celebration.dart';
 import 'feedback/feedback.dart';
 import 'home/widget_sync.dart';
 import 'capture/prewarm.dart';
@@ -10,6 +11,18 @@ import 'notices/notice_sync.dart';
 import 'router.dart';
 import 'settings/preferences.dart';
 import 'theme/theme.dart';
+import 'ui/toast.dart';
+
+/// What goes above every screen and sheet: the celebration (the web's `Celebration`) over the toasts
+/// (`ToastProvider`), so that it keeps clear of them. Tests that build their own `MaterialApp` put
+/// it in its `builder`.
+Widget withAppHosts(Widget child, {bool animateToastBar = true, bool celebrate = true}) {
+  final toasts = ToastHost(animateBar: animateToastBar, child: child);
+  return celebrate ? CelebrationHost(child: toasts) : toasts;
+}
+
+/// Whether a toast's time bar runs: always, except in tests that settle the frames.
+final toastBarAnimatesProvider = Provider<bool>((ref) => true);
 
 /// The app shell: theme (night by default), es and en copy, and routes.
 class LukitasApp extends ConsumerWidget {
@@ -43,6 +56,10 @@ class LukitasApp extends ConsumerWidget {
         (candidate) => candidate.languageCode == locale?.languageCode,
         orElse: () => const Locale('es'),
       ),
+      // The web's `Celebration` and `ToastProvider`, above every screen and sheet: the toasts under
+      // the party (it keeps clear of them).
+      builder: (context, child) =>
+          withAppHosts(child!, animateToastBar: ref.watch(toastBarAnimatesProvider)),
       routerConfig: ref.watch(routerProvider),
       debugShowCheckedModeBanner: false,
     );

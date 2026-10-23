@@ -320,6 +320,43 @@ when the app's picture changes. The web shots are regenerated only when the web 
     passkeys, the account has none (`GET /api/auth/passkey/list-user-passkeys`) and it has not answered on this phone.
     The answer is kept per account on the phone (`passkey.offered`, as the web keeps `lukas.passkey.offered` in
     `localStorage`). Its pairs are the stories' `Offer`, `OfferDayEnglish`, `WaitingForTheFingerprint` and `Failed`.
+- **Settings (`settings-app-sections*`).** The web's Settings has five cards; the app has Preferencias as the web draws
+  it, and the other four (time zone and currency, the passkeys' list, import and export, deleting the account) stay on
+  the web behind one card, "Más en la web", with a link in the web's link style (`PressLink`, secondary).
+  - **Stories added for the pairs.** `manage-settings--app-sections`, `--app-sections-day-english` and
+    `--app-sections-sound-off` leave only Preferencias on the page (their `play` hides the other sections), with the
+    header, the title, who is signed in and the bottom bar. The app's `SettingsScreen(webSectionsOnly: true)` draws the same:
+    no "Automático" language (the web has two languages; the app's third follows the phone) and none of the app's own
+    cards.
+  - **The app's own cards** (the guest's "Guarda tu progreso", "En este teléfono": vibration, the two notices and the
+    widget; the voice models, the server, "Más en la web", About, signing out) are drawn with the web's parts
+    (`SettingsSection`, `SettingSwitch`, `PressButton`), and have goldens of their own in `test/settings/goldens` to
+    review by eye, with the sheets the guest's dialogs and the server's address became.
+  - **Copy.** The theme's third choice is the web's "Automático"; the sound hint is the web's, and when the vibration is
+    off the English one says "Vibration stays off." where the web's says "stays on".
+  - **Weights.** The web loads Nunito from 600 up, so a `font-normal` text (the switch's hint) is drawn at 600 by Chrome;
+    the app does the same (`SettingSwitch`).
+  - **Paragraphs** are broken as Blink breaks them (`CssParagraph`): a line that is exactly as wide as its column breaks
+    in a different place when its words are measured whole, as Flutter does.
+- **The confirm sheet (`confirm-sheet-open*`).** `ui-confirmsheet--*` were added (the web had no story of it). A `flex-1`
+  button is its own padding and border and an equal share of what is left, so "Cancelar" (8px a side) is narrower than
+  the action (24px and a 2px border): `flexOneRow`. The guest's questions (`ChoiceSheet`: sign out, change server, the
+  claim offer, signing in over a guest) are this sheet with a second way forward; the web has no guests.
+- **The celebration (`celebration-*`).** The shots take animations at their end, where a celebration is gone, so
+  `feedback-celebration--mid-flight*` stop the live one part of the way through (`freezeAt`: every animation paused at
+  that fraction of one `--celebrate`, its look kept as plain styles, the stay made an hour long first) and the app is
+  stopped at the same moment (`parityGolden(settleAfterAct: false)` and a pump of that long once the celebration and
+  Lukitas' sprite have started). The pairs: half way above the spot, clear of the toast, with no spot, a tenth in, by day in
+  English at three quarters, and under reduced motion. The 28 pieces are the web's (`confettiBurst`), the easings are its
+  keyframes' (`confettiAt`, `lukitasAt`).
+  - Under reduced motion the controller must not take the system's shortened durations (`AnimationBehavior.preserve`): the
+    web still fades him over the same stay.
+  - The sprite's loops are the web's (`LukasSprite.loopMs`: wave 1200, worried 2000, celebrate 1000 ms) and the
+    celebration's plays for the whole stay (`LukitasFace.endless`).
+- **Toasts** are the web's `ToastHost` everywhere now (above the Navigator, in `LukitasApp`): the Material snackbar is gone
+  (`lib/home/toast.dart`). The shell lifts them 92px above its bottom bar. `animateBar: false` (tests only; the app's
+  `toastBarAnimatesProvider`) stops the time bar, which asks for a frame all the way to the end of the toast, so a test that
+  settles the frames would wait the toast out.
 - **Stories that are not pictures of the component.** A few stories' end states are not what the
   component draws on its own:
   - `ui-toast--*`: Playwright takes the picture with CSS animations at their end, so the time bar is

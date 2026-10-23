@@ -220,6 +220,8 @@ Future<ProviderContainer> pumpApp(
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   final container = ProviderContainer(
     overrides: [
+      // The tests settle the frames: a running time bar would wait a toast's life out.
+      toastBarAnimatesProvider.overrideWithValue(false),
       authApiProvider.overrideWithValue(auth),
       passkeysProvider.overrideWithValue(passkeys ?? FakePasskeys(isSupported: false)),
       // Home, once reached, reads an empty month from memory instead of the network.

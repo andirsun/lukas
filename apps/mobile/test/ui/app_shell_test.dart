@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/theme/theme.dart';
 import 'package:lukitas/ui/app_shell.dart';
+import 'package:lukitas/ui/toast.dart';
 
 import '../support/fonts.dart';
 
@@ -97,5 +98,53 @@ void main() {
     await t.drag(find.byType(SingleChildScrollView), const Offset(0, -600));
     await t.pumpAndSettle();
     expect(_gradient(t).top, 16 - 600);
+  });
+
+  testWidgets('the toasts sit above the bar while the shell is on screen, and drop back after', (
+    t,
+  ) async {
+    t.view
+      ..physicalSize = _screen
+      ..devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final navigator = GlobalKey<NavigatorState>();
+    await t.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigator,
+        theme: nightTheme,
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => ToastHost(animateBar: false, child: child!),
+        home: AppShell(
+          current: 'home',
+          onAdd: () {},
+          onMic: () {},
+          onNavigate: (_) {},
+          child: const SizedBox.expand(),
+        ),
+      ),
+    );
+    final toasts = ToastHost.of(navigator.currentContext!);
+    toasts.say('Hecho');
+    await t.pumpAndSettle();
+    // `--toast-lift: 92px` under 64rem: 16 + 92 from the bottom.
+    expect(_screen.height - t.getRect(find.byType(ToastLayer)).bottom, 16 + 92);
+
+    await t.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigator,
+        theme: nightTheme,
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => ToastHost(animateBar: false, child: child!),
+        home: const Scaffold(body: SizedBox.expand()),
+      ),
+    );
+    await t.pumpAndSettle();
+    ToastHost.of(navigator.currentContext!).say('Otra vez');
+    await t.pumpAndSettle();
+    expect(_screen.height - t.getRect(find.byType(ToastLayer)).bottom, 16);
   });
 }

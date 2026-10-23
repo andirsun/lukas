@@ -144,4 +144,64 @@ void main() {
       lessThan(t.getTopLeft(find.text('CANCELAR')).dy),
     );
   });
+
+  testWidgets('a ChoiceSheet answers with the choice, and null for Cancelar and the backdrop', (
+    t,
+  ) async {
+    final results = <String?>[];
+    await t.pumpWidget(
+      uiApp(
+        Builder(
+          builder: (context) => PressButton.text(
+            'Preguntar',
+            onPressed: () async => results.add(
+              await ChoiceSheet.show<String>(
+                context,
+                title: '¿Dejar tu cuenta de invitado?',
+                body: 'Sin correo, pierdes tus datos.',
+                choices: [
+                  const SheetChoice(
+                    key: Key('save'),
+                    label: 'Guarda tu progreso',
+                    value: 'save',
+                    tone: PressTone.primary,
+                  ),
+                  const SheetChoice(
+                    key: Key('leave'),
+                    label: 'Entrar de todos modos',
+                    value: 'leave',
+                    danger: true,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    Future<void> ask() async {
+      await t.tap(find.text('PREGUNTAR'));
+      await t.pumpAndSettle();
+    }
+
+    await ask();
+    expect(find.text('¿Dejar tu cuenta de invitado?'), findsOneWidget);
+    expect(find.text('GUARDA TU PROGRESO'), findsOneWidget);
+    // One under the other, then Cancelar.
+    final save = t.getRect(find.byKey(const Key('save')));
+    final leave = t.getRect(find.byKey(const Key('leave')));
+    expect(leave.top, greaterThan(save.bottom));
+    expect(t.getRect(find.text('CANCELAR')).top, greaterThan(leave.bottom));
+    await t.tap(find.byKey(const Key('leave')));
+    await t.pumpAndSettle();
+
+    await ask();
+    await t.tap(find.text('CANCELAR'));
+    await t.pumpAndSettle();
+
+    await ask();
+    await t.sendKeyEvent(LogicalKeyboardKey.escape);
+    await t.pumpAndSettle();
+    expect(results, ['leave', null, null]);
+  });
 }

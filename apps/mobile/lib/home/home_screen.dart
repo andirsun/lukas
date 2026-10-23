@@ -22,6 +22,7 @@ import '../ui/lukas_bubble.dart';
 import '../ui/press_button.dart';
 import '../ui/segmented_control.dart';
 import '../ui/swipe_row.dart';
+import '../ui/toast.dart';
 import '../ui/transaction_row.dart';
 import 'category_look.dart';
 import 'day_groups.dart';
@@ -34,7 +35,6 @@ import 'lukas_line.dart';
 import 'lukitas_face.dart';
 import 'nudges.dart';
 import 'screen_error.dart';
-import 'toast.dart';
 
 /// Picks which of Lukitas' three phrasings a line uses (1 to 3). Replaced in tests.
 final lukasVariantProvider = Provider<int Function()>((ref) {
@@ -154,79 +154,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   // -- messages ------------------------------------------------------------------------------
 
-  void _toast(
-    ScaffoldMessengerState messenger,
-    LukitasColors colors,
-    String message, {
-    String? actionLabel,
-    VoidCallback? onAction,
-    bool error = false,
-  }) => showToast(
-    messenger,
-    colors,
-    message,
-    actionLabel: actionLabel,
-    onAction: onAction,
-    error: error,
-  );
-
   String _failureMessage(AppLocalizations l10n, HomeFailure failure) =>
       failure.offline ? l10n.errorNetwork : l10n.errorGeneric;
 
   Future<void> _delete(Transaction tx) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     // At the gesture, not at the server's answer: the row is already gone (the web does the same).
     ref.read(feedbackProvider)(FeedbackEvent.deleted);
     try {
       await _controller.remove(tx);
     } on HomeFailure catch (failure) {
-      _toast(messenger, colors, _failureMessage(l10n, failure), error: true);
+      toasts.say(_failureMessage(l10n, failure), error: true);
       return;
     }
-    _toast(
-      messenger,
-      colors,
+    toasts.say(
       l10n.transactionDeleted(tx.name),
       actionLabel: l10n.undo,
-      onAction: () => unawaited(_restore(tx, messenger, l10n, colors)),
+      onAction: () => unawaited(_restore(tx, toasts, l10n)),
     );
   }
 
-  Future<void> _restore(
-    Transaction tx,
-    ScaffoldMessengerState messenger,
-    AppLocalizations l10n,
-    LukitasColors colors,
-  ) async {
+  Future<void> _restore(Transaction tx, ToastController toasts, AppLocalizations l10n) async {
     try {
       await _controller.restore(tx);
     } on HomeFailure catch (failure) {
-      _toast(messenger, colors, _failureMessage(l10n, failure), error: true);
+      toasts.say(_failureMessage(l10n, failure), error: true);
       return;
     }
     if (mounted) ref.read(feedbackProvider)(FeedbackEvent.undo);
-    _toast(messenger, colors, l10n.transactionRestored(tx.name));
+    toasts.say(l10n.transactionRestored(tx.name));
   }
 
   /// Marks [tx] paid. Rethrows a failure after saying it, so the badge goes back to "Pendiente".
   Future<void> _pay(Transaction tx) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     final data = ref.read(homeProvider).data;
     try {
       await _controller.markPaid(tx);
     } on HomeFailure catch (failure) {
-      _toast(messenger, colors, _failureMessage(l10n, failure), error: true);
+      toasts.say(_failureMessage(l10n, failure), error: true);
       rethrow;
     }
     if (mounted) ref.read(feedbackProvider)(FeedbackEvent.paid);
     if (data != null) {
-      _toast(
-        messenger,
-        colors,
+      toasts.say(
         l10n.transactionPaid(tx.name, formatMoney(tx.amount, data.currency, l10n.localeName)),
       );
     }
@@ -604,13 +577,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _loadMore() async {
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     try {
       await _controller.loadMore();
     } on HomeFailure catch (failure) {
-      _toast(messenger, colors, _failureMessage(l10n, failure), error: true);
+      toasts.say(_failureMessage(l10n, failure), error: true);
     }
   }
 

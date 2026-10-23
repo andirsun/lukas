@@ -18,6 +18,8 @@ const _homeHeaderTsx = '../web/app/features/home/HomeHeader.tsx';
 const _signInScreenTsx = '../web/app/features/sign-in/SignInScreen.tsx';
 const _signInTsx = '../web/app/features/sign-in/SignIn.tsx';
 const _tokensCss = '../web/app/styles/tokens.css';
+const _settingsTsx = '../web/app/features/settings/Settings.tsx';
+const _settingsPartsTsx = '../web/app/features/settings/parts.tsx';
 
 /// The declarations of `selector { ... }` in app.css, the first rule with exactly that selector.
 Map<String, String> _rule(String selector) {
@@ -216,6 +218,27 @@ void main() {
       expect(LkText.labelSm.fontSize, 14);
       expect(LkText.labelSm.fontWeight, FontWeight.w700);
       expect(LkText.labelSm.height! * 14, closeTo(20, 1e-9));
+    });
+
+    test('pageTitle and sectionTitle: Settings\' title and its cards\' titles', () {
+      // Settings.tsx: the h1 has a size and a weight, no leading of its own.
+      expect(
+        File(_settingsTsx).readAsStringSync(),
+        contains('m-0 font-display text-[28px] font-bold text-ink'),
+      );
+      expect(LkText.pageTitle.fontFamily, 'Fredoka');
+      expect(LkText.pageTitle.fontSize, 28);
+      expect(LkText.pageTitle.fontWeight, FontWeight.w700);
+      expect(LkText.pageTitle.height, 1.5);
+      // parts.tsx SettingsSection: the h2 is leading-tight (1.25).
+      expect(
+        File(_settingsPartsTsx).readAsStringSync(),
+        contains('m-0 font-display text-[20px] font-bold leading-tight'),
+      );
+      expect(LkText.sectionTitle.fontFamily, 'Fredoka');
+      expect(LkText.sectionTitle.fontSize, 20);
+      expect(LkText.sectionTitle.fontWeight, FontWeight.w700);
+      expect(LkText.sectionTitle.height, 1.25);
     });
 
     test('codeBox: a digit of the sign-in code, Fredoka 26px 700 with tabular figures', () {

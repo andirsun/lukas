@@ -21,6 +21,7 @@ class FakeHomeRepository implements HomeRepository {
     this.currency = 'COP',
     this.timezone = 'America/Bogota',
     this.userId = 'user-1',
+    this.email = '',
     this.budgetTotal = 0,
     List<Category>? categoryList,
     List<Transaction>? items,
@@ -34,6 +35,9 @@ class FakeHomeRepository implements HomeRepository {
   final String currency;
   final String timezone;
   final String userId;
+
+  /// The profile's email ("Entraste como…" in Settings).
+  final String email;
 
   /// Cents. Zero: no budgets.
   int budgetTotal;
@@ -75,7 +79,7 @@ class FakeHomeRepository implements HomeRepository {
   @override
   Future<HomeProfile> profile() async {
     _call('profile');
-    return HomeProfile(id: userId, currency: currency, timezone: timezone);
+    return HomeProfile(id: userId, currency: currency, timezone: timezone, email: email);
   }
 
   @override

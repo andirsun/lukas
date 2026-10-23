@@ -10,6 +10,7 @@ import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/home/home_header.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
+import 'package:lukitas/app.dart' show withAppHosts;
 import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/theme/theme.dart';
 
@@ -91,12 +92,18 @@ Future<HomeHarness> pumpHome(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         debugShowCheckedModeBanner: false,
-        builder: textScale == 1
-            ? null
-            : (context, child) => MediaQuery(
-                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
-                child: child!,
-              ),
+        builder: (context, child) => withAppHosts(
+          textScale == 1
+              ? child!
+              : MediaQuery(
+                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+                  child: child!,
+                ),
+          // Tests settle the frames: a running time bar, or a celebration, would wait out its stay
+          // (test/feedback/celebration_test.dart has the celebration's own).
+          animateToastBar: false,
+          celebrate: false,
+        ),
         home: HomeScreen(
           onEdit: withEdit ? edited.add : null,
           initialMonth: initialMonth,

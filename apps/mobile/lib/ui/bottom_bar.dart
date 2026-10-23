@@ -5,6 +5,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../feedback/celebration.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/surfaces.dart';
 import '../theme/text_styles.dart';
@@ -135,13 +136,18 @@ class BottomBar extends StatelessWidget {
                   top: floor - 58,
                   height: 58,
                   child: Center(
-                    child: _RaisedButton(
-                      key: addKey,
-                      size: 58,
-                      glyph: '＋',
-                      style: LkText.plus,
-                      label: l10n.navAdd,
-                      onPressed: onAdd,
+                    // Lukitas lands just above it when something is celebrated (the web's
+                    // `data-celebration-anchor="64"` on the ＋).
+                    child: CelebrationAnchor(
+                      size: 64,
+                      child: _RaisedButton(
+                        key: addKey,
+                        size: 58,
+                        glyph: '＋',
+                        style: LkText.plus,
+                        label: l10n.navAdd,
+                        onPressed: onAdd,
+                      ),
                     ),
                   ),
                 ),

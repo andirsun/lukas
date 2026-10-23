@@ -91,6 +91,74 @@ class CssText extends StatelessWidget {
   }
 }
 
+/// A paragraph broken into lines the way Blink does it: a line takes words while their widths, each
+/// kept in 64ths of a pixel and rounded up as [CssText] has them, still fit. Flutter breaks where
+/// the whole text's shaped width fits, which can be a hair more, so a line that is exactly as wide
+/// as its column breaks in a different place. Each line is a [CssText], and the paragraph is as
+/// tall as CSS makes it ([CssLines]).
+///
+/// [text] is in [style]; a word wider than the column (an address) is left to [Text].
+class CssParagraph extends StatelessWidget {
+  const CssParagraph(this.text, {super.key, required this.style, this.textAlign});
+
+  final String text;
+  final TextStyle style;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    // Read as one text, whatever the words' boxes are.
+    return Semantics(
+      label: text,
+      textDirection: Directionality.of(context),
+      child: ExcludeSemantics(child: _lines(context)),
+    );
+  }
+
+  Widget _lines(BuildContext context) {
+    return CssLines(
+      style: style,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final max = constraints.maxWidth;
+          final scaler = MediaQuery.textScalerOf(context);
+          final dir = Directionality.of(context);
+          double width(String token) => CssText._measure(context, token, style, scaler, dir);
+          final space = width(' ');
+          final lines = <String>[];
+          var line = '';
+          var lineWidth = 0.0;
+          for (final word in text.split(' ')) {
+            final w = width(word);
+            if (w > max) return Text(text, style: style, textAlign: textAlign);
+            if (line.isEmpty) {
+              line = word;
+              lineWidth = w;
+            } else if (lineWidth + space + w <= max) {
+              line = '$line $word';
+              lineWidth += space + w;
+            } else {
+              lines.add(line);
+              line = word;
+              lineWidth = w;
+            }
+          }
+          lines.add(line);
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: switch (textAlign) {
+              TextAlign.center => CrossAxisAlignment.center,
+              TextAlign.right || TextAlign.end => CrossAxisAlignment.end,
+              _ => CrossAxisAlignment.start,
+            },
+            children: [for (final l in lines) CssText(TextSpan(text: l, style: style))],
+          );
+        },
+      ),
+    );
+  }
+}
+
 final _lineUnits = <(String?, double?, FontWeight?, double?, double), double>{};
 
 /// How tall Flutter makes one line of [style] at [scale]: a whole number of pixels (a 13px font at

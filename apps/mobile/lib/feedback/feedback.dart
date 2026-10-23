@@ -3,21 +3,24 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'celebration.dart';
 import 'feedback_event.dart';
 import 'feedback_platform.dart';
 import 'sound_setting.dart';
 import 'vibration_setting.dart';
 
+export 'celebration.dart' show celebratedEvents;
 export 'feedback_event.dart';
 export 'feedback_platform.dart';
 export 'sound_setting.dart';
 export 'vibration_setting.dart';
 
-/// Gives feedback for something that happened (spec section 6.2): plays its sound (unless muted)
-/// and vibrates (unless vibration is off). Each waits for its setting to be read and stays quiet
-/// when it is off. It never throws: a phone with no motor or speaker just skips that part. Call it from
-/// a gesture's handler: `ref.read(feedbackProvider)(FeedbackEvent.saved)`, or [FeedbackContext.feedback]
-/// where there is only a `BuildContext`.
+/// Gives feedback for something that happened (spec section 6.2): plays its sound (unless muted),
+/// vibrates (unless vibration is off) and, for a save or a payment, celebrates (`CelebrationHost`).
+/// Each waits for its setting to be read and stays quiet when it is off. It never throws: a phone
+/// with no motor or speaker just skips that part. Call it from a gesture's handler:
+/// `ref.read(feedbackProvider)(FeedbackEvent.saved)`, or [FeedbackContext.feedback] where there is
+/// only a `BuildContext`.
 final feedbackProvider = Provider<void Function(FeedbackEvent event)>((ref) {
   final platform = ref.watch(feedbackPlatformProvider);
   // Starts reading both settings now, at the app's start: nothing plays or vibrates before they
@@ -27,6 +30,9 @@ final feedbackProvider = Provider<void Function(FeedbackEvent event)>((ref) {
   _quietly(platform.warmUp);
 
   void run(FeedbackEvent event) {
+    // The party is the person's to see whatever the sound and the motor are set to: the web's
+    // `Celebration` listens to `feedback()` itself.
+    if (celebratedEvents.contains(event)) ref.read(celebrationBurstsProvider.notifier).burst();
     final pattern = hapticPatterns[event];
     if (pattern != null && _vibrationOn(ref)) _quietly(() => platform.vibrate(pattern));
     final sound = feedbackSounds[event];

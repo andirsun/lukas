@@ -49,6 +49,7 @@ class FixtureHomeRepository implements HomeRepository {
       id: me['id']! as String,
       currency: me['currency']! as String,
       timezone: me['timezone']! as String,
+      email: me['email'] as String? ?? '',
     );
   }
 

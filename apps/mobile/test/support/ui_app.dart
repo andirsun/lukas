@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/theme/theme.dart';
+import 'package:lukitas/ui/toast.dart';
 
 /// A component in the app's theme and copy, for the behaviour tests of `lib/ui` (how each looks is
-/// test/parity's job). [width] is the phone's width in logical pixels; [textScale] the system's
-/// font size (1.3 is "130%"); [disableAnimations] the system's "remove animations".
+/// test/parity's job), with a host for the toasts it shows. [width] is the phone's width in logical
+/// pixels; [textScale] the system's font size (1.3 is "130%"); [disableAnimations] the system's
+/// "remove animations".
 Widget uiApp(
   Widget child, {
   Locale locale = const Locale('es'),
@@ -21,7 +23,7 @@ Widget uiApp(
   builder: (context, home) => MediaQuery(
     data: MediaQuery.of(context)
         .copyWith(textScaler: TextScaler.linear(textScale), disableAnimations: disableAnimations),
-    child: home!,
+    child: ToastHost(animateBar: false, child: home!),
   ),
   home: Scaffold(
     body: Align(

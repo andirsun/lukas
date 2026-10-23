@@ -123,12 +123,15 @@ void main() {
           await t.tap(find.text('Movimientos'));
           await t.pumpAndSettle();
           // The story pays the pending subscription from its badge.
+          final paidAt = t.binding.clock.now();
           await t.tap(find.text('PENDIENTE'));
+          // The party Lukitas throws over the page (Celebration) runs its 1.2 s in here; the
+          // story's picture is taken the same 6 s after the click.
           await t.pumpAndSettle();
           // A click focuses a button in Chrome; a tap does not in Flutter.
           Focus.of(t.element(find.text('PAGADO'))).requestFocus();
           // Its toast is gone by the time the picture is taken; Lukitas still talks about it.
-          await t.pump(const Duration(seconds: 6));
+          await t.pump(const Duration(seconds: 6) - t.binding.clock.now().difference(paidAt));
           await t.pumpAndSettle();
           await _keyboardMode(t);
         },

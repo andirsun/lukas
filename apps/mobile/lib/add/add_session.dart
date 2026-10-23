@@ -8,11 +8,10 @@ import '../api/session.dart';
 import '../home/home_controller.dart';
 import '../home/home_repository.dart';
 import '../home/saved_feedback.dart';
-import '../home/toast.dart';
 import '../l10n/app_localizations.dart';
 import '../ui/amount_field.dart';
-import '../ui/lk_theme.dart';
 import '../ui/name_field.dart';
+import '../ui/toast.dart';
 import 'add_form.dart';
 import 'add_repository.dart';
 import 'add_request.dart';
@@ -197,9 +196,8 @@ class AddSheetState extends ConsumerState<AddSheet> {
     final repo = ref.read(addRepositoryProvider);
     // What outlives the sheet: the toast, Deshacer, and the home update.
     final container = ProviderScope.containerOf(context);
-    final messenger = ScaffoldMessenger.of(context);
+    final toasts = ToastHost.of(context);
     final navigator = Navigator.of(context);
-    final colors = context.lkColors;
     final words = l10n;
     final currency = current.currency;
     final kind = current.kind;
@@ -234,9 +232,8 @@ class AddSheetState extends ConsumerState<AddSheet> {
       if (editing == null) {
         toastCreated(
           container: container,
-          messenger: messenger,
+          toasts: toasts,
           navigator: navigator,
-          colors: colors,
           l10n: words,
           created: saved,
           kind: kind,
@@ -246,7 +243,7 @@ class AddSheetState extends ConsumerState<AddSheet> {
           nameIt: widget.nameIt,
         );
       } else {
-        showToast(messenger, colors, words.addUpdated(saved.name));
+        toasts.say(words.addUpdated(saved.name));
       }
     } on HomeFailure catch (answer) {
       if (answer.unauthorized) {
@@ -275,20 +272,11 @@ class AddSheetState extends ConsumerState<AddSheet> {
     final tx = form?.editing;
     if (saving || tx == null) return;
     final container = ProviderScope.containerOf(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final colors = context.lkColors;
+    final toasts = ToastHost.of(context);
     final words = l10n;
     setState(() => saving = true);
     Navigator.of(context).pop();
-    unawaited(
-      deleteMovement(
-        container: container,
-        messenger: messenger,
-        colors: colors,
-        l10n: words,
-        transaction: tx,
-      ),
-    );
+    unawaited(deleteMovement(container: container, toasts: toasts, l10n: words, transaction: tx));
   }
 
   // -- build ---------------------------------------------------------------------------------

@@ -1196,10 +1196,10 @@
   "settingsGuestAccount": "Estás usando Lukitas sin correo.",
   "settingsPreferences": "Preferencias",
   "settingsTheme": "Tema",
-  "settingsThemeSystem": "Sistema",
+  "settingsThemeSystem": "Automático",
   "settingsThemeDay": "Día",
   "settingsThemeNight": "Noche",
-  "settingsThemeHint": "Por defecto es de noche. Sistema sigue el modo de tu teléfono.",
+  "settingsThemeHint": "Automático sigue el modo de tu teléfono.",
   "settingsLanguage": "Idioma",
   "settingsLanguageAuto": "Automático",
   "settingsLanguageEs": "Español",
@@ -1212,7 +1212,7 @@
   },
   "settingsLanguageHint": "Automático usa el idioma de tu teléfono.",
   "settingsSound": "Sonidos",
-  "settingsSoundHint": "Suenan al anotar y al celebrar.",
+  "settingsSoundHint": "Suenan al anotar y al celebrar. La vibración sigue igual.",
   "settingsVibration": "Vibración",
   "settingsVibrationHint": "Un toque suave al anotar, deslizar y deshacer.",
   "settingsNotices": "Avisos",
@@ -1253,8 +1253,22 @@
   },
   "settingsAbout": "Acerca de",
   "settingsWeb": "Más en la web",
-  "settingsWebHint": "Categorías, recurrentes, informes y descargar tus datos.",
+  "settingsWebHint": "Hora y moneda, tus huellas, tus datos, categorías, recurrentes y eliminar tu cuenta.",
   "settingsWebFailed": "No pudimos abrir el navegador.",
+  "settingsSignedInAs": "Entraste como {email}",
+  "@settingsSignedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPhone": "En este teléfono",
+  "settingsSoundHintVibrationOff": "Suenan al anotar y al celebrar. La vibración sigue igual.",
+  "settingsWebOpen": "Abrir en el navegador",
+  "settingsAboutOpen": "Licencias y más",
+  "aboutBack": "Volver a Ajustes",
+  "aboutBackShort": "Ajustes",
   "settingsSignOut": "Cerrar sesión",
   "guestSignOutTitle": "¿Cerrar sesión sin guardar tu progreso?",
   "guestSignOutBody": "Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos. Si cierras sesión ahora, no podrás volver a esta cuenta.",

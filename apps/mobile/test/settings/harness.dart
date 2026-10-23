@@ -110,6 +110,8 @@ Future<SettingsEnv> pumpSettingsApp(
   addTearDown(tester.view.reset);
   // What the whole app is faked with; a test's own override of the same provider replaces it.
   final defaults = <Override>[
+    // The tests settle the frames: a running time bar would wait the toast's life out.
+    toastBarAnimatesProvider.overrideWithValue(false),
     authApiProvider.overrideWithValue(fakeAuth),
     passkeysProvider.overrideWithValue(passkeys),
     settingsStoreProvider.overrideWithValue(fakeSettings),

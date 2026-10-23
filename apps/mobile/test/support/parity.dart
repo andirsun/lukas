@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/app.dart' show withAppHosts;
 import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/theme/text_styles.dart';
@@ -251,6 +252,9 @@ ThemeData parityTheme(String theme) {
 /// taps first and the keys last: a key puts the app in keyboard mode, where the focused control
 /// shows its focus ring, and a tap puts it back.
 ///
+/// [settleAfterAct] false takes the picture as [act] left it, for a picture of something in motion
+/// (the celebration, stopped part of the way through).
+///
 /// [overrides] are the providers a screen reads (the story's API, as a repository) on top of the
 /// clock.
 Future<void> parityGolden(
@@ -260,6 +264,7 @@ Future<void> parityGolden(
   required String theme,
   Locale locale = const Locale('es'),
   Future<void> Function(WidgetTester t)? act,
+  bool settleAfterAct = true,
   List<Override> overrides = const [],
 }) async {
   final pair = parityPairs().where((p) => p.id == id && p.theme == theme).firstOrNull;
@@ -275,7 +280,7 @@ Future<void> parityGolden(
   // glow under a primary button is a 24px blur, so the parity pictures draw it blurred.
   debugDisableShadows = false;
   try {
-    await _pumpAndCompare(t, id, screen, pair, locale, act, overrides);
+    await _pumpAndCompare(t, id, screen, pair, locale, act, settleAfterAct, overrides);
   } finally {
     // The test framework checks it is back as it set it, before it runs the tear-downs.
     debugDisableShadows = true;
@@ -289,6 +294,7 @@ Future<void> _pumpAndCompare(
   ParityPair pair,
   Locale locale,
   Future<void> Function(WidgetTester t)? act,
+  bool settleAfterAct,
   List<Override> overrides,
 ) async {
   final fixture = ParityFixtures.load(pair.storyId);
@@ -303,6 +309,8 @@ Future<void> _pumpAndCompare(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         debugShowCheckedModeBanner: false,
+        // As the app has them: the toasts a screen shows, and the celebration.
+        builder: (context, child) => withAppHosts(child!),
         home: screen,
       ),
     ),
@@ -310,7 +318,7 @@ Future<void> _pumpAndCompare(
   await t.pumpAndSettle();
   if (act != null) {
     await act(t);
-    await t.pumpAndSettle();
+    if (settleAfterAct) await t.pumpAndSettle();
   }
   await expectLater(
     find.byType(MaterialApp),

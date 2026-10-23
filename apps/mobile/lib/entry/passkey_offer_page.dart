@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../api/auth_api.dart';
 import '../api/session.dart';
 import '../l10n/app_localizations.dart';
+import '../ui/toast.dart';
 import 'passkey_offer_screen.dart';
 
 /// What adding the passkey came to, from the failure Better Auth or the phone gave: closing the
@@ -38,10 +39,10 @@ class PasskeyOfferPage extends ConsumerWidget {
       },
       onAnswered: (added) async {
         final router = GoRouter.of(context);
-        final messenger = ScaffoldMessenger.of(context);
+        final toasts = ToastHost.of(context);
         final message = AppLocalizations.of(context).passkeyOfferAdded;
         await session.answerPasskeyOffer();
-        if (added) messenger.showSnackBar(SnackBar(content: Text(message)));
+        if (added) toasts.say(message);
         router.go('/');
       },
     );

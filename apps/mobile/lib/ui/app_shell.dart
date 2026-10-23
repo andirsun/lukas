@@ -9,6 +9,7 @@ import '../theme/surfaces.dart';
 import '../theme/tokens.g.dart';
 import 'bottom_bar.dart';
 import 'lk_theme.dart';
+import 'toast.dart';
 
 /// What the shell asks of a screen's content, inside its scroll view:
 ///
@@ -281,26 +282,65 @@ class AppShell extends StatelessWidget {
       frameLeading: leading,
       child: child,
     );
-    return PageBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        // The content runs under the bar: what scrolls past it is hidden by it, not cut off above.
-        extendBody: true,
-        // Tight: a short screen is as tall as the page, as `min-h-dvh` makes it.
-        body: SizedBox.expand(child: content),
-        bottomNavigationBar: Padding(
-          padding: EdgeInsets.only(bottom: safeBottom),
-          child: BottomBar(
-            current: current,
-            onAdd: onAdd,
-            onMic: onMic,
-            onNavigate: onNavigate,
-            showMic: shellFrame?.showMic ?? true,
-            addKey: addKey,
-            micKey: micKey,
+    return _ToastLift(
+      child: PageBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          // The content runs under the bar: what scrolls past it is hidden by it, not cut off above.
+          extendBody: true,
+          // Tight: a short screen is as tall as the page, as `min-h-dvh` makes it.
+          body: SizedBox.expand(child: content),
+          bottomNavigationBar: Padding(
+            padding: EdgeInsets.only(bottom: safeBottom),
+            child: BottomBar(
+              current: current,
+              onAdd: onAdd,
+              onMic: onMic,
+              onNavigate: onNavigate,
+              showMic: shellFrame?.showMic ?? true,
+              addKey: addKey,
+              micKey: micKey,
+            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// While the bottom bar is on screen the toasts sit above it: `--toast-lift: 92px` under 64rem,
+/// set by the shell (app.css, `:root:has(.lk-app-shell)`).
+class _ToastLift extends StatefulWidget {
+  const _ToastLift({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ToastLift> createState() => _ToastLiftState();
+}
+
+class _ToastLiftState extends State<_ToastLift> {
+  static const _lift = 92.0;
+
+  ToastController? _toasts;
+  VoidCallback? _release;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final toasts = ToastHost.maybeOf(context);
+    if (toasts == _toasts) return;
+    _release?.call();
+    _toasts = toasts;
+    _release = toasts?.liftBy(_lift);
+  }
+
+  @override
+  void dispose() {
+    _release?.call();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
