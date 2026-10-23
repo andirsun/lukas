@@ -125,6 +125,8 @@ flutter test integration_test -d emulator-5554 \
   --dart-define=MAILPIT_URL=http://10.0.2.2:8025
 ```
 
+`apps/mobile/scripts/run-integration-tests.sh` runs every file below in turn on a running emulator (it refuses anything that is not `emulator-*`), installing the app first in the notification-permission state each file needs; CI's `mobile-emulator` job runs it. To pin the dev stack's clock as CI does, start it with `E2E_NOW=2026-10-21T15:00:00Z docker compose up -d`.
+
 They read sign-in codes and links from Mailpit, as the web's e2e suite does. The API allows 5 code
 requests per 10 minutes from one address, and every run from the emulator comes from the same one:
 running the suite more than twice in 10 minutes gets `too_many_requests`.
@@ -172,6 +174,8 @@ there.
 (the voice models, the speech engine, the sounds) are registered at start, and that "Más en la web"
 refuses anything but http and https. `integration_test/entry_test.dart` includes the claim: a guest
 with a movement saves their progress to an email from Mailpit and keeps the movement.
+
+Why the permission matters: a fresh install has not been given the notification permission, so the question a guest is asked about notices (Task 16) covers the screen and the other files' taps miss. `flutter test` uninstalls the app when it ends, so each file needs the app installed by hand first: `adb install -r -t -g build/app/outputs/flutter-apk/app-debug.apk` and `adb shell pm grant com.andersonlaverde.lukitas android.permission.POST_NOTIFICATIONS` (the notices file's two tests are run separately, with `--plain-name`, one with the permission revoked and one with it granted).
 
 The first Gradle build also installs `platforms;android-35` and `cmake;3.22.1` into the SDK: the
 `jni` plugin (pulled in through `flutter_secure_storage`'s dependencies) builds against them.

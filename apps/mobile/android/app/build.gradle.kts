@@ -1,3 +1,4 @@
+import com.android.build.api.variant.FilterConfiguration
 import java.util.Base64
 
 plugins {
@@ -35,7 +36,10 @@ android {
         // Android 8 (API 26) or newer (spec section 6.3).
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
-        // From pubspec.yaml's version; release builds set them from the mobile-v* tag.
+        // Flutter's --build-name and --build-number (release.sh gives them from the mobile-v* tag,
+        // docs/mobile/release.md); with none, pubspec.yaml's version, which is the dev build's
+        // 0.0.0-dev. versionCode here is the release's base code: the APK's own is that times 10
+        // plus the ABI digit (androidComponents below).
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
@@ -48,11 +52,15 @@ android {
             dartDefines["LUKITAS_SERVER"] ?: "https://app-lukas.andersonlaverde.com",
         )
 
-        ndk {
-            // Phones only: 64- and 32-bit ARM. The Flutter Gradle plugin, applied above, has just
-            // set its own list (x86_64 included), so it is replaced rather than added to.
-            abiFilters.clear()
-            abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+        // Phones only: 64- and 32-bit ARM. A split build (--split-per-abi, which release.sh gives
+        // with --target-platform android-arm,android-arm64) takes its ABIs from Flutter's splits and
+        // refuses ndk filters on top of them; any other build sets them here, replacing the list the
+        // Flutter Gradle plugin, applied above, has just set (x86_64 included).
+        if (project.findProperty("split-per-abi")?.toString()?.toBoolean() != true) {
+            ndk {
+                abiFilters.clear()
+                abiFilters.addAll(listOf("arm64-v8a", "armeabi-v7a"))
+            }
         }
     }
 
@@ -67,11 +75,30 @@ android {
 
     buildTypes {
         release {
-            // The release signing key lives only on the founder's Mac (scripts/release.sh, later).
-            // Until then a local release build is signed with the debug key, so it still installs.
-            signingConfig = signingConfigs.getByName("debug")
+            // The release signing key lives only on the founder's Mac and never reaches Gradle:
+            // scripts/release.sh builds with LUKITAS_UNSIGNED_RELEASE=1 (no signature at all, the
+            // bytes F-Droid compares) and signs the result with apksigner. Any other local release
+            // build is signed with the debug key, so it still installs.
+            signingConfig =
+                if (System.getenv("LUKITAS_UNSIGNED_RELEASE") == "1") null
+                else signingConfigs.getByName("debug")
             // Vosk reaches its native library through JNA, by reflection: R8 must keep both.
             proguardFiles("proguard-rules.pro")
+        }
+    }
+}
+
+// The version code of every APK: base code * 10 + a digit for its ABI, so a later release is always
+// above an earlier one and the two split APKs of a release differ (scripts/release-lib.sh has the
+// same scheme and the tests; release.sh compares what this builds with it). Flutter's own scheme
+// (ABI * 1000 + code) is switched off in gradle.properties: it is not monotonic across releases.
+val abiVersionDigits = mapOf("armeabi-v7a" to 1, "arm64-v8a" to 2)
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val abi = output.filters.firstOrNull { it.filterType == FilterConfiguration.FilterType.ABI }?.identifier
+            output.versionCode.set(flutter.versionCode * 10 + (abiVersionDigits[abi] ?: 0))
         }
     }
 }

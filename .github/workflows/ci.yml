@@ -198,9 +198,140 @@ jobs:
       - run: scripts/check-no-google.sh
       - run: scripts/test-no-google-probes.sh
       - run: flutter build apk --debug
+      # The Kotlin side on the JVM (Robolectric, from Maven Central): the widget's rendering and
+      # refresh job, the notices, the voice model unzip, the haptics. After the debug build, which
+      # writes android/local.properties and the Gradle wrapper (neither is committed).
+      - run: ./gradlew :app:testDebugUnitTest --console=plain
+        working-directory: apps/mobile/android
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-test-reports
+          path: apps/mobile/build/app/reports/tests
+          retention-days: 7
+      # The release scripts' own tests (version scheme, certificate fingerprint format) and the
+      # F-Droid metadata's limits (title, descriptions, changelogs, screenshots).
+      - run: scripts/test-release.sh
+      - run: scripts/check-fastlane.sh
       # The release APK (signed with the runner's debug key, only to inspect it) asks for INTERNET
       # and for no permission nobody chose.
       - run: flutter build apk --release
       - run: scripts/check-permissions.sh
       # About can list a licence for every Dart package (Flutter collects them into NOTICES.Z).
       - run: scripts/check-licenses.sh
+      # scripts/release.sh end to end on this runner, with a key made up for the occasion (the real
+      # one lives only on the founder's Mac and never reaches CI): unsigned split build, apksigner,
+      # verification, and the fingerprint in the ANDROID_CERT_SHA256 format. Last, because it cleans.
+      - name: scripts/release.sh, with a throwaway key
+        run: |
+          export LUKITAS_KEYSTORE="$RUNNER_TEMP/throwaway.p12"
+          export LUKITAS_KEY_ALIAS="ci-throwaway"
+          LUKITAS_KEYSTORE_PASSWORD="$(openssl rand -hex 16)"
+          echo "::add-mask::$LUKITAS_KEYSTORE_PASSWORD"
+          export LUKITAS_KEYSTORE_PASSWORD
+          keytool -genkeypair -keystore "$LUKITAS_KEYSTORE" -storetype PKCS12 \
+            -alias "$LUKITAS_KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 2 \
+            -dname "CN=Lukitas CI throwaway" -storepass:env LUKITAS_KEYSTORE_PASSWORD
+          scripts/release.sh --out "$RUNNER_TEMP/dist"
+          rm -f "$LUKITAS_KEYSTORE"
+
+  # The Android app on an emulator, against the dev stack (docs/mobile/setup.md, "Integration tests
+  # against the dev stack"). A job of its own: it takes longest, and a slow emulator should not hold
+  # up the quick checks above. Same filter, so it is skipped (which counts as passing) when nothing
+  # the app depends on changed. Linux runners have KVM; the emulator needs it enabled for the runner
+  # user. The AVD is cached after its first boot (the snapshot step).
+  mobile-emulator:
+    needs: mobile-changes
+    if: needs.mobile-changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      # The suite's "now", as in the e2e job: the API's clock is pinned to it.
+      E2E_NOW: "2026-10-21T15:00:00Z"
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable KVM
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Read the pinned Flutter version
+        id: flutter-version
+        run: echo "version=$(cat .flutter-version)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ steps.flutter-version.outputs.version }}
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-emulator-${{ runner.os }}-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties', 'apps/mobile/pubspec.lock') }}
+          restore-keys: gradle-emulator-${{ runner.os }}-
+      # The dev stack, as in the e2e job: Postgres, Mailpit and the API (which applies the
+      # migrations on start), with the development defaults and the pinned clock. The emulator
+      # reaches it at 10.0.2.2.
+      - name: Start the dev stack
+        working-directory: .
+        run: |
+          cp .env.example .env
+          docker compose up -d --build
+          for attempt in $(seq 1 60); do
+            # The API answers with the pinned clock, and Mailpit is up.
+            if curl -fsS http://localhost:3000/api/health 2>/dev/null | grep -qF "${E2E_NOW%Z}" && curl -fsS http://localhost:8025/api/v1/info >/dev/null 2>&1; then
+              echo "The dev stack is up, with its clock at $E2E_NOW"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs api
+          echo "::error::The dev stack did not come up in 2 minutes"
+          exit 1
+      - name: Cache the AVD
+        id: avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api36-default-x86_64-pixel_8-v1
+      - name: Create the AVD and its snapshot (first run only)
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2.37.0
+        with:
+          api-level: 36
+          target: default
+          arch: x86_64
+          profile: pixel_8
+          ram-size: 4096M
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: echo "Generated the AVD snapshot for caching."
+      - name: Integration tests on the emulator
+        uses: reactivecircus/android-emulator-runner@v2.37.0
+        with:
+          api-level: 36
+          target: default
+          arch: x86_64
+          profile: pixel_8
+          ram-size: 4096M
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          working-directory: apps/mobile
+          script: scripts/run-integration-tests.sh
+      - if: failure()
+        working-directory: .
+        run: docker compose logs api

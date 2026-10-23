@@ -28,3 +28,15 @@ The app takes no Google Play Services, Firebase, ML Kit, Play Core, ARCore or ot
 - `scripts/check-licenses.sh`, after `flutter build apk --release`, checks that the APK's licence file (`NOTICES.Z`, which About's licence page shows) has an entry for every package under `dependencies:`. It also fails when `assets/licenses/android-libraries.json` (the Android libraries About lists, each under the licence its POM declares) is not what the release classpath resolves to: regenerate it with `dart run scripts/gen-android-licenses.dart`. The voice models, the speech engine, the sounds and the app are added by `lib/settings/licenses.dart`.
 
 CI runs all four.
+
+## Release, F-Droid metadata and the emulator suite
+
+`docs/mobile/release.md` has the procedure; `docs/mobile/fdroid.md` has what an F-Droid submission will need.
+
+- `scripts/release.sh` builds, signs and verifies the split release APKs with the founder's key (from environment variables only) and prints the certificate's `ANDROID_CERT_SHA256`. `scripts/release-lib.sh` holds the version scheme and the fingerprint format; `scripts/test-release.sh` tests them.
+- `scripts/check-reproducible.sh` builds the unsigned release APKs twice and compares them.
+- `scripts/check-fastlane.sh` checks `fastlane/metadata/android` (es-ES, en-US) against F-Droid's limits.
+- `scripts/run-integration-tests.sh` runs `integration_test/` on a running emulator against the dev stack.
+- The Kotlin unit tests: `cd android && ./gradlew :app:testDebugUnitTest`.
+
+CI runs all of them but the signed build (`release.sh` runs there with a throwaway key) and the reproducibility check.
