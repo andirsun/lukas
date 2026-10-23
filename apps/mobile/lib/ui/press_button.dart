@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/surfaces.dart';
 import '../theme/text_styles.dart';
-import '../theme/theme.dart';
 import 'lk_theme.dart';
 import 'pressable.dart';
 
@@ -15,18 +14,6 @@ enum PressTone { primary, secondary, ghost }
 
 /// The button's size (the web's `size`): `md`, or the smaller `sm`.
 enum PressSize { md, sm }
-
-/// `--edge-brand` at rest, or its pressed `0 1px 0 var(--brand-edge)`, in Flutter's paint order.
-///
-/// CSS paints the first shadow of a list on top, Flutter the last, so the list is reversed: the
-/// glow underneath, the solid edge over it. The pressed list keeps two entries (the glow gone, at
-/// no offset and no blur) so the two lists animate into each other shadow by shadow, as CSS does
-/// when it pads the shorter list.
-List<BoxShadow> _brandShadow(LukitasTheme lk, {required bool pressed}) {
-  final [edge, glow] = lk.shadows.edgeBrand;
-  if (!pressed) return [glow, edge];
-  return [BoxShadow(color: glow.color), ...LkSurface.pressedBrandEdge(lk)];
-}
 
 /// The pressable button (`lk-btn`): it sits on a solid bottom edge and sinks into it while pressed
 /// (primary 5px, secondary 3px, ghost 2px, over 80 ms). At least 44px in both directions. Without
@@ -108,7 +95,7 @@ class PressButton extends StatelessWidget {
             decoration = BoxDecoration(
               color: colors.brand,
               borderRadius: radius,
-              boxShadow: _brandShadow(lk, pressed: pressed),
+              boxShadow: LkSurface.brandEdge(lk, pressed: pressed),
             );
             dy = pressed ? 5 : 0;
           case PressTone.secondary:

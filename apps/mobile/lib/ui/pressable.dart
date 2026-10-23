@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsRole;
 
 import '../theme/tokens.g.dart';
+import 'pixel_snap.dart';
 
 /// What a [Pressable] tells the widget it builds.
 @immutable
@@ -45,6 +46,8 @@ class Pressable extends StatefulWidget {
     this.liveRegion = false,
     this.role,
     this.onFocusChange,
+    this.hint,
+    this.keepChildSemantics = false,
   });
 
   final Widget Function(BuildContext context, PressState state) builder;
@@ -72,6 +75,15 @@ class Pressable extends StatefulWidget {
 
   /// Called when the focus enters or leaves.
   final ValueChanged<bool>? onFocusChange;
+
+  /// What the control does beyond its name (the web's `aria-describedby`).
+  final String? hint;
+
+  /// With a [label]: the content's own semantics stay as separate nodes under the control instead
+  /// of being dropped, for a card that holds a button of its own (a row with a pending badge, as
+  /// the web's row-hit button lies under the badge). The content must then leave out what [label]
+  /// already says.
+  final bool keepChildSemantics;
 
   @override
   State<Pressable> createState() => _PressableState();
@@ -115,11 +127,22 @@ class _PressableState extends State<Pressable> {
   void initState() {
     super.initState();
     _node.canRequestFocus = _enabled;
+    _node.addListener(_nodeChanged);
+  }
+
+  /// A control that holds another (a row with a badge) is focused while the one inside has the
+  /// focus, but only the one that has it rings, as `:focus-visible` does.
+  void _nodeChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void didUpdateWidget(Pressable old) {
     super.didUpdateWidget(old);
+    if (old.focusNode != widget.focusNode) {
+      (old.focusNode ?? _ownNode)?.removeListener(_nodeChanged);
+      _node.addListener(_nodeChanged);
+    }
     if (!_enabled && _pressed) _letGo();
     // A disabled control cannot take the focus (a node of our own or the caller's: `Focus` only
     // applies its `canRequestFocus` to a node it makes itself).
@@ -129,6 +152,7 @@ class _PressableState extends State<Pressable> {
   @override
   void dispose() {
     _release?.cancel();
+    _node.removeListener(_nodeChanged);
     _ownNode?.dispose();
     super.dispose();
   }
@@ -137,7 +161,7 @@ class _PressableState extends State<Pressable> {
   Widget build(BuildContext context) {
     final state = PressState(
       pressed: _pressed && _enabled,
-      focusVisible: _focusVisible && _enabled,
+      focusVisible: _focusVisible && _enabled && _node.hasPrimaryFocus,
       enabled: _enabled,
     );
     final named = widget.label != null;
@@ -178,12 +202,14 @@ class _PressableState extends State<Pressable> {
       focused: named ? _hasFocus : null,
       onFocus: named && _enabled ? _node.requestFocus : null,
       label: widget.label,
+      hint: widget.hint,
       selected: widget.selected,
       liveRegion: widget.liveRegion,
       role: widget.role,
       onTap: widget.onPressed,
       // A label is the control's whole name (the web's `aria-label`); without one its content is.
-      excludeSemantics: named,
+      excludeSemantics: named && !widget.keepChildSemantics,
+      container: widget.keepChildSemantics,
       child: detector,
     );
     return named ? semantics : MergeSemantics(child: semantics);
@@ -216,33 +242,35 @@ class RingBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = this.radius;
-    if (radius == null) return child;
     final out = offset + width;
     Radius grow(Radius r) => Radius.circular(r.x + out);
+    // The same tree with the ring and without it: [child] keeps its place (and its state, a pending
+    // badge's, say) when the ring comes and goes.
     return Stack(
       clipBehavior: Clip.none,
       fit: StackFit.passthrough,
       children: [
         child,
-        Positioned(
-          left: -out,
-          top: -out,
-          right: -out,
-          bottom: -out,
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: grow(radius.topLeft),
-                  topRight: grow(radius.topRight),
-                  bottomLeft: grow(radius.bottomLeft),
-                  bottomRight: grow(radius.bottomRight),
+        if (radius != null)
+          Positioned(
+            left: -out,
+            top: -out,
+            right: -out,
+            bottom: -out,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: grow(radius.topLeft),
+                    topRight: grow(radius.topRight),
+                    bottomLeft: grow(radius.bottomLeft),
+                    bottomRight: grow(radius.bottomRight),
+                  ),
+                  border: Border.all(color: color, width: width),
                 ),
-                border: Border.all(color: color, width: width),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -312,12 +340,18 @@ class PressSurface extends StatelessWidget {
         child: OutsideShadow(
           shadows: outsideShadow,
           radius: (decoration.borderRadius ?? BorderRadius.zero).resolve(TextDirection.ltr),
-          child: AnimatedContainer(
+          child: TweenAnimationBuilder<Decoration>(
+            tween: DecorationTween(end: decoration),
             duration: duration,
             curve: Curves.ease,
-            constraints: BoxConstraints(minWidth: minSize, minHeight: minSize),
-            padding: padding,
-            decoration: decoration,
+            builder: (context, animated, child) => SnappedDecoratedBox(
+              decoration: animated,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: minSize, minHeight: minSize),
+                // A border takes room inside the box, as a container adds it.
+                child: Padding(padding: padding.add(animated.padding), child: child),
+              ),
+            ),
             child: Center(widthFactor: 1, heightFactor: 1, child: child),
           ),
         ),

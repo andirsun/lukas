@@ -1268,5 +1268,76 @@
   "licenseNoticeFontRoleText": "el resto del texto",
   "licenseNoticeSounds": "Los sonidos de Lukitas al anotar, pagar, deshacer o acercarte a un límite son obra original hecha para Lukitas: unos pocos tonos simples, sin muestras de terceros. Se publican con la licencia de la propia app, la GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
   "licenseNoticeApp": "Lukitas es software libre, bajo la GNU Affero General Public License 3.0. Su código está en https://github.com/andirsun/lukas.",
-  "aboutLegalese": "Software libre, AGPL-3.0"
+  "aboutLegalese": "Software libre, AGPL-3.0",
+  "close": "Cerrar",
+  "@close": {
+    "description": "A sheet's header button: closes the sheet."
+  },
+  "navLabel": "Navegación principal",
+  "@navLabel": {
+    "description": "Screen-reader name of the bottom bar."
+  },
+  "navHome": "Inicio",
+  "@navHome": {
+    "description": "Bottom bar: the home tab."
+  },
+  "navInsights": "Análisis",
+  "@navInsights": {
+    "description": "Bottom bar: the insights tab."
+  },
+  "navAdd": "Agregar",
+  "@navAdd": {
+    "description": "Bottom bar: the raised + button that opens the add sheet (screen readers)."
+  },
+  "categoryRowRemaining": "Quedan {amount}",
+  "@categoryRowRemaining": {
+    "description": "A category row: what is left of its budget.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowOver": "Te pasaste {amount}",
+  "@categoryRowOver": {
+    "description": "A category row: how far over its budget it is.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowNoBudget": "Sin presupuesto",
+  "@categoryRowNoBudget": {
+    "description": "A category row without a budget."
+  },
+  "categoryRowSpent": "Gastado {amount}",
+  "@categoryRowSpent": {
+    "description": "A category row without a budget: what was spent.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowMeter": "{name}: {status}",
+  "@categoryRowMeter": {
+    "description": "A category row's budget bar, for screen readers: the category and its status.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "swipeHint": "Tócalo para editarlo o borrarlo.",
+  "@swipeHint": {
+    "description": "What a transaction row's swipes do, for screen readers (they take over swipes)."
+  },
+  "swipeHintPending": "Tócalo para editarlo o borrarlo; Pendiente lo marca pagado.",
+  "@swipeHintPending": {
+    "description": "The same, on a pending row."
+  }
 }

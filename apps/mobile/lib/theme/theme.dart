@@ -41,6 +41,9 @@ TextTheme _webTextTheme(LukitasColors colors) {
     fontFamily: LkText.textFamily,
     fontWeight: FontWeight.w700,
     color: colors.ink,
+    // The web's text has no letter spacing but the one a style asks for (Material's own styles
+    // carry 0.25 to 0.5 px, which would widen every line inside a Material).
+    letterSpacing: 0,
   );
   return TextTheme(
     displayLarge: web(base.displayLarge),

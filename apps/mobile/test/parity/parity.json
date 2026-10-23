@@ -388,5 +388,389 @@
     "storyId": "ui-money--huge-amount",
     "theme": "day",
     "appTest": "test/parity/money_parity_test.dart"
+  },
+  {
+    "id": "sheet-open",
+    "storyId": "ui-sheet--open",
+    "theme": "night",
+    "appTest": "test/parity/sheet_parity_test.dart"
+  },
+  {
+    "id": "sheet-open",
+    "storyId": "ui-sheet--open",
+    "theme": "day",
+    "appTest": "test/parity/sheet_parity_test.dart"
+  },
+  {
+    "id": "sheet-open-day-english",
+    "storyId": "ui-sheet--open-day-english",
+    "theme": "day",
+    "appTest": "test/parity/sheet_parity_test.dart"
+  },
+  {
+    "id": "keypad-spanish",
+    "storyId": "ui-keypad--spanish",
+    "theme": "night",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-spanish",
+    "storyId": "ui-keypad--spanish",
+    "theme": "day",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-english",
+    "storyId": "ui-keypad--english",
+    "theme": "night",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-english",
+    "storyId": "ui-keypad--english",
+    "theme": "day",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-pesos",
+    "storyId": "ui-keypad--pesos",
+    "theme": "night",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-pesos",
+    "storyId": "ui-keypad--pesos",
+    "theme": "day",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-max-length",
+    "storyId": "ui-keypad--max-length",
+    "theme": "night",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-max-length",
+    "storyId": "ui-keypad--max-length",
+    "theme": "day",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-press-and-focus",
+    "storyId": "ui-keypad--keys-press-and-focus",
+    "theme": "night",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-press-and-focus",
+    "storyId": "ui-keypad--keys-press-and-focus",
+    "theme": "day",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "keypad-day",
+    "storyId": "ui-keypad--day",
+    "theme": "day",
+    "appTest": "test/parity/keypad_parity_test.dart"
+  },
+  {
+    "id": "name-field-empty",
+    "storyId": "ui-namefield--empty",
+    "theme": "night",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "name-field-empty",
+    "storyId": "ui-namefield--empty",
+    "theme": "day",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "name-field-pick-shortcut",
+    "storyId": "ui-namefield--pick-shortcut",
+    "theme": "night",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "name-field-pick-shortcut",
+    "storyId": "ui-namefield--pick-shortcut",
+    "theme": "day",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "name-field-typing",
+    "storyId": "ui-namefield--typing",
+    "theme": "night",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "name-field-typing",
+    "storyId": "ui-namefield--typing",
+    "theme": "day",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "name-field-focus-and-press",
+    "storyId": "ui-namefield--focus-and-press",
+    "theme": "night",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "name-field-focus-and-press",
+    "storyId": "ui-namefield--focus-and-press",
+    "theme": "day",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "name-field-day-english",
+    "storyId": "ui-namefield--day-english",
+    "theme": "day",
+    "appTest": "test/parity/name_field_parity_test.dart"
+  },
+  {
+    "id": "swipe-row-at-rest",
+    "storyId": "ui-swiperow--right-edits",
+    "theme": "night",
+    "appTest": "test/parity/swipe_row_parity_test.dart"
+  },
+  {
+    "id": "swipe-row-at-rest",
+    "storyId": "ui-swiperow--right-edits",
+    "theme": "day",
+    "appTest": "test/parity/swipe_row_parity_test.dart"
+  },
+  {
+    "id": "swipe-row-pending",
+    "storyId": "ui-swiperow--keyboard-skips-closed-actions",
+    "theme": "night",
+    "appTest": "test/parity/swipe_row_parity_test.dart"
+  },
+  {
+    "id": "swipe-row-pending",
+    "storyId": "ui-swiperow--keyboard-skips-closed-actions",
+    "theme": "day",
+    "appTest": "test/parity/swipe_row_parity_test.dart"
+  },
+  {
+    "id": "swipe-row-open-day-english",
+    "storyId": "ui-swiperow--day-english",
+    "theme": "day",
+    "appTest": "test/parity/swipe_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-expense",
+    "storyId": "ui-transactionrow--expense",
+    "theme": "night",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-expense",
+    "storyId": "ui-transactionrow--expense",
+    "theme": "day",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-unnamed",
+    "storyId": "ui-transactionrow--unnamed",
+    "theme": "night",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-unnamed",
+    "storyId": "ui-transactionrow--unnamed",
+    "theme": "day",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-income",
+    "storyId": "ui-transactionrow--income",
+    "theme": "night",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-income",
+    "storyId": "ui-transactionrow--income",
+    "theme": "day",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-pending",
+    "storyId": "ui-transactionrow--pending",
+    "theme": "night",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-pending",
+    "storyId": "ui-transactionrow--pending",
+    "theme": "day",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-pending-read-only",
+    "storyId": "ui-transactionrow--pending-read-only",
+    "theme": "night",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-pending-read-only",
+    "storyId": "ui-transactionrow--pending-read-only",
+    "theme": "day",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-press-and-focus",
+    "storyId": "ui-transactionrow--press-and-focus",
+    "theme": "night",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-press-and-focus",
+    "storyId": "ui-transactionrow--press-and-focus",
+    "theme": "day",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "transaction-row-pending-day-english",
+    "storyId": "ui-transactionrow--pending-day-english",
+    "theme": "day",
+    "appTest": "test/parity/transaction_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-over",
+    "storyId": "ui-categoryrow--over",
+    "theme": "night",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-over",
+    "storyId": "ui-categoryrow--over",
+    "theme": "day",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-near",
+    "storyId": "ui-categoryrow--near",
+    "theme": "night",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-near",
+    "storyId": "ui-categoryrow--near",
+    "theme": "day",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-ok",
+    "storyId": "ui-categoryrow--ok",
+    "theme": "night",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-ok",
+    "storyId": "ui-categoryrow--ok",
+    "theme": "day",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-no-budget",
+    "storyId": "ui-categoryrow--no-budget",
+    "theme": "night",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-no-budget",
+    "storyId": "ui-categoryrow--no-budget",
+    "theme": "day",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-press-and-focus",
+    "storyId": "ui-categoryrow--press-and-focus",
+    "theme": "night",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-press-and-focus",
+    "storyId": "ui-categoryrow--press-and-focus",
+    "theme": "day",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-no-budget-english",
+    "storyId": "ui-categoryrow--no-budget-english",
+    "theme": "night",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-no-budget-english",
+    "storyId": "ui-categoryrow--no-budget-english",
+    "theme": "day",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "category-row-over-day-english",
+    "storyId": "ui-categoryrow--over-day-english",
+    "theme": "day",
+    "appTest": "test/parity/category_row_parity_test.dart"
+  },
+  {
+    "id": "toast-day-english",
+    "storyId": "ui-toast--day-english",
+    "theme": "day",
+    "appTest": "test/parity/toast_parity_test.dart"
+  },
+  {
+    "id": "toast-reduced-motion",
+    "storyId": "ui-toast--reduced-motion",
+    "theme": "night",
+    "appTest": "test/parity/toast_parity_test.dart"
+  },
+  {
+    "id": "toast-reduced-motion",
+    "storyId": "ui-toast--reduced-motion",
+    "theme": "day",
+    "appTest": "test/parity/toast_parity_test.dart"
+  },
+  {
+    "id": "toast-replaces-previous",
+    "storyId": "ui-toast--replaces-previous",
+    "theme": "night",
+    "appTest": "test/parity/toast_parity_test.dart"
+  },
+  {
+    "id": "toast-replaces-previous",
+    "storyId": "ui-toast--replaces-previous",
+    "theme": "day",
+    "appTest": "test/parity/toast_parity_test.dart"
+  },
+  {
+    "id": "bottom-bar-home",
+    "storyId": "ui-bottombar--home",
+    "theme": "night",
+    "appTest": "test/parity/bottom_bar_parity_test.dart"
+  },
+  {
+    "id": "bottom-bar-home",
+    "storyId": "ui-bottombar--home",
+    "theme": "day",
+    "appTest": "test/parity/bottom_bar_parity_test.dart"
+  },
+  {
+    "id": "bottom-bar-press-and-focus",
+    "storyId": "ui-bottombar--press-and-focus",
+    "theme": "night",
+    "appTest": "test/parity/bottom_bar_parity_test.dart"
+  },
+  {
+    "id": "bottom-bar-press-and-focus",
+    "storyId": "ui-bottombar--press-and-focus",
+    "theme": "day",
+    "appTest": "test/parity/bottom_bar_parity_test.dart"
+  },
+  {
+    "id": "bottom-bar-insights-day-english",
+    "storyId": "ui-bottombar--insights-day-english",
+    "theme": "day",
+    "appTest": "test/parity/bottom_bar_parity_test.dart"
   }
 ]

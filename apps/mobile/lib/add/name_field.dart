@@ -4,40 +4,11 @@ import 'package:flutter/services.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.g.dart';
+import '../ui/name_field.dart' show NameChoice, maxShortcutRows, shortcutsThatFit;
 
-/// A recent name with the category it usually goes in.
-class NameChoice {
-  const NameChoice({required this.name, required this.categoryName, required this.source});
-
-  final String name;
-  final String categoryName;
-
-  /// What the sheet gets back when this shortcut is tapped.
-  final Object source;
-}
-
-/// At most this many rows of shortcuts, so the categories under the field stay in view.
-const maxShortcutRows = 2;
-
-/// How many shortcuts of [widths] fit in [maxRows] wrapped rows of [maxWidth], [spacing] apart.
-/// Whatever does not fit is left out, never squeezed: the first ones are the most used.
-int shortcutsThatFit(List<double> widths, double maxWidth, {double spacing = 6, int maxRows = 2}) {
-  var row = 0;
-  var x = 0.0;
-  for (var i = 0; i < widths.length; i++) {
-    final width = widths[i] > maxWidth ? maxWidth : widths[i];
-    final next = x == 0 ? width : x + spacing + width;
-    if (x > 0 && next > maxWidth) {
-      row++;
-      x = 0;
-      if (row >= maxRows) return i;
-      x = width;
-    } else {
-      x = next;
-    }
-  }
-  return widths.length;
-}
+// The shortcuts' rules moved to lib/ui/name_field.dart with the web's NameField; this Stage 3 field
+// stays until the add sheet is rebuilt on it (Stage 3b, Task 8).
+export '../ui/name_field.dart' show NameChoice, maxShortcutRows, shortcutsThatFit;
 
 /// The transaction's optional name, with recent names as shortcuts under it. While typing, each
 /// shortcut is labelled with its category; the one matching the current name is marked. The web's

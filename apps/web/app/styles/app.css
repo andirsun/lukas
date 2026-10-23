@@ -718,6 +718,10 @@
     transform: translateY(3px);
     box-shadow: 0 1px 0 var(--surface-edge);
   }
+  /* The ring is the pill's; without this the browser also outlines the 44px button around it. */
+  .lk-shortcut-button:focus-visible {
+    outline: none;
+  }
   .lk-shortcut-button:focus-visible .lk-shortcut {
     outline: 3px solid var(--focus);
     outline-offset: 2px;

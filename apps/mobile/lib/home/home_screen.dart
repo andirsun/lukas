@@ -12,6 +12,9 @@ import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../theme/theme.dart';
 import '../theme/tokens.g.dart';
+import '../ui/swipe_row.dart';
+import '../ui/transaction_row.dart';
+import 'category_look.dart';
 import 'day_groups.dart';
 import 'home_controller.dart';
 import 'home_format.dart';
@@ -19,9 +22,7 @@ import 'home_repository.dart';
 import 'home_widgets.dart';
 import 'lukas_line.dart';
 import 'lukitas_face.dart';
-import 'swipe_row.dart';
 import 'toast.dart';
-import 'transaction_row.dart';
 
 /// Picks which of Lukitas' three phrasings a line uses (1 to 3). Replaced in tests.
 final lukasVariantProvider = Provider<int Function()>((ref) {
@@ -552,17 +553,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               l10n.swipePaid,
             )
           : SwipeRight(SwipeRightKind.edit, () => onEdit(tx), l10n.swipeEdit),
-      child: TransactionRow(
-        transaction: tx,
-        category: data.categories[tx.categoryId],
-        currency: data.currency,
-        locale: l10n.localeName,
-        paidHere: home.paidHere.contains(tx.id),
-        onOpen: () => onEdit(tx),
-        onPay: () => _pay(tx),
-      ),
+      child: _txRow(data, tx, home.paidHere.contains(tx.id), onEdit, () => _pay(tx)),
     );
   }
+}
+
+/// The web's `TransactionRow` for [tx]: its category's glyph and name, and the row's actions.
+Widget _txRow(
+  HomeData data,
+  Transaction tx,
+  bool paidHere,
+  void Function(Transaction) onEdit,
+  Future<void> Function() onPay,
+) {
+  final category = data.categories[tx.categoryId];
+  return TransactionRow(
+    name: tx.name,
+    categoryName: category?.name ?? '',
+    glyph: category == null
+        ? '🏷️'
+        : categoryLook(icon: category.icon, color: category.color).glyph,
+    amount: tx.amount,
+    currency: data.currency,
+    status: tx.status == TransactionStatusEnum.pending
+        ? TransactionRowStatus.pending
+        : TransactionRowStatus.paid,
+    paidHere: paidHere,
+    onOpen: () => onEdit(tx),
+    onPay: onPay,
+  );
 }
 
 class _Entry {

@@ -49,11 +49,29 @@ abstract final class LkSurface {
     BoxShadow(color: theme.colors.surfaceEdge, offset: const Offset(0, 1)),
   ];
 
+  /// `--edge-brand` at rest, or its pressed `0 1px 0 var(--brand-edge)`, in Flutter's paint order.
+  ///
+  /// CSS paints the first shadow of a list on top, Flutter the last, so the list is reversed: the
+  /// glow underneath, the solid edge over it. The pressed list keeps two entries (the glow gone, at
+  /// no offset and no blur) so the two lists animate into each other shadow by shadow, as CSS does
+  /// when it pads the shorter list.
+  static List<BoxShadow> brandEdge(LukitasTheme theme, {required bool pressed}) {
+    final [edge, glow] = theme.shadows.edgeBrand;
+    if (!pressed) return [glow, edge];
+    return [BoxShadow(color: glow.color), ...pressedBrandEdge(theme)];
+  }
+
   /// A pressed primary button's edge: app.css `.lk-btn-primary:active`
   /// (`box-shadow: 0 1px 0 var(--brand-edge)`), the surface 5px down.
   static List<BoxShadow> pressedBrandEdge(LukitasTheme theme) => [
     BoxShadow(color: theme.colors.brandEdge, offset: const Offset(0, 1)),
   ];
+
+  /// The sheet's backdrop: app.css `--scrim`, dark in both themes. Night mixes 72 % of
+  /// `surface-edge` into nothing, day 40 % of `ink`.
+  static Color scrim(LukitasColors colors, Brightness brightness) => brightness == Brightness.light
+      ? colors.ink.withValues(alpha: 0.4)
+      : colors.surfaceEdge.withValues(alpha: 0.72);
 
   /// The corner radius of a token.
   static BorderRadius radius(LkRadius radius) => BorderRadius.circular(radius.pixels);

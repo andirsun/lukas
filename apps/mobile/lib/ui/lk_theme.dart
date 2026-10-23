@@ -51,7 +51,9 @@ double cssBaselineShift(TextStyle style) {
         ascent.roundToDouble() +
         ((lineHeight - ascent.roundToDouble() - descent.roundToDouble()) / 2).floorToDouble();
     final flutter = (lineHeight - ascent - descent) / 2 + ascent;
-    return blink - flutter;
+    // A hair lower: a baseline exactly half a device pixel down is drawn on the pixel below in
+    // Chrome and on the one above in Flutter's tests.
+    return blink - flutter + 0.02;
   });
 }
 
@@ -66,4 +68,23 @@ class BlinkLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Transform.translate(offset: Offset(0, cssBaselineShift(style)), child: child);
+}
+
+/// The widths of [count] equal columns [gap] apart in [width] px, as Chrome draws them: it rounds
+/// the left and right edge of every box to a whole device pixel (at [ratio] device pixels per
+/// logical one), so a column of 102.67px is 102.5 or 103px and every edge is sharp. Flutter keeps
+/// the fractions and draws blurred edges. The first [count] values are the columns' widths, then
+/// the [count] - 1 gaps between them, then how far each column's centre moved when its edges were
+/// rounded (text is placed from the unrounded box: shift it back by that much). Lay a row out as
+/// column, gap, column, gap, column.
+List<double> snappedColumns(double width, int count, double gap, double ratio) {
+  final column = (width - gap * (count - 1)) / count;
+  double snap(double value) => (value * ratio).round() / ratio;
+  final lefts = [for (var i = 0; i < count; i++) snap(i * (column + gap))];
+  final rights = [for (var i = 0; i < count; i++) snap(i * (column + gap) + column)];
+  return [
+    for (var i = 0; i < count; i++) rights[i] - lefts[i],
+    for (var i = 0; i < count - 1; i++) lefts[i + 1] - rights[i],
+    for (var i = 0; i < count; i++) i * (column + gap) + column / 2 - (lefts[i] + rights[i]) / 2,
+  ];
 }

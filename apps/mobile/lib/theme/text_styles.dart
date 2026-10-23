@@ -192,6 +192,107 @@ abstract final class LkText {
     leadingDistribution: TextLeadingDistribution.even,
   );
 
+  /// The glyph in a row's tile: app.css `.lk-tile`, 17px on the body's 700.
+  static const tileGlyph = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 17,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A toast's message: app.css `.lk-toast`, Nunito 12px 800.
+  static const toast = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A toast's action ("Deshacer"): app.css `.lk-toast-actions button`, the toast's text at 900.
+  static const toastAction = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w900,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A swipe row's action: app.css `.lk-swipe-action`, Nunito 12px 900, `letter-spacing: 0.04em`
+  /// (0.48 px), upper case ([upperCase]).
+  static const swipeAction = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 12,
+    fontWeight: FontWeight.w900,
+    letterSpacing: 0.04 * 12,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The glyph above a swipe action: app.css `.lk-swipe-glyph`, 18px with a line height of 1.
+  static const swipeGlyph = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w900,
+    height: 1,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A keypad key: app.css `.lk-key`, Fredoka 18px 600.
+  static const key = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A text field's text: app.css `.lk-input`, Nunito 13px 800 (the input inherits it).
+  static const input = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 13,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A name shortcut: app.css `.lk-shortcut`, Nunito 11px 800.
+  static const shortcut = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 11,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A bottom bar tab's label: app.css `.lk-tab`, Nunito 10px 800.
+  static const tab = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 10,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A bottom bar tab's icon: app.css `.lk-tab .lk-tab-ico`, 18px.
+  static const tabIcon = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 18,
+    fontWeight: FontWeight.w800,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// The ＋ of the bottom bar: app.css `.lk-plus`, 30px 700.
+  static const plus = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 30,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
   /// `text-transform: uppercase`, for [eyebrow], [button], [buttonSm] and [badge].
   static String upperCase(String text) => text.toUpperCase();
 }

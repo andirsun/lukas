@@ -1,3 +1,6 @@
+// The web's SwipeRow (apps/web/app/ui/SwipeRow.tsx) and the CSS it uses: app.css `.lk-swipe`,
+// `.lk-swipe-face`, `.lk-swipe-side`, `.lk-swipe-action`, `.lk-swipe-glyph`. How the gestures
+// behave (the axis, the thresholds, the springs) is `swipe_rules.dart`'s, Stage 3's rules.
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
@@ -6,8 +9,11 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/semantics.dart';
 
 import '../feedback/feedback.dart';
-import '../theme/theme.dart';
+import '../l10n/app_localizations.dart';
+import '../theme/surfaces.dart';
+import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
+import 'lk_theme.dart';
 import 'swipe_rules.dart';
 
 /// What swiping a row to the right does: "Editar", or "Pagado" on a pending row.
@@ -24,6 +30,22 @@ class SwipeRight {
 
   /// "Editar" or "Pagado".
   final String label;
+}
+
+/// What a [SwipeRow]'s swipes do, in words, for the row inside it to describe itself with (the web's
+/// `useSwipeHint`): screen readers take over one-finger swipes, so the row's own button names what
+/// it can do instead.
+class SwipeHint extends InheritedWidget {
+  const SwipeHint({super.key, required this.hint, required super.child});
+
+  final String? hint;
+
+  /// The hint of the [SwipeRow] above [context], if any.
+  static String? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<SwipeHint>()?.hint;
+
+  @override
+  bool updateShouldNotify(SwipeHint old) => old.hint != hint;
 }
 
 /// Shared by the rows of one list: only one row is open at a time, and a tap anywhere else, or a
@@ -548,7 +570,7 @@ class _SwipeRowState extends State<SwipeRow> with TickerProviderStateMixin {
   }
 
   Widget _action(BuildContext context, Side side) {
-    final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
+    final colors = context.lkColors;
     final left = side == Side.left;
     final paid = !left && widget.right?.kind == SwipeRightKind.paid;
     final background = left ? colors.over : (paid ? colors.good : colors.brand);
@@ -557,46 +579,51 @@ class _SwipeRowState extends State<SwipeRow> with TickerProviderStateMixin {
     final glyph = left ? '🗑' : (paid ? '✓' : '✎');
     final armed = _armed == side;
     return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
+      // `.lk-swipe-side`: its own rounded corners, clipped to them.
+      child: ClipRRect(
+        borderRadius: LkSurface.radius(LkRadius.lg),
+        child: ColoredBox(
           color: background,
-          borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
-        ),
-        alignment: left ? Alignment.centerRight : Alignment.centerLeft,
-        child: Semantics(
-          button: true,
-          excludeSemantics: true,
-          label: label,
-          onTap: _open == side ? (left ? _remove : _runRight) : null,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _open == side ? (left ? _remove : _runRight) : null,
-            child: SizedBox(
-              width: SwipeFeel.rowActionWidth,
-              height: double.infinity,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AnimatedScale(
-                    // Past the threshold the action pops: letting go now runs it.
-                    scale: armed ? 1.35 : 1,
-                    duration: _reduceMotion ? Duration.zero : LukitasTokens.durationPress,
-                    child: Text(
-                      glyph,
-                      style: TextStyle(fontSize: 18, color: foreground, height: 1),
+          child: Align(
+            alignment: left ? Alignment.centerRight : Alignment.centerLeft,
+            child: Semantics(
+              button: true,
+              excludeSemantics: true,
+              label: label,
+              onTap: _open == side ? (left ? _remove : _runRight) : null,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _open == side ? (left ? _remove : _runRight) : null,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minWidth: SwipeFeel.rowActionWidth,
+                    minHeight: 44,
+                  ),
+                  child: SizedBox(
+                    width: SwipeFeel.rowActionWidth,
+                    height: double.infinity,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      spacing: 2,
+                      children: [
+                        AnimatedScale(
+                          // Past the threshold the action pops: letting go now runs it.
+                          scale: armed ? 1.35 : 1,
+                          duration: _reduceMotion ? Duration.zero : LukitasTokens.durationPress,
+                          curve: Curves.ease,
+                          child: Text(glyph, style: LkText.swipeGlyph.copyWith(color: foreground)),
+                        ),
+                        BlinkLine(
+                          style: LkText.swipeAction,
+                          child: Text(
+                            LkText.upperCase(label),
+                            style: LkText.swipeAction.copyWith(color: foreground),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    label.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.5,
-                      color: foreground,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),
@@ -610,17 +637,28 @@ class _SwipeRowState extends State<SwipeRow> with TickerProviderStateMixin {
     final offset = _x.value;
     final fold = _fold.value;
     final interactive = _hasLeft || _hasRight;
-    Widget body = ClipRRect(
-      borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
-      child: Stack(
-        key: _key,
-        children: [
-          // Each side shows only while the row is moved its way, so nothing peeks at rest.
-          if (_hasLeft && offset < -0.5) _action(context, Side.left),
-          if (_hasRight && offset > 0.5) _action(context, Side.right),
-          Transform.translate(offset: Offset(offset, 0), child: _face(widget.child)),
-        ],
-      ),
+    // The face moves over the actions and is not clipped (`.lk-swipe` has no overflow): a row
+    // swiped open reaches past its own edge.
+    final l10n = AppLocalizations.of(context);
+    Widget body = Stack(
+      key: _key,
+      clipBehavior: Clip.none,
+      children: [
+        // Each side shows only while the row is moved its way, so nothing peeks at rest.
+        if (_hasLeft && offset < -0.5) _action(context, Side.left),
+        if (_hasRight && offset > 0.5) _action(context, Side.right),
+        Transform.translate(
+          offset: Offset(offset, 0),
+          child: SwipeHint(
+            hint: !interactive
+                ? null
+                : (widget.right?.kind == SwipeRightKind.paid
+                      ? l10n.swipeHintPending
+                      : l10n.swipeHint),
+            child: _face(widget.child),
+          ),
+        ),
+      ],
     );
     if (interactive) {
       body = RawGestureDetector(gestures: _gestures, child: body);

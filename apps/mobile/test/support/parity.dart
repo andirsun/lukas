@@ -35,8 +35,41 @@ const parityDingbatsFamily = 'Parity Zapf Dingbats';
 
 const _zapfDingbats = '/System/Library/Fonts/ZapfDingbats.ttf';
 
+/// The family the parity goldens draw ⌫ (the keypad's backspace) with. No web font has it, and the
+/// web's font stacks end in `ui-rounded, system-ui, sans-serif`, so Chrome on the Mac draws it with
+/// San Francisco (`.SF NS`, found with CDP's `CSS.getPlatformFontsForNode`); `flutter test` has no
+/// fallback of its own, so the same system file is named. On a phone, Android's fallback font
+/// draws it.
+const paritySystemFamily = 'Parity San Francisco';
+
+const _sanFrancisco = '/System/Library/Fonts/SFNS.ttf';
+
+/// The family the parity goldens draw ＋ (the bottom bar's add button, U+FF0B) with: no web font has
+/// it, and San Francisco does not either, so Chrome on the Mac falls back to PingFang SC (Semibold
+/// for the button's weight 700). The Mac keeps PingFang in a downloaded font asset, in a collection
+/// whose face 11 is `PingFangSC-Semibold` ([ttcFace]). On a phone, Android's fallback font draws it.
+const parityCjkFamily = 'Parity PingFang SC';
+
+/// Where macOS keeps PingFang (the asset's folder is named by a hash).
+String _pingFang() {
+  final found = Directory('/System/Library/AssetsV2')
+      .listSync()
+      .whereType<Directory>()
+      .where((d) => d.path.contains('com_apple_MobileAsset_Font'))
+      .expand((d) => d.listSync().whereType<Directory>())
+      .map((d) => File('${d.path}/AssetData/PingFang.ttc'))
+      .where((f) => f.existsSync());
+  if (found.isEmpty) fail('Parity draws ＋ with PingFang, a macOS font asset: not found');
+  return found.first.path;
+}
+
 /// The fallbacks behind every text style of a parity golden.
-const parityFallbackFamilies = [parityEmojiFamily, parityDingbatsFamily];
+const parityFallbackFamilies = [
+  parityEmojiFamily,
+  parityDingbatsFamily,
+  paritySystemFamily,
+  parityCjkFamily,
+];
 
 /// test/parity, relative to apps/mobile (where `flutter test` runs).
 const _parityDir = 'test/parity';
@@ -183,6 +216,13 @@ Future<void> loadParityFonts() async {
   await (FontLoader(
     parityDingbatsFamily,
   )..addFont(Future.value(ByteData.sublistView(dingbats.readAsBytesSync())))).load();
+  final sanFrancisco = File(_sanFrancisco);
+  if (!sanFrancisco.existsSync()) fail('Parity draws ⌫ with $_sanFrancisco, a macOS system font');
+  await (FontLoader(
+    paritySystemFamily,
+  )..addFont(Future.value(ByteData.sublistView(sanFrancisco.readAsBytesSync())))).load();
+  final pingFang = ttcFace(File(_pingFang()).readAsBytesSync(), 11);
+  await (FontLoader(parityCjkFamily)..addFont(Future.value(ByteData.sublistView(pingFang)))).load();
   _fontsLoaded = true;
 }
 

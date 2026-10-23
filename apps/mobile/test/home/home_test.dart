@@ -251,7 +251,7 @@ void main() {
       expect(repo.calls, contains('markPaid rent'));
       expect(repo.items.firstWhere((t) => t.id == 'rent').status, TransactionStatusEnum.paid);
       expect(find.text('PENDIENTE'), findsNothing);
-      expect(find.text('✓ PAGADO'), findsOneWidget);
+      expect(find.text('PAGADO'), findsOneWidget);
       expect(find.textContaining('Pagado: Arriendo'), findsOneWidget);
       // The row is where it was: a swipe is not a move.
       expect(find.text('Arriendo'), findsWidgets);
@@ -264,7 +264,7 @@ void main() {
       await tester.tap(find.text('PENDIENTE'));
       await tester.pumpAndSettle();
       expect(repo.calls.where((c) => c.startsWith('markPaid')), ['markPaid rent']);
-      expect(find.text('✓ PAGADO'), findsOneWidget);
+      expect(find.text('PAGADO'), findsOneWidget);
       await endEvent(tester);
     });
 

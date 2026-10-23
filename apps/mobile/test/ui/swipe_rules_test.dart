@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lukitas/home/swipe_rules.dart';
+import 'package:lukitas/ui/swipe_rules.dart';
 
 // The web's gesture.test.ts (Stage 2 Task 12c), rule by rule.
 void main() {

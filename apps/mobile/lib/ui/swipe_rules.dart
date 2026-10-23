@@ -23,6 +23,16 @@ abstract final class SwipeFeel {
   /// px: how much of an action a short swipe leaves open.
   static const rowActionWidth = 88.0;
 
+  /// A sheet dragged down past this fraction of its height closes when let go.
+  static const sheetCloseAt = 0.25;
+
+  /// A sheet let go short of closing springs back: stiffness, damping.
+  static const sheetBackStiffness = 500.0;
+  static const sheetBackDamping = 40.0;
+
+  /// px: a toast dragged this far down or sideways is dismissed.
+  static const toastDismiss = 48.0;
+
   /// A deleted row starts folding away once this much of it has left the screen.
   static const rowGoneAt = 0.9;
 

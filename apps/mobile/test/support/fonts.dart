@@ -38,3 +38,36 @@ String _flutterCache() {
   }
   throw StateError('Cannot find the Flutter SDK cache from ${Platform.resolvedExecutable}');
 }
+
+/// Face [index] of a TrueType collection (`.ttc`) as a font of its own. The engine loads only a
+/// collection's first face, so another one has to be taken out: its tables are copied after a new
+/// directory, with their offsets moved.
+Uint8List ttcFace(Uint8List collection, int index) {
+  final data = ByteData.sublistView(collection);
+  if (String.fromCharCodes(collection.sublist(0, 4)) != 'ttcf') {
+    throw ArgumentError('not a TrueType collection');
+  }
+  final faces = data.getUint32(8);
+  if (index >= faces) throw RangeError.index(index, List<int>.filled(faces, 0));
+  final directory = data.getUint32(12 + index * 4);
+  final count = data.getUint16(directory + 4);
+  var next = (12 + count * 16 + 3) & ~3;
+  final tables = <(int record, int offset, int length)>[];
+  for (var i = 0; i < count; i++) {
+    final record = directory + 12 + i * 16;
+    final length = data.getUint32(record + 12);
+    tables.add((record, next, length));
+    next = (next + length + 3) & ~3;
+  }
+  final out = Uint8List(next);
+  final view = ByteData.sublistView(out);
+  out.setRange(0, 12, collection.sublist(directory, directory + 12));
+  for (var i = 0; i < count; i++) {
+    final (record, offset, length) = tables[i];
+    out.setRange(12 + i * 16, 12 + i * 16 + 16, collection.sublist(record, record + 16));
+    view.setUint32(12 + i * 16 + 8, offset);
+    final from = data.getUint32(record + 8);
+    out.setRange(offset, offset + length, collection.sublist(from, from + length));
+  }
+  return out;
+}

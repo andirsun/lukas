@@ -167,6 +167,13 @@ when the app's picture changes. The web shots are regenerated only when the web 
   `/System/Library/Fonts/ZapfDingbats.ttf`, at the face's own weight (`useParityEmoji`,
   `loadParityFonts`). It is Apple's, so it is read from the Mac, never committed. On a phone, Android's
   fallback font draws it, and thickens it in both Chrome and Flutter.
+- **⌫ and ＋.** No web font has them, so Chrome on the Mac falls back: ⌫ (the keypad's backspace) to San
+  Francisco (`.SF NS`, because the stacks end in `ui-rounded, system-ui`), ＋ (the bottom bar's add button)
+  to PingFang SC Semibold (found with CDP's `CSS.getPlatformFontsForNode`). `flutter test` has no
+  fallback, so the golden harness names the same system files: `/System/Library/Fonts/SFNS.ttf`, and the
+  `PingFang.ttc` of macOS's downloaded font asset (face 11 is `PingFangSC-Semibold`, taken out of the
+  collection by `ttcFace`). Apple's, read from the Mac, never committed. On a phone Android's fallback
+  draws them.
 - **Icons.** Material icons draw with the Flutter SDK's own `MaterialIcons-Regular.otf`
   (`loadMaterialIcons` in `test/support/fonts.dart`), the file `flutter build` bundles. The Stage 3
   goldens load it too.
@@ -196,5 +203,35 @@ when the app's picture changes. The web shots are regenerated only when the web 
     with an edge (the pending badge) uses `OutsideShadow`.
   - CSS paints the first shadow of a list on top, Flutter the last: the brand button's edge and glow
     are reversed.
+  - A multi-word text is laid out word by word (`CssText`): Blink shapes each word and each space on
+    its own and keeps every width in 64ths of a pixel, rounded up, so a line is a hundredth or two
+    wider than Flutter shapes it, and every word after the first starts a hair further right. A
+    hundredth decides which quarter of a device pixel a glyph is drawn on, so a flowed row of
+    pills (the name shortcuts) drifts off the web's picture unless it is laid out the same way.
+    Flutter also rounds a laid-out text's width up to a whole pixel; `CssText` uses the exact one.
+  - Chrome rounds the left, top, right and bottom of every box to whole device pixels when it paints
+    it, and keeps the fractions for layout and for the text inside. `SnappedDecoratedBox` (used by
+    `PressSurface`) paints a box that way, and `snappedColumns` lays out equal columns (the keypad's
+    102.67px keys) with their edges on whole pixels, the text staying where the unrounded box puts it.
+    Without it every fractional edge is anti-aliased across two pixels and counts as a difference.
+  - A `Container` insets its child by its border; a `DecoratedBox` does not (a 2px border is padding
+    in the web's box model, so add it).
+  - A box that holds another focusable (a transaction row and its badge) is focused while the one
+    inside is, but only the one that has the primary focus rings. And a ring that comes and goes must not
+    change the tree around its child (it would rebuild the child's state): `RingBox` keeps one tree.
+  - A row's 44px badge sits in a 20px line (`-my-3`): `OutsetBox` takes the room back, and
+    `HitTargetBoost` lets a touch on the part outside the line still reach the badge, as a browser does
+    for an overflowing element.
+- **Stories that are not pictures of the component.** A few stories' end states are not what the
+  component draws on its own:
+  - `ui-toast--*`: Playwright takes the picture with CSS animations at their end, so the time bar is
+    gone and the toast is still there. The app's host here lives for an hour (`dismissAfter`) while its
+    bar runs its real eight seconds.
+  - `ui-bottombar--*`: the web has no 🎤, so the pairs hide it (`showMic: false`);
+    `test/ui/bottom_bar_golden_test.dart` has its own pictures of the bar with the 🎤, to review by eye.
+  - `ui-namefield--two-rows-at-most` has no pair: `useRowLimit` measures before the fonts have loaded,
+    so the story shows six shortcuts where the fonts' widths show seven.
+  - A story's click leaves the focus on what it clicked, which Chrome rings; `act:` presses Tab to the
+    same control.
 - **Pictures are the Mac's.** Text and shadows rasterise differently on Linux. The parity goldens
   are tagged `golden`, so CI skips them (`dart_test.yaml`), as it skips the other goldens.
