@@ -125,7 +125,7 @@ flutter test integration_test -d emulator-5554 \
   --dart-define=MAILPIT_URL=http://10.0.2.2:8025
 ```
 
-`apps/mobile/scripts/run-integration-tests.sh` runs every file below in turn on a running emulator (it refuses anything that is not `emulator-*`), installing the app first in the notification-permission state each file needs; CI's `mobile-emulator` job runs it. To pin the dev stack's clock as CI does, start it with `E2E_NOW=2026-10-21T15:00:00Z docker compose up -d`.
+`apps/mobile/scripts/run-integration-tests.sh` runs every file below in turn on a running emulator (it refuses anything that is not `emulator-*`), installing the app first in the notification-permission state each file needs; CI's `mobile-emulator` job runs it. Start the dev stack on the real clock (no `E2E_NOW`), as CI does: the emulator's clock is real, and every test makes its own data from the device's today.
 
 They read sign-in codes and links from Mailpit, as the web's e2e suite does. The API allows 5 code
 requests per 10 minutes from one address, and every run from the emulator comes from the same one:

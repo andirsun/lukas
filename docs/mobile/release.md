@@ -89,7 +89,7 @@ Install on a phone: `adb install apps/mobile/dist/1.0.0/lukitas-1.0.0-arm64-v8a.
 `.github/workflows/ci.yml`, on pull requests that touch `apps/mobile` or what its generated code depends on (the `mobile-changes` filter). The jobs `mobile` and `mobile-emulator` are not required checks yet.
 
 - `mobile`: `flutter analyze`; `flutter test --exclude-tags golden`; the generated-code checks; `check-no-google.sh` and its probes; a debug build; the Kotlin unit tests (`./gradlew :app:testDebugUnitTest`, Robolectric); `test-release.sh`; `check-fastlane.sh`; a release build with `check-permissions.sh` and `check-licenses.sh`; and finally `release.sh` itself with a throwaway key made on the runner.
-- `mobile-emulator`: the dev stack from compose (clock pinned with `E2E_NOW`, as in the `e2e` job) and `scripts/run-integration-tests.sh` on an x86_64 API 36 emulator (`reactivecircus/android-emulator-runner`, AOSP image, KVM), with the AVD and Gradle caches kept between runs.
+- `mobile-emulator`: the dev stack from compose, on the real clock (no `E2E_NOW`: the emulator's clock is real and every test makes its own data from the device's today) and `scripts/run-integration-tests.sh` on an x86_64 API 36 emulator (`reactivecircus/android-emulator-runner`, AOSP image, KVM), with the AVD and Gradle caches kept between runs.
 - Signed releases are never built in CI: that stays a later decision.
 
 The integration tests locally: see "Integration tests against the dev stack" in `setup.md`, or `apps/mobile/scripts/run-integration-tests.sh` once an emulator is running.

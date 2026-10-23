@@ -254,9 +254,8 @@ jobs:
     concurrency:
       group: mobile-emulator-${{ github.ref }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-    env:
-      # The suite's "now", as in the e2e job: the API's clock is pinned to it.
-      E2E_NOW: "2026-10-21T15:00:00Z"
+    # No E2E_NOW here, unlike the e2e job: the emulator's clock is the real one, and every test
+    # creates its own data from the device's today, so the API must run on the real clock too.
     defaults:
       run:
         working-directory: apps/mobile
@@ -288,8 +287,8 @@ jobs:
             ~/.gradle/wrapper
           key: gradle-emulator-${{ runner.os }}-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties', 'apps/mobile/pubspec.lock') }}
           restore-keys: gradle-emulator-${{ runner.os }}-
-      # The dev stack, as in the e2e job: Postgres, Mailpit and the API (which applies the
-      # migrations on start), with the development defaults and the pinned clock. The emulator
+      # The dev stack, as in the e2e job but on the real clock: Postgres, Mailpit and the API
+      # (which applies the migrations on start), with the development defaults. The emulator
       # reaches it at 10.0.2.2.
       - name: Start the dev stack
         working-directory: .
@@ -297,9 +296,9 @@ jobs:
           cp .env.example .env
           docker compose up -d --build
           for attempt in $(seq 1 60); do
-            # The API answers with the pinned clock, and Mailpit is up.
-            if curl -fsS http://localhost:3000/api/health 2>/dev/null | grep -qF "${E2E_NOW%Z}" && curl -fsS http://localhost:8025/api/v1/info >/dev/null 2>&1; then
-              echo "The dev stack is up, with its clock at $E2E_NOW"
+            # The API answers, and Mailpit is up.
+            if curl -fsS http://localhost:3000/api/health >/dev/null 2>&1 && curl -fsS http://localhost:8025/api/v1/info >/dev/null 2>&1; then
+              echo "The dev stack is up"
               exit 0
             fi
             sleep 2
