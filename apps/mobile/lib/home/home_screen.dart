@@ -363,11 +363,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final shown = home.shown;
     final lukitas = shown == null ? null : _lukitas(l10n, home, shown, today);
     final entries = shown == null ? const <_Entry>[] : _entries(home, shown, l10n, today);
-    final room = ShellRoom.of(context);
     final colors = context.lkColors;
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Read here, below the `AppShell` that provides it: 112px plus the system's bottom inset.
+        final room = ShellRoom.of(context);
         final inset = math.max(
           LukitasTokens.space4,
           (constraints.maxWidth - _maxContentWidth) / 2 + LukitasTokens.space4,

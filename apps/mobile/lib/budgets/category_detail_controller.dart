@@ -196,14 +196,15 @@ class CategoryDetailController extends Notifier<CategoryDetailState> {
     final month = state.month;
     final cursor = state.nextCursor;
     if (state.items == null || cursor == null || state.loadingMore) return;
+    // The load this page belongs to: a month chosen (or a reload) meanwhile makes it an old answer.
+    final seq = _loadSeq;
     _set(state.copyWith(loadingMore: true));
     try {
       final page = await _watch(_repo.categoryTransactions(month, categoryId, cursor: cursor));
-      // Another month was chosen while the page was on its way: its rows are that month's.
-      if (!_alive || state.month != month || state.items == null) {
-        if (_alive) _set(state.copyWith(loadingMore: false));
-        return;
-      }
+      // Another month was chosen, or the list was loaded again, while the page was on its way: its
+      // rows and its cursor are an older list's, never to be put under this one. (That load
+      // already cleared `loadingMore`.)
+      if (!_alive || seq != _loadSeq || state.items == null) return;
       final known = {for (final tx in state.items!) tx.id};
       _set(
         state.copyWith(
@@ -213,7 +214,7 @@ class CategoryDetailController extends Notifier<CategoryDetailState> {
         ),
       );
     } on Object catch (error) {
-      if (_alive) _set(state.copyWith(loadingMore: false));
+      if (_alive && seq == _loadSeq) _set(state.copyWith(loadingMore: false));
       throw _failure(error);
     }
   }
@@ -255,6 +256,24 @@ class CategoryDetailController extends Notifier<CategoryDetailState> {
     _set(state.copyWith(restored: {...state.restored}..remove(id)));
   }
 
+  /// Puts [tx] among the rows when it belongs to the month on screen (replacing its earlier
+  /// version), or takes it off when it does not: home's `_place` rule. A page boundary hides what
+  /// is below it: a row older than the last one loaded would sit at the end of a list that has more
+  /// to come, so it waits for "Ver más movimientos".
+  void _place(Transaction tx) {
+    final items = state.items;
+    if (items == null) return;
+    final rest = [
+      for (final t in items)
+        if (t.id != tx.id) t,
+    ];
+    final here = tx.date.startsWith(state.month);
+    final last = rest.isEmpty ? null : rest.last;
+    final beyond =
+        state.nextCursor != null && last != null && _newestFirst(tx, last) > 0 && tx.id != last.id;
+    _replaceItems(here && !beyond ? ([...rest, tx]..sort(_newestFirst)) : rest);
+  }
+
   /// Home catches up with a change made here to a movement.
   void _tellHome() => unawaited(ref.read(homeProvider.notifier).refresh());
 
@@ -271,9 +290,8 @@ class CategoryDetailController extends Notifier<CategoryDetailState> {
     try {
       await _home.delete(tx.id);
     } on Object catch (error) {
-      if (_alive && state.month == month && state.items != null) {
-        _replaceItems([...state.items!.where((t) => t.id != tx.id), tx]..sort(_newestFirst));
-      }
+      // Back where it was, unless another month is on screen by now (its rule: `_place`).
+      if (_alive && state.items != null && !state.items!.any((t) => t.id == tx.id)) _place(tx);
       throw _failure(error);
     }
     _tellHome();
@@ -289,14 +307,11 @@ class CategoryDetailController extends Notifier<CategoryDetailState> {
       throw _failure(error);
     }
     if (!_alive) return;
-    // It shows only where it belongs: Deshacer outlives a change of month.
+    // The server has it back. It shows only where it belongs: Deshacer outlives a change of month,
+    // and a September row never appears in August's list (it is there when September is).
     if (state.items != null && back.date.startsWith(state.month)) {
-      _set(
-        state.copyWith(
-          restored: {...state.restored, back.id},
-          items: [...state.items!.where((t) => t.id != back.id), back]..sort(_newestFirst),
-        ),
-      );
+      _set(state.copyWith(restored: {...state.restored, back.id}));
+      _place(back);
     }
     _tellHome();
     unawaited(_refreshSummary(state.month));

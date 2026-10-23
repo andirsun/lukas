@@ -117,6 +117,12 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
     final l10n = AppLocalizations.of(context);
     final home = ref.watch(homeProvider);
     final data = home.data;
+    // Whatever changes the month's movements or figures (a movement added from the ＋, the 🎤 or
+    // the empty month's button, an edit, a Deshacer of either) goes through home: the detail's
+    // list and bar catch up, as the web's queries do when they are invalidated.
+    ref.listen(homeProvider.select((s) => (s.data?.summary, s.data?.items)), (previous, _) {
+      if (previous != null && _started) unawaited(_controller.refresh());
+    });
 
     final Widget body;
     if (data == null) {
@@ -288,11 +294,8 @@ class _DetailViewState extends ConsumerState<_DetailView> {
   String _failureMessage(AppLocalizations l10n, HomeFailure failure) =>
       failure.offline ? l10n.errorNetwork : l10n.errorGeneric;
 
-  Future<void> _edit(Transaction tx) async {
-    await openEditSheet(context, tx);
-    // The sheet saved (or not): this month's rows and figures catch up.
-    if (mounted) unawaited(_controller.refresh());
-  }
+  /// The edit sheet saves through home, which the detail follows (see the screen's `ref.listen`).
+  Future<void> _edit(Transaction tx) => openEditSheet(context, tx);
 
   Future<void> _delete(Transaction tx) async {
     final messenger = ScaffoldMessenger.of(context);

@@ -46,6 +46,9 @@ class FakeHomeRepository implements HomeRepository {
 
   final calls = <String>[];
 
+  /// Runs as a summary is asked, before it is computed (a server whose lines follow its data).
+  void Function()? beforeSummary;
+
   /// While set, every [summary] answer waits for it (a slow connection).
   Completer<void>? holdSummary;
 
@@ -78,6 +81,7 @@ class FakeHomeRepository implements HomeRepository {
   @override
   Future<Summary> summary(String month) async {
     _call('summary $month');
+    beforeSummary?.call();
     final gate = summaryGates.isEmpty ? null : summaryGates.removeAt(0);
     final spent = items
         .where(

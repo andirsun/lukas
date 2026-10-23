@@ -14,6 +14,8 @@ import '../home/fixtures.dart';
 class FakeBudgetsRepository implements BudgetsRepository {
   FakeBudgetsRepository(this.home, {Map<String, int> budgets = const {}}) {
     this.budgets.addAll(budgets);
+    // The summary's lines follow the movements, as the server computes them.
+    home.beforeSummary = publish;
     publish();
   }
 
@@ -91,8 +93,11 @@ class FakeBudgetsRepository implements BudgetsRepository {
         .where((t) => t.date.startsWith(month) && t.categoryId == categoryId)
         .toList();
     final start = cursor == null ? 0 : int.parse(cursor);
+    // The answer is made when the request arrives; a next page can be held (a slow connection).
     final end = (start + home.pageSize).clamp(0, live.length);
-    return TransactionsPage(live.sublist(start, end), end < live.length ? '$end' : null);
+    final page = TransactionsPage(live.sublist(start, end), end < live.length ? '$end' : null);
+    if (cursor != null) await home.holdPage?.future;
+    return page;
   }
 
   @override
