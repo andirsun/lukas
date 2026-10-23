@@ -17,19 +17,24 @@ import java.time.ZoneId
  *
  *  * "Hoy vence…": a one-time job aimed at the next 9:00 in the profile's zone; it schedules the
  *    next one when it ends ([DueWorker]). WorkManager may run it a few minutes late.
- *  * The guest warning: a one-time job 45 days ahead, replaced each time the app opens on a guest
+ *  * The guest warning: a one-time job 44 days ahead, replaced each time the app opens on a guest
  *    account and the server accepts a request from it (lib/notices/notice_sync.dart), so it only
- *    ever fires after 45 days without that.
+ *    ever fires after 44 days without that.
  *
  * "Hoy vence…" waits for a network, since it asks the server before saying anything. The guest
- * warning asks nothing, so it waits for none: a phone offline on day 45 is warned all the same.
+ * warning asks nothing, so it waits for none: a phone offline on day 44 is warned all the same.
  */
 object NoticeScheduler {
     const val DUE = "lukitas.notice.due"
     const val GUEST = "lukitas.notice.guest"
 
-    /** The server deletes an inactive guest at 60 days (apps/api/src/services/guest-cleanup.ts). */
-    val GUEST_AFTER: Duration = Duration.ofDays(45)
+    /**
+     * The server deletes an inactive guest at 60 days (apps/api/src/services/guest-cleanup.ts), but
+     * counts activity to the day: a session slides at most once a day, so the last accepted request
+     * may count up to a day early there. 44 days keeps "en 15 días" from ever promising more than
+     * is left.
+     */
+    val GUEST_AFTER: Duration = Duration.ofDays(44)
 
     private val network = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
@@ -71,7 +76,7 @@ object NoticeScheduler {
         removePosted(context, NoticePoster.DUE_ID)
     }
 
-    /** Sets the guest warning 45 days from now, in place of any earlier one. */
+    /** Sets the guest warning 44 days from now, in place of any earlier one. */
     fun scheduleGuest(context: Context, language: String?) {
         val settings = NoticeSettings(context)
         settings.guestEnabled = true

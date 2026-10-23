@@ -154,7 +154,7 @@ A guest may register a passkey on their anonymous user (the existing passkey rou
 - A daily job in the API process takes a Postgres advisory lock so only one instance runs it.
 - It deletes anonymous users with no session activity for 60 days, with all their data (the existing cascade).
 - Users with an email are never auto-deleted.
-- The 45-day warning is a local notice on the phone (§7).
+- The warning is a local notice on the phone (§7), 44 days after the last request the server accepted: the server counts activity to the day, so 44 keeps "15 días" from ever being fewer.
 - "Activity" is the later of the latest session `updatedAt` and `user.lastActiveAt`, which is stamped when a guest's session is created, refreshed or ended. A guest with a passkey who signs out therefore keeps 60 days from the sign-out. Background requests never count.
 
 ### 4.5 Android App Links and passkeys
@@ -326,7 +326,7 @@ Both are scheduled on the device with WorkManager or AlarmManager. There's no se
    - At 9:00 local time, one notice groups the recurring payments still pending today, e.g. "Hoy vencen Arriendo y Spotify".
    - Tapping it opens home with them in view.
    - On by default, with a switch in settings.
-2. **The guest warning.** If the app isn't opened for 45 days on a guest account: "Tus datos se borrarán en 15 días si no agregas tu correo".
+2. **The guest warning.** If the app isn't opened for 44 days on a guest account (the server counts activity to the day, so the deletion is then still at least 15 days away): "Tus datos se borrarán en 15 días si no agregas tu correo".
 
 There are no other notices: no summaries, no "¿ya anotaste hoy?", no promotions. The notification permission (Android 13+) is asked only the first time there's something to announce, with one sentence on why. Server-originated push, if ever needed, uses UnifiedPush (ntfy or another distributor), never FCM.
 

@@ -90,11 +90,14 @@ class NoticeSchedulerTest {
     }
 
     @Test
-    fun `the guest warning is a one-time job 45 days ahead, replaced at every app open`() {
+    fun `the guest warning is a one-time job 44 days ahead, replaced at every app open`() {
         NoticeScheduler.scheduleGuest(context, "es")
         val first = active(NoticeScheduler.GUEST).single()
-        assertEquals(Duration.ofDays(45).toMillis(), first.initialDelayMillis)
-        // It asks the server nothing, so it waits for no network: a phone offline on day 45 is warned.
+        // 44, not 45: the server counts activity to the day (a session slides at most once a day), so
+        // the last accepted request may count a day early there. At 44 the deletion is still at least
+        // 15 days away when "Tus datos se borrarán en 15 días" shows.
+        assertEquals(Duration.ofDays(44).toMillis(), first.initialDelayMillis)
+        // It asks the server nothing, so it waits for no network: a phone offline on day 44 is warned.
         assertEquals(NetworkType.NOT_REQUIRED, first.constraints.requiredNetworkType)
         assertTrue(NoticeSettings(context).guestEnabled)
 

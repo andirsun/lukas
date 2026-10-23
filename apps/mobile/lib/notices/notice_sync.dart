@@ -18,7 +18,7 @@ import 'notice_prompt.dart';
 ///    allowed (a guest included); otherwise it is cancelled, so the phone never wakes up, nor
 ///    asks the server anything, for a notice that cannot be posted. Offline, with nothing known,
 ///    the job is left as it is.
-///  * **The guest warning** is set 45 days ahead, again at every opening of the app on a guest
+///  * **The guest warning** is set 44 days ahead, again at every opening of the app on a guest
 ///    account **that the server accepted a request from** (that is when its own 60-day clock
 ///    restarts; an opening offline leaves the job as it was), and cancelled when the account
 ///    stops being a guest (a claimed email, a sign-out) or its switch goes off.
@@ -101,7 +101,7 @@ class NoticeSync with WidgetsBindingObserver {
       }
     }
     if (guestRelevant) {
-      // The 45 days restart only when the server accepted a request: an opening that never
+      // The 44 days restart only when the server accepted a request: an opening that never
       // reached it (offline) must not push the warning past the 60 days it counts.
       if (fresh != null) await platform.scheduleGuest(language: language);
     } else {

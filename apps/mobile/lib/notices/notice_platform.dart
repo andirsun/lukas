@@ -25,7 +25,7 @@ abstract interface class NoticePlatform {
 
   Future<void> cancelDue();
 
-  /// Sets the guest warning 45 days from now, in place of any earlier one.
+  /// Sets the guest warning 44 days from now, in place of any earlier one.
   Future<void> scheduleGuest({required String language});
 
   Future<void> cancelGuest();

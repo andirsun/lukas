@@ -449,7 +449,7 @@ class NoticeWorkersTest {
     // --- The guest warning ---------------------------------------------------------------------
 
     @Test
-    fun `a guest not opening the app for 45 days gets the warning, with no call to the server`() {
+    fun `a guest not opening the app for 44 days gets the warning, with no call to the server`() {
         runGuest()
         assertEquals("Tus datos se borrarán en 15 días si no agregas tu correo", text(posted().single()))
         // A request would count as activity and move the deletion 60 days on: it makes none.

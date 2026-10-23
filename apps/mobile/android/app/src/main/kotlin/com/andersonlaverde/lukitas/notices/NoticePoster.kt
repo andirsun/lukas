@@ -29,7 +29,7 @@ class NoticePoster(private val context: Context) {
         category = Notification.CATEGORY_REMINDER,
     )
 
-    /** The 45-day warning; false when notifications are not allowed. */
+    /** The guest warning ([NoticeScheduler.GUEST_AFTER]); false when notifications are not allowed. */
     fun postGuestWarning(language: String?): Boolean = post(
         channel = NoticeChannels.GUEST,
         id = GUEST_ID,

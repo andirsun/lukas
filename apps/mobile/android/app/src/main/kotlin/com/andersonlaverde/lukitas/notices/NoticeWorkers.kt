@@ -139,7 +139,7 @@ class DueWorker(context: Context, params: WorkerParameters) : CoroutineWorker(co
 }
 
 /**
- * The guest warning (spec section 7.2): it fires 45 days after the app was last opened on a guest
+ * The guest warning (spec section 7.2): it fires 44 days after the app was last opened on a guest
  * account (the app replaces the job at every open) and posts "Tus datos se borrarán en 15 días si
  * no agregas tu correo": the server deletes an inactive guest at 60 days.
  *
