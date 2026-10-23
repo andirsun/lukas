@@ -217,6 +217,32 @@ void main() {
       expect(env.platform.callsNamed('scheduleGuest'), ['scheduleGuest es', 'scheduleGuest es']);
     });
 
+    testWidgets('the 45 days restart only after the server accepted a request: an offline opening leaves the job alone', (
+      tester,
+    ) async {
+      // Offline at the start: the server's own 60-day clock did not move, so neither does ours.
+      final env = await _pump(
+        tester,
+        guest: true,
+        backend: FakeNoticeBackend()..failure = Exception('offline'),
+      );
+      expect(env.platform.callsNamed('scheduleGuest'), isEmpty);
+      expect(env.platform.callsNamed('cancelGuest'), isEmpty);
+
+      // Back online, the next opening is accepted: now it restarts.
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await env.idle();
+      expect(env.platform.callsNamed('scheduleGuest'), ['scheduleGuest es']);
+    });
+
+    testWidgets('an opening the server accepted restarts the 45 days', (tester) async {
+      final backend = FakeNoticeBackend();
+      final env = await _pump(tester, guest: true, backend: backend);
+      expect(backend.calls, greaterThan(0));
+      expect(env.platform.callsNamed('scheduleGuest'), ['scheduleGuest es']);
+    });
+
     testWidgets('an account with an email never gets it', (tester) async {
       final env = await _pump(tester);
       expect(env.platform.callsNamed('scheduleGuest'), isEmpty);

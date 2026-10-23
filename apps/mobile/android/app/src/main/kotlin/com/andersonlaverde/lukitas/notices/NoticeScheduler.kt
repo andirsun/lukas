@@ -17,9 +17,11 @@ import java.time.ZoneId
  *  * "Hoy vence…": a one-time job aimed at the next 9:00 in the profile's zone; it schedules the
  *    next one when it ends ([DueWorker]). WorkManager may run it a few minutes late.
  *  * The guest warning: a one-time job 45 days ahead, replaced each time the app opens on a guest
- *    account, so it only ever fires after 45 days without opening it.
+ *    account and the server accepts a request from it (lib/notices/notice_sync.dart), so it only
+ *    ever fires after 45 days without that.
  *
- * Both wait for a network, since both ask the server before saying anything.
+ * "Hoy vence…" waits for a network, since it asks the server before saying anything. The guest
+ * warning asks nothing, so it waits for none: a phone offline on day 45 is warned all the same.
  */
 object NoticeScheduler {
     const val DUE = "lukitas.notice.due"
@@ -72,7 +74,6 @@ object NoticeScheduler {
         settings.language = language
         val request = OneTimeWorkRequestBuilder<GuestWorker>()
             .setInitialDelay(GUEST_AFTER)
-            .setConstraints(network)
             .build()
         WorkManager.getInstance(context).enqueueUniqueWork(GUEST, ExistingWorkPolicy.REPLACE, request)
     }

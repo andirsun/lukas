@@ -19,7 +19,8 @@ import 'notice_prompt.dart';
 ///    asks the server anything, for a notice that cannot be posted. Offline, with nothing known,
 ///    the job is left as it is.
 ///  * **The guest warning** is set 45 days ahead, again at every opening of the app on a guest
-///    account (so it only fires after 45 days without opening it), and cancelled when the account
+///    account **that the server accepted a request from** (that is when its own 60-day clock
+///    restarts; an opening offline leaves the job as it was), and cancelled when the account
 ///    stops being a guest (a claimed email, a sign-out) or its switch goes off.
 ///  * **The notification permission** (Android 13+) is asked in the app, with one sentence on why,
 ///    the first time a notice is relevant while the app is open: a recurring payment and the due
@@ -89,23 +90,27 @@ class NoticeSync with WidgetsBindingObserver {
     final language = widgetLanguage(_ref);
 
     final guestRelevant = guest && guestOn;
+    // One foreground request per pass: the zone and the recurring payments are the server's word,
+    // and an answer is also the proof that the server saw the person (its own 60-day clock moved).
+    NoticeFacts? fresh;
+    if (dueOn || guestRelevant) {
+      try {
+        fresh = _facts = await _ref.read(noticeBackendProvider).facts();
+      } on Object {
+        // Offline or a server error: nothing moved on the server, and nothing moves here.
+      }
+    }
     if (guestRelevant) {
-      await platform.scheduleGuest(language: language);
+      // The 45 days restart only when the server accepted a request: an opening that never
+      // reached it (offline) must not push the warning past the 60 days it counts.
+      if (fresh != null) await platform.scheduleGuest(language: language);
     } else {
       await platform.cancelGuest();
     }
 
     var recurringRelevant = false;
     if (dueOn) {
-      // The zone and the recurring payments are the server's word.
-      var facts = _facts;
-      if (facts == null || !facts.hasRecurring) {
-        try {
-          facts = _facts = await _ref.read(noticeBackendProvider).facts();
-        } on Object {
-          // Keep the earlier facts, if any.
-        }
-      }
+      final facts = fresh ?? _facts;
       if (facts == null) {
         // Nothing known (offline): the job stays as it is.
       } else if (!facts.hasRecurring) {

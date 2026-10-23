@@ -92,7 +92,8 @@ class NoticeSchedulerTest {
         NoticeScheduler.scheduleGuest(context, "es")
         val first = active(NoticeScheduler.GUEST).single()
         assertEquals(Duration.ofDays(45).toMillis(), first.initialDelayMillis)
-        assertEquals(NetworkType.CONNECTED, first.constraints.requiredNetworkType)
+        // It asks the server nothing, so it waits for no network: a phone offline on day 45 is warned.
+        assertEquals(NetworkType.NOT_REQUIRED, first.constraints.requiredNetworkType)
         assertTrue(NoticeSettings(context).guestEnabled)
 
         NoticeScheduler.scheduleGuest(context, "es")
