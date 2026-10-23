@@ -35,7 +35,6 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
-import com.andersonlaverde.lukitas.MainActivity
 import com.andersonlaverde.lukitas.R
 import com.andersonlaverde.lukitas.launch.LaunchLinks
 import es.antonborri.home_widget.HomeWidgetGlanceState
@@ -81,9 +80,14 @@ private fun toneColor(tone: Tone): String = when (tone) {
     Tone.OVER -> "over"
 }
 
-/** Opens the app on home (a tap anywhere but the buttons). */
+/**
+ * Opens the app on home (a tap anywhere but the buttons: the figures, the face, the empty areas).
+ * It is the app's own `lukitas://home` link, like the buttons': a plain `actionStartActivity<MainActivity>()`
+ * carries Glance's `glance-action:/CALLBACK?...` as data, which Flutter's router took for a route
+ * ("Page Not Found") whenever the app was already running.
+ */
 @Composable
-private fun openApp(): Action = actionStartActivity<MainActivity>()
+private fun openApp(): Action = linkAction(LaunchLinks.HOME)
 
 @Composable
 private fun linkAction(link: android.net.Uri): Action =

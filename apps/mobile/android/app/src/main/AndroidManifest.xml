@@ -89,6 +89,8 @@
                 <data android:scheme="lukitas" android:host="due"/>
                 <!-- The guest warning (notices/NoticePoster.kt): "Guarda tu progreso". -->
                 <data android:scheme="lukitas" android:host="progress"/>
+                <!-- A tap on the widget itself: home. -->
+                <data android:scheme="lukitas" android:host="home"/>
             </intent-filter>
         </activity-alias>
         <!-- The home-screen widget, small (2×1) and medium (4×2), drawn with Jetpack Glance

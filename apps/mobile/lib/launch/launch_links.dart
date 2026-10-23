@@ -14,8 +14,9 @@ import '../router.dart';
 /// sheet with the keypad ready) and its 🎤, also the Quick Settings tile's (`lukitas://capture`,
 /// quick capture listening). `lukitas://due` is the "Hoy vence…" notice's (spec section 7.2): home,
 /// where the payments due today are listed first. `lukitas://progress` is the guest warning's:
-/// "Guarda tu progreso", over home.
-enum LaunchAction { add, capture, due, progress }
+/// "Guarda tu progreso", over home. `lukitas://home` is a tap on the widget itself (its figures, its
+/// face, any area but the buttons): home.
+enum LaunchAction { add, capture, due, progress, home }
 
 /// The action [link] asks for, or null for any other link.
 LaunchAction? launchActionOf(String? link) {
@@ -27,6 +28,7 @@ LaunchAction? launchActionOf(String? link) {
     'capture' => LaunchAction.capture,
     'due' => LaunchAction.due,
     'progress' => LaunchAction.progress,
+    'home' => LaunchAction.home,
     _ => null,
   };
 }
@@ -120,6 +122,7 @@ class LaunchLinks {
       case LaunchAction.capture:
         unawaited(openCapture(context, listen: true));
       case LaunchAction.due:
+      case LaunchAction.home:
         // Home is the destination: today's payments sit at the top of its list. A home that was
         // already loaded is brought up to date, so the payment that fell due overnight is there.
         if (_ref.exists(homeProvider)) unawaited(_ref.read(homeProvider.notifier).refresh());

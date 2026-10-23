@@ -39,6 +39,9 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.listen(sessionProvider, (_, next) => session.value = next);
   final router = GoRouter(
     refreshListenable: session,
+    // A location no route has (an address Android hands over that is not one of the app's, such as
+    // the `glance-action:/CALLBACK?...` a tap on the widget carried) is home, never "Page Not Found".
+    onException: (context, state, router) => router.go('/'),
     redirect: (context, state) => sessionRedirect(session.value, state.uri),
     routes: [
       GoRoute(

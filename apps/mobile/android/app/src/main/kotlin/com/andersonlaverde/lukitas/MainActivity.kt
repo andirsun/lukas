@@ -54,18 +54,24 @@ class MainActivity : FlutterActivity() {
     }
 
     /**
-     * Keeps [intent]'s `lukitas://` link for Dart (when [act]) and strips it from the intent. A
-     * `lukitas://` link that did not come through the app's own entry (another app starting this
-     * exported activity with one) is stripped too, and only opens the app. So is a web link for a
-     * host other than the configured server's ([LaunchLinks.isForeignWebLink]).
+     * Keeps [intent]'s `lukitas://` link for Dart (when [act]) and strips it from the intent. Flutter
+     * reads an intent's data as a route to open, so nothing but the sign-in email's magic link may
+     * stay on it ([LaunchLinks.routerMayRead]): a `lukitas://` link (taken here, or one that did not
+     * come through the app's own entry and only opens the app), a web link for a host other than the
+     * configured server's, and the `glance-action:/CALLBACK?...` Glance puts on a tap on the widget
+     * itself are all stripped.
      */
     private fun takeLink(intent: Intent?, act: Boolean): Boolean {
         val link = LaunchLinks.linkOf(intent)
-        if (intent?.data?.scheme == LaunchLinks.SCHEME) intent.data = null
-        // Read only for a web link (a magic link, rarely): the setting's decrypt stays off every
-        // other start.
-        if (LaunchLinks.isWebLink(intent) && LaunchLinks.isForeignWebLink(intent, configuredServerHost())) {
-            intent?.data = null
+        if (intent?.data != null) {
+            // The server's host is read (a decrypt) only for a web link, rarely: every other start
+            // keeps the setting untouched.
+            val host = if (LaunchLinks.isWebLink(intent) && intent.data?.scheme in setOf("http", "https")) {
+                configuredServerHost()
+            } else {
+                null
+            }
+            if (!LaunchLinks.routerMayRead(intent, host)) intent.data = null
         }
         if (link == null || !act) return false
         pendingLink = link
@@ -133,10 +139,32 @@ class MainActivity : FlutterActivity() {
                         startActivity(intent)
                         result.success(null)
                     }
-                    // What the widget's ＋ ("add") and 🎤 ("capture") start, exactly.
+                    // What the widget's ＋ ("add"), 🎤 ("capture") and body ("home") start, exactly.
                     "openWidgetButton" -> {
-                        val link = if (call.arguments == "add") LaunchLinks.ADD else LaunchLinks.CAPTURE
+                        val link = when (call.arguments) {
+                            "add" -> LaunchLinks.ADD
+                            "home" -> LaunchLinks.HOME
+                            else -> LaunchLinks.CAPTURE
+                        }
                         startActivity(LaunchLinks.intent(this, link))
+                        result.success(null)
+                    }
+                    // What the widget's body started before it was a link (the shape Glance's own
+                    // `actionStartActivity<MainActivity>()` gave it, logged by the emulator): this
+                    // activity, `glance-action:/CALLBACK?...` as data and no action. Flutter's
+                    // router read it as a route and showed "Page Not Found" with the app running.
+                    "openGlanceTap" -> {
+                        startActivity(
+                            Intent()
+                                .setClass(this, MainActivity::class.java)
+                                .setData(
+                                    Uri.parse(
+                                        "glance-action:/CALLBACK?appWidgetId=5&viewId=2131296449" +
+                                            "&viewSize=110.09524.dp%20x%2040.0.dp&extraData=0",
+                                    ),
+                                )
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
                         result.success(null)
                     }
                     // What another app can do: the exported launcher activity, explicitly, on a link.

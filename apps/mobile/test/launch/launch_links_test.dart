@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/add/add_sheet.dart';
 import 'package:lukitas/capture/capture_sheet.dart';
@@ -44,6 +45,7 @@ void main() {
       expect(launchActionOf('lukitas://capture/'), LaunchAction.capture);
       expect(launchActionOf('lukitas://due'), LaunchAction.due);
       expect(launchActionOf('lukitas://progress'), LaunchAction.progress);
+      expect(launchActionOf('lukitas://home'), LaunchAction.home);
       expect(launchActionOf('lukitas://settings'), isNull);
       expect(launchActionOf('https://add'), isNull);
       expect(launchActionOf('https://app-lukas.andersonlaverde.com/auth/verify?code=1'), isNull);
@@ -277,5 +279,66 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(AddSheet), findsNothing);
     expect(find.byType(CaptureSheet), findsNothing);
+  });
+
+  group('a tap on the widget itself (not its buttons)', () {
+    // What Glance puts on the intent of a body tap: `dat=glance-action:/CALLBACK?...`, found on the
+    // emulator. Flutter hands an intent's data to the router as a location when deep linking is on.
+    const glanceTap =
+        'glance-action:/CALLBACK?appWidgetId=5&viewId=2131296449&viewSize=110.09524.dp%20x%2040.0.dp&extraData=0';
+
+    testWidgets('lukitas://home opens home from any screen, with no sheet over it', (tester) async {
+      final links = FakeLaunchLinks();
+      final env = await pumpSettingsApp(
+        tester,
+        location: '/settings',
+        overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+      );
+      links.open('lukitas://home');
+      await tester.pumpAndSettle();
+      expect(env.router.state.uri.path, '/');
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byType(AddSheet), findsNothing);
+    });
+
+    testWidgets('lukitas://home brings a home that was already loaded up to date', (tester) async {
+      final links = FakeLaunchLinks();
+      final env = await pumpSettingsApp(
+        tester,
+        overrides: [launchLinkSourceProvider.overrideWithValue(links)],
+      );
+      final repo = env.container.read(homeRepositoryProvider) as FakeHomeRepository;
+      final before = repo.calls.where((c) => c.startsWith('summary')).length;
+      links.open('lukitas://home');
+      await tester.pumpAndSettle();
+      expect(repo.calls.where((c) => c.startsWith('summary')).length, before + 1);
+    });
+
+    testWidgets('a location no route matches lands on home, not on "Page Not Found"', (
+      tester,
+    ) async {
+      final env = await pumpSettingsApp(tester, location: '/settings');
+      // The engine's `pushRouteInformation`, as the running activity's onNewIntent sends it.
+      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(
+          const MethodCall('pushRouteInformation', {'location': glanceTap}),
+        ),
+        (_) {},
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(env.router.state.uri.path, '/');
+      expect(find.textContaining('glance-action'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the same at a cold start: the first route is home', (tester) async {
+      tester.binding.platformDispatcher.defaultRouteNameTestValue = glanceTap;
+      addTearDown(tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
+      await pumpSettingsApp(tester);
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.textContaining('glance-action'), findsNothing);
+    });
   });
 }

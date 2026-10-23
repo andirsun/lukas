@@ -2,6 +2,7 @@ package com.andersonlaverde.lukitas.widget
 
 import android.content.Context
 import androidx.glance.appwidget.testing.unit.assertHasStartActivityClickAction
+import androidx.glance.appwidget.testing.unit.hasStartActivityClickAction
 import androidx.glance.appwidget.testing.unit.isLinearProgressIndicator
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasContentDescription
@@ -73,6 +74,25 @@ class WidgetContentTest {
             onNode(hasContentDescription("Decir o escribir un gasto"))
                 .assertHasStartActivityClickAction(LaunchLinks.intent(context, LaunchLinks.CAPTURE))
         }
+
+    @Test
+    fun `a tap on the widget itself, on any of its figures, opens home`() {
+        val home = LaunchLinks.intent(context, LaunchLinks.HOME)
+        val states = listOf(snapshot(), WidgetSnapshot(signedIn = false, locale = "es"))
+        for (draw in listOf<@androidx.compose.runtime.Composable (WidgetModel) -> Unit>(
+            { SmallWidgetContent(it) },
+            { MediumWidgetContent(it) },
+        )) {
+            for (state in states) {
+                runGlanceAppWidgetUnitTest {
+                    setContext(context)
+                    provideComposable { draw(model(state)) }
+                    // The body: its outermost box is the one that takes the tap.
+                    onNode(hasStartActivityClickAction(home)).assertExists()
+                }
+            }
+        }
+    }
 
     @Test
     fun `without budgets - Gastado este mes, what was spent, no progress`() =

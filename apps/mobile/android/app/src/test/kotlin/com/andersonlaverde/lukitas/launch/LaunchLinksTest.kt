@@ -98,4 +98,40 @@ class LaunchLinksTest {
         assertEquals("lukitas.example.org", LaunchLinks.serverHost(ServerSetting.Chosen("https://lukitas.example.org/"), default))
         assertNull(LaunchLinks.serverHost(ServerSetting.Unreadable, default))
     }
+
+    // --- What Flutter's router may read ------------------------------------------------------------
+
+    /** The intent Glance gives a tap on the widget itself, as the emulator's ActivityManager logged it. */
+    private val glanceTap = Intent()
+        .setClass(context, MainActivity::class.java)
+        .setData(Uri.parse("glance-action:/CALLBACK?appWidgetId=5&viewId=2131296449&viewSize=110.09524.dp%20x%2040.0.dp&extraData=0"))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    @Test
+    fun `the widget's body tap is a link home, through the app's own entry`() {
+        assertEquals("lukitas://home", LaunchLinks.intent(context, LaunchLinks.HOME).dataString)
+        assertEquals("lukitas://home", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.HOME)))
+    }
+
+    @Test
+    fun `the router never reads the data Glance puts on a widget tap, with or without an action`() {
+        // Read as a route it was "Page Not Found: no routes for location: glance-action:/CALLBACK?...".
+        assertFalse(LaunchLinks.routerMayRead(glanceTap, "app-lukas.andersonlaverde.com"))
+        assertFalse(LaunchLinks.routerMayRead(Intent(glanceTap).setAction(Intent.ACTION_VIEW), "app-lukas.andersonlaverde.com"))
+    }
+
+    @Test
+    fun `the router reads only the magic link of the configured server`() {
+        val host = "app-lukas.andersonlaverde.com"
+        assertTrue(LaunchLinks.routerMayRead(view(verify), host))
+        assertFalse(LaunchLinks.routerMayRead(view(verify), "lukitas.example.org"))
+        assertFalse(LaunchLinks.routerMayRead(view(verify), null))
+        // Data on an intent that is not a view of a link is nobody's route.
+        assertFalse(LaunchLinks.routerMayRead(Intent(Intent.ACTION_MAIN, Uri.parse(verify)), host))
+        assertFalse(LaunchLinks.routerMayRead(Intent(Intent.ACTION_SEND, Uri.parse(verify)), host))
+        assertFalse(LaunchLinks.routerMayRead(LaunchLinks.intent(context, LaunchLinks.ADD), host))
+        // No data at all is not a route either, and null is not an intent.
+        assertFalse(LaunchLinks.routerMayRead(Intent(Intent.ACTION_MAIN), host))
+        assertFalse(LaunchLinks.routerMayRead(null, host))
+    }
 }

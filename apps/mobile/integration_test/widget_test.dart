@@ -27,6 +27,7 @@ import 'package:lukitas/entry/entry_screen.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
 import 'package:lukitas/main.dart' as app;
+import 'package:lukitas/router.dart';
 
 const _server = String.fromEnvironment('LUKITAS_SERVER', defaultValue: 'http://10.0.2.2:3000');
 const _test = MethodChannel('lukitas/test');
@@ -124,6 +125,48 @@ void main() {
     debugPrint('widget 🎤 to listening (warm, emulator): ${clock.elapsedMilliseconds} ms');
     expect(tester.widget<CaptureSheet>(find.byType(CaptureSheet)).listen, isTrue);
   });
+
+  testWidgets('a tap on the widget itself opens home, over a screen or a sheet, with no error', (
+    tester,
+  ) async {
+    await _startAsGuest(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+    // From Settings.
+    container.read(routerProvider).go('/settings');
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsNothing);
+    await _test.invokeMethod<void>('openWidgetButton', 'home');
+    await _pumpUntil(tester, find.byType(HomeScreen));
+    expect(find.text('Page Not Found'), findsNothing);
+
+    // With the add sheet open and empty: it gives way.
+    await tester.tap(find.byKey(const Key('home.add')));
+    await _pumpUntil(tester, find.byType(AddSheet));
+    await _test.invokeMethod<void>('openWidgetButton', 'home');
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(AddSheet), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets(
+    'the intent Glance gave the widget body (glance-action data, no action) shows no "Page Not Found"',
+    (tester) async {
+      await _startAsGuest(tester);
+      final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+      container.read(routerProvider).go('/settings');
+      await tester.pumpAndSettle();
+      await _test.invokeMethod<void>('openGlanceTap');
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Page Not Found'), findsNothing);
+      expect(tester.takeException(), isNull);
+      // The router stayed where it was: the intent's data never reached it. Home is a tap away.
+      expect(container.read(routerProvider).state.uri.path, '/settings');
+    },
+  );
 
   testWidgets('lukitas://capture sent to the exported launcher activity opens nothing', (
     tester,
