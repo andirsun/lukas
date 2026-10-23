@@ -73,6 +73,15 @@ abstract final class LkSurface {
       ? colors.ink.withValues(alpha: 0.4)
       : colors.surfaceEdge.withValues(alpha: 0.72);
 
+  /// The edge of a field that has no other cue (the sign-in code boxes), app.css `--field-edge`:
+  /// 60 % of `ink-muted` over `surface-sunken` at night, 80 % by day (at least 3:1 against its own
+  /// fill and the background, WCAG 1.4.11).
+  static Color fieldEdge(LukitasColors colors, Brightness brightness) => Color.lerp(
+    colors.surfaceSunken,
+    colors.inkMuted,
+    brightness == Brightness.light ? 0.8 : 0.6,
+  )!;
+
   /// The corner radius of a token.
   static BorderRadius radius(LkRadius radius) => BorderRadius.circular(radius.pixels);
 

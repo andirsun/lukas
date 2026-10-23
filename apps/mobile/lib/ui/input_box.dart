@@ -14,10 +14,15 @@ class InputBox extends StatelessWidget {
     required this.child,
     this.focused = false,
     this.alignment = Alignment.centerLeft,
+    this.borderColor,
   });
 
   final Widget child;
   final bool focused;
+
+  /// The border's colour: the theme's `stroke`, or `over` on a field with a mistake
+  /// (`border-over`).
+  final Color? borderColor;
 
   /// Where [child] sits when the box is taller than it.
   final AlignmentGeometry alignment;
@@ -35,7 +40,7 @@ class InputBox extends StatelessWidget {
           decoration: BoxDecoration(
             color: colors.surfaceSunken,
             borderRadius: radius,
-            border: LkSurface.border(colors),
+            border: Border.all(color: borderColor ?? colors.stroke, width: 2),
           ),
           child: Padding(
             // 12px by 9px inside the 2px border.

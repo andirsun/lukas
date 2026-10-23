@@ -288,6 +288,38 @@ when the app's picture changes. The web shots are regenerated only when the web 
     11px at weight 700) while the names are drawn at 800: the app measures the same way (`measureTickName`).
   - Recharts keeps a bar out of the picture when it has no height; the stories' counts of bars are of the months
     that have data.
+- **The entry screens (`signin-*`, `verify-*`, `code-input-*`, `passkey-offer-*`).** The sign-in screens, the magic
+  link's failed and checking pages, the code boxes and the passkey offer are paired with
+  `sign-in-signin--*`, `sign-in-verify--*`, `sign-in-codeinput--*` and `sign-in-passkeyoffer--*`. Each sits in a
+  `ShellFrame` for Storybook's 16px (no bar under it). The pairs that differ from the stories as they were:
+  - **Stories added or changed for the pairs.** `SignIn.stories.tsx` has `CodeStep`, and `WrongCode`, `CheckingCode`
+    and `OfflineKeepsCode` now pass `resendDelayMs: 0`; `Verify.stories.tsx` has `RejectedCode` and `NoConnection`
+    (the failed page, which only `ExpiredDay` stopped at, and only by day in English). The app has no 30 second wait
+    before "Reenviar código" (Stage 3), so the code step is compared with "resend" unlocked, which the web shows from
+    the 31st second on.
+  - **The email field's focus.** The app focuses it on opening (the person tapped "Entrar con mi correo", and a Stage
+    3 test pins it); the web leaves it alone so the keyboard does not cover Lukitas. The pairs put the focus down
+    (`_putFocusDown`) where the story has none.
+  - **"Usar passkey" is "Entrar con huella" in the pairs** (`EmailScreen.passkeyLabel`), as the detail's "Editar" is
+    in the budget pairs: the email screen's button keeps Stage 3's words and the web's sign-in has the others.
+  - **"Probar sin correo" is in no pair.** It sits on the first screen, which the web has no story for (its sign-in
+    has no guest and no first screen with three ways in), so the entry screen, "Guarda tu progreso" and the magic
+    link that finds a guest signed in have their own goldens in `test/entry/goldens`, to review by eye
+    (`test/entry/entry_golden_test.dart`).
+  - **The code is one text field with six boxes drawn over it**, where the web has six inputs. The ring is on the
+    next box to type, and on the last once the code is whole. The web's box keeps a typed digit selected when focus
+    moves to it, and a pasted code not; the boxes do the same (a change of two digits or more is a paste), in the
+    browser's selection colours (`#1E5172` at night, `#A1D2F5` by day, the digit black), the highlight as wide as
+    the glyph and as tall as the font's rounded ascent and descent.
+  - **A click's focus ring.** `PasskeyFailed` and the offer's `Failed` leave the focus, with a ring, on the button that
+    was clicked; the app's tests focus it and press a key. `NoConnection` blurs it (a finger rings nothing).
+  - **The magic link's `AsksFirst` and `OffersTheApp` have no pair.** The app signs the link in at once (Stage 3: a
+    link opened in the app is already the person's choice), so its "checking" page is the web's `Checking`, with the
+    same words.
+  - **The passkey offer is built and paired, but nothing opens it yet.** The app never had one. Offering it after an
+    email sign-in needs the list of the account's passkeys (`GET /api/auth/passkey/list-user-passkeys`, as the web's
+    `shouldOfferPasskey`) and the answer kept per user on the phone; neither is in the session logic, which this task
+    does not change.
 - **Stories that are not pictures of the component.** A few stories' end states are not what the
   component draws on its own:
   - `ui-toast--*`: Playwright takes the picture with CSS animations at their end, so the time bar is

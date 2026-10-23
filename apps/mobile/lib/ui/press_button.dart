@@ -33,6 +33,7 @@ class PressButton extends StatelessWidget {
     this.semanticLabel,
     this.link = false,
     this.horizontalPadding,
+    this.padding,
   });
 
   /// A button whose label is [label], in upper case as the web shows it.
@@ -47,6 +48,7 @@ class PressButton extends StatelessWidget {
     this.semanticLabel,
     this.link = false,
     this.horizontalPadding,
+    this.padding,
   }) : child = Text(LkText.upperCase(label));
 
   final Widget child;
@@ -69,6 +71,9 @@ class PressButton extends StatelessWidget {
   /// padding-inline: var(--space-4) }`), so two buttons side by side fit a narrow phone.
   final double? horizontalPadding;
 
+  /// Replaces the padding altogether: the day/night switch is `p-0`, a 44px box with an icon in it.
+  final EdgeInsets? padding;
+
   @override
   Widget build(BuildContext context) {
     final lk = context.lk;
@@ -85,9 +90,14 @@ class PressButton extends StatelessWidget {
       (_, false) => const EdgeInsets.symmetric(horizontal: 24, vertical: 15),
       (_, true) => const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     };
-    final padding = horizontalPadding == null
-        ? basePadding
-        : EdgeInsets.symmetric(horizontal: horizontalPadding!, vertical: basePadding.vertical / 2);
+    final padding =
+        this.padding ??
+        (horizontalPadding == null
+            ? basePadding
+            : EdgeInsets.symmetric(
+                horizontal: horizontalPadding!,
+                vertical: basePadding.vertical / 2,
+              ));
 
     return Pressable(
       onPressed: onPressed,

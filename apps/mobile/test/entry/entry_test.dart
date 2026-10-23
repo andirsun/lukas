@@ -8,18 +8,20 @@ import 'package:lukitas/api/auth_api.dart';
 import 'package:lukitas/api/session.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/router.dart';
+import 'package:lukitas/ui/press_button.dart';
 
 import 'fakes.dart';
 
 Future<void> _enterEmail(WidgetTester tester, String email) async {
   await tester.enterText(find.byKey(const Key('entry.email')), email);
-  await tester.tap(find.text('Enviar código'));
+  await tester.tap(find.text('ENVIAR CÓDIGO'));
   await tester.pumpAndSettle();
 }
 
 Future<void> _enterCode(WidgetTester tester, String code, {String submit = 'Entrar'}) async {
   await tester.enterText(find.byKey(const Key('entry.code')), code);
-  await tester.tap(find.widgetWithText(FilledButton, submit));
+  await tester.pump();
+  await tester.tap(find.widgetWithText(PressButton, submit.toUpperCase()));
   await tester.pumpAndSettle();
 }
 
@@ -37,17 +39,17 @@ void main() {
         'passkeysSupported is false', (tester) async {
       await pumpApp(tester, auth: auth, passkeys: FakePasskeys(isSupported: false));
 
-      expect(find.text('Probar sin correo'), findsOneWidget);
-      expect(find.text('Entrar con mi correo'), findsOneWidget);
-      expect(find.text('Entrar con huella'), findsNothing);
+      expect(find.text('PROBAR SIN CORREO'), findsOneWidget);
+      expect(find.text('ENTRAR CON MI CORREO'), findsOneWidget);
+      expect(find.text('ENTRAR CON HUELLA'), findsNothing);
     });
 
     testWidgets('with a passkey provider on the phone, all three choices show', (tester) async {
       await pumpApp(tester, auth: auth, passkeys: FakePasskeys(isSupported: true));
 
-      expect(find.text('Probar sin correo'), findsOneWidget);
-      expect(find.text('Entrar con mi correo'), findsOneWidget);
-      expect(find.text('Entrar con huella'), findsOneWidget);
+      expect(find.text('PROBAR SIN CORREO'), findsOneWidget);
+      expect(find.text('ENTRAR CON MI CORREO'), findsOneWidget);
+      expect(find.text('ENTRAR CON HUELLA'), findsOneWidget);
     });
 
     testWidgets('in English, the same three choices', (tester) async {
@@ -58,15 +60,15 @@ void main() {
         locale: const Locale('en'),
       );
 
-      expect(find.text('Try it without an email'), findsOneWidget);
-      expect(find.text('Sign in with my email'), findsOneWidget);
-      expect(find.text('Sign in with fingerprint'), findsOneWidget);
+      expect(find.text('TRY IT WITHOUT AN EMAIL'), findsOneWidget);
+      expect(find.text('SIGN IN WITH MY EMAIL'), findsOneWidget);
+      expect(find.text('SIGN IN WITH FINGERPRINT'), findsOneWidget);
     });
 
     testWidgets('Probar sin correo creates a guest and lands on home', (tester) async {
       final container = await pumpApp(tester, auth: auth);
 
-      await tester.tap(find.text('Probar sin correo'));
+      await tester.tap(find.text('PROBAR SIN CORREO'));
       await tester.pumpAndSettle();
 
       expect(auth.calls, ['signInAsGuest']);
@@ -82,7 +84,7 @@ void main() {
         status: 403,
       );
 
-      await tester.tap(find.text('Probar sin correo'));
+      await tester.tap(find.text('PROBAR SIN CORREO'));
       await tester.pumpAndSettle();
 
       expect(find.text('Por ahora no se pueden crear cuentas de invitado.'), findsOneWidget);
@@ -94,7 +96,7 @@ void main() {
     testWidgets('the email code signs in', (tester) async {
       final container = await pumpApp(tester, auth: auth);
 
-      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.tap(find.text('ENTRAR CON MI CORREO'));
       await tester.pumpAndSettle();
       await _enterEmail(tester, ' Ana@Correo.com ');
 
@@ -113,12 +115,12 @@ void main() {
       tester,
     ) async {
       await pumpApp(tester, auth: auth);
-      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.tap(find.text('ENTRAR CON MI CORREO'));
       await tester.pumpAndSettle();
       await _enterEmail(tester, 'ana@correo.com');
 
       final field = find.byKey(const Key('entry.code'));
-      String shown() => tester.widget<TextField>(field).controller!.text;
+      String shown() => tester.widget<EditableText>(field).controller.text;
       for (final pasted in [
         '123456',
         '123 456',
@@ -131,7 +133,8 @@ void main() {
         expect(shown(), '123456', reason: 'pasted "$pasted"');
       }
 
-      await tester.tap(find.widgetWithText(FilledButton, 'Entrar'));
+      await tester.pump();
+      await tester.tap(find.widgetWithText(PressButton, 'ENTRAR'));
       await tester.pumpAndSettle();
       expect(auth.calls.last, 'verifyCode ana@correo.com 123456');
       expect(find.byType(HomeScreen), findsOneWidget);
@@ -141,12 +144,12 @@ void main() {
       'a whole code pasted over digits already typed replaces them; typing stops at six',
       (tester) async {
         await pumpApp(tester, auth: auth);
-        await tester.tap(find.text('Entrar con mi correo'));
+        await tester.tap(find.text('ENTRAR CON MI CORREO'));
         await tester.pumpAndSettle();
         await _enterEmail(tester, 'ana@correo.com');
 
         final field = find.byKey(const Key('entry.code'));
-        String shown() => tester.widget<TextField>(field).controller!.text;
+        String shown() => tester.widget<EditableText>(field).controller.text;
         await tester.enterText(field, '12');
         await tester.pump();
         expect(shown(), '12');
@@ -173,7 +176,7 @@ void main() {
       await pumpApp(tester, auth: auth);
       auth.failures['sendCode'] = const AuthFailure(code: 'sign_in_not_allowed', status: 403);
 
-      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.tap(find.text('ENTRAR CON MI CORREO'));
       await tester.pumpAndSettle();
       await _enterEmail(tester, 'nadie@correo.com');
 
@@ -190,7 +193,7 @@ void main() {
     testWidgets('a mistyped email is caught before asking the server', (tester) async {
       await pumpApp(tester, auth: auth);
 
-      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.tap(find.text('ENTRAR CON MI CORREO'));
       await tester.pumpAndSettle();
       await _enterEmail(tester, 'ana@correo');
 
@@ -200,7 +203,7 @@ void main() {
 
     testWidgets('a wrong code says so and keeps the person on the code', (tester) async {
       await pumpApp(tester, auth: auth);
-      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.tap(find.text('ENTRAR CON MI CORREO'));
       await tester.pumpAndSettle();
       await _enterEmail(tester, 'ana@correo.com');
       auth.failures['verifyCode'] = const AuthFailure(code: 'INVALID_OTP', status: 400);
@@ -218,7 +221,7 @@ void main() {
       await pumpApp(tester, auth: auth);
       auth.failures['sendCode'] = const AuthFailure(status: 0);
 
-      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.tap(find.text('ENTRAR CON MI CORREO'));
       await tester.pumpAndSettle();
       await _enterEmail(tester, 'ana@correo.com');
 
@@ -250,10 +253,10 @@ void main() {
         find.text('Este código ya no sirve: venció o ya se usó. Pide uno nuevo.'),
         findsOneWidget,
       );
-      await tester.tap(find.text('Enviar un código nuevo'));
+      await tester.tap(find.text('ENVIAR UN CÓDIGO NUEVO'));
       await tester.pumpAndSettle();
       expect(
-        tester.widget<TextField>(find.byKey(const Key('entry.email'))).controller?.text,
+        tester.widget<EditableText>(find.byKey(const Key('entry.email'))).controller.text,
         'ana@correo.com',
       );
     });
@@ -345,7 +348,7 @@ void main() {
       await tester.tap(find.text('Entrar de todos modos'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Usar otro correo'));
+      await tester.tap(find.text('USAR OTRO CORREO'));
       await tester.pumpAndSettle();
       await _enterEmail(tester, 'luis@correo.com');
 
@@ -376,7 +379,7 @@ void main() {
       expect(auth.calls, isEmpty);
       expect(find.text('¿Dejar tu cuenta de invitado?'), findsOneWidget);
 
-      await tester.tap(find.text('Entrar de todos modos'));
+      await tester.tap(find.text('ENTRAR DE TODOS MODOS'));
       await tester.pumpAndSettle();
       expect(auth.calls, ['verifyCode ana@correo.com 654321']);
       expect(_stored(container)?.guest, isFalse);
@@ -389,7 +392,7 @@ void main() {
       final passkeys = FakePasskeys();
       final container = await pumpApp(tester, auth: auth, passkeys: passkeys);
 
-      await tester.tap(find.text('Entrar con huella'));
+      await tester.tap(find.text('ENTRAR CON HUELLA'));
       await tester.pumpAndSettle();
 
       expect(passkeys.calls, ['get {"challenge":"sign-in"}']);
@@ -409,12 +412,12 @@ void main() {
       await pumpApp(tester, auth: auth, passkeys: passkeys);
 
       passkeys.failure = const AuthFailure(code: 'AUTH_CANCELLED', status: 400);
-      await tester.tap(find.text('Entrar con huella'));
+      await tester.tap(find.text('ENTRAR CON HUELLA'));
       await tester.pumpAndSettle();
       expect(find.textContaining('huella. Inténtalo'), findsNothing);
 
       passkeys.failure = const AuthFailure(code: 'NO_CREDENTIAL', status: 400);
-      await tester.tap(find.text('Entrar con huella'));
+      await tester.tap(find.text('ENTRAR CON HUELLA'));
       await tester.pumpAndSettle();
       expect(
         find.text('No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.'),
@@ -441,7 +444,7 @@ void main() {
     }
 
     bool emailFocused(WidgetTester tester) =>
-        tester.widget<TextField>(find.byKey(const Key('entry.email'))).focusNode?.hasFocus ?? false;
+        tester.widget<EditableText>(find.byKey(const Key('entry.email'))).focusNode.hasFocus;
 
     testWidgets('a passkey the phone already has (made on the web) is offered on opening, and '
         'signing in with it completes', (tester) async {
@@ -470,7 +473,7 @@ void main() {
       expect(passkeys.calls, [getAvailable]);
       expect(auth.calls, ['passkeySignInOptions']);
       expect(find.byType(HomeScreen), findsNothing);
-      expect(find.textContaining('huella'), findsNothing);
+      expect(find.textContaining('Inténtalo'), findsNothing);
       expect(find.text('Entra a Lukitas'), findsOneWidget);
       expect(emailFocused(tester), isTrue);
 
@@ -502,7 +505,7 @@ void main() {
       container.read(routerProvider).go('/entry/email');
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('huella'), findsNothing);
+      expect(find.textContaining('Inténtalo'), findsNothing);
       expect(emailFocused(tester), isTrue);
     });
 
@@ -530,7 +533,7 @@ void main() {
       expect(passkeys.calls, isEmpty);
       expect(auth.calls, isEmpty);
       expect(find.byKey(const Key('entry.passkey')), findsNothing);
-      expect(find.text('Usar passkey'), findsNothing);
+      expect(find.text('USAR PASSKEY'), findsNothing);
       expect(emailFocused(tester), isTrue);
     });
 
@@ -540,10 +543,10 @@ void main() {
       final passkeys = FakePasskeys();
       final container = await openEmail(tester, passkeys);
 
-      expect(find.widgetWithText(OutlinedButton, 'Usar passkey'), findsOneWidget);
+      expect(find.widgetWithText(PressButton, 'USAR PASSKEY'), findsOneWidget);
       passkeys.calls.clear();
       auth.calls.clear();
-      await tester.tap(find.text('Usar passkey'));
+      await tester.tap(find.text('USAR PASSKEY'));
       await tester.pumpAndSettle();
 
       // The button may show the provider's picker (a passkey made anywhere), not only what is at hand.
@@ -554,7 +557,7 @@ void main() {
 
     testWidgets('"Use a passkey", in English', (tester) async {
       await openEmail(tester, FakePasskeys(), locale: const Locale('en'));
-      expect(find.widgetWithText(OutlinedButton, 'Use a passkey'), findsOneWidget);
+      expect(find.widgetWithText(PressButton, 'USE A PASSKEY'), findsOneWidget);
     });
 
     testWidgets('closing the sheet of the button says nothing; a failure suggests the code', (
@@ -564,13 +567,13 @@ void main() {
       await openEmail(tester, passkeys);
 
       passkeys.failure = const AuthFailure(code: 'AUTH_CANCELLED', status: 400);
-      await tester.tap(find.text('Usar passkey'));
+      await tester.tap(find.text('USAR PASSKEY'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Inténtalo'), findsNothing);
       expect(emailFocused(tester), isTrue);
 
       passkeys.failure = const AuthFailure(code: 'PASSKEY_FAILED', status: 400);
-      await tester.tap(find.text('Usar passkey'));
+      await tester.tap(find.text('USAR PASSKEY'));
       await tester.pumpAndSettle();
       expect(
         find.text('No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.'),
@@ -593,7 +596,7 @@ void main() {
         expect(passkeys.calls, isEmpty);
         expect(auth.calls, isEmpty);
         expect(_stored(container)?.token, 'guest-token-0');
-        expect(find.text('Usar passkey'), findsOneWidget);
+        expect(find.text('USAR PASSKEY'), findsOneWidget);
       });
 
       testWidgets('the button warns first; cancelling keeps the guest and asks nothing', (
@@ -602,7 +605,7 @@ void main() {
         final passkeys = FakePasskeys(hasPasskey: true);
         final container = await openEmail(tester, passkeys);
 
-        await tester.tap(find.text('Usar passkey'));
+        await tester.tap(find.text('USAR PASSKEY'));
         await tester.pumpAndSettle();
         expect(find.text('¿Dejar tu cuenta de invitado?'), findsOneWidget);
         await tester.tap(find.text('Cancelar'));
@@ -620,7 +623,7 @@ void main() {
         final passkeys = FakePasskeys(hasPasskey: true);
         final container = await openEmail(tester, passkeys);
 
-        await tester.tap(find.text('Usar passkey'));
+        await tester.tap(find.text('USAR PASSKEY'));
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('guest.save')));
         await tester.pumpAndSettle();
@@ -637,7 +640,7 @@ void main() {
         final passkeys = FakePasskeys();
         final container = await openEmail(tester, passkeys);
 
-        await tester.tap(find.text('Usar passkey'));
+        await tester.tap(find.text('USAR PASSKEY'));
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('guest.leaveConfirm')));
         await tester.pumpAndSettle();
@@ -669,7 +672,7 @@ void main() {
     const generic = 'Algo salió mal. Inténtalo de nuevo en un momento.';
 
     bool enabled(WidgetTester tester, Finder button) =>
-        tester.widget<ButtonStyleButton>(button).onPressed != null;
+        tester.widget<PressButton>(button).onPressed != null;
 
     testWidgets('a timeout on Probar sin correo says no connection and the button works again', (
       tester,
@@ -677,14 +680,14 @@ void main() {
       await pumpApp(tester, auth: auth);
       auth.failures['signInAsGuest'] = TimeoutException('slow network');
 
-      await tester.tap(find.text('Probar sin correo'));
+      await tester.tap(find.text('PROBAR SIN CORREO'));
       await tester.pumpAndSettle();
 
       expect(find.text(network), findsOneWidget);
       expect(enabled(tester, find.byKey(const Key('entry.guest'))), isTrue);
-      expect(find.text('Probar sin correo'), findsOneWidget);
+      expect(find.text('PROBAR SIN CORREO'), findsOneWidget);
 
-      await tester.tap(find.text('Probar sin correo'));
+      await tester.tap(find.text('PROBAR SIN CORREO'));
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
     });
@@ -693,7 +696,7 @@ void main() {
       tester,
     ) async {
       await pumpApp(tester, auth: auth);
-      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.tap(find.text('ENTRAR CON MI CORREO'));
       await tester.pumpAndSettle();
       auth.failures['sendCode'] = const SocketException('Network is unreachable');
 
@@ -710,7 +713,7 @@ void main() {
     testWidgets('anything else while checking the code says something went wrong, and the '
         'button stops saying Entrando…', (tester) async {
       await pumpApp(tester, auth: auth);
-      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.tap(find.text('ENTRAR CON MI CORREO'));
       await tester.pumpAndSettle();
       await _enterEmail(tester, 'ana@correo.com');
       auth.failures['verifyCode'] = StateError('storage write failed');
@@ -734,7 +737,7 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text('No pudimos hacerte entrar'), findsOneWidget);
       expect(find.text(network), findsOneWidget);
-      await tester.tap(find.text('Reintentar'));
+      await tester.tap(find.text('REINTENTAR'));
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
     });
@@ -744,7 +747,7 @@ void main() {
       await pumpApp(tester, auth: auth, passkeys: passkeys);
       passkeys.failure = const FormatException('not JSON');
 
-      await tester.tap(find.text('Entrar con huella'));
+      await tester.tap(find.text('ENTRAR CON HUELLA'));
       await tester.pumpAndSettle();
 
       expect(
@@ -758,7 +761,7 @@ void main() {
       await pumpApp(tester, auth: auth, locale: const Locale('en'));
       auth.failures['signInAsGuest'] = TimeoutException('slow network');
 
-      await tester.tap(find.text('Try it without an email'));
+      await tester.tap(find.text('TRY IT WITHOUT AN EMAIL'));
       await tester.pumpAndSettle();
 
       expect(find.text('No connection. Check your internet and try again.'), findsOneWidget);
@@ -770,7 +773,7 @@ void main() {
     await pumpApp(tester, auth: auth);
 
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('Probar sin correo'), findsNothing);
+    expect(find.text('PROBAR SIN CORREO'), findsNothing);
   });
 
   testWidgets('a session the server no longer knows goes back to the first screen', (tester) async {
@@ -778,7 +781,7 @@ void main() {
     auth.failures['isGuest'] = const AuthFailure(code: 'unauthenticated', status: 401);
     await pumpApp(tester, auth: auth);
 
-    expect(find.text('Probar sin correo'), findsOneWidget);
+    expect(find.text('PROBAR SIN CORREO'), findsOneWidget);
     expect(await SessionStore().read(), isNull);
   });
 }

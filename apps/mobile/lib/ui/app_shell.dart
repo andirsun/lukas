@@ -163,6 +163,77 @@ class PageGradientPainter extends CustomPainter {
       old.colors != colors || old.frame != frame || old.metrics != metrics;
 }
 
+/// The page's background, as the web's `.lk-screen` paints it, behind [child]: the page's colour
+/// and the radial gradient over it, as tall as the page ([child]'s scroll content, a screen at
+/// least) and scrolling with it. It listens to the scroll notifications of [child]'s main scroll
+/// view (a vertical one that is not inside another) to know how far it has gone and how long it is.
+/// The frame of a parity picture ([ShellFrame]) is the page's padding.
+class PageBackground extends StatefulWidget {
+  const PageBackground({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<PageBackground> createState() => _PageBackgroundState();
+}
+
+class _PageBackgroundState extends State<PageBackground> {
+  final _page = ValueNotifier<PageMetrics>(const PageMetrics());
+
+  @override
+  void dispose() {
+    _page.dispose();
+    super.dispose();
+  }
+
+  /// The screen's main scroll view moved or changed its length.
+  void _measure(ScrollMetrics metrics, BuildContext? scrollable) {
+    if (metrics.axis != Axis.vertical) return;
+    final shell = context.findRenderObject();
+    final box = scrollable?.findRenderObject();
+    var top = 0.0;
+    if (shell is RenderBox && box is RenderBox && box.attached && shell.attached) {
+      top = box.localToGlobal(Offset.zero, ancestor: shell).dy;
+    }
+    final next = PageMetrics(
+      top: top,
+      pixels: metrics.pixels,
+      viewport: metrics.viewportDimension,
+      extent: metrics.maxScrollExtent + metrics.viewportDimension,
+    );
+    if (next != _page.value) _page.value = next;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lkColors;
+    final frame = ShellFrame.maybeOf(context)?.padding ?? EdgeInsets.zero;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: CustomPaint(
+            key: const Key('shell.gradient'),
+            painter: PageGradientPainter(colors: colors, frame: frame, metrics: _page),
+          ),
+        ),
+        NotificationListener<ScrollMetricsNotification>(
+          onNotification: (n) {
+            if (n.depth == 0) _measure(n.metrics, n.context);
+            return false;
+          },
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (n) {
+              if (n.depth == 0) _measure(n.metrics, n.context);
+              return false;
+            },
+            child: widget.child,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// The frame of the signed-in screens on a phone: the page's background gradient, the screen
 /// ([child]) over all of it, and the bottom bar (Inicio · ＋ · Análisis, and the 🎤) fixed under
 /// it, above the system's navigation bar (`pb-[env(safe-area-inset-bottom)]`). Toasts show above
@@ -170,8 +241,8 @@ class PageGradientPainter extends CustomPainter {
 ///
 /// The screen is one scroll view whose content leaves [ShellRoom] under it. Its scrolling moves the
 /// gradient, which is the page's, not the screen's: on the web it is as tall as the page and the
-/// glow scrolls away.
-class AppShell extends StatefulWidget {
+/// glow scrolls away ([PageBackground]).
+class AppShell extends StatelessWidget {
   const AppShell({
     super.key,
     required this.current,
@@ -193,40 +264,7 @@ class AppShell extends StatefulWidget {
   final Key? micKey;
 
   @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends State<AppShell> {
-  final _page = ValueNotifier<PageMetrics>(const PageMetrics());
-
-  @override
-  void dispose() {
-    _page.dispose();
-    super.dispose();
-  }
-
-  /// The screen's main scroll view (a vertical one that is not inside another) moved or changed
-  /// its length.
-  void _measure(ScrollMetrics metrics, BuildContext? scrollable) {
-    if (metrics.axis != Axis.vertical) return;
-    final shell = context.findRenderObject();
-    final box = scrollable?.findRenderObject();
-    var top = 0.0;
-    if (shell is RenderBox && box is RenderBox && box.attached && shell.attached) {
-      top = box.localToGlobal(Offset.zero, ancestor: shell).dy;
-    }
-    final next = PageMetrics(
-      top: top,
-      pixels: metrics.pixels,
-      viewport: metrics.viewportDimension,
-      extent: metrics.maxScrollExtent + metrics.viewportDimension,
-    );
-    if (next != _page.value) _page.value = next;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final colors = context.lkColors;
     final safeBottom = MediaQuery.viewPaddingOf(context).bottom;
     final shellFrame = ShellFrame.maybeOf(context);
     final frame = shellFrame?.padding ?? EdgeInsets.zero;
@@ -241,48 +279,28 @@ class _AppShellState extends State<AppShell> {
       bottom: 112 + safeBottom + frame.bottom,
       frameSides: EdgeInsets.fromLTRB(frame.left, 0, frame.right, 0),
       frameLeading: leading,
-      child: NotificationListener<ScrollMetricsNotification>(
-        onNotification: (n) {
-          if (n.depth == 0) _measure(n.metrics, n.context);
-          return false;
-        },
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (n) {
-            if (n.depth == 0) _measure(n.metrics, n.context);
-            return false;
-          },
-          child: widget.child,
+      child: child,
+    );
+    return PageBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        // The content runs under the bar: what scrolls past it is hidden by it, not cut off above.
+        extendBody: true,
+        // Tight: a short screen is as tall as the page, as `min-h-dvh` makes it.
+        body: SizedBox.expand(child: content),
+        bottomNavigationBar: Padding(
+          padding: EdgeInsets.only(bottom: safeBottom),
+          child: BottomBar(
+            current: current,
+            onAdd: onAdd,
+            onMic: onMic,
+            onNavigate: onNavigate,
+            showMic: shellFrame?.showMic ?? true,
+            addKey: addKey,
+            micKey: micKey,
+          ),
         ),
       ),
-    );
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: CustomPaint(
-            key: const Key('shell.gradient'),
-            painter: PageGradientPainter(colors: colors, frame: frame, metrics: _page),
-          ),
-        ),
-        Scaffold(
-          backgroundColor: Colors.transparent,
-          // The content runs under the bar: what scrolls past it is hidden by it, not cut off above.
-          extendBody: true,
-          // Tight: a short screen is as tall as the page, as `min-h-dvh` makes it.
-          body: SizedBox.expand(child: content),
-          bottomNavigationBar: Padding(
-            padding: EdgeInsets.only(bottom: safeBottom),
-            child: BottomBar(
-              current: widget.current,
-              onAdd: widget.onAdd,
-              onMic: widget.onMic,
-              onNavigate: widget.onNavigate,
-              showMic: shellFrame?.showMic ?? true,
-              addKey: widget.addKey,
-              micKey: widget.micKey,
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

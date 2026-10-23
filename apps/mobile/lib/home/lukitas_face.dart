@@ -31,7 +31,13 @@ enum LukitasMood {
 /// when the mood arrives, then rests on the first frame; with the system's "remove animations" it
 /// stands still on the mood's [LukitasMood.stillFrame].
 class LukitasFace extends StatefulWidget {
-  const LukitasFace({super.key, required this.mood, this.size = 72, this.decorative = false});
+  const LukitasFace({
+    super.key,
+    required this.mood,
+    this.size = 72,
+    this.decorative = false,
+    this.label,
+  });
 
   final LukitasMood mood;
   final double size;
@@ -39,6 +45,9 @@ class LukitasFace extends StatefulWidget {
   /// Hidden from assistive technology, when something next to Lukitas already says the same (the
   /// web's `decorative`).
   final bool decorative;
+
+  /// How he is named for assistive technology (the web's `mascot.<mood>`); "Lukitas" when null.
+  final String? label;
 
   @override
   State<LukitasFace> createState() => _LukitasFaceState();
@@ -114,6 +123,10 @@ class _LukitasFaceState extends State<LukitasFace> with SingleTickerProviderStat
       ),
     );
     if (widget.decorative) return ExcludeSemantics(child: picture);
-    return Semantics(label: AppLocalizations.of(context).lukitasMood, image: true, child: picture);
+    return Semantics(
+      label: widget.label ?? AppLocalizations.of(context).lukitasMood,
+      image: true,
+      child: picture,
+    );
   }
 }

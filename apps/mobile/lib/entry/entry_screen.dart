@@ -6,10 +6,12 @@ import '../api/auth_api.dart';
 import '../api/session.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/tokens.g.dart';
+import '../ui/lk_icons.dart';
+import '../ui/press_button.dart';
 import 'auth_errors.dart';
-import 'lukitas_wave.dart';
+import 'sign_in_frame.dart';
 
-/// First run (spec section 6.1): Lukitas waves, and three ways in: "Probar sin correo" (a guest),
+/// First run (spec section 6.1): Lukitas on the web's sign-in frame, and three ways in: "Probar sin correo" (a guest),
 /// "Entrar con mi correo" (a code or magic link) and "Entrar con huella" (a passkey), the last only
 /// when the phone supports passkeys.
 class EntryScreen extends ConsumerStatefulWidget {
@@ -65,102 +67,64 @@ class _EntryScreenState extends ConsumerState<EntryScreen> {
     passkeyErrorFor,
   );
 
+  /// The web's `w-full`.
+  Widget _full(Widget child) => SizedBox(width: double.infinity, child: child);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
     final passkeys = ref.watch(passkeysSupportedProvider).value ?? false;
     final busy = _busy != _Busy.none;
     final error = _error;
 
-    return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
-            padding: const EdgeInsets.all(LukitasTokens.space5),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - 2 * LukitasTokens.space5,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Column(
-                    children: [
-                      const SizedBox(height: LukitasTokens.space6),
-                      const LukitasWave(),
-                      const SizedBox(height: LukitasTokens.space4),
-                      Text(
-                        l10n.appName,
-                        style: theme.textTheme.displaySmall,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: LukitasTokens.space2),
-                      Text(
-                        l10n.entryLead,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(height: LukitasTokens.space6),
-                      FilledButton(
-                        key: const Key('entry.guest'),
-                        onPressed: busy ? null : _startGuest,
-                        child: Text(_busy == _Busy.guest ? l10n.entryGuestBusy : l10n.entryGuest),
-                      ),
-                      const SizedBox(height: LukitasTokens.space1),
-                      Text(
-                        l10n.entryGuestHint,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: LukitasTokens.space4),
-                      OutlinedButton(
-                        key: const Key('entry.withEmail'),
-                        onPressed: busy ? null : () => context.push('/entry/email'),
-                        child: Text(l10n.entryEmail),
-                      ),
-                      if (passkeys) ...[
-                        const SizedBox(height: LukitasTokens.space3),
-                        OutlinedButton.icon(
-                          key: const Key('entry.passkey'),
-                          onPressed: busy ? null : _passkey,
-                          icon: const Icon(Icons.fingerprint),
-                          label: Text(
-                            _busy == _Busy.passkey ? l10n.entryPasskeyBusy : l10n.entryPasskey,
-                          ),
-                        ),
-                      ],
-                      if (error != null) ...[
-                        const SizedBox(height: LukitasTokens.space4),
-                        Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            error.message(l10n),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.error,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ),
-            ),
+    return SignInFrame(
+      children: [
+        EntryTitle(l10n.appName),
+        EntryLead(l10n.entryLead),
+        // The way in with the least to give up, first: the web's secondary button.
+        _full(
+          PressButton.text(
+            _busy == _Busy.guest ? l10n.entryGuestBusy : l10n.entryGuest,
+            key: const Key('entry.guest'),
+            tone: PressTone.secondary,
+            onPressed: busy ? null : _startGuest,
           ),
         ),
-      ),
+        EntryNote(l10n.entryGuestHint),
+        _full(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: LukitasTokens.space3,
+            children: [
+              PressButton.text(
+                l10n.entryEmail,
+                key: const Key('entry.withEmail'),
+                onPressed: busy ? null : () => context.push('/entry/email'),
+              ),
+              if (passkeys)
+                PressButton(
+                  key: const Key('entry.passkey'),
+                  tone: PressTone.secondary,
+                  onPressed: busy ? null : _passkey,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    spacing: LukitasTokens.space2,
+                    children: [
+                      const FingerprintIcon(),
+                      Flexible(
+                        child: Text(
+                          (_busy == _Busy.passkey ? l10n.entryPasskeyBusy : l10n.entryPasskey)
+                              .toUpperCase(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (error != null) FieldError(error.message(l10n), textAlign: TextAlign.center),
+      ],
     );
   }
 }

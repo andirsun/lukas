@@ -1057,5 +1057,233 @@
     "storyId": "home-home--edit-sheet-day-theme",
     "theme": "day",
     "appTest": "test/parity/add_sheet_parity_test.dart"
+  },
+  {
+    "id": "signin-email-step",
+    "storyId": "sign-in-signin--email-step",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-email-step",
+    "storyId": "sign-in-signin--email-step",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-invalid-email",
+    "storyId": "sign-in-signin--invalid-email",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-invalid-email",
+    "storyId": "sign-in-signin--invalid-email",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-too-many-codes",
+    "storyId": "sign-in-signin--too-many-codes",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-too-many-codes",
+    "storyId": "sign-in-signin--too-many-codes",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-code-step",
+    "storyId": "sign-in-signin--code-step",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-code-step",
+    "storyId": "sign-in-signin--code-step",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-wrong-code",
+    "storyId": "sign-in-signin--wrong-code",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-wrong-code",
+    "storyId": "sign-in-signin--wrong-code",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-checking-code",
+    "storyId": "sign-in-signin--checking-code",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-checking-code",
+    "storyId": "sign-in-signin--checking-code",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-offline-keeps-code",
+    "storyId": "sign-in-signin--offline-keeps-code",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-offline-keeps-code",
+    "storyId": "sign-in-signin--offline-keeps-code",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-fingerprint-button",
+    "storyId": "sign-in-signin--fingerprint-button-after-a-passkey",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-fingerprint-button",
+    "storyId": "sign-in-signin--fingerprint-button-after-a-passkey",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "signin-passkey-failed",
+    "storyId": "sign-in-signin--passkey-failed",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "verify-checking",
+    "storyId": "sign-in-verify--checking",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "verify-checking",
+    "storyId": "sign-in-verify--checking",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "verify-rejected",
+    "storyId": "sign-in-verify--rejected-code",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "verify-rejected",
+    "storyId": "sign-in-verify--rejected-code",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "verify-no-connection",
+    "storyId": "sign-in-verify--no-connection",
+    "theme": "night",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "verify-no-connection",
+    "storyId": "sign-in-verify--no-connection",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "verify-expired-day-english",
+    "storyId": "sign-in-verify--expired-day",
+    "theme": "day",
+    "appTest": "test/parity/entry_parity_test.dart"
+  },
+  {
+    "id": "code-input-typing",
+    "storyId": "sign-in-codeinput--typing",
+    "theme": "night",
+    "appTest": "test/parity/code_input_parity_test.dart"
+  },
+  {
+    "id": "code-input-typing",
+    "storyId": "sign-in-codeinput--typing",
+    "theme": "day",
+    "appTest": "test/parity/code_input_parity_test.dart"
+  },
+  {
+    "id": "code-input-backspace",
+    "storyId": "sign-in-codeinput--backspace",
+    "theme": "night",
+    "appTest": "test/parity/code_input_parity_test.dart"
+  },
+  {
+    "id": "code-input-backspace",
+    "storyId": "sign-in-codeinput--backspace",
+    "theme": "day",
+    "appTest": "test/parity/code_input_parity_test.dart"
+  },
+  {
+    "id": "code-input-paste",
+    "storyId": "sign-in-codeinput--paste",
+    "theme": "night",
+    "appTest": "test/parity/code_input_parity_test.dart"
+  },
+  {
+    "id": "code-input-paste",
+    "storyId": "sign-in-codeinput--paste",
+    "theme": "day",
+    "appTest": "test/parity/code_input_parity_test.dart"
+  },
+  {
+    "id": "code-input-invalid",
+    "storyId": "sign-in-codeinput--invalid",
+    "theme": "day",
+    "appTest": "test/parity/code_input_parity_test.dart"
+  },
+  {
+    "id": "passkey-offer",
+    "storyId": "sign-in-passkeyoffer--offer",
+    "theme": "night",
+    "appTest": "test/parity/passkey_offer_parity_test.dart"
+  },
+  {
+    "id": "passkey-offer",
+    "storyId": "sign-in-passkeyoffer--offer",
+    "theme": "day",
+    "appTest": "test/parity/passkey_offer_parity_test.dart"
+  },
+  {
+    "id": "passkey-offer-day-english",
+    "storyId": "sign-in-passkeyoffer--offer-day-english",
+    "theme": "day",
+    "appTest": "test/parity/passkey_offer_parity_test.dart"
+  },
+  {
+    "id": "passkey-offer-waiting",
+    "storyId": "sign-in-passkeyoffer--waiting-for-the-fingerprint",
+    "theme": "night",
+    "appTest": "test/parity/passkey_offer_parity_test.dart"
+  },
+  {
+    "id": "passkey-offer-waiting",
+    "storyId": "sign-in-passkeyoffer--waiting-for-the-fingerprint",
+    "theme": "day",
+    "appTest": "test/parity/passkey_offer_parity_test.dart"
+  },
+  {
+    "id": "passkey-offer-failed",
+    "storyId": "sign-in-passkeyoffer--failed",
+    "theme": "night",
+    "appTest": "test/parity/passkey_offer_parity_test.dart"
+  },
+  {
+    "id": "passkey-offer-failed",
+    "storyId": "sign-in-passkeyoffer--failed",
+    "theme": "day",
+    "appTest": "test/parity/passkey_offer_parity_test.dart"
   }
 ]

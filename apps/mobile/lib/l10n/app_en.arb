@@ -1304,5 +1304,24 @@
         "type": "int"
       }
     }
-  }
+  },
+  "themeSwitchToDay": "Switch to day mode",
+  "themeSwitchToNight": "Switch to night mode",
+  "mascotHappy": "Lukitas, happy",
+  "mascotWorried": "Lukitas, worried",
+  "signInOrEmail": "or with your email",
+  "signInFirstTime": "First time? Sign in with your email; you can use your fingerprint afterwards.",
+  "verifyConfirmTitle": "Continue as {email}",
+  "verifyConfirmLead": "Tap Continue to sign in to Lukitas with this email.",
+  "verifyNotMe": "Not me",
+  "passkeyOfferTitle": "Sign in with your fingerprint next time?",
+  "passkeyOfferLead": "That way you skip waiting for the code.",
+  "passkeyOfferKey": "A passkey is a key saved on this phone, in Google, Samsung Pass, iCloud or Proton Pass.",
+  "passkeyOfferUnlock": "Your fingerprint or face only unlocks it. Lukitas never receives them.",
+  "passkeyOfferSync": "It syncs to your other devices that use the same account.",
+  "passkeyOfferBackup": "Your email keeps working as a backup.",
+  "passkeyOfferAdd": "Create my fingerprint",
+  "passkeyOfferAdding": "Waiting for your fingerprint…",
+  "passkeyOfferNotNow": "Not now",
+  "passkeyOfferFailed": "We couldn't save your fingerprint. Try again or carry on without it."
 }

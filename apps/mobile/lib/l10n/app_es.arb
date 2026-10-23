@@ -1824,5 +1824,87 @@
         "type": "int"
       }
     }
+  },
+  "themeSwitchToDay": "Cambiar a modo día",
+  "@themeSwitchToDay": {
+    "description": "The day/night switch on the entry screens, at night: what a press does."
+  },
+  "themeSwitchToNight": "Cambiar a modo noche",
+  "@themeSwitchToNight": {
+    "description": "The day/night switch on the entry screens, by day: what a press does."
+  },
+  "mascotHappy": "Lukitas, contento",
+  "@mascotHappy": {
+    "description": "Lukitas on the entry screens, happy."
+  },
+  "mascotWorried": "Lukitas, preocupado",
+  "@mascotWorried": {
+    "description": "Lukitas on the entry screens, worried (a failure)."
+  },
+  "signInOrEmail": "o con tu correo",
+  "@signInOrEmail": {
+    "description": "Entry: the line between the passkey button and the email field."
+  },
+  "signInFirstTime": "¿Primera vez? Entra con tu correo; después podrás usar tu huella.",
+  "@signInFirstTime": {
+    "description": "Entry: under the email form, for a newcomer."
+  },
+  "verifyConfirmTitle": "Continuar como {email}",
+  "@verifyConfirmTitle": {
+    "description": "The magic link: whose account is being entered.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "verifyConfirmLead": "Toca Continuar para entrar a Lukitas con este correo.",
+  "@verifyConfirmLead": {
+    "description": "The magic link: under the title."
+  },
+  "verifyNotMe": "No soy yo",
+  "@verifyNotMe": {
+    "description": "The magic link: leave without signing in."
+  },
+  "passkeyOfferTitle": "¿Entrar con tu huella la próxima vez?",
+  "@passkeyOfferTitle": {
+    "description": "Passkey offer: title."
+  },
+  "passkeyOfferLead": "Así entras sin esperar el código.",
+  "@passkeyOfferLead": {
+    "description": "Passkey offer: under the title."
+  },
+  "passkeyOfferKey": "Una passkey es una llave guardada en este teléfono, en Google, Samsung Pass, iCloud o Proton Pass.",
+  "@passkeyOfferKey": {
+    "description": "Passkey offer: first point."
+  },
+  "passkeyOfferUnlock": "Tu huella o tu cara solo la desbloquean. Lukitas nunca las recibe.",
+  "@passkeyOfferUnlock": {
+    "description": "Passkey offer: second point."
+  },
+  "passkeyOfferSync": "Se sincroniza con tus otros dispositivos que usan la misma cuenta.",
+  "@passkeyOfferSync": {
+    "description": "Passkey offer: third point."
+  },
+  "passkeyOfferBackup": "Tu correo sigue funcionando como respaldo.",
+  "@passkeyOfferBackup": {
+    "description": "Passkey offer: fourth point."
+  },
+  "passkeyOfferAdd": "Crear mi huella",
+  "@passkeyOfferAdd": {
+    "description": "Passkey offer: creates the passkey."
+  },
+  "passkeyOfferAdding": "Esperando tu huella…",
+  "@passkeyOfferAdding": {
+    "description": "Passkey offer: while the phone asks for the fingerprint."
+  },
+  "passkeyOfferNotNow": "Ahora no",
+  "@passkeyOfferNotNow": {
+    "description": "Passkey offer: goes on without a passkey."
+  },
+  "passkeyOfferFailed": "No pudimos guardar tu huella. Inténtalo otra vez o sigue sin ella.",
+  "@passkeyOfferFailed": {
+    "description": "Passkey offer: the passkey could not be saved."
   }
 }

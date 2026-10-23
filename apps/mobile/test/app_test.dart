@@ -18,7 +18,8 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: LukitasApp()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Lukitas'), findsOneWidget);
+    // The wordmark above, and the title of the first-run screen.
+    expect(find.text('Lukitas'), findsNWidgets(2));
 
     final theme = Theme.of(tester.element(find.byType(Scaffold)));
     expect(theme.brightness, Brightness.dark);

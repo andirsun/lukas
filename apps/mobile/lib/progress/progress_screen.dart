@@ -5,9 +5,14 @@ import 'package:go_router/go_router.dart';
 import '../api/auth_api.dart';
 import '../api/session.dart';
 import '../entry/auth_errors.dart';
-import '../entry/lukitas_wave.dart';
+import '../entry/sign_in_frame.dart';
 import '../l10n/app_localizations.dart';
+import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
+import '../ui/lk_icons.dart';
+import '../ui/lk_theme.dart';
+import '../ui/press_button.dart';
+import '../ui/web_text_field.dart';
 
 /// "Guarda tu progreso" (spec section 6.1.5, guests only): says honestly what a guest account is,
 /// and offers the two ways to keep it. The email claim (section 4.2) is the real one: the guest's
@@ -24,6 +29,7 @@ enum _Passkey { idle, busy, added }
 
 class _ProgressScreenState extends ConsumerState<ProgressScreen> {
   final _email = TextEditingController();
+  final _emailFocus = FocusNode();
   AuthError? _emailError;
 
   _Passkey _passkey = _Passkey.idle;
@@ -32,6 +38,7 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
   @override
   void dispose() {
     _email.dispose();
+    _emailFocus.dispose();
     super.dispose();
   }
 
@@ -82,104 +89,84 @@ class _ProgressScreenState extends ConsumerState<ProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final muted = theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final colors = context.lkColors;
     final passkeys = ref.watch(passkeysSupportedProvider).value ?? false;
     final error = _emailError;
-    return Scaffold(
-      appBar: AppBar(),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(LukitasTokens.space5),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Center(child: LukitasWave(size: 112)),
-                  const SizedBox(height: LukitasTokens.space3),
-                  Text(l10n.progressTitle, style: theme.textTheme.headlineMedium),
-                  const SizedBox(height: LukitasTokens.space2),
-                  Text(
-                    l10n.progressLead,
-                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: LukitasTokens.space2),
-                  Text(l10n.progressEmailBody, style: muted),
-                  const SizedBox(height: LukitasTokens.space4),
-                  TextField(
-                    key: const Key('progress.email'),
-                    controller: _email,
-                    keyboardType: TextInputType.emailAddress,
-                    autofillHints: const [AutofillHints.email],
-                    autocorrect: false,
-                    textInputAction: TextInputAction.send,
-                    onSubmitted: (_) => _save(),
-                    decoration: InputDecoration(
-                      labelText: l10n.emailLabel,
-                      hintText: l10n.emailPlaceholder,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  if (error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: LukitasTokens.space3),
-                      child: Semantics(
-                        liveRegion: true,
-                        child: Text(
-                          error.message(l10n),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: LukitasTokens.space4),
-                  FilledButton(
-                    key: const Key('progress.save'),
-                    onPressed: _save,
-                    child: Text(l10n.progressSave),
-                  ),
-                  if (passkeys) ...[
-                    const SizedBox(height: LukitasTokens.space6),
-                    Text(l10n.progressPasskeyTitle, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: LukitasTokens.space2),
-                    Text(l10n.progressPasskeyBody, style: muted),
-                    const SizedBox(height: LukitasTokens.space3),
-                    if (_passkey == _Passkey.added)
-                      Semantics(liveRegion: true, child: Text(l10n.progressPasskeyAdded))
-                    else
-                      OutlinedButton.icon(
-                        key: const Key('progress.passkey'),
-                        onPressed: _passkey == _Passkey.busy ? null : _addPasskey,
-                        icon: const Icon(Icons.fingerprint),
-                        label: Text(
-                          _passkey == _Passkey.busy
-                              ? l10n.progressPasskeyAdding
-                              : l10n.progressPasskeyAdd,
-                        ),
-                      ),
-                    if (_passkeyError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: LukitasTokens.space3),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            _passkeyError!,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.error,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ],
+    // The web's sign-in language: the frame, the title, a lead, a form, the line between two ways.
+    return SignInFrame(
+      children: [
+        EntryTitle(l10n.progressTitle),
+        // What a guest account is, said plainly, then what saving to an email does.
+        EntryLead(l10n.progressLead, ink: true),
+        EntryLead(l10n.progressEmailBody),
+        SizedBox(
+          width: double.infinity,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: LukitasTokens.space3,
+            children: [
+              FieldCaption(l10n.emailLabel),
+              WebTextField(
+                fieldKey: const Key('progress.email'),
+                controller: _email,
+                focusNode: _emailFocus,
+                label: l10n.emailLabel,
+                placeholder: l10n.emailPlaceholder,
+                invalid: error != null,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _save(),
               ),
-            ),
+              if (error != null) FieldError(error.message(l10n)),
+              PressButton.text(
+                l10n.progressSave,
+                key: const Key('progress.save'),
+                onPressed: _save,
+              ),
+            ],
           ),
         ),
-      ),
+        if (passkeys) ...[
+          OrDivider(l10n.progressPasskeyTitle),
+          EntryLead(l10n.progressPasskeyBody),
+          if (_passkey == _Passkey.added)
+            Semantics(
+              liveRegion: true,
+              container: true,
+              child: Text(
+                l10n.progressPasskeyAdded,
+                textAlign: TextAlign.center,
+                style: LkText.copy.copyWith(color: colors.good),
+              ),
+            )
+          else
+            SizedBox(
+              width: double.infinity,
+              child: PressButton(
+                key: const Key('progress.passkey'),
+                tone: PressTone.secondary,
+                onPressed: _passkey == _Passkey.busy ? null : _addPasskey,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: LukitasTokens.space2,
+                  children: [
+                    const FingerprintIcon(),
+                    Flexible(
+                      child: Text(
+                        (_passkey == _Passkey.busy
+                                ? l10n.progressPasskeyAdding
+                                : l10n.progressPasskeyAdd)
+                            .toUpperCase(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (_passkeyError != null) FieldError(_passkeyError!),
+        ],
+      ],
     );
   }
 }

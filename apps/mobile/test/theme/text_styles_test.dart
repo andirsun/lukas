@@ -15,6 +15,8 @@ const _confirmSheetTsx = '../web/app/ui/ConfirmSheet.tsx';
 const _addSheetTsx = '../web/app/features/add-transaction/AddTransactionSheet.tsx';
 const _homeTsx = '../web/app/features/home/Home.tsx';
 const _homeHeaderTsx = '../web/app/features/home/HomeHeader.tsx';
+const _signInScreenTsx = '../web/app/features/sign-in/SignInScreen.tsx';
+const _signInTsx = '../web/app/features/sign-in/SignIn.tsx';
 const _tokensCss = '../web/app/styles/tokens.css';
 
 /// The declarations of `selector { ... }` in app.css, the first rule with exactly that selector.
@@ -184,6 +186,50 @@ void main() {
       expect(LkText.eyebrow.letterSpacing, closeTo(0.07 * 11, 1e-9));
       expect(LkText.eyebrow.height, 1.5);
       expect(LkText.upperCase('hoy · mar 21'), 'HOY · MAR 21');
+    });
+
+    test('screenTitle: the entry screens\' title, Fredoka 28px 700 on leading-tight', () {
+      // SignInScreen.tsx ScreenTitle: font-display text-[28px] leading-tight font-bold
+      final source = File(_signInScreenTsx).readAsStringSync();
+      expect(source, contains('font-display text-[28px] leading-tight font-bold'));
+      expect(LkText.screenTitle.fontFamily, 'Fredoka');
+      expect(LkText.screenTitle.fontSize, 28);
+      expect(LkText.screenTitle.fontWeight, FontWeight.w700);
+      // Tailwind's leading-tight is 1.25.
+      expect(LkText.screenTitle.height, 1.25);
+    });
+
+    test('copy, note and labelSm: the paragraphs and labels of the sign-in screens', () {
+      final source = File(_signInTsx).readAsStringSync();
+      // A paragraph with no size of its own is the body's 16px.
+      expect(source, contains('<p className="text-center text-ink-muted">{t("lead")}</p>'));
+      expect(LkText.copy.fontSize, 16);
+      expect(LkText.copy.fontWeight, FontWeight.w700);
+      expect(LkText.copy.height, 1.5);
+      // The note under the form and a field's error: text-[15px].
+      expect(source, contains('className="text-center text-[15px] text-ink-muted"'));
+      expect(File(_signInScreenTsx).readAsStringSync(), contains('text-[15px] text-over'));
+      expect(LkText.note.fontSize, 15);
+      expect(LkText.note.height, 1.5);
+      // The label of a field: text-sm, which Tailwind gives a 20px line.
+      expect(source, contains('className="text-sm text-ink-muted"'));
+      expect(LkText.labelSm.fontSize, 14);
+      expect(LkText.labelSm.fontWeight, FontWeight.w700);
+      expect(LkText.labelSm.height! * 14, closeTo(20, 1e-9));
+    });
+
+    test('codeBox: a digit of the sign-in code, Fredoka 26px 700 with tabular figures', () {
+      // app.css .lk-code-box
+      final css = _rule('.lk-code-box');
+      expect(css['font-family'], 'var(--font-display)');
+      expect(css['font-size'], '26px');
+      expect(css['font-weight'], '700');
+      expect(css['font-variant-numeric'], 'tabular-nums');
+      expect(css['height'], '56px');
+      expect(LkText.codeBox.fontFamily, 'Fredoka');
+      expect(LkText.codeBox.fontSize, 26);
+      expect(LkText.codeBox.fontWeight, FontWeight.w700);
+      expect(LkText.codeBox.fontFeatures, contains(const FontFeature.tabularFigures()));
     });
 
     test('logo: the wordmark, Fredoka 22px 700, line height 1', () {

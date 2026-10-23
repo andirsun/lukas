@@ -5,6 +5,7 @@ import 'package:lukitas/api/session.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/progress/progress_screen.dart';
 import 'package:lukitas/router.dart';
+import 'package:lukitas/ui/press_button.dart';
 
 import '../settings/harness.dart';
 
@@ -17,8 +18,8 @@ Future<void> _claimWith(WidgetTester tester, String email) async {
   await tester.pumpAndSettle();
 }
 
-/// The fingerprint button (an icon button is two widgets sharing the key).
-final _passkeyButton = find.byKey(const Key('progress.passkey')).first;
+/// The fingerprint button.
+final _passkeyButton = find.byKey(const Key('progress.passkey'));
 
 /// Scrolls the progress screen (not the home under it) down to the fingerprint button.
 Future<void> _showPasskey(WidgetTester tester) => tester.scrollUntilVisible(
@@ -71,6 +72,7 @@ void main() {
       expect(find.byKey(const Key('entry.code')), findsOneWidget);
 
       await tester.enterText(find.byKey(const Key('entry.code')), '123456');
+      await tester.pump();
       await tester.tap(find.byKey(const Key('entry.submitCode')));
       await tester.pumpAndSettle();
 
@@ -104,7 +106,7 @@ void main() {
       await _claimWith(tester, 'ana@correo.com');
 
       expect(find.text('Ese correo ya tiene una cuenta. Entra con él.'), findsOneWidget);
-      expect(find.text('Entrar con ese correo'), findsOneWidget);
+      expect(find.text('ENTRAR CON ESE CORREO'), findsOneWidget);
       expect(env.stored?.token, 'guest-token-0');
       expect(env.stored?.guest, isTrue);
       expect(
@@ -113,7 +115,7 @@ void main() {
       );
 
       // Signing in with it is warned about, and walking away leaves the guest as it was.
-      await tester.tap(find.text('Entrar con ese correo'));
+      await tester.tap(find.text('ENTRAR CON ESE CORREO'));
       await tester.pumpAndSettle();
       expect(find.text('¿Dejar tu cuenta de invitado?'), findsOneWidget);
       await tester.tap(find.text('Cancelar'));
@@ -141,6 +143,7 @@ void main() {
       await _claimWith(tester, 'ana@correo.com');
       env.auth.failures['claimVerify'] = const AuthFailure(code: 'invalid_code', status: 400);
       await tester.enterText(find.byKey(const Key('entry.code')), '000000');
+      await tester.pump();
       await tester.tap(find.byKey(const Key('entry.submitCode')));
       await tester.pumpAndSettle();
 
@@ -216,7 +219,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No pudimos guardar tu huella. Inténtalo otra vez.'), findsOneWidget);
-      expect(tester.widget<ButtonStyleButton>(_passkeyButton).onPressed, isNotNull);
+      expect(tester.widget<PressButton>(_passkeyButton).onPressed, isNotNull);
     });
   });
 }

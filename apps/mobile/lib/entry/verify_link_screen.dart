@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../api/auth_api.dart';
 import '../api/session.dart';
+import '../home/lukitas_face.dart';
 import '../l10n/app_localizations.dart';
-import '../theme/tokens.g.dart';
+import '../ui/lk_theme.dart';
+import '../ui/press_button.dart';
 import 'auth_errors.dart';
+import 'sign_in_frame.dart';
 
 /// The magic link, `https://<server>/auth/verify?email=…&code=…`, opened in the app (Android App
 /// Links). Signs in at once; a signed-in guest is asked first, since signing in would leave the
@@ -80,61 +83,74 @@ class _VerifyLinkScreenState extends ConsumerState<VerifyLinkScreen> {
     queryParameters: {if (_email.isNotEmpty) 'email': _email, if (claim) 'claim': '1'},
   ).toString();
 
+  /// The web's `w-full`.
+  Widget _full(Widget child) => SizedBox(width: double.infinity, child: child);
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final body = switch (_phase) {
-      _Phase.waiting || _Phase.verifying => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: LukitasTokens.space4),
-            Text(l10n.verifying),
-          ],
-        ),
-      ),
-      _Phase.guestAsks => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    return switch (_phase) {
+      // The web's page while the code is being checked: whose account, and a button that says so.
+      _Phase.waiting || _Phase.verifying => SignInFrame(
         children: [
-          Text(l10n.guestLeaveTitle, style: theme.textTheme.headlineMedium),
-          const SizedBox(height: LukitasTokens.space3),
-          Text(l10n.guestLeaveBody(_email), style: theme.textTheme.bodyLarge),
-          const SizedBox(height: LukitasTokens.space5),
-          FilledButton(
-            onPressed: () => context.go(_emailRoute(claim: true)),
-            child: Text(l10n.guestSaveAction),
-          ),
-          const SizedBox(height: LukitasTokens.space3),
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(foregroundColor: theme.colorScheme.error),
-            onPressed: () => _verify(replaceGuest: true),
-            child: Text(l10n.guestLeaveConfirm),
-          ),
-          TextButton(onPressed: () => context.go('/'), child: Text(l10n.cancel)),
+          EntryTitle(l10n.verifyConfirmTitle(_email)),
+          EntryLead(l10n.verifyConfirmLead),
+          _full(PressButton.text(l10n.verifying)),
+          PressButton.text(l10n.verifyNotMe, tone: PressTone.ghost),
         ],
       ),
-      _Phase.failed => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      // Only the app has this one: the web's page signs a new browser in, not a signed-in guest.
+      _Phase.guestAsks => SignInFrame(
         children: [
-          Text(l10n.verifyFailedTitle, style: theme.textTheme.headlineMedium),
-          const SizedBox(height: LukitasTokens.space3),
-          Semantics(
-            liveRegion: true,
-            child: Text(_error.message(l10n), style: theme.textTheme.bodyLarge),
+          EntryTitle(l10n.guestLeaveTitle),
+          EntryLead(l10n.guestLeaveBody(_email), strong: _email),
+          _full(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 8,
+              children: [
+                PressButton.text(
+                  l10n.guestSaveAction,
+                  onPressed: () => context.go(_emailRoute(claim: true)),
+                ),
+                PressButton(
+                  tone: PressTone.secondary,
+                  onPressed: () => _verify(replaceGuest: true),
+                  child: Text(
+                    l10n.guestLeaveConfirm.toUpperCase(),
+                    style: TextStyle(color: context.lkColors.over),
+                  ),
+                ),
+                PressButton.text(
+                  l10n.cancel,
+                  tone: PressTone.ghost,
+                  onPressed: () => context.go('/'),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: LukitasTokens.space5),
-          if (retryableErrors.contains(_error) && emailPattern.hasMatch(_email))
-            OutlinedButton(onPressed: () => _start(), child: Text(l10n.retry)),
-          FilledButton(onPressed: () => context.go(_emailRoute()), child: Text(l10n.sendNewCode)),
         ],
       ),
+      _Phase.failed => _failed(l10n),
     };
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(padding: const EdgeInsets.all(LukitasTokens.space5), child: body),
-      ),
+  }
+
+  Widget _failed(AppLocalizations l10n) {
+    final retry = retryableErrors.contains(_error) && emailPattern.hasMatch(_email);
+    return SignInFrame(
+      mood: LukitasMood.worried,
+      children: [
+        EntryTitle(l10n.verifyFailedTitle),
+        FieldError(_error.message(l10n), textAlign: TextAlign.center),
+        if (retry) _full(PressButton.text(l10n.retry, onPressed: () => _start())),
+        _full(
+          PressButton.text(
+            l10n.sendNewCode,
+            tone: retry ? PressTone.secondary : PressTone.primary,
+            onPressed: () => context.go(_emailRoute()),
+          ),
+        ),
+      ],
     );
   }
 }

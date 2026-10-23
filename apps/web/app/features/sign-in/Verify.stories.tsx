@@ -227,6 +227,38 @@ export const Expired: Story = {
   },
 };
 
+/** A rejected code leaves the failed screen up: Lukitas worried, the message and "send a new code". */
+export const RejectedCode: Story = {
+  args: { auth: expired() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await tapContinue(canvas);
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
+    );
+    await expect(canvas.getByRole("img", { name: "Lukitas, preocupado" })).toBeVisible();
+    await expect(canvas.queryByRole("button", { name: "Reintentar" })).toBeNull();
+    await expectTarget(canvas.getByRole("button", { name: "Enviar un código nuevo" }));
+  },
+};
+
+/** No connection leaves the failed screen up too, with "Reintentar" for the same link. */
+export const NoConnection: Story = {
+  args: { auth: fakeAuth({ verifyCode: fn(async () => fail({ status: 0 })) }) },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await tapContinue(canvas);
+    await expect(await canvas.findByRole("alert")).toHaveTextContent(
+      "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
+    );
+    await expectTarget(canvas.getByRole("button", { name: "Reintentar" }));
+    await expectTarget(canvas.getByRole("button", { name: "Enviar un código nuevo" }));
+    // The tap on "Continuar" left the focus on the button that took its place; a finger rings
+    // nothing, so the picture is taken without it.
+    (canvasElement.ownerDocument.activeElement as HTMLElement | null)?.blur();
+  },
+};
+
 /** The same, by day and in English. */
 export const ExpiredDay: Story = {
   args: { auth: expired(), initialEntry: LINK.replace("lang=es", "lang=en") },

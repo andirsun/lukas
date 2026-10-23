@@ -45,6 +45,9 @@ Future<void> _pumpUntil(
 
 Future<void> _tap(WidgetTester tester, String key) async {
   await _pumpUntil(tester, find.byKey(Key(key)));
+  // On a short phone the button may be below the fold: bring it up, as a person would.
+  await tester.ensureVisible(find.byKey(Key(key)));
+  await tester.pump();
   await tester.tap(find.byKey(Key(key)));
   await tester.pump();
 }
@@ -115,7 +118,15 @@ void main() {
     // The guest's profile starts from the phone's time zone (x-lukas-timezone).
     // The server stores the canonical name, so an emulator's "Etc/UTC" comes back as "UTC".
     final zone = await const MethodChannel('lukitas/device').invokeMethod<String>('timeZone');
-    const utcAliases = {'Etc/UTC', 'Etc/UCT', 'Etc/Universal', 'Etc/Zulu', 'UCT', 'Universal', 'Zulu'};
+    const utcAliases = {
+      'Etc/UTC',
+      'Etc/UCT',
+      'Etc/Universal',
+      'Etc/Zulu',
+      'UCT',
+      'Universal',
+      'Zulu',
+    };
     expect(me['timezone'], utcAliases.contains(zone) ? 'UTC' : zone);
   });
 

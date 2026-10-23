@@ -4,11 +4,19 @@ import 'package:go_router/go_router.dart';
 
 import '../api/auth_api.dart';
 import '../api/session.dart';
+import '../home/lukitas_face.dart';
 import '../l10n/app_localizations.dart';
+import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
+import '../ui/lk_icons.dart';
+import '../ui/lk_theme.dart';
+import '../ui/press_button.dart';
+import '../ui/web_text_field.dart';
 import 'auth_errors.dart';
 import 'code_formatter.dart';
+import 'code_input.dart';
 import 'guest_dialogs.dart';
+import 'sign_in_frame.dart';
 
 /// "Entrar con mi correo": the email, then the 6-digit code (the email also carries a magic link,
 /// handled by VerifyLinkScreen).
@@ -21,9 +29,13 @@ import 'guest_dialogs.dart';
 /// For a signed-in guest, nothing is sent before the person decides: save their progress to the
 /// email (the claim, spec section 4.2), or, after a warning, sign in as another account.
 class EmailScreen extends ConsumerStatefulWidget {
-  const EmailScreen({super.key, this.initialEmail, this.claim = false});
+  const EmailScreen({super.key, this.initialEmail, this.claim = false, this.passkeyLabel});
 
   final String? initialEmail;
+
+  /// The passkey button's words, in place of "Usar passkey": the web's own, "Entrar con huella",
+  /// for the parity pictures that compare it with the web's sign-in.
+  final String? passkeyLabel;
 
   /// Start the claim of [initialEmail] at once (a guest chose "Guardar mi progreso" elsewhere).
   final bool claim;
@@ -40,6 +52,7 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
   late final _email = TextEditingController(text: widget.initialEmail ?? '');
   final _code = TextEditingController();
   final _emailFocus = FocusNode();
+  final _codeFocus = FocusNode();
 
   /// A passkey prompt is open (or being asked for): no second one.
   bool _passkeyActive = false;
@@ -54,6 +67,9 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
   /// Checking the code (rather than sending one).
   bool _verifying = false;
   AuthError? _error;
+
+  /// The error is about the passkey (shown under its button), not the email field.
+  bool _errorIsPasskey = false;
   bool _resent = false;
 
   /// The email the code went to.
@@ -62,6 +78,7 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
   @override
   void initState() {
     super.initState();
+    _code.addListener(_codeChanged);
     final email = widget.initialEmail;
     if (widget.claim && email != null && emailPattern.hasMatch(normalizeEmail(email))) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _claim(normalizeEmail(email)));
@@ -75,7 +92,13 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     _email.dispose();
     _code.dispose();
     _emailFocus.dispose();
+    _codeFocus.dispose();
     super.dispose();
+  }
+
+  void _codeChanged() {
+    // The button waits for the whole code.
+    if (mounted) setState(() {});
   }
 
   SessionController get _session => ref.read(sessionProvider.notifier);
@@ -96,9 +119,19 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
       // A guest signed in meanwhile: nothing to offer.
     } on AuthFailure catch (failure) {
       // Only a passkey the person chose and the server refused gets here.
-      if (mounted) setState(() => _error = passkeyErrorFor(failure));
+      if (mounted) {
+        setState(() {
+          _error = passkeyErrorFor(failure);
+          _errorIsPasskey = true;
+        });
+      }
     } catch (error) {
-      if (mounted) setState(() => _error = unexpectedPasskeyErrorFor(error));
+      if (mounted) {
+        setState(() {
+          _error = unexpectedPasskeyErrorFor(error);
+          _errorIsPasskey = true;
+        });
+      }
     } finally {
       if (mounted) setState(() => _passkeyActive = false);
     }
@@ -128,6 +161,7 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     setState(() {
       _passkeyActive = true;
       _error = null;
+      _errorIsPasskey = false;
       _resent = false;
     });
     var signedIn = false;
@@ -135,11 +169,21 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
       await _session.signInWithPasskey(replaceGuest: replaceGuest);
       signedIn = true;
     } on AuthFailure catch (failure) {
-      if (mounted) setState(() => _error = passkeyErrorFor(failure));
+      if (mounted) {
+        setState(() {
+          _error = passkeyErrorFor(failure);
+          _errorIsPasskey = true;
+        });
+      }
     } on GuestInTheWay {
       // A guest signed in meanwhile: the person can tap again and will be asked.
     } catch (error) {
-      if (mounted) setState(() => _error = unexpectedPasskeyErrorFor(error));
+      if (mounted) {
+        setState(() {
+          _error = unexpectedPasskeyErrorFor(error);
+          _errorIsPasskey = true;
+        });
+      }
     } finally {
       if (mounted) setState(() => _passkeyActive = false);
     }
@@ -156,6 +200,7 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     setState(() {
       _busy = true;
       _error = null;
+      _errorIsPasskey = false;
       _resent = false;
     });
     try {
@@ -176,7 +221,10 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
   Future<void> _send() async {
     final email = normalizeEmail(_email.text);
     if (!emailPattern.hasMatch(email)) {
-      setState(() => _error = AuthError.invalidEmail);
+      setState(() {
+        _error = AuthError.invalidEmail;
+        _errorIsPasskey = false;
+      });
       return;
     }
     if (ref.read(sessionProvider).isGuest && !_replaceGuest) {
@@ -250,144 +298,164 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     _replaceGuest = false;
     _stage = _Stage.email;
     _error = null;
+    _errorIsPasskey = false;
     _resent = false;
   });
 
-  void _close() => context.canPop() ? context.pop() : context.go('/');
+  /// The web's `w-full`.
+  Widget _full(Widget child) => SizedBox(width: double.infinity, child: child);
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(leading: BackButton(onPressed: _stage == _Stage.code ? _changeEmail : _close)),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(LukitasTokens.space5),
-          child: _stage == _Stage.email ? _emailStage(l10n) : _codeStage(l10n),
-        ),
+    return PopScope(
+      // Back from the code goes to the email, as "Usar otro correo" does; from the email it leaves.
+      canPop: _stage == _Stage.email,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _stage == _Stage.code) _changeEmail();
+      },
+      child: SignInFrame(
+        mood: LukitasMood.happy,
+        children: _stage == _Stage.email ? _emailStage(l10n) : _codeStage(l10n),
       ),
     );
   }
 
-  Widget _errorText(AuthError error) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: LukitasTokens.space3),
-      child: Semantics(
-        liveRegion: true,
-        child: Text(
-          error.message(AppLocalizations.of(context)),
-          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
-        ),
-      ),
-    );
-  }
-
-  Widget _emailStage(AppLocalizations l10n) {
-    final theme = Theme.of(context);
+  /// The email step (`SignIn`'s `email` step): the title and lead, "Usar passkey" first when the
+  /// phone has passkeys, then the email and "Enviar código".
+  List<Widget> _emailStage(AppLocalizations l10n) {
     final error = _error;
     final passkeys = ref.watch(passkeysSupportedProvider).value ?? false;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(l10n.signInTitle, style: theme.textTheme.headlineMedium),
-        const SizedBox(height: LukitasTokens.space2),
-        Text(
-          l10n.signInLead,
-          style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: LukitasTokens.space5),
-        TextField(
-          key: const Key('entry.email'),
-          controller: _email,
-          focusNode: _emailFocus,
-          enabled: !_busy,
-          autofocus: widget.initialEmail == null,
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.email],
-          autocorrect: false,
-          textInputAction: TextInputAction.send,
-          onSubmitted: (_) => _send(),
-          decoration: InputDecoration(
-            labelText: l10n.emailLabel,
-            hintText: l10n.emailPlaceholder,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        if (error != null) _errorText(error),
-        if (error == AuthError.emailTaken) ...[
-          const SizedBox(height: LukitasTokens.space3),
-          OutlinedButton(
-            onPressed: _busy ? null : _signInInstead,
-            child: Text(l10n.emailTakenSignIn),
-          ),
-        ],
-        const SizedBox(height: LukitasTokens.space5),
-        FilledButton(
-          key: const Key('entry.send'),
-          onPressed: _busy ? null : _send,
-          child: Text(_busy ? l10n.sending : l10n.sendCode),
-        ),
-        if (passkeys) ...[
-          const SizedBox(height: LukitasTokens.space3),
-          OutlinedButton(
+    final passkeyError = _errorIsPasskey;
+    return [
+      EntryTitle(l10n.signInTitle),
+      EntryLead(l10n.signInLead),
+      if (passkeys) ...[
+        _full(
+          PressButton(
             key: const Key('entry.passkey'),
+            tone: PressTone.secondary,
             onPressed: _busy || _passkeyActive ? null : _passkey,
-            child: Text(_passkeyActive ? l10n.emailPasskeyBusy : l10n.emailPasskey),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              spacing: LukitasTokens.space2,
+              children: [
+                const FingerprintIcon(),
+                Flexible(
+                  child: Text(
+                    (_passkeyActive
+                            ? l10n.emailPasskeyBusy
+                            : (widget.passkeyLabel ?? l10n.emailPasskey))
+                        .toUpperCase(),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
+        if (passkeyError && error != null) FieldError(error.message(l10n)),
+        OrDivider(l10n.signInOrEmail),
       ],
-    );
+      _full(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: LukitasTokens.space3,
+          children: [
+            FieldCaption(l10n.emailLabel),
+            WebTextField(
+              fieldKey: const Key('entry.email'),
+              controller: _email,
+              focusNode: _emailFocus,
+              label: l10n.emailLabel,
+              placeholder: l10n.emailPlaceholder,
+              invalid: error != null && !passkeyError,
+              readOnly: _busy,
+              autofocus: widget.initialEmail == null,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _send(),
+            ),
+            if (error != null && !passkeyError) FieldError(error.message(l10n)),
+            if (error == AuthError.emailTaken && !passkeyError)
+              PressButton.text(
+                l10n.emailTakenSignIn,
+                tone: PressTone.secondary,
+                onPressed: _busy ? null : _signInInstead,
+              ),
+            PressButton.text(
+              _busy ? l10n.sending : l10n.sendCode,
+              key: const Key('entry.send'),
+              onPressed: _busy ? null : _send,
+            ),
+          ],
+        ),
+      ),
+      EntryNote(l10n.signInFirstTime),
+    ];
   }
 
-  Widget _codeStage(AppLocalizations l10n) {
-    final theme = Theme.of(context);
+  /// The code step: the boxes, "Entrar" (or "Guardar" for a guest's claim), and the two ways back.
+  List<Widget> _codeStage(AppLocalizations l10n) {
     final error = _error;
     final claim = _mode == _Mode.claim;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(l10n.codeTitle, style: theme.textTheme.headlineMedium),
-        const SizedBox(height: LukitasTokens.space2),
-        Text(
-          claim ? l10n.claimCodeLead(_sentTo) : l10n.codeLead(_sentTo),
-          style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+    final complete = _code.text.length == codeLength;
+    final text = claim ? l10n.claimCodeLead(_sentTo) : l10n.codeLead(_sentTo);
+    return [
+      EntryTitle(l10n.codeTitle),
+      EntryLead(text, strong: _sentTo),
+      _full(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: LukitasTokens.space3,
+          children: [
+            CodeInput(
+              fieldKey: const Key('entry.code'),
+              controller: _code,
+              focusNode: _codeFocus,
+              label: l10n.codeLabel,
+              invalid: error != null && isCodeError(error),
+              readOnly: _busy,
+              autofocus: true,
+              onSubmitted: (_) {
+                if (!_busy && _code.text.length == codeLength) _submitCode();
+              },
+            ),
+            if (error != null) FieldError(error.message(l10n)),
+            if (_resent && error == null) _Resent(l10n.resent),
+            PressButton.text(
+              _verifying ? l10n.verifying : (claim ? l10n.submitClaim : l10n.submitCode),
+              key: const Key('entry.submitCode'),
+              onPressed: _busy || !complete ? null : _submitCode,
+            ),
+          ],
         ),
-        const SizedBox(height: LukitasTokens.space5),
-        TextField(
-          key: const Key('entry.code'),
-          controller: _code,
-          enabled: !_busy,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          autofillHints: const [AutofillHints.oneTimeCode],
-          inputFormatters: const [CodeFormatter()],
-          maxLength: codeLength,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _submitCode(),
-          style: theme.textTheme.headlineSmall?.copyWith(letterSpacing: 8),
-          decoration: InputDecoration(
-            labelText: l10n.codeLabel,
-            border: const OutlineInputBorder(),
-            counterText: '',
+      ),
+      // Stacked: nothing here changes width and reflows the row.
+      Column(
+        children: [
+          PressButton.text(l10n.resend, tone: PressTone.ghost, onPressed: _busy ? null : _resend),
+          PressButton.text(
+            l10n.changeEmail,
+            tone: PressTone.ghost,
+            onPressed: _busy ? null : _changeEmail,
           ),
-        ),
-        if (error != null) _errorText(error),
-        if (_resent && error == null)
-          Padding(
-            padding: const EdgeInsets.only(top: LukitasTokens.space3),
-            child: Semantics(liveRegion: true, child: Text(l10n.resent)),
-          ),
-        const SizedBox(height: LukitasTokens.space5),
-        FilledButton(
-          key: const Key('entry.submitCode'),
-          onPressed: _busy ? null : _submitCode,
-          child: Text(_verifying ? l10n.verifying : (claim ? l10n.submitClaim : l10n.submitCode)),
-        ),
-        const SizedBox(height: LukitasTokens.space3),
-        TextButton(onPressed: _busy ? null : _resend, child: Text(l10n.resend)),
-        TextButton(onPressed: _busy ? null : _changeEmail, child: Text(l10n.changeEmail)),
-      ],
-    );
+        ],
+      ),
+    ];
   }
+}
+
+/// "Te mandamos un código nuevo.", read out politely when it appears.
+class _Resent extends StatelessWidget {
+  const _Resent(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    container: true,
+    child: Text(text, style: LkText.note.copyWith(color: context.lkColors.ink)),
+  );
 }

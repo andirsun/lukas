@@ -369,6 +369,57 @@ abstract final class LkText {
     leadingDistribution: TextLeadingDistribution.even,
   );
 
+  /// The entry screens' title: SignInScreen.tsx `ScreenTitle`, `font-display text-[28px]
+  /// leading-tight font-bold`, Fredoka 28px 700 on Tailwind's `leading-tight` (1.25).
+  static const screenTitle = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 28,
+    fontWeight: FontWeight.w700,
+    height: 1.25,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A paragraph with no size of its own (`<p className="text-center text-ink-muted">`): the
+  /// body's Nunito 700 at the browser's 16px, on Tailwind's 1.5.
+  static const copy = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 16,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A note under a form, and a field's error: SignIn.tsx `text-[15px]`, FieldError `text-[15px]
+  /// text-over`, Nunito 15px 700 on the inherited 1.5.
+  static const note = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 15,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A field's label and the line between two ways in: SignIn.tsx `text-sm`, Nunito 14px 700 on
+  /// Tailwind's `text-sm` line height (20px).
+  static const labelSm = TextStyle(
+    fontFamily: textFamily,
+    fontSize: 14,
+    fontWeight: FontWeight.w700,
+    height: 20 / 14,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
+  /// A digit of the sign-in code: app.css `.lk-code-box`, Fredoka 26px 700 with tabular figures
+  /// (the input takes the page's 1.5 line height).
+  static const codeBox = TextStyle(
+    fontFamily: displayFamily,
+    fontSize: 26,
+    fontWeight: FontWeight.w700,
+    height: _inherited,
+    fontFeatures: _tabular,
+    leadingDistribution: TextLeadingDistribution.even,
+  );
+
   /// `text-transform: uppercase`, for [eyebrow], [button], [buttonSm] and [badge].
   static String upperCase(String text) => text.toUpperCase();
 }
