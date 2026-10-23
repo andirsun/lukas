@@ -129,9 +129,14 @@ class FakeAuthApi implements AuthApi {
 
 /// The phone's passkey prompt, answered at once.
 class FakePasskeys implements Passkeys {
-  FakePasskeys({this.isSupported = true});
+  FakePasskeys({this.isSupported = true, this.hasPasskey = false});
 
   bool isSupported;
+
+  /// Whether the phone has a passkey for this server at once (a provider such as Proton Pass holds
+  /// one made on the web): [getAvailable] answers with it, else with `NO_CREDENTIAL`. [get], which
+  /// may show the provider's own picker, always answers.
+  bool hasPasskey;
   final calls = <String>[];
 
   /// Thrown by the next `get` or `create` instead of answering (then cleared).
@@ -146,6 +151,16 @@ class FakePasskeys implements Passkeys {
     final error = failure;
     failure = null;
     if (error != null) throw error;
+    return '{"assertion":true}';
+  }
+
+  @override
+  Future<String> getAvailable(String optionsJson) async {
+    calls.add('getAvailable $optionsJson');
+    final error = failure;
+    failure = null;
+    if (error != null) throw error;
+    if (!hasPasskey) throw const AuthFailure(code: 'NO_CREDENTIAL', status: 400);
     return '{"assertion":true}';
   }
 

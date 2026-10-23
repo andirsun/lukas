@@ -257,6 +257,63 @@ void main() {
       expect(container.read(sessionProvider).isGuest, isTrue);
     });
 
+    group('signInWithAvailablePasskey (the email screen, on opening)', () {
+      test('asks only for what the phone has at once, and signs in with it', () async {
+        passkeys.hasPasskey = true;
+        final container = containerWith();
+        final controller = await ready(container);
+
+        expect(await controller.signInWithAvailablePasskey(), isTrue);
+        expect(passkeys.calls, ['getAvailable {"challenge":"sign-in"}']);
+        expect(container.read(sessionProvider).stored?.token, 'passkey-token-1');
+        expect(container.read(sessionProvider).isGuest, isFalse);
+      });
+
+      test('with none to offer, or the sheet closed, it is false and nothing changes', () async {
+        final container = containerWith();
+        final controller = await ready(container);
+
+        expect(await controller.signInWithAvailablePasskey(), isFalse);
+        passkeys.hasPasskey = true;
+        passkeys.failure = const AuthFailure(code: 'AUTH_CANCELLED', status: 400);
+        expect(await controller.signInWithAvailablePasskey(), isFalse);
+        expect(container.read(sessionProvider).status, SessionStatus.signedOut);
+        expect(auth.calls.where((c) => c.startsWith('passkeySignIn ')), isEmpty);
+      });
+
+      test('no connection for the challenge is as silent: the email is there', () async {
+        passkeys.hasPasskey = true;
+        final container = containerWith();
+        final controller = await ready(container);
+        auth.failures['passkeySignInOptions'] = const AuthFailure(code: 'NETWORK', status: 0);
+
+        expect(await controller.signInWithAvailablePasskey(), isFalse);
+        expect(passkeys.calls, isEmpty);
+      });
+
+      test('a passkey the person chose and the server refuses is an AuthFailure', () async {
+        passkeys.hasPasskey = true;
+        final container = containerWith();
+        final controller = await ready(container);
+        auth.failures['passkeySignIn'] = const AuthFailure(code: 'PASSKEY_NOT_FOUND', status: 401);
+
+        await expectLater(controller.signInWithAvailablePasskey(), throwsA(isA<AuthFailure>()));
+        expect(container.read(sessionProvider).status, SessionStatus.signedOut);
+      });
+
+      test('never discards a guest token: GuestInTheWay, and the phone is not asked', () async {
+        mockStorage(token: 'guest-token-0', guest: true);
+        auth.guests['guest-token-0'] = true;
+        passkeys.hasPasskey = true;
+        final container = containerWith();
+        final controller = await ready(container);
+
+        await expectLater(controller.signInWithAvailablePasskey(), throwsA(isA<GuestInTheWay>()));
+        expect(passkeys.calls, isEmpty);
+        expect(container.read(sessionProvider).stored?.token, 'guest-token-0');
+      });
+    });
+
     test('registerPasskey adds a passkey to the signed-in user, guest or not', () async {
       final container = containerWith();
       final controller = await ready(container);

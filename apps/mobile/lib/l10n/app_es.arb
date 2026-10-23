@@ -49,6 +49,14 @@
   "@entryPasskeyBusy": {
     "description": "While the phone's passkey prompt is open."
   },
+  "emailPasskey": "Usar passkey",
+  "@emailPasskey": {
+    "description": "Email screen: sign in with a passkey stored on the phone (made on the web too). Shown only when the phone supports passkeys."
+  },
+  "emailPasskeyBusy": "Esperando tu passkey…",
+  "@emailPasskeyBusy": {
+    "description": "Email screen: while the phone's passkey prompt is open."
+  },
   "signInTitle": "Entra a Lukitas",
   "@signInTitle": {
     "description": "Email screen title."
@@ -160,6 +168,10 @@
         "example": "ana@correo.com"
       }
     }
+  },
+  "guestPasskeyBody": "Si entras con un passkey, lo que anotaste como invitado se queda en esa cuenta sin correo y no podrás volver a verlo. Antes puedes guardar tu progreso con un correo.",
+  "@guestPasskeyBody": {
+    "description": "Body of the warning before a guest signs in with a passkey (the passkey's email is not known)."
   },
   "guestLeaveConfirm": "Entrar de todos modos",
   "@guestLeaveConfirm": {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,10 +7,16 @@ import '../api/session.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/tokens.g.dart';
 import 'auth_errors.dart';
+import 'code_formatter.dart';
 import 'guest_dialogs.dart';
 
 /// "Entrar con mi correo": the email, then the 6-digit code (the email also carries a magic link,
 /// handled by VerifyLinkScreen).
+///
+/// On opening it also asks the phone for a passkey it can offer at once (one made on the web and
+/// held by a provider such as Proton Pass): its sheet appears if there is one, and signing in with
+/// it completes; with none, nothing shows and the email field is ready. "Usar passkey" does the
+/// same on demand, with the provider's own picker.
 ///
 /// For a signed-in guest, nothing is sent before the person decides: save their progress to the
 /// email (the claim, spec section 4.2), or, after a warning, sign in as another account.
@@ -34,6 +39,10 @@ enum _Mode { signIn, claim }
 class _EmailScreenState extends ConsumerState<EmailScreen> {
   late final _email = TextEditingController(text: widget.initialEmail ?? '');
   final _code = TextEditingController();
+  final _emailFocus = FocusNode();
+
+  /// A passkey prompt is open (or being asked for): no second one.
+  bool _passkeyActive = false;
 
   _Stage _stage = _Stage.email;
   _Mode _mode = _Mode.signIn;
@@ -56,6 +65,8 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     final email = widget.initialEmail;
     if (widget.claim && email != null && emailPattern.hasMatch(normalizeEmail(email))) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _claim(normalizeEmail(email)));
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _offerPasskey());
     }
   }
 
@@ -63,10 +74,82 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
   void dispose() {
     _email.dispose();
     _code.dispose();
+    _emailFocus.dispose();
     super.dispose();
   }
 
   SessionController get _session => ref.read(sessionProvider.notifier);
+
+  /// On opening: signs in with a passkey the phone can offer at once, silently when it has none.
+  /// Not for a guest, whose session a passkey would replace unasked (the button warns first), nor
+  /// when the screen only finishes a claim.
+  Future<void> _offerPasskey() async {
+    if (!mounted || _passkeyActive) return;
+    setState(() => _passkeyActive = true);
+    var signedIn = false;
+    try {
+      await _session.ready;
+      if (!mounted || ref.read(sessionProvider).isGuest) return;
+      if (!await ref.read(passkeysSupportedProvider.future) || !mounted) return;
+      signedIn = await _session.signInWithAvailablePasskey();
+    } on GuestInTheWay {
+      // A guest signed in meanwhile: nothing to offer.
+    } on AuthFailure catch (failure) {
+      // Only a passkey the person chose and the server refused gets here.
+      if (mounted) setState(() => _error = passkeyErrorFor(failure));
+    } catch (error) {
+      if (mounted) setState(() => _error = unexpectedPasskeyErrorFor(error));
+    } finally {
+      if (mounted) setState(() => _passkeyActive = false);
+    }
+    if (!mounted) return;
+    if (signedIn) {
+      context.go('/');
+    } else if (_stage == _Stage.email) {
+      // The sheet took the focus away, or never came: the email is where the person goes next.
+      _emailFocus.requestFocus();
+    }
+  }
+
+  /// "Usar passkey": the phone's passkey prompt, with the provider's own picker. A guest is warned
+  /// first (the passkey's account replaces theirs) and may save their progress instead.
+  Future<void> _passkey() async {
+    if (_passkeyActive) return;
+    var replaceGuest = false;
+    if (ref.read(sessionProvider).isGuest) {
+      final choice = await askGuestPasskeyChoice(context);
+      if (!mounted || choice == null) return;
+      if (choice == GuestPasskeyChoice.save) {
+        _emailFocus.requestFocus();
+        return;
+      }
+      replaceGuest = true;
+    }
+    setState(() {
+      _passkeyActive = true;
+      _error = null;
+      _resent = false;
+    });
+    var signedIn = false;
+    try {
+      await _session.signInWithPasskey(replaceGuest: replaceGuest);
+      signedIn = true;
+    } on AuthFailure catch (failure) {
+      if (mounted) setState(() => _error = passkeyErrorFor(failure));
+    } on GuestInTheWay {
+      // A guest signed in meanwhile: the person can tap again and will be asked.
+    } catch (error) {
+      if (mounted) setState(() => _error = unexpectedPasskeyErrorFor(error));
+    } finally {
+      if (mounted) setState(() => _passkeyActive = false);
+    }
+    if (!mounted) return;
+    if (signedIn) {
+      context.go('/');
+    } else if (_stage == _Stage.email) {
+      _emailFocus.requestFocus();
+    }
+  }
 
   /// Runs [action] with the busy state on, showing a failure as [onFail] reads it.
   Future<bool> _run(Future<void> Function() action, AuthError Function(AuthFailure) onFail) async {
@@ -203,6 +286,7 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
   Widget _emailStage(AppLocalizations l10n) {
     final theme = Theme.of(context);
     final error = _error;
+    final passkeys = ref.watch(passkeysSupportedProvider).value ?? false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -216,6 +300,7 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
         TextField(
           key: const Key('entry.email'),
           controller: _email,
+          focusNode: _emailFocus,
           enabled: !_busy,
           autofocus: widget.initialEmail == null,
           keyboardType: TextInputType.emailAddress,
@@ -243,6 +328,14 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
           onPressed: _busy ? null : _send,
           child: Text(_busy ? l10n.sending : l10n.sendCode),
         ),
+        if (passkeys) ...[
+          const SizedBox(height: LukitasTokens.space3),
+          OutlinedButton(
+            key: const Key('entry.passkey'),
+            onPressed: _busy || _passkeyActive ? null : _passkey,
+            child: Text(_passkeyActive ? l10n.emailPasskeyBusy : l10n.emailPasskey),
+          ),
+        ],
       ],
     );
   }
@@ -268,8 +361,8 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
           autofocus: true,
           keyboardType: TextInputType.number,
           autofillHints: const [AutofillHints.oneTimeCode],
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          maxLength: 6,
+          inputFormatters: const [CodeFormatter()],
+          maxLength: codeLength,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _submitCode(),
           style: theme.textTheme.headlineSmall?.copyWith(letterSpacing: 8),

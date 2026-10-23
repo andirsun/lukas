@@ -109,6 +109,64 @@ void main() {
       expect((await SessionStore().read())?.token, 'email-token-1');
     });
 
+    testWidgets('a code pasted whole, with spaces, dashes or words around it, is the code', (
+      tester,
+    ) async {
+      await pumpApp(tester, auth: auth);
+      await tester.tap(find.text('Entrar con mi correo'));
+      await tester.pumpAndSettle();
+      await _enterEmail(tester, 'ana@correo.com');
+
+      final field = find.byKey(const Key('entry.code'));
+      String shown() => tester.widget<TextField>(field).controller!.text;
+      for (final pasted in [
+        '123456',
+        '123 456',
+        '123-456',
+        ' 123\u00A0456\n',
+        'Tu código: 123456',
+      ]) {
+        await tester.enterText(field, pasted);
+        await tester.pump();
+        expect(shown(), '123456', reason: 'pasted "$pasted"');
+      }
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Entrar'));
+      await tester.pumpAndSettle();
+      expect(auth.calls.last, 'verifyCode ana@correo.com 123456');
+      expect(find.byType(HomeScreen), findsOneWidget);
+    });
+
+    testWidgets(
+      'a whole code pasted over digits already typed replaces them; typing stops at six',
+      (tester) async {
+        await pumpApp(tester, auth: auth);
+        await tester.tap(find.text('Entrar con mi correo'));
+        await tester.pumpAndSettle();
+        await _enterEmail(tester, 'ana@correo.com');
+
+        final field = find.byKey(const Key('entry.code'));
+        String shown() => tester.widget<TextField>(field).controller!.text;
+        await tester.enterText(field, '12');
+        await tester.pump();
+        expect(shown(), '12');
+        // The result of pasting "654 321" at the end of "12" (and in the middle of it).
+        await tester.enterText(field, '12654 321');
+        await tester.pump();
+        expect(shown(), '654321');
+        await tester.enterText(field, '1');
+        await tester.enterText(field, '1654-3212');
+        await tester.pump();
+        expect(shown(), '654321');
+        // Typed one digit at a time, the seventh is not taken.
+        await tester.enterText(field, '12345');
+        await tester.enterText(field, '123456');
+        await tester.enterText(field, '1234567');
+        await tester.pump();
+        expect(shown(), '123456');
+      },
+    );
+
     testWidgets('a not-allowlisted email shows "Lukitas todavía no está abierto al público…"', (
       tester,
     ) async {
@@ -363,6 +421,246 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(HomeScreen), findsNothing);
+    });
+  });
+
+  group('passkey on the email screen', () {
+    const getAvailable = 'getAvailable {"challenge":"sign-in"}';
+
+    Future<ProviderContainer> openEmail(
+      WidgetTester tester,
+      FakePasskeys passkeys, {
+      Locale locale = const Locale('es'),
+    }) async {
+      final container = await pumpApp(tester, auth: auth, passkeys: passkeys, locale: locale);
+      auth.calls.clear();
+      passkeys.calls.clear();
+      container.read(routerProvider).go('/entry/email');
+      await tester.pumpAndSettle();
+      return container;
+    }
+
+    bool emailFocused(WidgetTester tester) =>
+        tester.widget<TextField>(find.byKey(const Key('entry.email'))).focusNode?.hasFocus ?? false;
+
+    testWidgets('a passkey the phone already has (made on the web) is offered on opening, and '
+        'signing in with it completes', (tester) async {
+      final passkeys = FakePasskeys(hasPasskey: true);
+      final container = await openEmail(tester, passkeys);
+
+      // Only the credentials available at once are asked for, with no click.
+      expect(passkeys.calls, [getAvailable]);
+      expect(auth.calls, [
+        'passkeySignInOptions',
+        'passkeySignIn {"assertion":true}',
+        startsWith('isGuest'),
+      ]);
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(_stored(container)?.token, 'passkey-token-1');
+      expect(_stored(container)?.guest, isFalse);
+      expect((await SessionStore().read())?.token, 'passkey-token-1');
+    });
+
+    testWidgets('with no passkey on the phone nothing shows, and the email field is ready', (
+      tester,
+    ) async {
+      final passkeys = FakePasskeys();
+      await openEmail(tester, passkeys);
+
+      expect(passkeys.calls, [getAvailable]);
+      expect(auth.calls, ['passkeySignInOptions']);
+      expect(find.byType(HomeScreen), findsNothing);
+      expect(find.textContaining('huella'), findsNothing);
+      expect(find.text('Entra a Lukitas'), findsOneWidget);
+      expect(emailFocused(tester), isTrue);
+
+      // And the email still works.
+      await _enterEmail(tester, 'ana@correo.com');
+      expect(auth.calls.last, 'sendCode ana@correo.com');
+      expect(find.text('Revisa tu correo'), findsOneWidget);
+    });
+
+    testWidgets('closing the phone\'s sheet says nothing and leaves the email field focused', (
+      tester,
+    ) async {
+      final passkeys = FakePasskeys(hasPasskey: true);
+      final container = await pumpApp(tester, auth: auth, passkeys: passkeys);
+      passkeys.failure = const AuthFailure(code: 'AUTH_CANCELLED', status: 400);
+      container.read(routerProvider).go('/entry/email');
+      await tester.pumpAndSettle();
+
+      expect(passkeys.calls.where((c) => c.startsWith('getAvailable')), hasLength(1));
+      expect(find.textContaining('Inténtalo'), findsNothing);
+      expect(find.byType(HomeScreen), findsNothing);
+      expect(emailFocused(tester), isTrue);
+    });
+
+    testWidgets('a sheet that fails to open is as silent as no passkey', (tester) async {
+      final passkeys = FakePasskeys(hasPasskey: true);
+      final container = await pumpApp(tester, auth: auth, passkeys: passkeys);
+      passkeys.failure = const AuthFailure(code: 'PASSKEY_FAILED', status: 400);
+      container.read(routerProvider).go('/entry/email');
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('huella'), findsNothing);
+      expect(emailFocused(tester), isTrue);
+    });
+
+    testWidgets('a passkey the server does not accept says so, and the email still works', (
+      tester,
+    ) async {
+      final passkeys = FakePasskeys(hasPasskey: true);
+      final container = await pumpApp(tester, auth: auth, passkeys: passkeys);
+      auth.failures['passkeySignIn'] = const AuthFailure(code: 'PASSKEY_NOT_FOUND', status: 401);
+      container.read(routerProvider).go('/entry/email');
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.'),
+        findsOneWidget,
+      );
+      expect(find.byType(HomeScreen), findsNothing);
+      expect(find.byKey(const Key('entry.send')), findsOneWidget);
+    });
+
+    testWidgets('a phone without passkeys is not asked, and has no button', (tester) async {
+      final passkeys = FakePasskeys(isSupported: false, hasPasskey: true);
+      await openEmail(tester, passkeys);
+
+      expect(passkeys.calls, isEmpty);
+      expect(auth.calls, isEmpty);
+      expect(find.byKey(const Key('entry.passkey')), findsNothing);
+      expect(find.text('Usar passkey'), findsNothing);
+      expect(emailFocused(tester), isTrue);
+    });
+
+    testWidgets('"Usar passkey" is visible when the phone supports passkeys, and signs in', (
+      tester,
+    ) async {
+      final passkeys = FakePasskeys();
+      final container = await openEmail(tester, passkeys);
+
+      expect(find.widgetWithText(OutlinedButton, 'Usar passkey'), findsOneWidget);
+      passkeys.calls.clear();
+      auth.calls.clear();
+      await tester.tap(find.text('Usar passkey'));
+      await tester.pumpAndSettle();
+
+      // The button may show the provider's picker (a passkey made anywhere), not only what is at hand.
+      expect(passkeys.calls, ['get {"challenge":"sign-in"}']);
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(_stored(container)?.token, 'passkey-token-1');
+    });
+
+    testWidgets('"Use a passkey", in English', (tester) async {
+      await openEmail(tester, FakePasskeys(), locale: const Locale('en'));
+      expect(find.widgetWithText(OutlinedButton, 'Use a passkey'), findsOneWidget);
+    });
+
+    testWidgets('closing the sheet of the button says nothing; a failure suggests the code', (
+      tester,
+    ) async {
+      final passkeys = FakePasskeys();
+      await openEmail(tester, passkeys);
+
+      passkeys.failure = const AuthFailure(code: 'AUTH_CANCELLED', status: 400);
+      await tester.tap(find.text('Usar passkey'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Inténtalo'), findsNothing);
+      expect(emailFocused(tester), isTrue);
+
+      passkeys.failure = const AuthFailure(code: 'PASSKEY_FAILED', status: 400);
+      await tester.tap(find.text('Usar passkey'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.'),
+        findsOneWidget,
+      );
+    });
+
+    group('for a guest', () {
+      setUp(() {
+        mockStorage(token: 'guest-token-0', guest: true);
+        auth.guests['guest-token-0'] = true;
+      });
+
+      testWidgets('nothing is asked on opening: a passkey would replace the guest unasked', (
+        tester,
+      ) async {
+        final passkeys = FakePasskeys(hasPasskey: true);
+        final container = await openEmail(tester, passkeys);
+
+        expect(passkeys.calls, isEmpty);
+        expect(auth.calls, isEmpty);
+        expect(_stored(container)?.token, 'guest-token-0');
+        expect(find.text('Usar passkey'), findsOneWidget);
+      });
+
+      testWidgets('the button warns first; cancelling keeps the guest and asks nothing', (
+        tester,
+      ) async {
+        final passkeys = FakePasskeys(hasPasskey: true);
+        final container = await openEmail(tester, passkeys);
+
+        await tester.tap(find.text('Usar passkey'));
+        await tester.pumpAndSettle();
+        expect(find.text('¿Dejar tu cuenta de invitado?'), findsOneWidget);
+        await tester.tap(find.text('Cancelar'));
+        await tester.pumpAndSettle();
+
+        expect(passkeys.calls, isEmpty);
+        expect(auth.calls, isEmpty);
+        expect(_stored(container)?.token, 'guest-token-0');
+        expect((await SessionStore().read())?.token, 'guest-token-0');
+      });
+
+      testWidgets('the warning offers to save their progress instead, with the email field ready', (
+        tester,
+      ) async {
+        final passkeys = FakePasskeys(hasPasskey: true);
+        final container = await openEmail(tester, passkeys);
+
+        await tester.tap(find.text('Usar passkey'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('guest.save')));
+        await tester.pumpAndSettle();
+
+        expect(passkeys.calls, isEmpty);
+        expect(emailFocused(tester), isTrue);
+        expect(_stored(container)?.token, 'guest-token-0');
+        // The email that follows is offered the claim, as ever.
+        await _enterEmail(tester, 'ana@correo.com');
+        expect(find.text('¿Guardamos lo que ya anotaste?'), findsOneWidget);
+      });
+
+      testWidgets('who confirms the warning signs in with the passkey', (tester) async {
+        final passkeys = FakePasskeys();
+        final container = await openEmail(tester, passkeys);
+
+        await tester.tap(find.text('Usar passkey'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('guest.leaveConfirm')));
+        await tester.pumpAndSettle();
+
+        expect(passkeys.calls, ['get {"challenge":"sign-in"}']);
+        expect(_stored(container)?.token, 'passkey-token-1');
+        expect(find.byType(HomeScreen), findsOneWidget);
+      });
+    });
+
+    testWidgets('saving a guest\'s progress (the claim) does not ask for a passkey', (
+      tester,
+    ) async {
+      mockStorage(token: 'guest-token-0', guest: true);
+      auth.guests['guest-token-0'] = true;
+      final passkeys = FakePasskeys(hasPasskey: true);
+      final container = await pumpApp(tester, auth: auth, passkeys: passkeys);
+      passkeys.calls.clear();
+      container.read(routerProvider).go('/entry/email?email=ana%40correo.com&claim=1');
+      await tester.pumpAndSettle();
+
+      expect(passkeys.calls, isEmpty);
+      expect(auth.calls.where((c) => c.startsWith('claimSend')), hasLength(1));
     });
   });
 

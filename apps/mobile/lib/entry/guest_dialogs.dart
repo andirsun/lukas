@@ -56,3 +56,33 @@ Future<bool> confirmLeavingGuest(BuildContext context, String email) async {
   );
   return confirmed ?? false;
 }
+
+/// What a guest who chose "Usar passkey" decided.
+enum GuestPasskeyChoice { save, signIn }
+
+/// The warning before a guest signs in with a passkey (spec section 4.2), which replaces the
+/// guest's session: its email is not known, so the warning cannot name one. The person may instead
+/// save their progress to an email first (the claim). Null: neither.
+Future<GuestPasskeyChoice?> askGuestPasskeyChoice(BuildContext context) {
+  final l10n = AppLocalizations.of(context);
+  return showDialog<GuestPasskeyChoice>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(l10n.guestLeaveTitle),
+      content: Text(l10n.guestPasskeyBody),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(l10n.cancel)),
+        TextButton(
+          key: const Key('guest.leaveConfirm'),
+          onPressed: () => Navigator.pop(context, GuestPasskeyChoice.signIn),
+          child: Text(l10n.guestLeaveConfirm),
+        ),
+        FilledButton(
+          key: const Key('guest.save'),
+          onPressed: () => Navigator.pop(context, GuestPasskeyChoice.save),
+          child: Text(l10n.guestSaveAction),
+        ),
+      ],
+    ),
+  );
+}

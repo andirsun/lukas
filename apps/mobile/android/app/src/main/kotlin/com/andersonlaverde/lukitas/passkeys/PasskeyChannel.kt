@@ -31,9 +31,11 @@ import io.flutter.plugin.common.MethodChannel
  * passkey provider (Proton Pass, Bitwarden, KeePassDX, Samsung Pass, Google Password Manager…) answers.
  * Below API 34 it would need Play Services, so passkeys are simply not offered there.
  *
- * Methods: `isSupported` → Boolean; `get(requestJson)` → the assertion as JSON; `create(requestJson)` →
- * the attestation as JSON. Errors: `cancelled` (the person closed the prompt), `no_credential` (no
- * passkey for this server), `unsupported`, `failed`.
+ * Methods: `isSupported` → Boolean; `get(requestJson)` → the assertion as JSON; `getAvailable(requestJson)`
+ * → the same, but only for a passkey the provider can offer at once (nothing is shown when there
+ * is none: `no_credential`); `create(requestJson)` → the attestation as JSON. Errors: `cancelled`
+ * (the person closed the prompt), `no_credential` (no passkey for this server), `unsupported`,
+ * `failed`.
  */
 class PasskeyChannel(private val activity: Activity, messenger: BinaryMessenger) :
     MethodChannel.MethodCallHandler {
@@ -47,7 +49,8 @@ class PasskeyChannel(private val activity: Activity, messenger: BinaryMessenger)
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "isSupported" -> result.success(isSupported())
-            "get" -> withRequest(call, result) { get(it, result) }
+            "get" -> withRequest(call, result) { get(it, result, immediate = false) }
+            "getAvailable" -> withRequest(call, result) { get(it, result, immediate = true) }
             "create" -> withRequest(call, result) { create(it, result) }
             else -> result.notImplemented()
         }
@@ -72,8 +75,11 @@ class PasskeyChannel(private val activity: Activity, messenger: BinaryMessenger)
         return providers.isNotEmpty()
     }
 
-    private fun get(requestJson: String, result: MethodChannel.Result) {
-        val request = GetCredentialRequest(listOf(GetPublicKeyCredentialOption(requestJson)))
+    private fun get(requestJson: String, result: MethodChannel.Result, immediate: Boolean) {
+        val request = GetCredentialRequest(
+            listOf(GetPublicKeyCredentialOption(requestJson)),
+            preferImmediatelyAvailableCredentials = immediate,
+        )
         CredentialManager.create(activity).getCredentialAsync(
             activity,
             request,

@@ -201,6 +201,31 @@ class SessionController extends Notifier<SessionState> {
     _guardGuest(replaceGuest);
     final challenge = await _auth.passkeySignInOptions();
     final assertion = await _passkeys.get(challenge.optionsJson);
+    await _finishPasskeySignIn(challenge, assertion);
+  }
+
+  /// The email screen, on opening: signs in with a passkey the phone can offer at once (one made on
+  /// the web and held by Proton Pass, say), showing nothing when there is none. True when it signed
+  /// in. False, silently, when there was no passkey, the person closed the sheet, or the phone or
+  /// the connection could not even ask: the email works as ever. Only a passkey the person chose
+  /// and the server then refused throws [AuthFailure]. Guarded like [sendCode]: it never replaces
+  /// a guest's session ([GuestInTheWay], before anything is asked).
+  Future<bool> signInWithAvailablePasskey() async {
+    await ready;
+    _guardGuest(false);
+    final PasskeyChallenge challenge;
+    final String assertion;
+    try {
+      challenge = await _auth.passkeySignInOptions();
+      assertion = await _passkeys.getAvailable(challenge.optionsJson);
+    } on AuthFailure {
+      return false;
+    }
+    await _finishPasskeySignIn(challenge, assertion);
+    return true;
+  }
+
+  Future<void> _finishPasskeySignIn(PasskeyChallenge challenge, String assertion) async {
     final token = await _auth.passkeySignIn(challenge, assertion);
     // A guest can add a passkey (spec section 4.3), so the passkey may belong to one: ask, so a
     // guest stays a guest (warned on sign-out, offered "Guarda tu progreso"). If the server can't
