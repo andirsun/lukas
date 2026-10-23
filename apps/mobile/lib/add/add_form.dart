@@ -28,6 +28,7 @@ class AddForm extends ChangeNotifier {
     required this.today,
     this.editing,
     Kind kind = Kind.expense,
+    String? categoryId,
     String Function()? newKey,
   }) : _newKey = newKey ?? newIdempotencyKey,
        _kind = editing == null ? kind : (editing.amount > 0 ? Kind.income : Kind.expense) {
@@ -41,6 +42,9 @@ class AddForm extends ChangeNotifier {
       _note = tx.note ?? '';
     } else {
       _date = today;
+      // Opened from a category's detail: that category, as the web's `openAdd(categoryId)`. It is
+      // not something the person chose, so it never counts as input.
+      _categoryId = categoryId;
     }
   }
 

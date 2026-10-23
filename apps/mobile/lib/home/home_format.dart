@@ -1,6 +1,7 @@
 import 'package:intl/intl.dart';
 
 import '../l10n/app_localizations.dart';
+import 'day_groups.dart';
 import 'lukas_line.dart';
 
 /// Short weekday plus day of month: es `mié 21`, en `Wed 21` (the web's `formatDay`). [date] is
@@ -75,5 +76,17 @@ String lukasLineText(AppLocalizations l, LukasLine line, int variant, String Fun
     LukasKey.empty => l.lukasEmpty,
     LukasKey.noBudget => l.lukasNoBudget(money(line.spent)),
     LukasKey.overTotal => l.lukasOverTotal(money(line.over)),
+  };
+}
+
+/// A day's heading on a list of movements: today and yesterday and the days to come say so, the
+/// others are the day itself (the web's `Day`, apps/web/app/features/home/Home.tsx).
+String dayHeadingLabel(AppLocalizations l10n, DayGroup group) {
+  final day = formatDay(group.date, l10n.localeName);
+  return switch (group.when) {
+    DayWhen.today => l10n.homeDayToday(day),
+    DayWhen.yesterday => l10n.homeDayYesterday(day),
+    DayWhen.upcoming => l10n.homeDayUpcoming(day),
+    DayWhen.past => day,
   };
 }

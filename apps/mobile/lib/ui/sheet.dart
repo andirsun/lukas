@@ -36,13 +36,15 @@ abstract final class LkSheet {
   /// [children] sit under the title, [pinned] and [footer] make the add sheet's layout: with a
   /// [footer] the sheet may take all but a strip of the screen, [pinned] stays under the header,
   /// the [children] scroll between them, and the footer is always in view. Without one the whole
-  /// sheet scrolls.
+  /// sheet scrolls; then [stuck] (the web's `.lk-sheet-footer` in a sheet that scrolls as a whole:
+  /// a budget's Guardar) stays at the bottom of the sheet while the rest scrolls above it.
   static Future<T?> show<T>(
     BuildContext context, {
     required String title,
     required List<Widget> children,
     List<Widget> pinned = const [],
     List<Widget>? footer,
+    List<Widget>? stuck,
     bool useRootNavigator = true,
   }) {
     final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
@@ -52,6 +54,7 @@ abstract final class LkSheet {
         children: children,
         pinned: pinned,
         footer: footer,
+        stuck: stuck,
         themes: InheritedTheme.capture(from: context, to: navigator.context),
         barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       ),
@@ -75,6 +78,10 @@ class LkSheetScope extends InheritedWidget {
   bool updateShouldNotify(LkSheetScope old) => old.hasFooter != hasFooter;
 }
 
+/// How far a stuck footer's bottom edge sits above the sheet's: the sheet's padding the web's
+/// `.lk-sheet-footer` leaves uncovered (calibrated against the budget sheet's picture).
+const _stuckBottomGap = 16.0;
+
 /// The sheet's slide: iOS-like deceleration (Sheet.tsx `SHEET_EASE`).
 const _sheetEase = Cubic(0.32, 0.72, 0, 1);
 
@@ -84,6 +91,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
     required this.children,
     required this.pinned,
     required this.footer,
+    required this.stuck,
     required this.themes,
     required this.barrierLabel,
   });
@@ -92,6 +100,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
   final List<Widget> children;
   final List<Widget> pinned;
   final List<Widget>? footer;
+  final List<Widget>? stuck;
   final CapturedThemes themes;
 
   @override
@@ -122,6 +131,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
       title: title,
       pinned: pinned,
       footer: footer,
+      stuck: stuck,
       children: children,
     ),
   );
@@ -135,6 +145,7 @@ class _SheetPage extends StatefulWidget {
     required this.children,
     required this.pinned,
     required this.footer,
+    required this.stuck,
   });
 
   final Route<dynamic> route;
@@ -143,6 +154,7 @@ class _SheetPage extends StatefulWidget {
   final List<Widget> children;
   final List<Widget> pinned;
   final List<Widget>? footer;
+  final List<Widget>? stuck;
 
   @override
   State<_SheetPage> createState() => _SheetPageState();
@@ -336,24 +348,44 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     if (footer == null) {
       // The whole sheet scrolls, `max-h-[90dvh] overflow-y-auto`. The toast's slot is the last
       // child of the flex column, so the gap above it counts even when it is empty.
+      final stuck = widget.stuck;
+      final bottom = safe > LukitasTokens.space4 ? safe : LukitasTokens.space4;
+      final scroll = SingleChildScrollView(
+        controller: _scroll,
+        physics: physics,
+        padding: EdgeInsets.fromLTRB(
+          side,
+          10,
+          side,
+          // With a stuck footer nothing follows the content: the footer is stuck over its end.
+          stuck == null ? bottom : 0,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: LukitasTokens.space2,
+          children: [_header(context), ...widget.children, if (stuck == null) toasts],
+        ),
+      );
       content = ConstrainedBox(
         constraints: BoxConstraints(maxHeight: screen.height * 0.9),
-        child: SingleChildScrollView(
-          controller: _scroll,
-          physics: physics,
-          padding: EdgeInsets.fromLTRB(
-            side,
-            10,
-            side,
-            safe > LukitasTokens.space4 ? safe : LukitasTokens.space4,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            spacing: LukitasTokens.space2,
-            children: [_header(context), ...widget.children, toasts],
-          ),
-        ),
+        child: stuck == null
+            ? scroll
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Flexible(
+                    child: Stack(
+                      children: [
+                        scroll,
+                        Positioned(left: side, right: side, bottom: 0, child: toasts),
+                      ],
+                    ),
+                  ),
+                  _SheetFooter(safeBottom: safe, bottomGap: _stuckBottomGap, children: stuck),
+                ],
+              ),
       );
     } else {
       // The header, what is pinned under it, a scrolling middle, then the footer, always in view.
@@ -509,10 +541,13 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
 /// `.lk-sheet-footer` in a sheet with a pinned footer: full width under the scrolling body, a
 /// 2px `stroke` line above it, the keypad's and the save button's place.
 class _SheetFooter extends StatelessWidget {
-  const _SheetFooter({required this.children, required this.safeBottom});
+  const _SheetFooter({required this.children, required this.safeBottom, this.bottomGap = 0});
 
   final List<Widget> children;
   final double safeBottom;
+
+  /// Room under the footer's own padding (a stuck footer sits above the sheet's bottom padding).
+  final double bottomGap;
 
   @override
   Widget build(BuildContext context) {
@@ -522,7 +557,7 @@ class _SheetFooter extends StatelessWidget {
         LukitasTokens.space3,
         LukitasTokens.space2,
         LukitasTokens.space3,
-        safeBottom > LukitasTokens.space3 ? safeBottom : LukitasTokens.space3,
+        (safeBottom > LukitasTokens.space3 ? safeBottom : LukitasTokens.space3) + bottomGap,
       ),
       decoration: BoxDecoration(
         color: colors.surface,

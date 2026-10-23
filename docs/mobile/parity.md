@@ -253,6 +253,14 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - A row's 44px badge sits in a 20px line (`-my-3`): `OutsetBox` takes the room back, and
     `HitTargetBoost` lets a touch on the part outside the line still reach the badge, as a browser does
     for an overflowing element.
+- **Category management stays on the web (founder ruling, Stage 3b).** Where the web's category detail has
+  "Editar" (and "Restaurar" on an archived one), the app has a link to the web, "Más en la web". The detail's
+  pairs (`category-detail`, `budget-sheet`, `budget-sheet-negative`) draw it with the web's word through
+  `CategoryDetailScreen.manageLabel`, so everything else is compared; the box is the same (`PressLink`, secondary,
+  small). The real label is `settingsWeb`. There is no way to clear a budget: the web's sheet refuses zero and the
+  API has no delete, so the app has none either. The budget sheet's stories `manage-categories--budget-sheet-open`
+  and `--budget-sheet-negative` were added to `Categories.stories.tsx` for these pairs (no existing story leaves the
+  sheet open), and `APP_GETS` has Ocio's own movements as the app asks for them.
 - **Stories that are not pictures of the component.** A few stories' end states are not what the
   component draws on its own:
   - `ui-toast--*`: Playwright takes the picture with CSS animations at their end, so the time bar is

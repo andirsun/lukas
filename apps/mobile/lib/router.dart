@@ -6,6 +6,7 @@ import 'api/session.dart';
 import 'entry/email_screen.dart';
 import 'entry/entry_screen.dart';
 import 'entry/verify_link_screen.dart';
+import 'budgets/category_detail_screen.dart';
 import 'home/home_screen.dart';
 import 'progress/progress_screen.dart';
 import 'settings/about_screen.dart';
@@ -50,6 +51,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           // The month to open on, when a link carries one (`/?month=2026-09`).
           initialMonth: state.uri.queryParameters['month'],
           menu: (context, close) => HomeMenuLinks(close: close),
+        ),
+      ),
+      GoRoute(
+        path: '/categories/:id',
+        builder: (context, state) => CategoryDetailScreen(
+          // A new category replaces the screen of an earlier one.
+          key: ValueKey(state.pathParameters['id']),
+          categoryId: state.pathParameters['id']!,
+          // The month it opens on (`?month=2026-09`), home's when it comes from a budget row.
+          initialMonth: state.uri.queryParameters['month'],
         ),
       ),
       GoRoute(path: '/progress', builder: (context, state) => const ProgressScreen()),

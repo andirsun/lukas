@@ -89,11 +89,12 @@ class _AmountDisplayState extends State<AmountDisplay> {
             AmountTone.neutral => colors.ink,
           };
     // `.lk-sheet.has-footer .lk-sheet-amount { line-height: 1.15 }`.
-    final tight = LkSheetScope.maybeOf(context)?.hasFooter ?? false;
+    final scope = LkSheetScope.maybeOf(context);
+    final tight = scope?.hasFooter ?? false;
     final style = LkText.display.copyWith(color: color, height: tight ? 1.15 : null);
     final announced = _settled(hint == null ? text : '$text $hint');
 
-    return Stack(
+    final display = Stack(
       children: [
         ExcludeSemantics(
           child: SizedBox(
@@ -129,50 +130,110 @@ class _AmountDisplayState extends State<AmountDisplay> {
         ),
       ],
     );
+    // `.lk-sheet:not(.has-footer) .lk-sheet-amount { padding: var(--space-1) var(--space-3) }`: in a
+    // sheet that scrolls as a whole the figure has 4px above and below it (and is stuck at the top).
+    return scope != null && !tight
+        ? Padding(
+            padding: const EdgeInsets.symmetric(vertical: LukitasTokens.space1),
+            child: display,
+          )
+        : display;
   }
 }
 
-/// A physical keyboard types on the keypad (the web's `useAmountKeys`) while focus is inside
-/// [child]: the digits, the language's decimal key and Backspace. The thousands separator is
-/// ignored (`15.000` in Spanish is 15000) and pesos take no decimals (`keypad_input.dart`).
-class AmountKeys extends StatelessWidget {
+/// A physical keyboard and the clipboard type on the keypad (the web's `useAmountKeys`, a
+/// listener on the document while the form is on screen): the digits, the language's decimal key and
+/// Backspace, and Ctrl or Cmd with V to paste. The thousands separator is ignored (`15.000` in
+/// Spanish is 15000) and pesos take no decimals (`keypad_input.dart`). It listens while the screen it
+/// is on is the top one, and leaves the keys to a text field that has the focus.
+///
+/// [onNegative] is a minus typed or a negative amount pasted: a form that takes only positive
+/// amounts says so and keeps the amount. Without it a typed `-` is ignored and a paste drops its
+/// sign, as in the add sheet, whose sign comes from expense / income.
+class AmountKeys extends StatefulWidget {
   const AmountKeys({
     super.key,
     required this.raw,
     required this.onChanged,
     required this.currency,
     required this.child,
+    this.onNegative,
   });
 
   final String raw;
   final ValueChanged<String> onChanged;
   final String currency;
+  final VoidCallback? onNegative;
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).languageCode;
-    return Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onKeyEvent: (node, event) {
-        if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
-        final keys = HardwareKeyboard.instance;
-        if (keys.isMetaPressed || keys.isControlPressed || keys.isAltPressed) {
-          return KeyEventResult.ignored;
-        }
-        final key = event.logicalKey == LogicalKeyboardKey.backspace
-            ? 'Backspace'
-            : event.character;
-        if (key == null) return KeyEventResult.ignored;
-        final next = typeOnKeypad(raw, key, AmountFormat(locale, currency));
-        if (next == null) return KeyEventResult.ignored;
-        onChanged(next);
-        return KeyEventResult.handled;
-      },
-      child: child,
-    );
+  State<AmountKeys> createState() => _AmountKeysState();
+}
+
+class _AmountKeysState extends State<AmountKeys> {
+  @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_onKey);
   }
+
+  @override
+  void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onKey);
+    super.dispose();
+  }
+
+  AmountFormat get _format =>
+      AmountFormat(Localizations.localeOf(context).languageCode, widget.currency);
+
+  /// A text field has the keys (a name being typed, say).
+  bool get _inField {
+    final focus = FocusManager.instance.primaryFocus?.context;
+    return focus != null &&
+        (focus.widget is EditableText ||
+            focus.findAncestorWidgetOfExactType<EditableText>() != null);
+  }
+
+  bool _onKey(KeyEvent event) {
+    if (!mounted || (ModalRoute.of(context)?.isCurrent ?? true) == false) return false;
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
+    final keys = HardwareKeyboard.instance;
+    if (_inField) return false;
+    if ((keys.isMetaPressed || keys.isControlPressed) &&
+        event.logicalKey == LogicalKeyboardKey.keyV) {
+      unawaited(_paste());
+      return true;
+    }
+    if (keys.isMetaPressed || keys.isControlPressed || keys.isAltPressed) return false;
+    final negative = widget.onNegative;
+    if (negative != null &&
+        (event.logicalKey == LogicalKeyboardKey.minus ||
+            event.logicalKey == LogicalKeyboardKey.numpadSubtract)) {
+      negative();
+      return true;
+    }
+    final key = event.logicalKey == LogicalKeyboardKey.backspace ? 'Backspace' : event.character;
+    if (key == null) return false;
+    final next = typeOnKeypad(widget.raw, key, _format);
+    if (next == null) return false;
+    widget.onChanged(next);
+    return true;
+  }
+
+  Future<void> _paste() async {
+    final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text ?? '';
+    if (!mounted) return;
+    final negative = widget.onNegative;
+    if (negative != null && pastedNegative(text)) {
+      negative();
+      return;
+    }
+    final next = pasteAmount(text, _format);
+    if (next != null) widget.onChanged(next);
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// The amount as the add sheet takes it, for any sheet: the big figure (with the muted lukas hint
@@ -187,6 +248,7 @@ class AmountField extends StatelessWidget {
     this.tone = AmountTone.neutral,
     this.invalid = false,
     this.compact = false,
+    this.onNegative,
   });
 
   final String raw;
@@ -199,6 +261,9 @@ class AmountField extends StatelessWidget {
   /// The keypad's tighter keys (see [Keypad.compact]).
   final bool compact;
 
+  /// A minus typed or a negative amount pasted (see [AmountKeys.onNegative]).
+  final VoidCallback? onNegative;
+
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
@@ -206,6 +271,7 @@ class AmountField extends StatelessWidget {
       raw: raw,
       onChanged: onChanged,
       currency: currency,
+      onNegative: onNegative,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

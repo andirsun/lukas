@@ -130,87 +130,93 @@ class CategoryRow extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     spacing: 2,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 8,
-                        children: [
-                          Expanded(
-                            child: ExcludeSemantics(
-                              child: BlinkLine(
-                                style: titleStyle,
-                                child: Text.rich(
-                                  TextSpan(
-                                    style: titleStyle.copyWith(color: colors.ink),
-                                    children: [
-                                      TextSpan(text: name),
-                                      if (note != null) ...[
-                                        const TextSpan(text: ' '),
-                                        TextSpan(
-                                          text: '· $note',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            color: colors.inkMuted,
+                      CssLines(
+                        style: titleStyle,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 8,
+                          children: [
+                            Expanded(
+                              child: ExcludeSemantics(
+                                child: BlinkLine(
+                                  style: titleStyle,
+                                  child: Text.rich(
+                                    TextSpan(
+                                      style: titleStyle.copyWith(color: colors.ink),
+                                      children: [
+                                        TextSpan(text: name),
+                                        if (note != null) ...[
+                                          const TextSpan(text: ' '),
+                                          TextSpan(
+                                            text: '· $note',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: colors.inkMuted,
+                                            ),
                                           ),
-                                        ),
+                                        ],
                                       ],
-                                    ],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (budget != null)
-                            ExcludeSemantics(
-                              child: BlinkLine(
-                                style: titleStyle,
-                                child: Text(
-                                  money(budget),
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style: titleStyle.copyWith(
-                                    color: colors.ink,
-                                    fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ),
                             ),
-                        ],
+                            if (budget != null)
+                              ExcludeSemantics(
+                                child: BlinkLine(
+                                  style: titleStyle,
+                                  child: Text(
+                                    money(budget),
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    style: titleStyle.copyWith(
+                                      color: colors.ink,
+                                      fontFeatures: const [FontFeature.tabularFigures()],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                      Wrap(
-                        spacing: LukitasTokens.space2,
-                        children: [
-                          ExcludeSemantics(
-                            child: BlinkLine(
-                              style: statusStyle,
-                              child: CssText(
-                                TextSpan(
-                                  text: status,
-                                  style: statusStyle.copyWith(
-                                    color: statusColor,
-                                    leadingDistribution: TextLeadingDistribution.even,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (budget == null && spent != 0)
+                      CssLines(
+                        style: statusStyle,
+                        child: Wrap(
+                          spacing: LukitasTokens.space2,
+                          children: [
                             ExcludeSemantics(
                               child: BlinkLine(
                                 style: statusStyle,
                                 child: CssText(
                                   TextSpan(
-                                    text: l10n.categoryRowSpent(money(spent)),
+                                    text: status,
                                     style: statusStyle.copyWith(
-                                      color: colors.inkMuted,
+                                      color: statusColor,
                                       leadingDistribution: TextLeadingDistribution.even,
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-                        ],
+                            if (budget == null && spent != 0)
+                              ExcludeSemantics(
+                                child: BlinkLine(
+                                  style: statusStyle,
+                                  child: CssText(
+                                    TextSpan(
+                                      text: l10n.categoryRowSpent(money(spent)),
+                                      style: statusStyle.copyWith(
+                                        color: colors.inkMuted,
+                                        leadingDistribution: TextLeadingDistribution.even,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                       if (budget != null)
                         BudgetBar(

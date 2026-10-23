@@ -33,8 +33,11 @@ export 'add_form.dart' show Kind;
 ///
 /// Completes when the sheet is closed. A save closes it by itself, updates home and shows the
 /// toast with Deshacer.
-Future<void> openAddSheet(BuildContext context, {Kind kind = Kind.expense}) =>
-    _open(context, _Request(kind: kind));
+///
+/// [categoryId] preselects a category (the "Agregar gasto" of a category's detail); the sheet
+/// falls back to the first of [kind] when it is not one.
+Future<void> openAddSheet(BuildContext context, {Kind kind = Kind.expense, String? categoryId}) =>
+    _open(context, _Request(kind: kind, categoryId: categoryId));
 
 /// Opens the sheet on an existing [transaction] (a tap on its row, a swipe right, "Ponerle
 /// nombre"): saving sends only what changed. [focusName] puts the cursor on the name.
@@ -45,9 +48,10 @@ Future<void> openEditSheet(
 }) => _open(context, _Request(editing: transaction, focusName: focusName));
 
 class _Request {
-  const _Request({this.kind = Kind.expense, this.editing, this.focusName = false});
+  const _Request({this.kind = Kind.expense, this.editing, this.focusName = false, this.categoryId});
 
   final Kind kind;
+  final String? categoryId;
   final Transaction? editing;
   final bool focusName;
 }
@@ -161,6 +165,7 @@ class _AddSheetState extends ConsumerState<AddSheet> {
       today: data.todayAt(ref.read(clockProvider)()),
       editing: _request.editing,
       kind: _request.kind,
+      categoryId: _request.categoryId,
     );
     form.updateChoices(data.categories.values.toList(), data.items);
     _name.text = form.name;

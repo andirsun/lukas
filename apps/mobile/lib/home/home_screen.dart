@@ -3,9 +3,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../add/add_sheet.dart';
 import '../api/gen/lukitas_api.dart';
+import '../budgets/budgets_tab.dart';
 import '../capture/capture_sheet.dart';
 import '../feedback/feedback.dart';
 import '../l10n/app_localizations.dart';
@@ -31,6 +33,7 @@ import 'home_widgets.dart';
 import 'lukas_line.dart';
 import 'lukitas_face.dart';
 import 'nudges.dart';
+import 'screen_error.dart';
 import 'toast.dart';
 
 /// Picks which of Lukitas' three phrasings a line uses (1 to 3). Replaced in tests.
@@ -327,7 +330,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           backgroundColor: Colors.transparent,
           body: SafeArea(
             child: home.failure != null
-                ? _FailedView(
+                ? ScreenError(
                     message: _failureMessage(l10n, home.failure!),
                     retryLabel: l10n.retry,
                     onRetry: () => unawaited(_controller.refresh()),
@@ -449,10 +452,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     ),
                   )
                 else if (_view == HomeView.budgets)
-                  // Presupuestos has the web's own look while it loads (a later task fills it).
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(inset, LukitasTokens.space2, inset, room),
-                    sliver: const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                    sliver: SliverToBoxAdapter(
+                      child: BudgetsTab(
+                        summary: shown.summary,
+                        categories: shown.categories,
+                        currency: shown.currency,
+                        // Its detail, in the month on screen.
+                        onOpen: (id) =>
+                            unawaited(context.push<void>('/categories/$id?month=${shown.month}')),
+                      ),
+                    ),
                   )
                 else
                   SliverPadding(
@@ -704,45 +715,6 @@ class _LoadingView extends StatelessWidget {
               label,
               style: TextStyle(color: colors.inkMuted, fontWeight: FontWeight.w700),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// What the screen shows when its first load fails (the web's `ScreenError`): Lukitas worried,
-/// what went wrong, and a retry.
-class _FailedView extends StatelessWidget {
-  const _FailedView({required this.message, required this.retryLabel, required this.onRetry});
-
-  final String message;
-  final String retryLabel;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.lkColors;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(LukitasTokens.space4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: LukitasTokens.space4,
-          children: [
-            const LukitasFace(mood: LukitasMood.worried, size: 96),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 360),
-              child: Semantics(
-                liveRegion: true,
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: LkText.body.copyWith(fontSize: 16, color: colors.ink),
-                ),
-              ),
-            ),
-            PressButton.text(retryLabel, onPressed: onRetry),
           ],
         ),
       ),

@@ -679,7 +679,7 @@ void main() {
       );
       expect(find.text('Café'), findsOneWidget);
 
-      // Until Presupuestos is built it has the web's own loading look: room, and no rows.
+      // Presupuestos shows the categories, not the movements.
       await tester.tap(find.text('Presupuestos'));
       await tester.pumpAndSettle();
       expect(find.text('Café'), findsNothing);

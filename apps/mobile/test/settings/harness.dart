@@ -108,21 +108,27 @@ Future<SettingsEnv> pumpSettingsApp(
   tester.view.physicalSize = const Size(390, 844);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+  // What the whole app is faked with; a test's own override of the same provider replaces it.
+  final defaults = <Override>[
+    authApiProvider.overrideWithValue(fakeAuth),
+    passkeysProvider.overrideWithValue(passkeys),
+    settingsStoreProvider.overrideWithValue(fakeSettings),
+    flagStoreProvider.overrideWith((ref, key) => flags.putIfAbsent(key, FakeFlagStore.new)),
+    urlOpenerProvider.overrideWithValue(opener),
+    modelStoreProvider.overrideWithValue(models),
+    feedbackPlatformProvider.overrideWithValue(FakeFeedbackPlatform()),
+    homeRepositoryProvider.overrideWithValue(homeRepo ?? FakeHomeRepository()),
+    widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
+    homeCacheStoreProvider.overrideWithValue(FakeCacheStore()),
+    widgetSnapshotWriterProvider.overrideWithValue(
+      (summary, {required currency, required locale, required timezone}) async {},
+    ),
+  ];
+  final replaced = {for (final o in overrides) o.origin};
   final container = ProviderContainer(
     overrides: [
-      authApiProvider.overrideWithValue(fakeAuth),
-      passkeysProvider.overrideWithValue(passkeys),
-      settingsStoreProvider.overrideWithValue(fakeSettings),
-      flagStoreProvider.overrideWith((ref, key) => flags.putIfAbsent(key, FakeFlagStore.new)),
-      urlOpenerProvider.overrideWithValue(opener),
-      modelStoreProvider.overrideWithValue(models),
-      feedbackPlatformProvider.overrideWithValue(FakeFeedbackPlatform()),
-      homeRepositoryProvider.overrideWithValue(homeRepo ?? FakeHomeRepository()),
-      widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
-      homeCacheStoreProvider.overrideWithValue(FakeCacheStore()),
-      widgetSnapshotWriterProvider.overrideWithValue(
-        (summary, {required currency, required locale, required timezone}) async {},
-      ),
+      for (final o in defaults)
+        if (!replaced.contains(o.origin)) o,
       ...overrides,
     ],
   );

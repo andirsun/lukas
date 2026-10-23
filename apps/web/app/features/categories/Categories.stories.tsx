@@ -139,6 +139,39 @@ export const BudgetRejectsNegatives: Story = {
   },
 };
 
+/**
+ * The budget sheet as it opens (for the app's parity pictures): the budget in force on the keypad,
+ * the month it applies from, and Guardar presupuesto.
+ */
+export const BudgetSheetOpen: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories/cat-fun" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const budget = await budgetRegion(canvas);
+    await waitFor(() => expect(budget).toHaveTextContent(`Quedan ${eur("383,67")}`));
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar presupuesto" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Presupuesto de Ocio" }));
+    await expect(sheet.getByTestId("budget-amount")).toHaveTextContent(eur("650"));
+  },
+};
+
+/** A minus typed on the keyboard is refused in words, and the amount stays (for the app's pictures). */
+export const BudgetSheetNegative: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories/cat-fun" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const budget = await budgetRegion(canvas);
+    await waitFor(() => expect(budget).toHaveTextContent(`Quedan ${eur("383,67")}`));
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar presupuesto" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Presupuesto de Ocio" }));
+    await userEvent.keyboard("-");
+    await expect(await sheet.findByRole("alert")).toHaveTextContent(
+      "Un presupuesto no puede ser negativo.",
+    );
+    await expect(sheet.getByTestId("budget-amount")).toHaveTextContent(eur("650"));
+  },
+};
+
 /** A budget changed while looking at last month applies from last month on. */
 export const BudgetFromSelectedMonth: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories/cat-fun" />,

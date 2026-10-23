@@ -847,5 +847,53 @@
     "storyId": "home-home--day-theme",
     "theme": "day",
     "appTest": "test/parity/home_parity_test.dart"
+  },
+  {
+    "id": "home-budgets",
+    "storyId": "home-home--budgets",
+    "theme": "night",
+    "appTest": "test/parity/budgets_parity_test.dart"
+  },
+  {
+    "id": "home-budgets",
+    "storyId": "home-home--budgets",
+    "theme": "day",
+    "appTest": "test/parity/budgets_parity_test.dart"
+  },
+  {
+    "id": "category-detail",
+    "storyId": "manage-categories--detail",
+    "theme": "night",
+    "appTest": "test/parity/budgets_parity_test.dart"
+  },
+  {
+    "id": "category-detail",
+    "storyId": "manage-categories--detail",
+    "theme": "day",
+    "appTest": "test/parity/budgets_parity_test.dart"
+  },
+  {
+    "id": "budget-sheet",
+    "storyId": "manage-categories--budget-sheet-open",
+    "theme": "night",
+    "appTest": "test/parity/budgets_parity_test.dart"
+  },
+  {
+    "id": "budget-sheet",
+    "storyId": "manage-categories--budget-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/budgets_parity_test.dart"
+  },
+  {
+    "id": "budget-sheet-negative",
+    "storyId": "manage-categories--budget-sheet-negative",
+    "theme": "night",
+    "appTest": "test/parity/budgets_parity_test.dart"
+  },
+  {
+    "id": "budget-sheet-negative",
+    "storyId": "manage-categories--budget-sheet-negative",
+    "theme": "day",
+    "appTest": "test/parity/budgets_parity_test.dart"
   }
 ]

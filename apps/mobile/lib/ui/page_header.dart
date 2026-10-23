@@ -28,6 +28,9 @@ class PageHeader extends StatelessWidget {
   /// Beside the back link: the month picker, say.
   final Widget? aside;
 
+  /// The web's link says `no-underline`, which a ghost button would otherwise have.
+  static const _plain = TextStyle(decoration: TextDecoration.none);
+
   /// The web's `min-[400px]`, a width of the viewport.
   static const _wide = 400.0;
 
@@ -45,8 +48,8 @@ class PageHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         spacing: LukitasTokens.space1,
         children: [
-          const ExcludeSemantics(child: Text('‹')),
-          Text(backShort.toUpperCase()),
+          const ExcludeSemantics(child: Text('‹', style: _plain)),
+          Text(backShort.toUpperCase(), style: _plain),
         ],
       ),
     );

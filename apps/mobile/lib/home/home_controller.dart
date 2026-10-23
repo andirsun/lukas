@@ -236,6 +236,7 @@ class HomeController extends Notifier<HomeState> {
     _summarySeq = 0;
     _monthSeq = 0;
     _widgetSeq = 0;
+    _categoriesSeq = 0;
     _profile = null;
     _wanted = null;
     _eventTimer?.cancel();
@@ -556,6 +557,40 @@ class HomeController extends Notifier<HomeState> {
       if (request != _summarySeq) return;
       _set(state.copyWith(stale: true, staleOffline: failure.offline));
     }
+  }
+
+  /// Counts the requests for the categories: only the latest one may touch the screen.
+  var _categoriesSeq = 0;
+
+  /// The categories again (a budget changed what `currentBudget` says), silently, and only the
+  /// latest answer counts. What is on screen stays when it fails.
+  Future<void> _refreshCategories() async {
+    if (!_alive) return;
+    final request = ++_categoriesSeq;
+    try {
+      final categories = await _repo.categories();
+      if (!_alive || request != _categoriesSeq) return;
+      final current = state.data;
+      if (current == null) return;
+      _set(
+        state.copyWith(data: current.copyWith(categories: {for (final c in categories) c.id: c})),
+      );
+      unawaited(_persist());
+    } on Object catch (error) {
+      // A refused session still ends the session; anything else leaves the categories as they were.
+      _checkSession(error);
+    }
+  }
+
+  /// A budget was set or changed (from a category's detail): the month's summary (Te quedan, the
+  /// Presupuestos bars) and the categories (what each has in force) are asked again, silently: the
+  /// last figures stay on screen while it is on its way, or when it fails (then they are marked as
+  /// possibly old). Only the latest summary counts, and the widget and the saved month follow it
+  /// (on an earlier month the widget is told the current one meanwhile).
+  Future<void> budgetChanged() async {
+    if (!_alive || state.data == null) return;
+    unawaited(_refreshCategories());
+    await _refreshSummary();
   }
 
   /// A row brought back by Deshacer has slid in: it is a plain row again.

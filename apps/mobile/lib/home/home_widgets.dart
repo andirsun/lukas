@@ -64,7 +64,7 @@ class HomeHero extends StatelessWidget {
     return Semantics(
       container: true,
       label: label,
-      child: _Card(
+      child: HeroCard(
         padding: const EdgeInsets.fromLTRB(
           LukitasTokens.space4,
           LukitasTokens.space3,
@@ -151,7 +151,7 @@ class HomeHeroPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
     container: true,
     label: label,
-    child: const _Card(
+    child: const HeroCard(
       padding: EdgeInsets.fromLTRB(
         LukitasTokens.space4,
         LukitasTokens.space3,
@@ -164,8 +164,8 @@ class HomeHeroPlaceholder extends StatelessWidget {
 }
 
 /// `.lk-hero`: the `surface` card, radius `xl`, on `edge-md`.
-class _Card extends StatelessWidget {
-  const _Card({required this.padding, required this.child});
+class HeroCard extends StatelessWidget {
+  const HeroCard({super.key, required this.padding, required this.child});
 
   final EdgeInsetsGeometry padding;
   final Widget child;

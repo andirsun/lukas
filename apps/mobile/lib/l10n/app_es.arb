@@ -1380,5 +1380,181 @@
   "swipeHintPending": "Tócalo para editarlo o borrarlo; Pendiente lo marca pagado.",
   "@swipeHintPending": {
     "description": "The same, on a pending row."
+  },
+  "homeNoExpenseCategories": "No tienes categorías de gasto activas.",
+  "@homeNoExpenseCategories": {
+    "description": "Presupuestos tab: the account has no active spending category."
+  },
+  "budgetsArchivedNote": "archivada",
+  "@budgetsArchivedNote": {
+    "description": "A short word after an archived category's name in the Presupuestos list."
+  },
+  "manageBack": "Volver al inicio",
+  "@manageBack": {
+    "description": "Category detail: the back link, for screen readers."
+  },
+  "manageBackShort": "Inicio",
+  "@manageBackShort": {
+    "description": "Category detail: the back link's visible text."
+  },
+  "categoryKindExpense": "Categoría de gasto",
+  "@categoryKindExpense": {
+    "description": "Category detail: under the name of a spending category."
+  },
+  "categoryKindIncome": "Categoría de ingreso",
+  "@categoryKindIncome": {
+    "description": "Category detail: under the name of an income category."
+  },
+  "categoryArchivedLine": "Archivada",
+  "@categoryArchivedLine": {
+    "description": "Category detail: added to the kind line of an archived category."
+  },
+  "categoryArchivedNote": "Esta categoría está archivada: no aparece al anotar ni en tus presupuestos. Sus movimientos se quedan.",
+  "@categoryArchivedNote": {
+    "description": "Category detail: what an archived category means."
+  },
+  "categoryBudgetTitle": "Presupuesto",
+  "@categoryBudgetTitle": {
+    "description": "Category detail: the budget card's heading."
+  },
+  "categorySetBudget": "Poner presupuesto",
+  "@categorySetBudget": {
+    "description": "Category detail: opens the budget sheet on a category without a budget."
+  },
+  "categoryChangeBudget": "Cambiar presupuesto",
+  "@categoryChangeBudget": {
+    "description": "Category detail: opens the budget sheet on a category with a budget."
+  },
+  "categoryNoBudget": "Sin presupuesto en {month}. Ponle uno y te aviso antes de que te pases.",
+  "@categoryNoBudget": {
+    "description": "Category detail: no budget that month. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "categorySpentOf": "Gastado {spent} de {budget}",
+  "@categorySpentOf": {
+    "description": "Category detail: spent of the budget. Both are amounts.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "categorySpent": "Gastado en {month}: {amount}",
+  "@categorySpent": {
+    "description": "Category detail: spent that month, without a budget.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryReceived": "Recibido en {month}: {amount}",
+  "@categoryReceived": {
+    "description": "Category detail: what came in to an income category that month.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryTransactionsTitle": "Movimientos de {month}",
+  "@categoryTransactionsTitle": {
+    "description": "Category detail: the heading of the month's movements.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryEmpty": "No hay movimientos de {name} en {month}.",
+  "@categoryEmpty": {
+    "description": "Category detail: no movements in the month.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryAddExpense": "Agregar gasto",
+  "@categoryAddExpense": {
+    "description": "Category detail: adds a spending movement to this category."
+  },
+  "categoryAddIncome": "Agregar ingreso",
+  "@categoryAddIncome": {
+    "description": "Category detail: adds an income movement to this category."
+  },
+  "categoryNotFoundTitle": "No encontramos esta categoría",
+  "@categoryNotFoundTitle": {
+    "description": "Category detail: the category is not there."
+  },
+  "categoryNotFoundLead": "Puede que ya no exista. Vuelve a tus categorías y elige otra.",
+  "@categoryNotFoundLead": {
+    "description": "Category detail: why it may not be there."
+  },
+  "budgetSheetTitle": "Presupuesto de {name}",
+  "@budgetSheetTitle": {
+    "description": "Budget sheet: its title. {name} is the category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetSheetFromMonth": "Desde {month} en adelante. Los meses anteriores quedan como estaban.",
+  "@budgetSheetFromMonth": {
+    "description": "Budget sheet: from which month the budget applies.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetSheetNegative": "Un presupuesto no puede ser negativo.",
+  "@budgetSheetNegative": {
+    "description": "Budget sheet: a minus was typed or pasted."
+  },
+  "budgetSheetZero": "Escribe un monto mayor que cero.",
+  "@budgetSheetZero": {
+    "description": "Budget sheet: Guardar with nothing typed."
+  },
+  "budgetSheetSave": "Guardar presupuesto",
+  "@budgetSheetSave": {
+    "description": "Budget sheet: the save button."
+  },
+  "budgetSheetSaved": "Presupuesto de {name}: {amount}",
+  "@budgetSheetSaved": {
+    "description": "Budget sheet: the toast after saving. {amount} may carry the lukas hint.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetErrorNotFound": "No encontramos lo que buscas.",
+  "@budgetErrorNotFound": {
+    "description": "Budget sheet: the server does not know the category."
+  },
+  "budgetErrorNotExpense": "Solo las categorías de gasto pueden tener presupuesto.",
+  "@budgetErrorNotExpense": {
+    "description": "Budget sheet: only spending categories have a budget."
   }
 }
