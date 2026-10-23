@@ -120,7 +120,7 @@ Future<SettingsEnv> pumpSettingsApp(
       widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
       homeCacheStoreProvider.overrideWithValue(FakeCacheStore()),
       widgetSnapshotWriterProvider.overrideWithValue(
-        (summary, {required currency, required locale}) async {},
+        (summary, {required currency, required locale, required timezone}) async {},
       ),
       ...overrides,
     ],

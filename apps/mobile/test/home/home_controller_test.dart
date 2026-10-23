@@ -16,10 +16,11 @@ import 'fixtures.dart';
 final _now = DateTime.utc(2026, 10, 22, 15);
 
 class Snapshot {
-  Snapshot(this.summary, this.currency, this.locale);
+  Snapshot(this.summary, this.currency, this.locale, this.timezone);
   final Summary summary;
   final String currency;
   final String locale;
+  final String timezone;
 }
 
 (ProviderContainer, FakeHomeRepository, List<Snapshot>) setup(
@@ -33,8 +34,8 @@ class Snapshot {
       homeCacheProvider.overrideWithValue(HomeCache(cacheStore ?? FakeCacheStore(), token: 't1')),
       clockProvider.overrideWithValue(() => _now),
       widgetSnapshotWriterProvider.overrideWithValue(
-        (summary, {required currency, required locale}) async =>
-            snapshots.add(Snapshot(summary, currency, locale)),
+        (summary, {required currency, required locale, required timezone}) async =>
+            snapshots.add(Snapshot(summary, currency, locale, timezone)),
       ),
     ],
   );
@@ -89,6 +90,8 @@ void main() {
       expect(snapshots, hasLength(1));
       expect(snapshots.single.currency, 'COP');
       expect(snapshots.single.locale, 'es');
+      // The profile's zone: the widget reads "this month" and its midnight in it.
+      expect(snapshots.single.timezone, 'America/Bogota');
     },
   );
 
@@ -101,7 +104,7 @@ void main() {
         homeCacheProvider.overrideWithValue(HomeCache(FakeCacheStore(), token: 't1')),
         clockProvider.overrideWithValue(() => DateTime.utc(2026, 10, 23, 2)),
         widgetSnapshotWriterProvider.overrideWithValue(
-          (s, {required currency, required locale}) async {},
+          (s, {required currency, required locale, required timezone}) async {},
         ),
       ],
     );
@@ -211,7 +214,7 @@ void main() {
         sessionProvider.overrideWith(() => session),
         clockProvider.overrideWithValue(() => _now),
         widgetSnapshotWriterProvider.overrideWithValue(
-          (s, {required currency, required locale}) async {},
+          (s, {required currency, required locale, required timezone}) async {},
         ),
       ],
     );
@@ -494,7 +497,7 @@ void main() {
           sessionProvider.overrideWith(() => session),
           clockProvider.overrideWithValue(() => _now),
           widgetSnapshotWriterProvider.overrideWithValue(
-            (s, {required currency, required locale}) async {},
+            (s, {required currency, required locale, required timezone}) async {},
           ),
         ],
       );

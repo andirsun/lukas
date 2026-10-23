@@ -18,13 +18,14 @@ void main() {
       final doc = signedInSnapshot(
         summary(budgetTotal: 200000000, spent: 50000000),
         currency: 'COP',
+        timezone: 'America/Bogota',
         locale: 'es',
         hideAmount: false,
         theme: 'dark',
         updatedAt: now,
       );
       expect(doc, {
-        'v': 2,
+        'v': 3,
         'signedIn': true,
         'remaining': 150000000,
         'spent': 50000000,
@@ -36,6 +37,7 @@ void main() {
         'updatedAt': '2026-10-22T15:30:00.000Z',
         'hideAmount': false,
         'theme': 'dark',
+        'timezone': 'America/Bogota',
       });
     });
 
@@ -49,6 +51,7 @@ void main() {
             categories: [categorySummary('c', budget: 100000, spent: 150000, state: 'over')],
           ),
           currency: 'EUR',
+          timezone: 'America/Bogota',
           locale: 'en',
           hideAmount: true,
           theme: 'light',
@@ -65,6 +68,7 @@ void main() {
       final doc = signedInSnapshot(
         summary(spent: 4200000),
         currency: 'COP',
+        timezone: 'America/Bogota',
         locale: 'es',
         hideAmount: false,
         theme: 'system',
@@ -77,7 +81,7 @@ void main() {
 
   test('signed out it says so and carries no figure, no currency and no month', () {
     final doc = signedOutSnapshot(hideAmount: true, theme: 'light', locale: 'en');
-    expect(doc, {'v': 2, 'signedIn': false, 'hideAmount': true, 'theme': 'light', 'locale': 'en'});
+    expect(doc, {'v': 3, 'signedIn': false, 'hideAmount': true, 'theme': 'light', 'locale': 'en'});
   });
 
   group('choices changed', () {
@@ -85,6 +89,7 @@ void main() {
       final before = signedInSnapshot(
         summary(budgetTotal: 200000000, spent: 50000000),
         currency: 'COP',
+        timezone: 'America/Bogota',
         locale: 'es',
         hideAmount: false,
         theme: 'dark',
@@ -97,6 +102,8 @@ void main() {
     test('nothing written yet, or an older version, gives nothing to patch', () {
       expect(withChoices(null, hideAmount: true, theme: 'dark'), isNull);
       expect(withChoices('{"v":1,"amount":"\$1"}', hideAmount: true, theme: 'dark'), isNull);
+      // Version 2 had no zone: the app writes a new one at its next load.
+      expect(withChoices('{"v":2,"signedIn":true}', hideAmount: true, theme: 'dark'), isNull);
       expect(withChoices('not json', hideAmount: true, theme: 'dark'), isNull);
     });
   });

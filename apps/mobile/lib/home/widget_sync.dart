@@ -72,9 +72,14 @@ class WidgetSync {
     return next;
   }
 
-  /// Writes [summary], the month home just loaded, in [currency]. [locale] is the language its
-  /// amount is written in ([widgetLanguage] when null).
-  Future<void> summaryLoaded(Summary summary, {required String currency, String? locale}) {
+  /// Writes [summary], the month home just loaded, in [currency], with the profile's [timezone].
+  /// [locale] is the language its amount is written in ([widgetLanguage] when null).
+  Future<void> summaryLoaded(
+    Summary summary, {
+    required String currency,
+    required String timezone,
+    String? locale,
+  }) {
     final language = locale ?? widgetLanguage(_ref);
     final updatedAt = _ref.read(clockProvider)();
     final session = _session;
@@ -90,6 +95,7 @@ class WidgetSync {
           hideAmount: _hideAmount,
           theme: _theme,
           updatedAt: updatedAt,
+          timezone: timezone,
         ),
       );
     });

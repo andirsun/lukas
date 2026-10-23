@@ -187,7 +187,7 @@ Future<ProviderContainer> pumpApp(
       widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
       homeCacheStoreProvider.overrideWithValue(FakeCacheStore()),
       widgetSnapshotWriterProvider.overrideWithValue(
-        (summary, {required currency, required locale}) async {},
+        (summary, {required currency, required locale, required timezone}) async {},
       ),
     ],
   );

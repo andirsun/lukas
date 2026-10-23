@@ -36,7 +36,7 @@ Future<void> settleAll() async {
       homeCacheProvider.overrideWithValue(HomeCache(store, token: 't1')),
       clockProvider.overrideWithValue(() => _now),
       widgetSnapshotWriterProvider.overrideWithValue(
-        (summary, {required currency, required locale}) async =>
+        (summary, {required currency, required locale, required timezone}) async =>
             snapshots.add(_Snapshot(summary.spent)),
       ),
     ],

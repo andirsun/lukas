@@ -4,12 +4,14 @@ import android.content.Context
 import android.content.SharedPreferences
 import org.json.JSONException
 import org.json.JSONObject
+import java.time.DateTimeException
 import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeParseException
 
 /**
  * What the widget draws, as the app writes it (lib/home/widget_snapshot.dart, which documents the
- * shape) and the refresh job too ([RefreshWorker]): one JSON document, version 2, under [KEY] in
+ * shape) and the refresh job too ([RefreshWorker]): one JSON document, version 3, under [KEY] in
  * home_widget's SharedPreferences file [PREFS].
  *
  * Amounts are cents, as the API sends them. A snapshot that is missing, of another version, signed
@@ -37,7 +39,21 @@ data class WidgetSnapshot(
      * app's writes drop it (their figures are fresh) and its choice patches keep it.
      */
     val refreshFailedAt: Instant? = null,
+    /**
+     * The profile's IANA zone: "this month" and the midnight refresh are read in it, as the app
+     * reads its own figures. Null (or not a zone): the phone's.
+     */
+    val timezone: String? = null,
 ) {
+    /** The profile's zone, or [fallback] (the phone's) without a valid one. */
+    fun zone(fallback: ZoneId): ZoneId = timezone?.let {
+        try {
+            ZoneId.of(it)
+        } catch (_: DateTimeException) {
+            null
+        }
+    } ?: fallback
+
     fun toJson(): String {
         val doc = JSONObject()
             .put("v", VERSION)
@@ -54,6 +70,7 @@ data class WidgetSnapshot(
                 .put("mood", mood)
                 .put("updatedAt", updatedAt?.toString())
             if (refreshFailedAt != null) doc.put("refreshFailedAt", refreshFailedAt.toString())
+            if (timezone != null) doc.put("timezone", timezone)
         }
         return doc.toString()
     }
@@ -61,7 +78,7 @@ data class WidgetSnapshot(
     companion object {
         const val PREFS = "HomeWidgetPreferences"
         const val KEY = "lukitas.widget.snapshot"
-        const val VERSION = 2
+        const val VERSION = 3
 
         /** The snapshot in [json], or null when there is none of this version. */
         fun parse(json: String?): WidgetSnapshot? {
@@ -98,6 +115,7 @@ data class WidgetSnapshot(
                     refreshFailedAt = instant(doc.optString("refreshFailedAt", "")),
                     hideAmount = hideAmount,
                     theme = theme,
+                    timezone = doc.optString("timezone", "").takeIf { it.isNotEmpty() },
                 )
             } catch (_: JSONException) {
                 signedOut

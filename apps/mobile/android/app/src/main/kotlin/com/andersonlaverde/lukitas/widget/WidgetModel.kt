@@ -78,8 +78,9 @@ private fun monthName(month: YearMonth, language: String): String {
 }
 
 /**
- * What the widget says for [snapshot] at [now]: "this month" is read in [zone] (the phone's), so
- * figures of an earlier month are labelled by their month, never "este mes".
+ * What the widget says for [snapshot] at [now]: "this month" is read in the profile's zone (the
+ * snapshot's), else in [zone] (the phone's), so figures of an earlier month are labelled by their
+ * month, never "este mes".
  */
 fun widgetModel(context: Context, snapshot: WidgetSnapshot?, now: Instant, zone: ZoneId): WidgetModel {
     val theme = themeOf(snapshot?.theme)
@@ -94,7 +95,7 @@ fun widgetModel(context: Context, snapshot: WidgetSnapshot?, now: Instant, zone:
         return WidgetModel.SignedOut(strings.getString(R.string.widget_signed_out), theme)
     }
     val name = monthName(month, language)
-    val current = month == YearMonth.from(now.atZone(zone))
+    val current = month == YearMonth.from(now.atZone(snapshot.zone(zone)))
     val budgets = snapshot.budgetTotal > 0
     val over = budgets && snapshot.remaining < 0
     val hidden = snapshot.hideAmount

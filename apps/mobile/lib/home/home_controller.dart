@@ -21,11 +21,17 @@ final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 /// Writes the widget's snapshot after the month's figures load (replaced in tests).
 final widgetSnapshotWriterProvider =
     Provider<
-      Future<void> Function(Summary summary, {required String currency, required String locale})
+      Future<void> Function(
+        Summary summary, {
+        required String currency,
+        required String locale,
+        required String timezone,
+      })
     >(
       (ref) =>
-          (summary, {required currency, required locale}) =>
-              ref.read(widgetSyncProvider).summaryLoaded(summary, currency: currency, locale: locale),
+          (summary, {required currency, required locale, required timezone}) => ref
+              .read(widgetSyncProvider)
+              .summaryLoaded(summary, currency: currency, locale: locale, timezone: timezone),
     );
 
 /// The language amounts and dates are written in: English when the phone asks for it, Spanish
@@ -254,7 +260,7 @@ class HomeController extends Notifier<HomeState> {
           paidHere: state.paidHere,
         ),
       );
-      unawaited(_writeSnapshot(summary, data.currency));
+      unawaited(_writeSnapshot(summary, data.currency, data.timezone));
       unawaited(_persist());
     } on ParallelWaitError<dynamic, dynamic> catch (error) {
       // What each of the three failed with (a record of dart:async AsyncError, null for the ones that
@@ -333,11 +339,16 @@ class HomeController extends Notifier<HomeState> {
     );
   }
 
-  Future<void> _writeSnapshot(Summary summary, String currency) async {
+  Future<void> _writeSnapshot(Summary summary, String currency, String timezone) async {
     if (!_alive) return;
     try {
       final locale = widgetLanguage(ref);
-      await ref.read(widgetSnapshotWriterProvider)(summary, currency: currency, locale: locale);
+      await ref.read(widgetSnapshotWriterProvider)(
+        summary,
+        currency: currency,
+        locale: locale,
+        timezone: timezone,
+      );
     } catch (_) {
       // The widget keeps its last figure; this never breaks home (nor, after home was left, the app).
     }
@@ -381,7 +392,7 @@ class HomeController extends Notifier<HomeState> {
       final current = state.data;
       if (current == null) return;
       _set(state.copyWith(data: current.copyWith(summary: summary)));
-      unawaited(_writeSnapshot(summary, current.currency));
+      unawaited(_writeSnapshot(summary, current.currency, current.timezone));
       unawaited(_persist());
     } on Object catch (error) {
       if (!_alive) return;

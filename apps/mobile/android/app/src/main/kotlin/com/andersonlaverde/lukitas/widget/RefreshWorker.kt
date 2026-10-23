@@ -47,7 +47,12 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
         } finally {
             // Redrawn either way: "este mes" and "hace un rato" depend on the clock too.
             WidgetUpdates.redrawAll(context)
-            if (tags.contains(RefreshScheduler.MIDNIGHT)) RefreshScheduler.scheduleMidnight(context)
+            // The next midnight, in the profile's zone; a periodic run moves it if that zone changed.
+            if (tags.contains(RefreshScheduler.MIDNIGHT)) {
+                RefreshScheduler.scheduleMidnight(context)
+            } else if (RefreshScheduler.hasWidgets(context)) {
+                RefreshScheduler.keepMidnight(context)
+            }
         }
         return Result.success(workDataOf(OUTCOME to outcome))
     }

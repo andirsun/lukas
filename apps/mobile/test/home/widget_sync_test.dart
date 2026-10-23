@@ -100,14 +100,18 @@ void main() {
     container = make();
     final written = container
         .read(widgetSyncProvider)
-        .summaryLoaded(summary(budgetTotal: 200000000, spent: 50000000), currency: 'COP');
+        .summaryLoaded(
+          summary(budgetTotal: 200000000, spent: 50000000),
+          currency: 'COP',
+          timezone: 'America/Bogota',
+        );
     await Future<void>.delayed(Duration.zero);
     expect(store.saved, isEmpty, reason: 'nothing before the choice is known');
 
     hide.gate.complete();
     await written;
     expect(doc(), {
-      'v': 2,
+      'v': 3,
       'signedIn': true,
       'remaining': 150000000,
       'spent': 50000000,
@@ -119,6 +123,7 @@ void main() {
       'updatedAt': '2026-10-22T15:30:00.000Z',
       'hideAmount': true,
       'theme': 'dark',
+      'timezone': 'America/Bogota',
     });
     expect(store.updates, greaterThanOrEqualTo(1));
   });
@@ -126,12 +131,16 @@ void main() {
   test("the snapshot's language is the app's: the choice in Settings, else the phone's", () async {
     hide.gate.complete();
     container = make(locale: const Locale('en'), deviceLocale: 'es-CO');
-    await container.read(widgetSyncProvider).summaryLoaded(summary(), currency: 'COP');
+    await container
+        .read(widgetSyncProvider)
+        .summaryLoaded(summary(), currency: 'COP', timezone: 'America/Bogota');
     expect(doc()['locale'], 'en');
 
     store = FakeWidgetStore();
     container = make(deviceLocale: 'en-US');
-    await container.read(widgetSyncProvider).summaryLoaded(summary(), currency: 'COP');
+    await container
+        .read(widgetSyncProvider)
+        .summaryLoaded(summary(), currency: 'COP', timezone: 'America/Bogota');
     expect(doc()['locale'], 'en');
   });
 
@@ -142,7 +151,11 @@ void main() {
       container = make();
       await container
           .read(widgetSyncProvider)
-          .summaryLoaded(summary(budgetTotal: 100, spent: 20), currency: 'COP');
+          .summaryLoaded(
+            summary(budgetTotal: 100, spent: 20),
+            currency: 'COP',
+            timezone: 'America/Bogota',
+          );
       final before = doc();
       final updates = store.updates;
 
@@ -156,7 +169,9 @@ void main() {
   test('the widget follows the theme chosen in the app', () async {
     hide.gate.complete();
     container = make();
-    await container.read(widgetSyncProvider).summaryLoaded(summary(), currency: 'COP');
+    await container
+        .read(widgetSyncProvider)
+        .summaryLoaded(summary(), currency: 'COP', timezone: 'America/Bogota');
     expect(doc()['theme'], 'dark');
 
     await container.read(themeModeProvider.notifier).set(ThemeMode.light);
@@ -176,7 +191,7 @@ void main() {
         // The hide-amount choice is still loading: sign-out does not wait for it.
         final done = container.read(widgetSyncProvider).signedOut();
         expect(doc(), {
-          'v': 2,
+          'v': 3,
           'signedIn': false,
           'hideAmount': false,
           'theme': 'dark',
@@ -193,14 +208,22 @@ void main() {
       final sync = container.read(widgetSyncProvider);
       // Sign-out writes the widget first, while the session still reads as signed in.
       await sync.signedOut();
-      await sync.summaryLoaded(summary(budgetTotal: 100, spent: 20), currency: 'COP');
+      await sync.summaryLoaded(
+        summary(budgetTotal: 100, spent: 20),
+        currency: 'COP',
+        timezone: 'America/Bogota',
+      );
       await container.read(themeModeProvider.notifier).set(ThemeMode.light);
       await sync.idle;
       expect(doc()['signedIn'], false);
       expect(doc().containsKey('remaining'), isFalse);
 
       sync.signedIn();
-      await sync.summaryLoaded(summary(budgetTotal: 100, spent: 20), currency: 'COP');
+      await sync.summaryLoaded(
+        summary(budgetTotal: 100, spent: 20),
+        currency: 'COP',
+        timezone: 'America/Bogota',
+      );
       expect(doc()['signedIn'], true);
     });
 
@@ -208,7 +231,11 @@ void main() {
       container = make();
       final late = container
           .read(widgetSyncProvider)
-          .summaryLoaded(summary(budgetTotal: 100, spent: 20), currency: 'COP');
+          .summaryLoaded(
+            summary(budgetTotal: 100, spent: 20),
+            currency: 'COP',
+            timezone: 'America/Bogota',
+          );
       session.signOutHere();
       await container.read(widgetSyncProvider).signedOut();
       hide.gate.complete();
@@ -222,7 +249,11 @@ void main() {
       container = make();
       await container
           .read(widgetSyncProvider)
-          .summaryLoaded(summary(budgetTotal: 100, spent: 20), currency: 'COP');
+          .summaryLoaded(
+            summary(budgetTotal: 100, spent: 20),
+            currency: 'COP',
+            timezone: 'America/Bogota',
+          );
       session.signOutHere();
       await container.read(widgetSyncProvider).signedOut();
       await container.read(hideWidgetAmountProvider.notifier).set(false);
@@ -237,7 +268,7 @@ void main() {
       await container.read(themeModeProvider.notifier).set(ThemeMode.light);
       await container.read(widgetSyncProvider).idle;
       expect(doc(), {
-        'v': 2,
+        'v': 3,
         'signedIn': false,
         'hideAmount': true,
         'theme': 'light',
@@ -254,8 +285,10 @@ void main() {
     await container.read(widgetSyncProvider).idle;
     expect(store.saved[widgetSnapshotKey], contains('"v":1'), reason: 'nothing to patch');
 
-    await container.read(widgetSyncProvider).summaryLoaded(summary(), currency: 'COP');
-    expect(doc()['v'], 2);
+    await container
+        .read(widgetSyncProvider)
+        .summaryLoaded(summary(), currency: 'COP', timezone: 'America/Bogota');
+    expect(doc()['v'], 3);
     expect(doc().containsKey('amount'), isFalse);
   });
 
@@ -263,7 +296,9 @@ void main() {
     hide.gate.complete();
     store.failure = StateError('broken');
     container = make();
-    await container.read(widgetSyncProvider).summaryLoaded(summary(), currency: 'COP');
+    await container
+        .read(widgetSyncProvider)
+        .summaryLoaded(summary(), currency: 'COP', timezone: 'America/Bogota');
     await container.read(widgetSyncProvider).signedOut();
     await container.read(hideWidgetAmountProvider.notifier).set(false);
     await container.read(widgetSyncProvider).idle;

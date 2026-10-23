@@ -63,7 +63,7 @@ Future<HomeHarness> pumpHome(
       clockProvider.overrideWithValue(clock ?? () => now ?? testNow),
       lukasVariantProvider.overrideWithValue(() => 1),
       widgetSnapshotWriterProvider.overrideWithValue(
-        (summary, {required currency, required locale}) async =>
+        (summary, {required currency, required locale, required timezone}) async =>
             snapshots.add(WrittenSnapshot(summary, currency, locale)),
       ),
       ...overrides,

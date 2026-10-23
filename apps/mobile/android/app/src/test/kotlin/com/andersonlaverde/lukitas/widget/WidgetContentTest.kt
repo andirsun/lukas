@@ -177,7 +177,7 @@ class WidgetContentTest {
 
         // lib/home/widget_snapshot.dart's signedOutSnapshot, as SessionController.signOut writes it.
         prefs.edit()
-            .putString(WidgetSnapshot.KEY, """{"v":2,"signedIn":false,"hideAmount":false,"theme":"dark","locale":"es"}""")
+            .putString(WidgetSnapshot.KEY, """{"v":3,"signedIn":false,"hideAmount":false,"theme":"dark","locale":"es"}""")
             .commit()
         for (size in WidgetSize.entries) {
             runGlanceAppWidgetUnitTest {

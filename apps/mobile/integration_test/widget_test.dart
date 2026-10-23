@@ -163,7 +163,9 @@ void main() {
       final token = (await SessionStore().read())!.token;
       // Home's load writes the snapshot, in the app's currency and language.
       final first = await _snapshotWhere(tester, (doc) => doc['signedIn'] == true);
-      expect(first['v'], 2);
+      expect(first['v'], 3);
+      // The profile's zone, which the widget reads "this month" and its midnight in.
+      expect(first['timezone'], isA<String>());
 
       // A movement made elsewhere (the web, say): the app does not know of it.
       final summary = await _http.get<Map<String, dynamic>>(
@@ -206,6 +208,7 @@ void main() {
       expect(refreshed['remaining'], after.data!['remaining']);
       expect(refreshed['currency'], first['currency']);
       expect(refreshed['hideAmount'], first['hideAmount']);
+      expect(refreshed['timezone'], first['timezone']);
 
       // Signing out: at once the widget holds no figure, and the job brings none back.
       final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));

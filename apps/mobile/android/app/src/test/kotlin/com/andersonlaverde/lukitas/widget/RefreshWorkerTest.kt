@@ -12,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -194,8 +195,10 @@ class RefreshWorkerTest {
     @Test
     fun `RefreshWorker is scheduled about every 3 h, on a network, and at midnight`() {
         WorkManagerTestInitHelper.initializeTestWorkManager(context)
-        val at = LocalDateTime.of(2026, 10, 22, 21, 30).atZone(ZoneId.of("America/Bogota"))
-        RefreshScheduler.schedule(context, at)
+        val bogota = ZoneId.of("America/Bogota")
+        val at = LocalDateTime.of(2026, 10, 22, 21, 30).atZone(bogota).toInstant()
+        // No snapshot yet: the phone's zone.
+        RefreshScheduler.schedule(context, at, bogota)
 
         val workManager = WorkManager.getInstance(context)
         val periodic = workManager.getWorkInfosForUniqueWork(RefreshScheduler.PERIODIC).get().single()
@@ -208,8 +211,39 @@ class RefreshWorkerTest {
         assertEquals(Duration.ofMinutes(151).toMillis(), midnight.initialDelayMillis)
 
         // Scheduling again (every app start) keeps the same periodic job.
-        RefreshScheduler.schedule(context, at)
+        RefreshScheduler.schedule(context, at, bogota)
         assertEquals(periodic.id, workManager.getWorkInfosForUniqueWork(RefreshScheduler.PERIODIC).get().single().id)
+        assertEquals(midnight.id, workManager.getWorkInfosForUniqueWork(RefreshScheduler.MIDNIGHT).get().single().id)
+    }
+
+    @Test
+    fun `midnight is the profile's, from the snapshot, and moves when its zone does`() {
+        WorkManagerTestInitHelper.initializeTestWorkManager(context)
+        val workManager = WorkManager.getInstance(context)
+        val bogota = ZoneId.of("America/Bogota")
+        // 2026-10-22 11:00 UTC: 06:00 in Bogotá (the phone), 20:00 in Tokyo (the profile).
+        val at = Instant.parse("2026-10-22T11:00:00Z")
+        store(earlier.copy(timezone = "Asia/Tokyo"))
+        RefreshScheduler.schedule(context, at, bogota)
+        val tokyo = workManager.getWorkInfosForUniqueWork(RefreshScheduler.MIDNIGHT).get().single()
+        // 20:00 to one minute past midnight in Tokyo.
+        assertEquals(Duration.ofMinutes(241).toMillis(), tokyo.initialDelayMillis)
+
+        // The profile moved to Bogotá: the next start puts midnight there.
+        store(earlier.copy(timezone = "America/Bogota"))
+        RefreshScheduler.schedule(context, at, ZoneId.of("Asia/Tokyo"))
+        val moved = workManager.getWorkInfosForUniqueWork(RefreshScheduler.MIDNIGHT).get()
+            .single { it.state == WorkInfo.State.ENQUEUED }
+        assertNotEquals(tokyo.id, moved.id)
+        // 06:00 to one minute past midnight in Bogotá.
+        assertEquals(Duration.ofMinutes(18 * 60 + 1).toMillis(), moved.initialDelayMillis)
+    }
+
+    @Test
+    fun `a refresh keeps the snapshot's zone`() {
+        store(earlier.copy(timezone = "America/Bogota"))
+        runWorker()
+        assertEquals("America/Bogota", stored()!!.timezone)
     }
 
     @Test

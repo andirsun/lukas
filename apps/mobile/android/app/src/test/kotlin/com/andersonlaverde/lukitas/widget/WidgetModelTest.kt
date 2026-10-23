@@ -30,8 +30,10 @@ class WidgetModelTest {
         updatedAt: Instant = now.minusSeconds(60),
         hideAmount: Boolean = false,
         theme: String = "dark",
+        timezone: String? = null,
     ) = WidgetSnapshot(
         signedIn = true,
+        timezone = timezone,
         remaining = remaining,
         spent = spent,
         budgetTotal = budgetTotal,
@@ -165,6 +167,27 @@ class WidgetModelTest {
     }
 
     @Test
+    fun `this month is the profile's month, in its zone, whatever the phone's zone`() {
+        // 2026-11-01 03:00 UTC: still October 31 in Bogotá, already November 1 in Madrid.
+        val at = Instant.parse("2026-11-01T03:00:00Z")
+        val madrid = ZoneId.of("Europe/Madrid")
+        val bogotaProfile = widgetModel(context, snapshot(timezone = "America/Bogota"), at, madrid)
+        assertEquals("Te quedan", (bogotaProfile as WidgetModel.Figures).label)
+        val madridProfile = widgetModel(context, snapshot(timezone = "Europe/Madrid"), at, zone)
+        assertEquals("Te quedaron en Octubre", (madridProfile as WidgetModel.Figures).label)
+        // A zone that is not one falls back to the phone's.
+        val unknown = widgetModel(context, snapshot(timezone = "Not/AZone"), at, zone)
+        assertEquals("Te quedan", (unknown as WidgetModel.Figures).label)
+    }
+
+    @Test
+    fun `the snapshot's zone is the profile's, or the phone's without one`() {
+        assertEquals(ZoneId.of("Asia/Tokyo"), snapshot(timezone = "Asia/Tokyo").zone(zone))
+        assertEquals(zone, snapshot().zone(zone))
+        assertEquals(zone, snapshot(timezone = "+05:00:00:00").zone(zone))
+    }
+
+    @Test
     fun `the theme is the app's choice, night when none`() {
         assertEquals(WidgetTheme.NIGHT, widgetModel(context, snapshot(theme = "dark"), now, zone).theme)
         assertEquals(WidgetTheme.DAY, widgetModel(context, snapshot(theme = "light"), now, zone).theme)
@@ -176,13 +199,21 @@ class WidgetModelTest {
 
     @Test
     fun `the snapshot reads back what it wrote, and a signed-out one keeps no figure`() {
-        val written = snapshot(updatedAt = Instant.parse("2026-10-22T15:30:00Z"))
+        val written = snapshot(updatedAt = Instant.parse("2026-10-22T15:30:00Z"), timezone = "America/Bogota")
         assertEquals(written, WidgetSnapshot.parse(written.toJson()))
+        assertEquals("America/Bogota", org.json.JSONObject(written.toJson()).getString("timezone"))
+        assertEquals(3, org.json.JSONObject(written.toJson()).getInt("v"))
         val signedOut = WidgetSnapshot.parse(
-            """{"v":2,"signedIn":false,"hideAmount":true,"theme":"light","locale":"en"}""",
+            """{"v":3,"signedIn":false,"hideAmount":true,"theme":"light","locale":"en"}""",
         )
         assertEquals(WidgetSnapshot(signedIn = false, hideAmount = true, theme = "light", locale = "en"), signedOut)
         // Signed in but missing a figure: never drawn as figures.
-        assertEquals(false, WidgetSnapshot.parse("""{"v":2,"signedIn":true,"currency":"COP"}""")!!.signedIn)
+        assertEquals(false, WidgetSnapshot.parse("""{"v":3,"signedIn":true,"currency":"COP"}""")!!.signedIn)
+        // A version 2 snapshot (no zone) is not read: the app writes a new one at its next start.
+        assertNull(
+            WidgetSnapshot.parse(
+                """{"v":2,"signedIn":true,"remaining":1,"spent":1,"budgetTotal":2,"currency":"COP","month":"2026-10"}""",
+            ),
+        )
     }
 }

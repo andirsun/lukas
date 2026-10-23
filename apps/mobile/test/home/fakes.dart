@@ -173,7 +173,7 @@ bool widgetSignedOut(FakeWidgetStore store) {
   final json = store.saved[widgetSnapshotKey];
   if (json == null) return false;
   final doc = jsonDecode(json) as Map<String, Object?>;
-  return doc['v'] == 2 &&
+  return doc['v'] == widgetSnapshotVersion &&
       doc['signedIn'] == false &&
       !doc.containsKey('remaining') &&
       !doc.containsKey('spent') &&

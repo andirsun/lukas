@@ -10,9 +10,9 @@ import '../api/gen/lukitas_api.dart';
 const widgetSnapshotKey = 'lukitas.widget.snapshot';
 
 /// The snapshot's shape version. The Kotlin widget draws "Abre Lukitas para empezar" for any other
-/// (`android/.../widget/WidgetSnapshot.kt`), so a phone that still holds a version 1 snapshot
-/// never shows it as figures.
-const widgetSnapshotVersion = 2;
+/// (`android/.../widget/WidgetSnapshot.kt`), so a phone that still holds an older snapshot never
+/// shows it as figures. Version 3 added `timezone`.
+const widgetSnapshotVersion = 3;
 
 /// The two widgets' receivers (`android/.../widget/`), which `updateWidgets` asks to redraw.
 const widgetReceivers = [
@@ -63,12 +63,12 @@ class HomeWidgetStore implements WidgetStore {
 /// Android SharedPreferences file `HomeWidgetPreferences`, which is where `home_widget` keeps its
 /// values.
 ///
-/// **Shape**, version 2 (a reader ignores unknown fields and draws "Abre Lukitas para empezar" for
+/// **Shape**, version 3 (a reader ignores unknown fields and draws "Abre Lukitas para empezar" for
 /// a `v` it does not know, or when `signedIn` is not true):
 ///
 /// ```json
 /// {
-///   "v": 2,
+///   "v": 3,
 ///   "signedIn": true,
 ///   "remaining": 150000000,    // cents, like the API: budgetTotal - spent, negative when over
 ///   "spent": 50000000,         // cents spent this month
@@ -79,7 +79,9 @@ class HomeWidgetStore implements WidgetStore {
 ///   "mood": "happy",           // Lukitas' face: "happy" | "worried" (a category near or over)
 ///   "updatedAt": "2026-10-22T15:30:00.000Z",  // UTC, when these figures came from the server
 ///   "hideAmount": false,       // Settings' "Ocultar el monto en el widget": draw "••••"
-///   "theme": "dark"            // the app's theme choice: "dark" | "light" | "system"
+///   "theme": "dark",           // the app's theme choice: "dark" | "light" | "system"
+///   "timezone": "America/Bogota"  // the profile's IANA zone: "this month" and midnight are read
+///                                 // in it, as the app reads its figures (the phone's without one)
 /// }
 /// ```
 ///
@@ -96,6 +98,7 @@ Map<String, Object?> signedInSnapshot(
   required bool hideAmount,
   required String theme,
   required DateTime updatedAt,
+  required String timezone,
 }) {
   final worried = summary.categories.any((c) => c.state != SummaryCategoriesInnerStateEnum.ok);
   return {
@@ -111,6 +114,7 @@ Map<String, Object?> signedInSnapshot(
     'updatedAt': updatedAt.toUtc().toIso8601String(),
     'hideAmount': hideAmount,
     'theme': theme,
+    'timezone': timezone,
   };
 }
 
