@@ -209,6 +209,17 @@ class VoiceChannel(private val activity: Activity, messenger: BinaryMessenger) :
             free = Recognizer(loaded, SAMPLE_RATE.toFloat()).apply { setWords(true) }
             biased = Recognizer(loaded, SAMPLE_RATE.toFloat(), grammar).apply { setWords(true) }
 
+            // Stopped, cancelled or disposed while the model loaded (the app went to the
+            // background, say): the microphone is never opened.
+            if (stopRequested || id != session) {
+                if (id == session) {
+                    send(id, sink, mapOf("type" to "result", "pass" to "free", "json" to free.finalResult))
+                    send(id, sink, mapOf("type" to "result", "pass" to "grammar", "json" to biased.finalResult))
+                    send(id, sink, mapOf("type" to "done"))
+                    main.post { if (id == session) sink.endOfStream() }
+                }
+                return
+            }
             val minimum = AudioRecord.getMinBufferSize(
                 SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT,
             )

@@ -48,7 +48,7 @@ class _FakeChannel implements VoicePlatform {
   Future<void> releaseModels() async {}
 
   @override
-  Future<int> freeBytes() async => 1 << 40;
+  Future<int?> freeBytes() async => 1 << 40;
 
   void send(VoiceEvent event) => events!.add(event);
 
@@ -228,10 +228,18 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('nothing said at all stops too', (tester) async {
+  testWidgets('nothing said at all stops too, counting from ready, not from the model load', (
+    tester,
+  ) async {
     engine.listen(locale: 'es').listen((_) {});
     await tester.pump();
-    await tester.pump(nothingHeardLimit);
+    // A slow model load: the person has not been asked anything yet.
+    await tester.pump(nothingHeardLimit + const Duration(seconds: 1));
+    expect(channel.stops, 0);
+    channel.send(const VoiceEvent.ready());
+    await tester.pump(nothingHeardLimit - const Duration(seconds: 1));
+    expect(channel.stops, 0);
+    await tester.pump(const Duration(seconds: 1));
     expect(channel.stops, 1);
     await channel.finish();
     await tester.pump();

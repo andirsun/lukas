@@ -73,7 +73,6 @@ class _Session {
       final granted = await _channel.requestPermission();
       if (!granted) throw const SpeechFailure(SpeechFailureKind.permissionDenied);
       if (out.isClosed || _cancelled) return;
-      _nothing = Timer(nothingHeardLimit, () => unawaited(stop()));
       _longest = Timer(longestListen, () => unawaited(stop()));
       _events = _channel
           .start(modelPath: path, grammar: grammarJson(_locale))
@@ -91,7 +90,9 @@ class _Session {
     if (out.isClosed) return;
     switch (event) {
       case VoiceReady():
-        // An empty first event: listening has really started (SpeechEngine.listen).
+        // An empty first event: listening has really started (SpeechEngine.listen). The person's
+        // 8 s to start talking count from here, not from the model load.
+        _nothing ??= Timer(nothingHeardLimit, () => unawaited(stop()));
         out.add('');
       case VoicePartial(:final text):
         _partial = text;

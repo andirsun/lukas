@@ -91,8 +91,8 @@ abstract interface class ModelFiles {
   /// Frees a model the recognizer has loaded (before its files are deleted).
   Future<void> releaseModels();
 
-  /// The bytes free where the models go.
-  Future<int> freeBytes();
+  /// The bytes free where the models go; null when the phone cannot tell.
+  Future<int?> freeBytes();
 }
 
 /// The downloaded models: which are ready, getting one, deleting them all.
@@ -174,7 +174,10 @@ class ModelStore {
       from = 0;
     }
     // Room for the rest of the zip and the unzipped model, which exist together for a moment.
-    if (await _files.freeBytes() < model.bytes - from + model.unzippedBytes) {
+    // When the phone cannot tell, it goes ahead: a full disk then fails the write, and the hash
+    // still guards what is used.
+    final free = await _freeBytes();
+    if (free != null && free < model.bytes - from + model.unzippedBytes) {
       throw const ModelDownloadFailure(noSpace: true);
     }
 
@@ -235,6 +238,14 @@ class ModelStore {
     }
     await File('$dir/${model.name}.ready').writeAsString(model.sha256, flush: true);
     await part.delete();
+  }
+
+  Future<int?> _freeBytes() async {
+    try {
+      return await _files.freeBytes();
+    } on Object {
+      return null;
+    }
   }
 
   /// The first byte of a 206 answer (`Content-Range: bytes <start>-<end>/<size>`), or null.

@@ -100,10 +100,14 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
   var _saving = false;
   HomeFailure? _failure;
 
-  /// The batch attempt's key: made at the first press, the same for Reintentar and for a change
-  /// that changes nothing, new for any other request body ([batchFingerprint]).
-  String? _key;
-  String? _keyBody;
+  /// One Idempotency-Key per request body ([batchFingerprint]) for the sheet's life: Reintentar, a
+  /// change that changes nothing, or a change and its undoing (A, B, then A again) all send the
+  /// key that body was first sent with, so a lost answer can never become a second set of rows.
+  final _keys = <String, String>{};
+
+  /// Listening waits for the app to be in front again (opened, or the engine answered, while it
+  /// was in the background): the microphone never opens unseen.
+  var _listenWhenBack = false;
 
   SpeechEngine get _engine => ref.read(speechEngineProvider);
 
@@ -128,6 +132,11 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _listenWhenBack) {
+      _listenWhenBack = false;
+      _listen();
+      return;
+    }
     // In the background the microphone is let go at once (Kotlin also stops on onStop); what was
     // heard stays in the typing field. Coming back does not listen by itself.
     if ((state == AppLifecycleState.hidden || state == AppLifecycleState.paused) &&
@@ -167,7 +176,19 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
 
   // -- listening -----------------------------------------------------------------------------
 
+  static bool get _inBackground => switch (WidgetsBinding.instance.lifecycleState) {
+    AppLifecycleState.hidden || AppLifecycleState.paused || AppLifecycleState.detached => true,
+    _ => false,
+  };
+
   void _listen() {
+    if (_inBackground) {
+      _set(() {
+        _stage = _Stage.starting;
+        _listenWhenBack = true;
+      });
+      return;
+    }
     unawaited(_listening?.cancel());
     _set(() {
       _stage = _Stage.listening;
@@ -215,6 +236,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
 
   /// The typing field, with [note] over it saying why it shows, if anything.
   void _type(_Note? note, {String? text}) {
+    _listenWhenBack = false;
     final listening = _listening;
     _listening = null;
     if (listening != null) {
@@ -333,10 +355,7 @@ class _CaptureSheetState extends ConsumerState<CaptureSheet> with WidgetsBinding
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
 
     final drafts = preview.drafts(categoryName: (id) => data.categories[id]?.name ?? '');
-    final body = batchFingerprint(drafts);
-    if (_keyBody != body) _key = null;
-    final key = _key ??= newIdempotencyKey();
-    _keyBody = body;
+    final key = _keys.putIfAbsent(batchFingerprint(drafts), newIdempotencyKey);
     final total = preview.total;
 
     _set(() {

@@ -125,7 +125,7 @@ class VoiceChannel implements VoicePlatform {
   Future<void> releaseModels() => _methods.invokeMethod<void>('releaseModels');
 
   @override
-  Future<int> freeBytes() async => (await _methods.invokeMethod<int>('freeBytes'))!;
+  Future<int?> freeBytes() => _methods.invokeMethod<int>('freeBytes');
 }
 
 final voiceChannelProvider = Provider<VoicePlatform>((ref) => const VoiceChannel());

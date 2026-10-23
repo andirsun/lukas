@@ -111,11 +111,17 @@ class _FakeFiles implements ModelFiles {
   final unzipped = <String>[];
   var released = 0;
 
-  /// Free space where the models go.
-  int free = 1 << 40;
+  /// Free space where the models go; null: unknown.
+  int? free = 1 << 40;
+
+  /// The free-space question fails outright.
+  var freeFails = false;
 
   @override
-  Future<int> freeBytes() async => free;
+  Future<int?> freeBytes() async {
+    if (freeFails) throw StateError('statfs failed');
+    return free;
+  }
 
   @override
   Future<String> modelsDirectory() async => root.path;
@@ -295,6 +301,16 @@ void main() {
     );
     expect(server.requests, isEmpty);
     files.free = _payload.length * 3;
+    await store().download('es');
+    expect(await store().installedPath('es'), isNotNull);
+  });
+
+  test('free space unknown, or its question failing, goes ahead: the hash still guards', () async {
+    files.free = null;
+    await store().download('es');
+    expect(await store().installedPath('es'), isNotNull);
+    await store().deleteModels();
+    files.freeFails = true;
     await store().download('es');
     expect(await store().installedPath('es'), isNotNull);
   });

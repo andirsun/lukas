@@ -104,36 +104,46 @@ void main() {
     expect(p.total, 1800000);
   });
 
-  group('a card amount typed by hand', () {
-    test('es: dots group thousands, a comma starts the cents', () {
-      expect(parseCardAmount('1.234,50', currency: 'EUR', locale: 'es'), 123450);
-      expect(parseCardAmount('9,5', currency: 'EUR', locale: 'es'), 950);
-      expect(parseCardAmount('12', currency: 'EUR', locale: 'es'), 1200);
-      expect(parseCardAmount('0,07', currency: 'EUR', locale: 'es'), 7);
-    });
+  group('a card amount typed by hand (the shared parser\'s separator rule)', () {
+    test(
+      'a separator before exactly three digits groups thousands; otherwise it is the decimal',
+      () {
+        int es(String t) => parseCardAmount(t, currency: 'EUR', locale: 'es');
+        int en(String t) => parseCardAmount(t, currency: 'USD', locale: 'en');
+        expect(es('12.5'), 1250);
+        expect(es('12,5'), 1250);
+        expect(es('1.234,50'), 123450);
+        expect(es('12.345'), 1234500);
+        expect(es('12'), 1200);
+        expect(es('0,07'), 7);
+        expect(en('1,234.50'), 123450);
+        expect(en('12,5'), 1250);
+        expect(en('12.5'), 1250);
+        expect(en('12,345'), 1234500);
+      },
+    );
 
-    test('en: commas group thousands, a dot starts the cents', () {
-      expect(parseCardAmount('1,234.50', currency: 'USD', locale: 'en'), 123450);
-      expect(parseCardAmount('9.5', currency: 'USD', locale: 'en'), 950);
-      expect(parseCardAmount('0.07', currency: 'USD', locale: 'en'), 7);
-    });
-
-    test('COP is whole pesos, with or without thousands dots', () {
+    test('COP is whole pesos, with or without thousands separators', () {
       expect(parseCardAmount('15000', currency: 'COP', locale: 'es'), 1500000);
       expect(parseCardAmount('15.000', currency: 'COP', locale: 'es'), 1500000);
       expect(parseCardAmount('15,000', currency: 'COP', locale: 'en'), 1500000);
+      expect(parseCardAmount('9,50', currency: 'COP', locale: 'es'), 0);
     });
 
     test('anything else is no amount (0), never a guess', () {
-      for (final text in ['', ',', '1,2,3', '1,234', '9,505', 'abc', '1.2.3,4,5']) {
+      for (final text in ['', ',', '1,2,3', '12,5000', 'abc', '0', '1.2.3,4,5']) {
         expect(
           parseCardAmount(text, currency: 'EUR', locale: 'es'),
           0,
           reason: text,
         );
       }
-      expect(parseCardAmount('9,50', currency: 'COP', locale: 'es'), 0);
       expect(parseCardAmount('99999999999999999999', currency: 'COP', locale: 'es'), 0);
+      expect(
+        parseCardAmount('1000000000', currency: 'COP', locale: 'es'),
+        0,
+        reason: 'over the cap',
+      );
     });
 
     test('an amount shows back the way it is typed', () {

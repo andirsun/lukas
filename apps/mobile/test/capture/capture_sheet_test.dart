@@ -1,4 +1,5 @@
 // Quick capture (spec section 6.1.4) on home, with a fixed transcript in place of audio.
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -444,5 +445,50 @@ void main() {
     expect(env.capture.keys[0], env.capture.keys[1]);
     expect(env.server.items.where((t) => t.id.startsWith('batch-')), hasLength(2));
     await _letTimersEnd(tester);
+  });
+
+  testWidgets('A, then B, then A again keeps A\'s key: still exactly 2 rows', (tester) async {
+    final env = await _pump(tester);
+    await _open(tester);
+    await _pickCategory(tester, 0, 'cat-food');
+    env.capture.loseNextAnswer = true;
+    await tester.tap(find.byKey(const Key('capture.save')));
+    await tester.pumpAndSettle();
+    // B: another category, saved and refused; then A again.
+    await tester.tap(find.text('almuerzo'));
+    await tester.pumpAndSettle();
+    await _pickCategory(tester, 0, 'cat-uber');
+    env.capture.failures['save'] = const HomeFailure(500);
+    await tester.tap(find.byKey(const Key('capture.save')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('almuerzo'));
+    await tester.pumpAndSettle();
+    await _pickCategory(tester, 0, 'cat-food');
+    await tester.tap(find.byKey(const Key('capture.save')));
+    await tester.pumpAndSettle();
+    expect(env.capture.keys, hasLength(3));
+    expect(env.capture.keys[1], isNot(env.capture.keys[0]));
+    expect(env.capture.keys[2], env.capture.keys[0]);
+    expect(env.server.items.where((t) => t.id.startsWith('batch-')), hasLength(2));
+    await _letTimersEnd(tester);
+  });
+
+  testWidgets('if the app goes to the background before listening starts, it waits to be back', (
+    tester,
+  ) async {
+    final env = await _pump(tester);
+    env.engine.availableGate = Completer<void>();
+    await _openMoving(tester);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    env.engine.availableGate!.complete();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(env.engine.listens, 0, reason: 'the microphone never opens unseen');
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    expect(env.engine.listens, 1);
+    expect(find.text('GUARDAR 2'), findsOneWidget);
   });
 }

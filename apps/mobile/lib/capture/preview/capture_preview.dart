@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../parser/amounts.dart' show Dec, maxAmountUnits, readAmountText;
 import '../parser/parse.dart';
 
 /// One movement in the preview, as the person may still change it.
@@ -168,21 +169,20 @@ String batchFingerprint(List<Draft> drafts) => jsonEncode([
   for (final d in drafts) [d.amount, d.kind.name, d.name, d.categoryId, d.date],
 ]);
 
-/// An amount typed by hand on a card, in cents, read as strings (never through floating point):
-/// in es dots group thousands and a comma starts the cents (`1.234,50`), in en the other way round
-/// (`1,234.50`). COP is whole pesos. Anything else, or nothing, is 0: no amount yet.
+/// An amount typed by hand on a card, in cents, read by the sentence parser's own number rule
+/// (packages/core/quick-capture/README.md), the same in every locale: a dot or comma before exactly
+/// three digits groups thousands (`12.345`, `1,234.50`), and before one or two digits it is the
+/// decimal, whichever mark it is (`12.5` and `12,5` are both 12,50). COP is whole pesos. Never a
+/// double. Anything else, zero, or above the parser's cap is 0: no amount yet.
 int parseCardAmount(String text, {required String currency, required String locale}) {
-  final decimal = locale == 'en' ? '.' : ',';
-  final grouping = locale == 'en' ? ',' : '.';
-  final cleaned = text.trim().replaceAll(grouping, '');
-  if (!RegExp(r'^\d*(?:' + RegExp.escape(decimal) + r'\d{0,2})?$').hasMatch(cleaned)) return 0;
-  final parts = cleaned.split(decimal);
-  final whole = parts[0];
-  final fraction = parts.length > 1 ? parts[1] : '';
-  if (whole.isEmpty && fraction.isEmpty) return 0;
-  if (whole.length > 12) return 0;
-  if (currency == 'COP' && fraction.replaceAll('0', '').isNotEmpty) return 0;
-  return int.parse(whole.isEmpty ? '0' : whole) * 100 + int.parse(fraction.padRight(2, '0'));
+  final trimmed = text.trim();
+  // Digits and separators only: the field takes nothing else, and words are the sentence's job.
+  if (!RegExp(r'^\d[\d.,]*$').hasMatch(trimmed)) return 0;
+  final value = readAmountText(trimmed, locale == 'en' ? 'en' : 'es');
+  if (value == null || value.compareTo(Dec.zero) <= 0) return 0;
+  if (value.compareTo(Dec(maxAmountUnits)) > 0) return 0;
+  if (currency == 'COP' && !value.isInteger) return 0;
+  return value.cents;
 }
 
 /// [cents] as a card's amount field shows it, ready to be changed: no grouping, the locale's

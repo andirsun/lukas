@@ -31,7 +31,13 @@ class FakeSpeechEngine implements SpeechEngine {
   var cancels = 0;
 
   @override
-  Future<bool> available() async => availableAnswer;
+  Future<bool> available() async {
+    await availableGate?.future;
+    return availableAnswer;
+  }
+
+  /// While set, [available] waits for it (the answer comes late).
+  Completer<void>? availableGate;
 
   @override
   Stream<String> listen({required String locale}) {
@@ -170,7 +176,7 @@ class _NoFiles implements ModelFiles {
   Future<void> releaseModels() async {}
 
   @override
-  Future<int> freeBytes() async => 1 << 40;
+  Future<int?> freeBytes() async => 1 << 40;
 
   @override
   Future<void> unzip(String zip, String into) async {}
