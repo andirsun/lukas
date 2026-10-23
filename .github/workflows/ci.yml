@@ -313,7 +313,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-api36-default-x86_64-pixel_8-v1
+          key: avd-api36-default-x86_64-nexus6-v1
       - name: Create the AVD and its snapshot (first run only)
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2.37.0
@@ -321,7 +321,7 @@ jobs:
           api-level: 36
           target: default
           arch: x86_64
-          profile: pixel_8
+          profile: Nexus 6
           ram-size: 4096M
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
@@ -333,7 +333,7 @@ jobs:
           api-level: 36
           target: default
           arch: x86_64
-          profile: pixel_8
+          profile: Nexus 6
           ram-size: 4096M
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
