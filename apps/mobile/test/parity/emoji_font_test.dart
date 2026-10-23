@@ -73,4 +73,21 @@ void main() {
       );
     }
   });
+
+  test('every emoji the web and the app write has a picture (categories, stories, copy)', () {
+    final sources = [
+      for (final root in ['../web/app', '../../packages', 'lib', 'lib/l10n'])
+        ...Directory(root)
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((file) => !file.path.contains('node_modules') && !file.path.contains('/gen/'))
+            .where((file) => RegExp(r'\.(ts|tsx|dart|arb|json)$').hasMatch(file.path)),
+    ];
+    final missing = <String, Set<String>>{};
+    for (final file in sources) {
+      final without = emojiWithoutPicture(file.readAsStringSync(), font);
+      if (without.isNotEmpty) missing[file.path] = without;
+    }
+    expect(missing, isEmpty, reason: 'update test/parity/fonts/NotoColorEmoji.ttf');
+  });
 }

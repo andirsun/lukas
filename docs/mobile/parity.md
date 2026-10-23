@@ -135,13 +135,19 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - The font keeps its pictures as PNGs in `CBDT` tables. `flutter test` on macOS draws through Core
     Text, which only draws Apple's `sbix` tables. So `test/support/emoji_font.dart` moves the same
     PNGs into an `sbix` table, in memory, for the goldens.
-  - The file is the 2017 build (v1.39) that ships in the Flutter SDK's engine sources. Emoji newer
-    than Unicode 10 are not in it: of those the web uses, 🧪 and 🧾. Chrome falls back to Apple's
-    for those and the app draws a box. The current CBDT `NotoColorEmoji.ttf` from
-    googlefonts/noto-emoji can replace it in that folder, with its OFL; nothing else changes.
+  - The file is googlefonts/noto-emoji's `2D/fonts/NotoColorEmoji.ttf` (the CBDT build, version
+    2.057, Emoji 18), unmodified and not subset:
+    - source commit `e20cbc2bbec1926686be9f9bee7d1d2cfa1fea0e` (the font last changed in
+      `1ffdd21391dd`, "Add Emoji 18 fonts");
+    - SHA-256 `15671215ab769fdc7162a045d56fd7d7e477c51b04e6b3c761d914d8fdd6cc44`, 10,730,124 bytes;
+    - `NotoColorEmoji-OFL.txt` is that commit's `2D/fonts/LICENSE`.
+  - It is test-only. Nothing in pubspec.yaml names it, and the release APK's assets hold only
+    Fredoka, Nunito and the tree-shaken Material icons.
+  - To update it, replace both files from a newer commit, record the commit and SHA-256 here, and
+    run the loop. Take the CBDT `NotoColorEmoji.ttf`, not a COLRv1 build: `sbixFromCbdt` reads CBDT.
   - `test/parity/emoji_font_test.dart` checks that `sbixFromCbdt` converts the committed file. It
-    also fails when an emoji in any fixture has no picture in it, so a missing emoji is reported
-    rather than drawn as a box.
+    also fails when an emoji in any fixture, or anywhere in the web's and the app's code, has no
+    picture in it, so a missing emoji is reported rather than drawn as a box.
 - **Icons.** Material icons draw with the Flutter SDK's own `MaterialIcons-Regular.otf`
   (`loadMaterialIcons` in `test/support/fonts.dart`), the file `flutter build` bundles. The Stage 3
   goldens load it too.
