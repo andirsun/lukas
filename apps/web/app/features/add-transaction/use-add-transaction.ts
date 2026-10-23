@@ -299,6 +299,8 @@ export function useTransactionForm({
   );
   const [name, setName] = useState(() => editing?.name ?? "");
   const [picked, setPicked] = useState<string | null>(null);
+  // The name was typed in or picked: it is no longer the movement's own, untouched one.
+  const [nameTouched, setNameTouched] = useState(false);
   const [categoryId, setCategoryId] = useState<string | null>(
     () => editing?.categoryId ?? initialCategory ?? null,
   );
@@ -327,9 +329,12 @@ export function useTransactionForm({
       : active;
   const selected =
     (categoryId && ofKind.find((c) => c.id === categoryId)) || ofKind[0] || undefined;
-  // An edited transaction whose name is just its category's shows the name as the placeholder.
+  // An edited transaction whose name is just its category's shows the name as the placeholder,
+  // until the field is first edited: typing the category's name and more keeps every letter.
   const nameShown =
-    editing && editingCategory && name === editingCategory.name && !picked ? "" : name;
+    editing && !nameTouched && editingCategory && name === editingCategory.name && !picked
+      ? ""
+      : name;
 
   let chips = ofKind;
   const overflow = ofKind.length > visibleChips + 1;
@@ -386,10 +391,12 @@ export function useTransactionForm({
     name: nameShown,
     setName(next: string) {
       setName(next);
+      setNameTouched(true);
       if (next !== picked) setPicked(null);
     },
     pick(s: NameChoice) {
       setName(s.name);
+      setNameTouched(true);
       setPicked(s.name);
       setKindState(s.kind);
       choose(s.categoryId);

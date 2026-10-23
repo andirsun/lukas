@@ -343,6 +343,41 @@ export const NameItLater: Story = {
   },
 };
 
+/**
+ * A name that starts with the category's: the field shows the category name only as the
+ * placeholder until it is first edited, so typing "Supermercado Éxito" never empties it at the
+ * 12th character and the whole name is saved.
+ */
+export const NameItWithTheCategoryName: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "12");
+    await pickCategory(sheet, "Supermercado");
+
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    const toast = await toastSaying("Gasto en Supermercado");
+    await userEvent.click(await toast.findByRole("button", { name: "Ponerle nombre" }));
+    const edit = within(await screen.findByRole("dialog", { name: "Editar movimiento" }));
+    const name = edit.getByRole("textbox", { name: "Nombre (opcional)" });
+    await waitFor(() => expect(name).toHaveFocus());
+    await expect(name).toHaveValue("");
+    await userEvent.type(name, "Supermercado Éxito");
+    await expect(name).toHaveValue("Supermercado Éxito");
+    await userEvent.click(edit.getByRole("button", { name: "Guardar cambios" }));
+    await dialogGone();
+    await waitFor(() =>
+      expect(calls(args.onRequest).map(([line]) => line)).toContainEqual(
+        expect.stringMatching(
+          /^PATCH \/api\/v1\/transactions\/\S+ \{"name":"Supermercado Éxito"\}$/,
+        ),
+      ),
+    );
+  },
+};
+
 /** An income: the toggle, the income categories, and its own words in the toast. */
 export const AddIncome: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} />,
