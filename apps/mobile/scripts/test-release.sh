@@ -148,6 +148,8 @@ Signer #1 key algorithm: RSA
 TEXT
 )"
 expect "digest read from apksigner" "$upper" "$(printf '%s\n' "$recorded" | release_fingerprint_from_apksigner)"
+expect "digest read from SDK-ranged signer blocks" "$upper" "$(printf 'Signer (minSdkVersion=26, maxSdkVersion=32) certificate SHA-256 digest: %s\nSigner (minSdkVersion=33, maxSdkVersion=2147483647) certificate SHA-256 digest: %s\n' "$lower" "$lower" | release_fingerprint_from_apksigner)"
+expect_fail "SDK-ranged blocks with two keys" bash -c "source '$HERE/release-lib.sh'; printf 'Signer (minSdkVersion=26) certificate SHA-256 digest: %s\nSigner (minSdkVersion=33) certificate SHA-256 digest: %s\n' '$lower' 'ab$lower' | release_fingerprint_from_apksigner"
 expect_fail "no digest in the output" bash -c "source '$HERE/release-lib.sh'; printf 'DOES NOT VERIFY\n' | release_fingerprint_from_apksigner"
 expect_fail "two signers" bash -c "source '$HERE/release-lib.sh'; printf 'Signer #1 certificate SHA-256 digest: %s\nSigner #2 certificate SHA-256 digest: %s\n' '$lower' '$lower' | release_fingerprint_from_apksigner"
 

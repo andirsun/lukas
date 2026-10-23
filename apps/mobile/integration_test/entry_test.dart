@@ -113,8 +113,10 @@ void main() {
     final me = await _me();
     expect(me['isAnonymous'], isTrue);
     // The guest's profile starts from the phone's time zone (x-lukas-timezone).
+    // The server stores the canonical name, so an emulator's "Etc/UTC" comes back as "UTC".
     final zone = await const MethodChannel('lukitas/device').invokeMethod<String>('timeZone');
-    expect(me['timezone'], zone);
+    const utcAliases = {'Etc/UTC', 'Etc/UCT', 'Etc/Universal', 'Etc/Zulu', 'UCT', 'Universal', 'Zulu'};
+    expect(me['timezone'], utcAliases.contains(zone) ? 'UTC' : zone);
   });
 
   testWidgets('the email code signs in', (tester) async {

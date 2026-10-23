@@ -88,9 +88,14 @@ release_format_fingerprint() {
 # need a decision, not a guess.
 release_fingerprint_from_apksigner() {
   local digests count
-  digests="$(sed -n 's/^Signer #[0-9][0-9]* certificate SHA-256 digest: *//p')"
+  local report numbered
+  report="$(cat)"
+  # Newer apksigner prints SDK-ranged blocks of the same signer as "Signer (minSdkVersion=…, …)";
+  # older ones print "Signer #1". Two numbered signers are two keys; ranged blocks of one key are not.
+  numbered="$(printf '%s\n' "$report" | grep -c '^Signer #[0-9][0-9]* certificate SHA-256 digest:' || true)"
+  digests="$(printf '%s\n' "$report" | sed -n 's/^Signer[^:]* certificate SHA-256 digest: *//p' | sort -u)"
   count="$(printf '%s' "$digests" | grep -c . || true)"
-  if [ "$count" -ne 1 ]; then
+  if [ "$numbered" -gt 1 ] || [ "$count" -ne 1 ]; then
     echo "Expected one signer's SHA-256 digest from apksigner, found $count" >&2
     return 1
   fi

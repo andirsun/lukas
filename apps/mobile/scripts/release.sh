@@ -206,7 +206,8 @@ for abi in "${ABIS[@]}"; do
 $(printf '%s\n' "$report" | redact)" 1
   grep -q '^Verified using v2 scheme.*: true' <<<"$report" || die "$abi: the APK has no v2 signature" 1
   if grep -q 'CN=Android Debug' <<<"$report"; then die "$abi: the APK is signed with the debug key" 1; fi
-  this="$(release_fingerprint_from_apksigner <<<"$report")" || die "$abi: could not read the certificate" 1
+  this="$(release_fingerprint_from_apksigner <<<"$report")" || die "$abi: could not read the certificate. apksigner's signer lines:
+$(grep '^Signer' <<<"$report" || echo '(none)')" 1
   if [ -z "$fingerprint" ]; then
     fingerprint="$this"
   elif [ "$this" != "$fingerprint" ]; then
