@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../api/auth_api.dart';
 import '../api/session.dart';
+import '../home/home_controller.dart' show clockProvider;
 import '../home/lukitas_face.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/text_styles.dart';
@@ -44,6 +47,9 @@ class EmailScreen extends ConsumerStatefulWidget {
   ConsumerState<EmailScreen> createState() => _EmailScreenState();
 }
 
+/// How long "Reenviar código" waits after a code was sent (`RESEND_DELAY_MS`, SignIn.tsx).
+const resendDelay = Duration(seconds: 30);
+
 enum _Stage { email, code }
 
 enum _Mode { signIn, claim }
@@ -72,6 +78,10 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
   bool _errorIsPasskey = false;
   bool _resent = false;
 
+  /// When "Reenviar código" unlocks, and the clock that counts down to it once a second.
+  DateTime? _resendAt;
+  Timer? _ticker;
+
   /// The email the code went to.
   String _sentTo = '';
 
@@ -93,6 +103,7 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     _code.dispose();
     _emailFocus.dispose();
     _codeFocus.dispose();
+    _ticker?.cancel();
     super.dispose();
   }
 
@@ -261,7 +272,26 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     await _sendSignIn(email);
   }
 
+  /// The seconds until "Reenviar código" unlocks (the web's `useSecondsUntil`), 0 when it has.
+  int get _resendIn {
+    final at = _resendAt;
+    if (at == null) return 0;
+    final left = at.difference(ref.read(clockProvider)()).inMilliseconds;
+    return left <= 0 ? 0 : (left / 1000).ceil();
+  }
+
+  void _startResendWait() {
+    _resendAt = ref.read(clockProvider)().add(resendDelay);
+    _ticker?.cancel();
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {});
+      if (_resendIn == 0) _ticker?.cancel();
+    });
+  }
+
   void _toCode(String email, _Mode mode, {required bool again}) {
+    _startResendWait();
     setState(() {
       _sentTo = email;
       _mode = mode;
@@ -400,6 +430,7 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
     final error = _error;
     final claim = _mode == _Mode.claim;
     final complete = _code.text.length == codeLength;
+    final resendIn = _resendIn;
     final text = claim ? l10n.claimCodeLead(_sentTo) : l10n.codeLead(_sentTo);
     return [
       EntryTitle(l10n.codeTitle),
@@ -434,7 +465,11 @@ class _EmailScreenState extends ConsumerState<EmailScreen> {
       // Stacked: nothing here changes width and reflows the row.
       Column(
         children: [
-          PressButton.text(l10n.resend, tone: PressTone.ghost, onPressed: _busy ? null : _resend),
+          PressButton.text(
+            resendIn > 0 ? l10n.resendIn(resendIn) : l10n.resend,
+            tone: PressTone.ghost,
+            onPressed: _busy || resendIn > 0 ? null : _resend,
+          ),
           PressButton.text(
             l10n.changeEmail,
             tone: PressTone.ghost,

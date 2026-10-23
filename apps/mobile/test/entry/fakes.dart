@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/auth_api.dart';
@@ -26,6 +27,10 @@ class FakeAuthApi implements AuthApi {
 
   /// What `GET /v1/me` says about `isAnonymous`, per token.
   final guests = <String, bool>{};
+
+  /// Who `GET /v1/me` says every token is, and how many passkeys the server lists for them.
+  String account = 'user-1';
+  int passkeysOnAccount = 0;
 
   /// Whether the passkey signs in a guest (a guest can add one, spec section 4.3).
   bool passkeyBelongsToGuest = false;
@@ -67,6 +72,20 @@ class FakeAuthApi implements AuthApi {
     calls.add('isGuest $token');
     _fail('isGuest');
     return guests[token] ?? false;
+  }
+
+  @override
+  Future<String> accountId(String token) async {
+    calls.add('accountId $token');
+    _fail('accountId');
+    return account;
+  }
+
+  @override
+  Future<int?> passkeyCount(String token) async {
+    calls.add('passkeyCount $token');
+    _fail('passkeyCount');
+    return passkeysOnAccount;
   }
 
   @override
@@ -190,6 +209,7 @@ Future<ProviderContainer> pumpApp(
   required FakeAuthApi auth,
   FakePasskeys? passkeys,
   Locale locale = const Locale('es'),
+  List<Override> overrides = const [],
 }) async {
   tester.platformDispatcher.localesTestValue = [locale];
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
@@ -204,6 +224,7 @@ Future<ProviderContainer> pumpApp(
       widgetSnapshotWriterProvider.overrideWithValue(
         (summary, {required currency, required locale, required timezone}) async {},
       ),
+      ...overrides,
     ],
   );
   addTearDown(container.dispose);

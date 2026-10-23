@@ -178,6 +178,51 @@ void main() {
     expect(last().headers['Authorization'], 'Bearer tok');
   });
 
+  test('accountId reads the id from /v1/me with the bearer token', () async {
+    adapter.replies['GET /api/v1/me'] = const _Reply(200, {
+      'id': 'u1',
+      'email': 'ana@correo.com',
+      'timezone': 'America/Bogota',
+      'locale': 'es',
+      'onboardingCompletedAt': null,
+      'currency': 'COP',
+      'isAnonymous': false,
+    });
+    expect(await api.accountId('tok'), 'u1');
+    expect(last().headers['Authorization'], 'Bearer tok');
+  });
+
+  group('passkeyCount, the web\'s listUserPasskeys', () {
+    test('counts the passkeys Better Auth lists for the signed-in user', () async {
+      adapter.replies['GET /api/auth/passkey/list-user-passkeys'] = const _Reply(200, [
+        {'id': 'a'},
+        {'id': 'b'},
+      ]);
+      expect(await api.passkeyCount('tok'), 2);
+      expect(last().headers['Authorization'], 'Bearer tok');
+
+      adapter.replies['GET /api/auth/passkey/list-user-passkeys'] = const _Reply(200, <Object>[]);
+      expect(await api.passkeyCount('tok'), 0);
+    });
+
+    test('an answer that is not a list is not a count', () async {
+      adapter.replies['GET /api/auth/passkey/list-user-passkeys'] = const _Reply(200, {
+        'oops': true,
+      });
+      expect(await api.passkeyCount('tok'), isNull);
+    });
+
+    test('a refusal is an AuthFailure', () async {
+      adapter.replies['GET /api/auth/passkey/list-user-passkeys'] = const _Reply(401, {
+        'code': 'UNAUTHORIZED',
+      });
+      await expectLater(
+        api.passkeyCount('tok'),
+        throwsA(isA<AuthFailure>().having((f) => f.status, 'status', 401)),
+      );
+    });
+  });
+
   test('the claim sends the email, then the email and code, as the guest', () async {
     adapter.replies['POST /api/v1/me/claim-email/send'] = const _Reply(204, null);
     adapter.replies['POST /api/v1/me/claim-email/verify'] = const _Reply(200, {

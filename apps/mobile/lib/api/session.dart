@@ -10,6 +10,7 @@ import 'auth_api.dart';
 import 'client.dart';
 import 'device.dart';
 import 'server_url.dart';
+import 'passkey_offer.dart';
 import 'passkeys.dart';
 
 export 'auth_api.dart' show authApiProvider;
@@ -66,15 +67,21 @@ enum SessionStatus { loading, signedOut, signedIn }
 
 /// Where the person stands: still reading the store, signed out, or signed in with [stored].
 class SessionState {
-  const SessionState._(this.status, this.stored);
+  const SessionState._(this.status, this.stored, [this.offerPasskeyFor]);
 
   static const loading = SessionState._(SessionStatus.loading, null);
   static const signedOut = SessionState._(SessionStatus.signedOut, null);
 
-  const SessionState.signedIn(StoredSession session) : this._(SessionStatus.signedIn, session);
+  const SessionState.signedIn(StoredSession session, {String? offerPasskeyFor})
+    : this._(SessionStatus.signedIn, session, offerPasskeyFor);
 
   final SessionStatus status;
   final StoredSession? stored;
+
+  /// Set right after an email sign-in that is due the passkey offer (web: `shouldOfferPasskey`): the
+  /// id of the account to offer a passkey to, until it answers ([SessionController.answerPasskeyOffer]).
+  /// Never a guest's: a guest has "Guarda tu progreso".
+  final String? offerPasskeyFor;
 
   bool get isGuest => stored?.guest ?? false;
 }
@@ -136,13 +143,16 @@ class SessionController extends Notifier<SessionState> {
     }
   }
 
-  Future<void> _signedIn(String token, {required bool guest}) async {
+  Future<void> _signedIn(String token, {required bool guest, String? offerPasskeyFor}) async {
     // Another token is another session (a guest replaced by an email account, say): what the old
     // one left on this phone goes with it. The same token (a claim, a corrected flag) keeps it.
     final previous = state.stored?.token;
     if (previous != null && previous != token) await _forgetWidget();
     await _store.write(token, guest: guest);
-    state = SessionState.signedIn(StoredSession(token: token, guest: guest));
+    state = SessionState.signedIn(
+      StoredSession(token: token, guest: guest),
+      offerPasskeyFor: guest ? null : offerPasskeyFor,
+    );
     ref.read(widgetSyncProvider).signedIn();
   }
 
@@ -176,7 +186,20 @@ class SessionController extends Notifier<SessionState> {
     await ready;
     _guardGuest(replaceGuest);
     final token = await _auth.verifyCode(email, code);
-    await _signedIn(token, guest: false);
+    // After an email sign-in (code or magic link) a passkey may be offered; asking is a nicety, so a
+    // failure just means no offer.
+    final offer = await ref.read(passkeyOfferProvider).dueFor(token);
+    await _signedIn(token, guest: false, offerPasskeyFor: offer);
+  }
+
+  /// The passkey offer was answered ("Crear mi huella" or "Ahora no"): it is kept for the account,
+  /// so this phone does not ask it again, and the offer is no longer pending.
+  Future<void> answerPasskeyOffer() async {
+    final id = state.offerPasskeyFor;
+    final stored = state.stored;
+    if (id == null || stored == null) return;
+    await ref.read(passkeyOfferProvider).decide(id);
+    if (state.stored?.token == stored.token) state = SessionState.signedIn(stored);
   }
 
   /// "Guardar mi progreso": mails the signed-in guest a code to claim [email].

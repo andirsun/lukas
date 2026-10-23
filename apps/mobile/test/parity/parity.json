@@ -1096,13 +1096,13 @@
   },
   {
     "id": "signin-code-step",
-    "storyId": "sign-in-signin--code-step",
+    "storyId": "sign-in-signin--email-to-code",
     "theme": "night",
     "appTest": "test/parity/entry_parity_test.dart"
   },
   {
     "id": "signin-code-step",
-    "storyId": "sign-in-signin--code-step",
+    "storyId": "sign-in-signin--email-to-code",
     "theme": "day",
     "appTest": "test/parity/entry_parity_test.dart"
   },

@@ -50,6 +50,14 @@ abstract interface class AuthApi {
   /// Whether the user behind [token] is still a guest (`GET /v1/me`, `isAnonymous`).
   Future<bool> isGuest(String token);
 
+  /// The id of the account behind [token] (`GET /v1/me`): what the passkey offer's answer is kept for.
+  Future<String> accountId(String token);
+
+  /// How many passkeys the account behind [token] has, on any device (Better Auth's
+  /// `GET /passkey/list-user-passkeys`, as the web's `listUserPasskeys`), or null when the answer is
+  /// not a list.
+  Future<int?> passkeyCount(String token);
+
   /// Saving a guest's progress (spec section 4.2): mails a claim code to [email].
   Future<void> claimSend(String token, String email);
 
@@ -157,6 +165,24 @@ class HttpAuthApi implements AuthApi {
     final profile = response.data;
     if (profile == null) throw const AuthFailure(status: 500);
     return profile.isAnonymous;
+  });
+
+  @override
+  Future<String> accountId(String token) => _settle(() async {
+    final response = await _api.getMe(headers: _bearer(token));
+    final profile = response.data;
+    if (profile == null) throw const AuthFailure(status: 500);
+    return profile.id;
+  });
+
+  @override
+  Future<int?> passkeyCount(String token) => _settle(() async {
+    final response = await dio.get<Object?>(
+      '/auth/passkey/list-user-passkeys',
+      options: Options(headers: _bearer(token)),
+    );
+    final data = response.data;
+    return data is List ? data.length : null;
   });
 
   @override

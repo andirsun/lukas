@@ -84,19 +84,6 @@ export const EmailToCode: Story = {
   },
 };
 
-/** The code step once "resend" has unlocked (it waits 30 s after a code is sent; here, no wait). */
-export const CodeStep: Story = {
-  args: { auth: fakeAuth(), initialEntry: AT_CODE_STEP, resendDelayMs: 0 },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { level: 1, name: "Revisa tu correo" })).toBeVisible();
-    await expect(digits(canvas)).toHaveLength(6);
-    await waitFor(() => expect(digits(canvas)[0]).toHaveFocus());
-    await expect(canvas.getByRole("button", { name: "Reenviar código" })).toBeEnabled();
-    await expect(canvas.getByRole("button", { name: "Entrar" })).toBeDisabled();
-  },
-};
-
 /** A malformed email never reaches the server: the field says what is wrong. */
 export const InvalidEmail: Story = {
   args: { auth: fakeAuth() },
@@ -132,7 +119,7 @@ export const TooManyCodes: Story = {
 
 /** A wrong code: the error is announced, the boxes are marked invalid and emptied for another try. */
 export const WrongCode: Story = {
-  args: { auth: fakeAuth(), initialEntry: AT_CODE_STEP, resendDelayMs: 0 },
+  args: { auth: fakeAuth(), initialEntry: AT_CODE_STEP },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const boxes = digits(canvas);
@@ -371,7 +358,6 @@ export const CheckingCode: Story = {
   args: {
     auth: fakeAuth({ verifyCode: fn(() => new Promise<never>(() => {})) }),
     initialEntry: AT_CODE_STEP,
-    resendDelayMs: 0,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -404,7 +390,6 @@ export const OfflineKeepsCode: Story = {
   args: {
     auth: fakeAuth({ verifyCode: fn(async () => fail({ status: 0 })) }),
     initialEntry: AT_CODE_STEP,
-    resendDelayMs: 0,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

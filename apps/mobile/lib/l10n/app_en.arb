@@ -1323,5 +1323,7 @@
   "passkeyOfferAdd": "Create my fingerprint",
   "passkeyOfferAdding": "Waiting for your fingerprint…",
   "passkeyOfferNotNow": "Not now",
-  "passkeyOfferFailed": "We couldn't save your fingerprint. Try again or carry on without it."
+  "passkeyOfferFailed": "We couldn't save your fingerprint. Try again or carry on without it.",
+  "resendIn": "Resend in {seconds} s",
+  "passkeyOfferAdded": "Done: next time you'll sign in with your fingerprint."
 }

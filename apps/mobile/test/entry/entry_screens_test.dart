@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/auth_api.dart';
 import 'package:lukitas/entry/code_input.dart';
+import 'package:lukitas/home/home_controller.dart' show clockProvider;
 import 'package:lukitas/progress/progress_screen.dart';
 import 'package:lukitas/router.dart';
 import 'package:lukitas/ui/press_button.dart';
@@ -115,6 +116,79 @@ void main() {
       await tester.pumpAndSettle();
       // The first screen, with "Probar sin correo" where it always was.
       expect(find.byKey(const Key('entry.guest')), findsOneWidget);
+    });
+  });
+
+  group('"Reenviar código" waits 30 s after a code was sent, as the web\'s does', () {
+    var now = DateTime.utc(2026, 10, 21, 15);
+
+    /// The phone's clock, moved by [seconds] a second at a time, as the page's timer sees it.
+    Future<void> wait(WidgetTester tester, int seconds) async {
+      for (var i = 0; i < seconds; i++) {
+        now = now.add(const Duration(seconds: 1));
+        await tester.pump(const Duration(seconds: 1));
+      }
+    }
+
+    Future<void> openCode(WidgetTester tester) async {
+      now = DateTime.utc(2026, 10, 21, 15);
+      final container = await pumpApp(
+        tester,
+        auth: auth,
+        overrides: [clockProvider.overrideWithValue(() => now)],
+      );
+      container.read(routerProvider).go('/entry/email');
+      await tester.pumpAndSettle();
+      await toCodeStep(tester);
+    }
+
+    testWidgets('it is locked with the seconds left, counting down', (tester) async {
+      await openCode(tester);
+      expect(find.text('REENVIAR EN 30 S'), findsOneWidget);
+      expect(enabled(tester, find.widgetWithText(PressButton, 'REENVIAR EN 30 S')), isFalse);
+
+      await wait(tester, 1);
+      expect(find.text('REENVIAR EN 29 S'), findsOneWidget);
+      await wait(tester, 28);
+      expect(find.text('REENVIAR EN 1 S'), findsOneWidget);
+    });
+
+    testWidgets('after 30 s it unlocks, sends again, and waits again', (tester) async {
+      await openCode(tester);
+      await wait(tester, 30);
+      final resend = find.widgetWithText(PressButton, 'REENVIAR CÓDIGO');
+      expect(enabled(tester, resend), isTrue);
+
+      auth.calls.clear();
+      await tester.tap(resend);
+      await tester.pumpAndSettle();
+
+      expect(auth.calls, ['sendCode ana@correo.com']);
+      expect(find.text('Te mandamos un código nuevo.'), findsOneWidget);
+      expect(find.text('REENVIAR EN 30 S'), findsOneWidget);
+    });
+
+    testWidgets('going back to the email and sending again starts a new wait', (tester) async {
+      await openCode(tester);
+      await wait(tester, 30);
+      await tester.tap(find.text('USAR OTRO CORREO'));
+      await tester.pumpAndSettle();
+      await toCodeStep(tester);
+      expect(find.text('REENVIAR EN 30 S'), findsOneWidget);
+    });
+
+    testWidgets('a guest saving their progress waits too', (tester) async {
+      mockStorage(token: 'guest-token-0', guest: true);
+      auth.guests['guest-token-0'] = true;
+      now = DateTime.utc(2026, 10, 21, 15);
+      final container = await pumpApp(
+        tester,
+        auth: auth,
+        overrides: [clockProvider.overrideWithValue(() => now)],
+      );
+      container.read(routerProvider).go('/entry/email?email=ana%40correo.com&claim=1');
+      await tester.pumpAndSettle();
+      expect(find.text('REENVIAR EN 30 S'), findsOneWidget);
     });
   });
 

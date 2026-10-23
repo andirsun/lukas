@@ -1906,5 +1906,18 @@
   "passkeyOfferFailed": "No pudimos guardar tu huella. Inténtalo otra vez o sigue sin ella.",
   "@passkeyOfferFailed": {
     "description": "Passkey offer: the passkey could not be saved."
+  },
+  "resendIn": "Reenviar en {seconds} s",
+  "@resendIn": {
+    "description": "The code step: \"resend\" while it waits, with the seconds left.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "passkeyOfferAdded": "Listo: la próxima vez entras con tu huella.",
+  "@passkeyOfferAdded": {
+    "description": "Passkey offer: the confirmation, shown after the passkey was made."
   }
 }

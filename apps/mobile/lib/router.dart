@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'api/session.dart';
 import 'entry/email_screen.dart';
+import 'entry/passkey_offer_page.dart';
 import 'entry/entry_screen.dart';
 import 'entry/verify_link_screen.dart';
 import 'budgets/category_detail_screen.dart';
@@ -14,12 +15,19 @@ import 'settings/about_screen.dart';
 import 'settings/home_actions.dart';
 import 'settings/settings_screen.dart';
 
+const _offerPath = '/entry/passkey-offer';
+
+/// Where a person with the offer pending is sent from: the sign-in screens and home.
+const _offerFirst = {'/', '/loading', '/entry', '/entry/email'};
+
 /// Where the session sends a [location], or null to stay:
 /// - the magic link (`/auth/verify`) always opens: it decides for itself, guests included;
 /// - while the stored session is read, a blank screen;
 /// - signed out, only the entry screens;
 /// - signed in, never the first-run screen, and the email screen and "Guarda tu progreso" only for
-///   a guest (to save their progress, or to sign in as another account after a warning).
+///   a guest (to save their progress, or to sign in as another account after a warning);
+/// - right after an email sign-in that is due the passkey offer, the offer comes first, wherever the
+///   person was going from the sign-in screens; its address is for that moment only.
 String? sessionRedirect(SessionState session, Uri location) {
   final path = location.path;
   if (path == '/auth/verify') return null;
@@ -29,6 +37,8 @@ String? sessionRedirect(SessionState session, Uri location) {
     case SessionStatus.signedOut:
       return path == '/entry' || path == '/entry/email' ? null : '/entry';
     case SessionStatus.signedIn:
+      if (session.offerPasskeyFor != null && _offerFirst.contains(path)) return _offerPath;
+      if (path == _offerPath && session.offerPasskeyFor == null) return '/';
       if (path == '/loading' || path == '/entry') return '/';
       if ((path == '/entry/email' || path == '/progress') && !session.isGuest) return '/';
       return null;
@@ -85,6 +95,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           claim: state.uri.queryParameters['claim'] == '1',
         ),
       ),
+      GoRoute(path: _offerPath, builder: (context, state) => const PasskeyOfferPage()),
       GoRoute(
         path: '/auth/verify',
         builder: (context, state) => VerifyLinkScreen(
