@@ -187,6 +187,13 @@ export const LOCALE_HINT_HEADER = "x-lukas-locale";
 export const NEXT_HINT_HEADER = "x-lukas-next";
 /** The device's IANA time zone, which the app sends with guest sign-up (and every request). */
 export const TIMEZONE_HINT_HEADER = "x-lukas-timezone";
+/**
+ * `x-lukas-background: 1`: the request is made by a job the person did not start (the Android
+ * widget's refresh, the local notices). The session is read as usual but never refreshed, so such
+ * a request does not count as activity: `session.updatedAt` and `expiresAt` stay as they were, and
+ * the guest cleanup (spec §4.4, 60 days idle) is not postponed by a phone that only runs jobs.
+ */
+export const BACKGROUND_HEADER = "x-lukas-background";
 
 const asLocale = (value: string | null | undefined): Locale | null =>
   value === "es" || value === "en" ? value : null;

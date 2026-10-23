@@ -251,6 +251,59 @@ describe("guest session lifetime", () => {
     expect(days).toBeGreaterThan(SESSION_DAYS - 0.01);
   });
 
+  /** A session last used 59 days ago: its expiry is a day away. */
+  async function ageSession(userId: string) {
+    const updatedAt = new Date(Date.now() - 59 * DAY);
+    const expiresAt = new Date(Date.now() + 1 * DAY);
+    await t.admin
+      .update(session)
+      .set({ createdAt: updatedAt, updatedAt, expiresAt })
+      .where(eq(session.userId, userId));
+    return { updatedAt, expiresAt };
+  }
+
+  test("a background request (x-lukas-background: 1) reads the session without sliding it", async () => {
+    const g = await newGuest();
+    const aged = await ageSession(g.userId);
+
+    const res = await t.request("GET", "/v1/me", {
+      headers: { ...g.headers, "x-lukas-background": "1" },
+    });
+    expect(res.status).toBe(200);
+
+    const [row] = await t.admin.select().from(session).where(eq(session.userId, g.userId));
+    expect(row?.updatedAt).toEqual(aged.updatedAt);
+    expect(row?.expiresAt).toEqual(aged.expiresAt);
+    // It sets no new cookie either: nothing about the session changes.
+    expect(res.headers.get("set-cookie")).toBeNull();
+  });
+
+  test("only the value 1 marks a background request; a normal request still slides", async () => {
+    const g = await newGuest();
+    await ageSession(g.userId);
+    // Not "1": an ordinary request.
+    expect(
+      (await t.request("GET", "/v1/me", { headers: { ...g.headers, "x-lukas-background": "0" } }))
+        .status,
+    ).toBe(200);
+    const [row] = await t.admin.select().from(session).where(eq(session.userId, g.userId));
+    expect(((row?.expiresAt.getTime() ?? 0) - Date.now()) / DAY).toBeGreaterThan(
+      SESSION_DAYS - 0.01,
+    );
+    expect(Date.now() - (row?.updatedAt.getTime() ?? 0)).toBeLessThan(DAY);
+  });
+
+  test("a background request from a guest idle for 59 days does not postpone its deletion", async () => {
+    const g = await newGuest();
+    await ageSession(g.userId);
+    for (let i = 0; i < 3; i++) {
+      await t.request("GET", "/v1/me", { headers: { ...g.headers, "x-lukas-background": "1" } });
+    }
+    // Two days later the guest is past 60 days idle, as if the phone had only run background jobs.
+    expect(await cleanupInactiveGuests(t.db, new Date(Date.now() + 2 * DAY))).toBe(1);
+    expect(await exists(g.userId)).toBe(false);
+  });
+
   test("a session idle for 61 days is no longer valid", async () => {
     const g = await newGuest();
     await t.admin
