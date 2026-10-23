@@ -81,22 +81,12 @@ class _WebTextFieldState extends State<WebTextField> {
     if (mounted) setState(() {});
   }
 
-  /// The [EditableTextState] below this field: asked to show the keyboard when the box is tapped
-  /// while it already has the focus (the keyboard may have been put away).
-  EditableTextState? _editableState() {
-    EditableTextState? found;
-    void visit(Element element) {
-      if (found != null) return;
-      if (element is StatefulElement && element.state is EditableTextState) {
-        found = element.state as EditableTextState;
-        return;
-      }
-      element.visitChildren(visit);
-    }
-
-    (context as Element).visitChildren(visit);
-    return found;
+  void _tap() {
+    widget.focusNode.requestFocus();
+    editableStateBelow(context)?.requestKeyboard();
   }
+
+  void _longPress() => showEditMenu(context, widget.focusNode);
 
   @override
   Widget build(BuildContext context) {
@@ -104,12 +94,8 @@ class _WebTextFieldState extends State<WebTextField> {
     final text = LkText.copy;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: widget.readOnly
-          ? null
-          : () {
-              widget.focusNode.requestFocus();
-              _editableState()?.requestKeyboard();
-            },
+      onTap: widget.readOnly ? null : _tap,
+      onLongPress: widget.readOnly ? null : _longPress,
       child: InputBox(
         focused: widget.focusNode.hasFocus,
         borderColor: widget.invalid ? colors.over : null,
@@ -141,7 +127,13 @@ class _WebTextFieldState extends State<WebTextField> {
                   cursorColor: colors.ink,
                   backgroundCursorColor: colors.inkMuted,
                   selectionColor: colors.brand.withValues(alpha: 0.4),
+                  // The phone's own selection: a long press shows its menu, with "Pegar".
+                  selectionControls: materialTextSelectionHandleControls,
+                  contextMenuBuilder: (context, state) =>
+                      AdaptiveTextSelectionToolbar.editableText(editableTextState: state),
                   maxLines: 1,
+                  // The box around it takes the taps and the long press (the field's own are rudimentary).
+                  rendererIgnoresPointer: true,
                   readOnly: widget.readOnly,
                   autofocus: widget.autofocus,
                   keyboardType: widget.keyboardType,
@@ -159,4 +151,36 @@ class _WebTextFieldState extends State<WebTextField> {
       ),
     );
   }
+}
+
+/// The [EditableTextState] below [context]'s element: asked to show the keyboard or the menu when
+/// the box around a bare [EditableText] is tapped or long-pressed.
+EditableTextState? editableStateBelow(BuildContext context) {
+  EditableTextState? found;
+  void visit(Element element) {
+    if (found != null) return;
+    if (element is StatefulElement && element.state is EditableTextState) {
+      found = element.state as EditableTextState;
+      return;
+    }
+    element.visitChildren(visit);
+  }
+
+  (context as Element).visitChildren(visit);
+  return found;
+}
+
+/// A long press on a bare [EditableText]'s box: the field takes the focus and the phone's own menu
+/// shows, with "Pegar" (the person copied a code or an address elsewhere). The menu needs the focus
+/// to have settled, so when it cannot show at once it does after the next frame.
+void showEditMenu(BuildContext context, FocusNode focusNode) {
+  focusNode.requestFocus();
+  final state = editableStateBelow(context);
+  if (state == null) return;
+  state.requestKeyboard();
+  if (state.showToolbar()) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (context.mounted) editableStateBelow(context)?.showToolbar();
+  });
+  WidgetsBinding.instance.scheduleFrame();
 }

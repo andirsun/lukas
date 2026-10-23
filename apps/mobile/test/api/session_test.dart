@@ -123,8 +123,14 @@ void main() {
       await controller.sendCode('ana@correo.com');
       await controller.verifyCode('ana@correo.com', '123456');
 
-      // Then, as the phone has passkeys, whether to offer one (test/entry/passkey_offer_flow_test.dart).
-      expect(auth.calls.take(2), ['sendCode ana@correo.com', 'verifyCode ana@correo.com 123456']);
+      // Then, as the phone has passkeys, whether to offer one (test/entry/passkey_offer_flow_test.dart),
+      // with the new session's token.
+      expect(auth.calls, [
+        'sendCode ana@correo.com',
+        'verifyCode ana@correo.com 123456',
+        'accountId email-token-1',
+        'passkeyCount email-token-1',
+      ]);
       expect(container.read(sessionProvider).stored?.token, 'email-token-1');
       expect(container.read(sessionProvider).stored?.guest, isFalse);
     });

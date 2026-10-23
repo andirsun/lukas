@@ -177,6 +177,23 @@ void main() {
       expect(find.text('REENVIAR EN 30 S'), findsOneWidget);
     });
 
+    testWidgets('in English', (tester) async {
+      now = DateTime.utc(2026, 10, 21, 15);
+      final container = await pumpApp(
+        tester,
+        auth: auth,
+        locale: const Locale('en'),
+        overrides: [clockProvider.overrideWithValue(() => now)],
+      );
+      container.read(routerProvider).go('/entry/email');
+      await tester.pumpAndSettle();
+      await toCodeStep(tester);
+
+      expect(find.text('RESEND IN 30 S'), findsOneWidget);
+      await wait(tester, 30);
+      expect(find.text('RESEND CODE'), findsOneWidget);
+    });
+
     testWidgets('a guest saving their progress waits too', (tester) async {
       mockStorage(token: 'guest-token-0', guest: true);
       auth.guests['guest-token-0'] = true;

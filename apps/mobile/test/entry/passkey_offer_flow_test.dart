@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lukitas/api/auth_api.dart';
+import 'package:lukitas/api/passkey_offer.dart';
 import 'package:lukitas/api/session.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/router.dart';
@@ -32,6 +35,20 @@ void main() {
     await tester.enterText(find.byKey(const Key('entry.code')), '123456');
     await tester.pump();
     await tester.tap(find.byKey(const Key('entry.submitCode')));
+    await tester.pumpAndSettle();
+  }
+
+  /// Signs in by code while the passkey list hangs: the lookup's wait runs out.
+  Future<void> signInWithCodeLate(WidgetTester tester, ProviderContainerOf app) async {
+    app.go('/entry/email');
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('entry.email')), 'ana@correo.com');
+    await tester.tap(find.byKey(const Key('entry.send')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('entry.code')), '123456');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('entry.submitCode')));
+    await tester.pump(PasskeyOffer.lookupWait);
     await tester.pumpAndSettle();
   }
 
@@ -123,6 +140,49 @@ void main() {
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.text(offerTitle), findsNothing);
       expect(auth.calls.where((c) => c.startsWith('passkeyCount')), isEmpty);
+    });
+  });
+
+  group('the offer never holds the sign-in up', () {
+    testWidgets('a list that never answers: the session is stored at once, and the person is '
+        'in after a few seconds, without an offer', (tester) async {
+      auth.holdPasskeyCount = Completer<void>();
+      final app = await open(tester);
+      app.go('/entry/email');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('entry.email')), 'ana@correo.com');
+      await tester.tap(find.byKey(const Key('entry.send')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('entry.code')), '123456');
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('entry.submitCode')));
+      await tester.pump(const Duration(seconds: 1));
+
+      // The code was accepted: the token is on the phone while the lookup hangs.
+      expect((await SessionStore().read())?.token, 'email-token-1');
+      expect(auth.calls.last, startsWith('passkeyCount'));
+
+      await tester.pump(PasskeyOffer.lookupWait);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text(offerTitle), findsNothing);
+      expect(app.container.read(sessionProvider).stored?.token, 'email-token-1');
+    });
+
+    testWidgets('a list that answers late is not waited for, and the offer is not made after', (
+      tester,
+    ) async {
+      final hold = Completer<void>();
+      auth.holdPasskeyCount = hold;
+      final app = await open(tester);
+      await signInWithCodeLate(tester, app);
+      expect(find.byType(HomeScreen), findsOneWidget);
+
+      hold.complete();
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text(offerTitle), findsNothing);
     });
   });
 

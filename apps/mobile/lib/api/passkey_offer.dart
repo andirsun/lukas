@@ -35,16 +35,24 @@ class PasskeyOffer {
     }
   }
 
-  /// The id of the account behind [token] when it is to be offered a passkey, else null.
+  /// The most the lookup is given: signing in never waits longer than this on the offer.
+  static const lookupWait = Duration(seconds: 3);
+
+  /// The id of the account behind [token] when it is to be offered a passkey, else null: also when
+  /// the answers take longer than [lookupWait] (what comes late is dropped).
   Future<String?> dueFor(String token) async {
     try {
-      if (!await passkeys.supported()) return null;
-      final id = await auth.accountId(token);
-      if ((await _decided()).contains(id)) return null;
-      return await auth.passkeyCount(token) == 0 ? id : null;
+      return await _dueFor(token).timeout(lookupWait);
     } on Object {
       return null;
     }
+  }
+
+  Future<String?> _dueFor(String token) async {
+    if (!await passkeys.supported()) return null;
+    final id = await auth.accountId(token);
+    if ((await _decided()).contains(id)) return null;
+    return await auth.passkeyCount(token) == 0 ? id : null;
   }
 
   /// The account answered: it is not asked again on this phone.

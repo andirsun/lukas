@@ -2,7 +2,6 @@
 // `.lk-code-box`.
 import 'dart:math' as math;
 
-import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../theme/surfaces.dart';
@@ -11,6 +10,7 @@ import '../theme/tokens.g.dart';
 import '../ui/lk_theme.dart';
 import '../ui/pixel_snap.dart';
 import '../ui/pressable.dart';
+import '../ui/web_text_field.dart' show editableStateBelow, showEditMenu;
 import 'code_formatter.dart';
 import 'sign_in_frame.dart' show FieldCaption;
 
@@ -104,20 +104,7 @@ class _CodeInputState extends State<CodeInput> {
     super.dispose();
   }
 
-  EditableTextState? _editableState() {
-    EditableTextState? found;
-    void visit(Element element) {
-      if (found != null) return;
-      if (element is StatefulElement && element.state is EditableTextState) {
-        found = element.state as EditableTextState;
-        return;
-      }
-      element.visitChildren(visit);
-    }
-
-    (context as Element).visitChildren(visit);
-    return found;
-  }
+  void _longPress() => showEditMenu(context, widget.focusNode);
 
   @override
   Widget build(BuildContext context) {
@@ -143,11 +130,12 @@ class _CodeInputState extends State<CodeInput> {
         // puts it.
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
+          onLongPress: widget.readOnly ? null : _longPress,
           onTap: widget.readOnly
               ? null
               : () {
                   widget.focusNode.requestFocus();
-                  _editableState()?.requestKeyboard();
+                  editableStateBelow(context)?.requestKeyboard();
                 },
           child: SizedBox(
             height: _boxHeight,
@@ -155,34 +143,35 @@ class _CodeInputState extends State<CodeInput> {
               children: [
                 // The field the keyboard types into: as wide as the boxes, drawn nowhere.
                 Positioned.fill(
-                  child: Opacity(
-                    opacity: 0,
-                    alwaysIncludeSemantics: true,
-                    child: Semantics(
-                      label: widget.label,
-                      textField: true,
-                      child: EditableText(
-                        key: widget.fieldKey,
-                        controller: widget.controller,
-                        focusNode: widget.focusNode,
-                        style: LkText.codeBox.copyWith(color: colors.ink),
-                        cursorColor: const Color(0x00000000),
-                        backgroundCursorColor: const Color(0x00000000),
-                        selectionColor: const Color(0x00000000),
-                        selectionControls: _noHandles,
-                        showCursor: false,
-                        maxLines: 1,
-                        readOnly: widget.readOnly,
-                        autofocus: widget.autofocus,
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.done,
-                        autofillHints: const [AutofillHints.oneTimeCode],
-                        inputFormatters: const [CodeFormatter()],
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        onSubmitted: widget.onSubmitted,
-                        onChanged: widget.onChanged,
-                      ),
+                  child: Semantics(
+                    label: widget.label,
+                    textField: true,
+                    child: EditableText(
+                      key: widget.fieldKey,
+                      controller: widget.controller,
+                      focusNode: widget.focusNode,
+                      style: LkText.codeBox.copyWith(color: const Color(0x00000000)),
+                      cursorColor: const Color(0x00000000),
+                      backgroundCursorColor: const Color(0x00000000),
+                      selectionColor: const Color(0x00000000),
+                      selectionControls: _noHandles,
+                      // A long press shows the phone's menu, with "Pegar": the code is copied from
+                      // the mail app.
+                      contextMenuBuilder: (context, state) =>
+                          AdaptiveTextSelectionToolbar.editableText(editableTextState: state),
+                      showCursor: false,
+                      maxLines: 1,
+                      rendererIgnoresPointer: true,
+                      readOnly: widget.readOnly,
+                      autofocus: widget.autofocus,
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.done,
+                      autofillHints: const [AutofillHints.oneTimeCode],
+                      inputFormatters: const [CodeFormatter()],
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      onSubmitted: widget.onSubmitted,
+                      onChanged: widget.onChanged,
                     ),
                   ),
                 ),
@@ -227,9 +216,9 @@ const _boxHeight = 56.0;
 
 final _noHandles = _NoHandles();
 
-/// Text selection with no handles and no toolbar of its own: the boxes show no selection, so a
+/// Text selection with no handles (the menu is the field's `contextMenuBuilder`): the boxes show no selection, so a
 /// handle would float over them.
-class _NoHandles extends TextSelectionControls {
+class _NoHandles extends TextSelectionControls with TextSelectionHandleControls {
   @override
   Widget buildHandle(
     BuildContext context,
@@ -243,19 +232,6 @@ class _NoHandles extends TextSelectionControls {
 
   @override
   Size getHandleSize(double textLineHeight) => Size.zero;
-
-  // The menu is the field's `contextMenuBuilder`, not this.
-  @override
-  Widget buildToolbar(
-    BuildContext context,
-    Rect globalEditableRegion,
-    double textLineHeight,
-    Offset selectionMidpoint,
-    List<TextSelectionPoint> endpoints,
-    TextSelectionDelegate delegate,
-    ValueListenable<ClipboardStatus>? clipboardStatus,
-    Offset? lastSecondaryTapDownPosition,
-  ) => const SizedBox.shrink();
 }
 
 /// One box of the code: sunken, 2px edge, `radius-md`, a digit in the display face. A ringed box

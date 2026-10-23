@@ -81,10 +81,15 @@ class FakeAuthApi implements AuthApi {
     return account;
   }
 
+  /// While set, `passkeyCount` waits for it (a server that accepts the connection and then says
+  /// nothing).
+  Completer<void>? holdPasskeyCount;
+
   @override
   Future<int?> passkeyCount(String token) async {
     calls.add('passkeyCount $token');
     _fail('passkeyCount');
+    await holdPasskeyCount?.future;
     return passkeysOnAccount;
   }
 

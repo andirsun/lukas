@@ -186,8 +186,11 @@ class SessionController extends Notifier<SessionState> {
     await ready;
     _guardGuest(replaceGuest);
     final token = await _auth.verifyCode(email, code);
+    // The code is spent: the session is on the phone before anything else is asked, so a slow or
+    // dropped connection can never leave a spent code and no session.
+    await _store.write(token, guest: false);
     // After an email sign-in (code or magic link) a passkey may be offered; asking is a nicety, so a
-    // failure just means no offer.
+    // failure just means no offer, and the answer is waited for only a few seconds.
     final offer = await ref.read(passkeyOfferProvider).dueFor(token);
     await _signedIn(token, guest: false, offerPasskeyFor: offer);
   }
