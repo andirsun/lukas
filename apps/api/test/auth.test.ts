@@ -207,6 +207,27 @@ describe("email code + magic link", () => {
     }
   });
 
+  test("the link carries from=app only when the app started the sign-in", async () => {
+    await sendCode("from-app@lukas.test", { "x-lukas-client": "android" });
+    const app = /http\S+/.exec(t.mailer.lastTo("from-app@lukas.test")?.text ?? "")?.[0] ?? "";
+    expect(new URL(app).searchParams.get("from")).toBe("app");
+    expect(new URL(app).pathname).toBe("/auth/verify");
+
+    // The web sends no marker, and anything but the app's own value is not the app.
+    await sendCode("from-web@lukas.test");
+    const web = /http\S+/.exec(t.mailer.lastTo("from-web@lukas.test")?.text ?? "")?.[0] ?? "";
+    expect(new URL(web).searchParams.has("from")).toBe(false);
+    for (const value of ["ios", "web", "", "android evil"]) {
+      await sendCode("from-other@lukas.test", { "x-lukas-client": value });
+      const other = /http\S+/.exec(t.mailer.lastTo("from-other@lukas.test")?.text ?? "")?.[0] ?? "";
+      expect(new URL(other).searchParams.has("from"), value).toBe(false);
+    }
+    // A timezone alone (the widget's and the notices' requests send it too) is not the marker.
+    await sendCode("from-tz@lukas.test", { "x-lukas-timezone": "Europe/Lisbon" });
+    const tz = /http\S+/.exec(t.mailer.lastTo("from-tz@lukas.test")?.text ?? "")?.[0] ?? "";
+    expect(new URL(tz).searchParams.has("from")).toBe(false);
+  });
+
   test("a new user gets one default account", async () => {
     const { userId } = await t.signIn("g@lukas.test");
     const rows = await withUser(t.db, userId, (tx) =>

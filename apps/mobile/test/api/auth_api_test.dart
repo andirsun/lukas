@@ -71,6 +71,14 @@ void main() {
     expect(last().headers['x-lukas-locale'], 'es-CO');
   });
 
+  test(
+    'every request says it comes from the Android app, so the email link opens the app',
+    () async {
+      await api.sendCode('ana@correo.com');
+      expect(last().headers['x-lukas-client'], 'android');
+    },
+  );
+
   test('signInAsGuest posts {} to the anonymous sign-in and returns set-auth-token', () async {
     adapter.replies['POST /api/auth/sign-in/anonymous'] = const _Reply(
       200,

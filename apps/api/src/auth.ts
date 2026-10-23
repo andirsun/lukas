@@ -189,6 +189,14 @@ export const NEXT_HINT_HEADER = "x-lukas-next";
 /** The device's IANA time zone, which the app sends with guest sign-up (and every request). */
 export const TIMEZONE_HINT_HEADER = "x-lukas-timezone";
 /**
+ * `x-lukas-client: android`: the request is made by the Android app, from a screen the person is
+ * using. A sign-in started this way marks its magic link `from=app`, so the web page the link opens
+ * offers to open the app. (The timezone header does not say it: the widget's and the notices'
+ * requests send it too.)
+ */
+export const CLIENT_HEADER = "x-lukas-client";
+export const CLIENT_ANDROID = "android";
+/**
  * `x-lukas-background: 1`: the request is made by a job the person did not start (the Android
  * widget's refresh, the local notices). The session is read as usual but never refreshed, so such
  * a request does not count as activity: `session.updatedAt` and `expiresAt` stay as they were, and
@@ -451,6 +459,9 @@ export function createAuth(deps: AppDeps) {
           const params = new URLSearchParams({ email, code: otp, lang: locale });
           const next = linkNext(headers?.get(NEXT_HINT_HEADER));
           if (next) params.set("next", next);
+          if (headers?.get(CLIENT_HEADER)?.trim().toLowerCase() === CLIENT_ANDROID) {
+            params.set("from", "app");
+          }
           const link = `${config.WEB_URL}/auth/verify?${params}`;
           const mail = signInEmail({
             code: otp,
