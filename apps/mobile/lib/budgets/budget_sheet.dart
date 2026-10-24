@@ -171,6 +171,9 @@ class _BudgetBody extends StatelessWidget {
               currency: form.currency,
               invalid: form.error != null,
               onNegative: form.refuseNegative,
+              // A phone up to 844 px tall gets the add sheet's tighter keys (still 44px targets), so
+              // the keypad and Guardar fit without the keypad scrolling under the footer.
+              compact: MediaQuery.sizeOf(context).height < compactFooterBelow,
             ),
             if (form.error != null)
               Semantics(

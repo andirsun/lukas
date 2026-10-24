@@ -103,7 +103,9 @@ class _AmountDisplayState extends State<AmountDisplay> {
     final scope = LkSheetScope.maybeOf(context);
     final tight = scope?.hasFooter ?? false;
     // `@media (max-height: 799.98px) { .lk-sheet.has-footer .lk-sheet-amount { font-size: 28px } }`.
-    final size = tight && MediaQuery.sizeOf(context).height < shortPhoneBelow
+    // The budget sheet takes it too (the web's has no such rule, and its keypad is cut on a short
+    // phone): the figure's room is what lets the keypad and Guardar fit.
+    final size = MediaQuery.sizeOf(context).height < shortPhoneBelow
         ? shortAmountSize
         : LkText.display.fontSize!;
     final style = LkText.display.copyWith(

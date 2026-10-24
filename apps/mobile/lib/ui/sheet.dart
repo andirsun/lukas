@@ -108,6 +108,23 @@ const compactFooterBelow = 860.0;
 /// `.lk-sheet-footer` leaves uncovered (calibrated against the budget sheet's picture).
 const _stuckBottomGap = 16.0;
 
+/// What the scrolling part of a sheet with a stuck footer is clipped to: its own box, and 3px more
+/// below. The web's footer (`position: sticky`, `z-index: 1`) covers the end of the form, where the
+/// last row of the keypad ends flush against it, and hides that row's solid edge: the keys look cut.
+/// Here the edge is drawn over the footer's line, 3px being the edge's height (`.lk-key`'s
+/// `box-shadow: 0 3px 0`); the keys' boxes themselves are still wholly above the footer.
+class _KeyEdgeClip extends CustomClipper<Rect> {
+  const _KeyEdgeClip();
+
+  static const edge = 3.0;
+
+  @override
+  Rect getClip(Size size) => Rect.fromLTWH(0, 0, size.width, size.height + edge);
+
+  @override
+  bool shouldReclip(_KeyEdgeClip oldClipper) => false;
+}
+
 /// The sheet's slide: iOS-like deceleration (Sheet.tsx `SHEET_EASE`).
 const _sheetEase = Cubic(0.32, 0.72, 0, 1);
 
@@ -408,6 +425,8 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
       final scroll = SingleChildScrollView(
         controller: _scroll,
         physics: physics,
+        // With a stuck footer [_KeyEdgeClip] clips, a little under the scroll view's end.
+        clipBehavior: stuck == null ? Clip.hardEdge : Clip.none,
         padding: EdgeInsets.fromLTRB(
           side,
           10,
@@ -426,19 +445,26 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
         constraints: BoxConstraints(maxHeight: screen.height * 0.9),
         child: stuck == null
             ? scroll
+            // Laid out from the bottom up so the footer is first, and painted first: the scrolling
+            // content paints over it, which lets the last key's solid edge (`0 3px 0`) show over the
+            // footer's line instead of being cut at the scroll view's end (see [_KeyEdgeClip]).
             : Column(
                 mainAxisSize: MainAxisSize.min,
+                verticalDirection: VerticalDirection.up,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _SheetFooter(safeBottom: safe, bottomGap: _stuckBottomGap, children: stuck),
                   Flexible(
-                    child: Stack(
-                      children: [
-                        scroll,
-                        Positioned(left: side, right: side, bottom: 0, child: toasts),
-                      ],
+                    child: ClipRect(
+                      clipper: const _KeyEdgeClip(),
+                      child: Stack(
+                        children: [
+                          scroll,
+                          Positioned(left: side, right: side, bottom: 0, child: toasts),
+                        ],
+                      ),
                     ),
                   ),
-                  _SheetFooter(safeBottom: safe, bottomGap: _stuckBottomGap, children: stuck),
                 ],
               ),
       );
