@@ -139,6 +139,38 @@ void main() {
       expect(run(['--max', '30'], root: root.path, out: StringBuffer()), 0);
     });
 
+    test('a pair\'s maxInk gives it room over --max, and never less', () {
+      File('${root.path}/test/parity/parity.json').writeAsStringSync(
+        jsonEncode([
+          {'id': 'same', 'storyId': 'ui-x--same', 'theme': 'night', 'appTest': 'x_test.dart'},
+          {
+            'id': 'off',
+            'storyId': 'ui-x--off',
+            'theme': 'night',
+            'appTest': 'x_test.dart',
+            'maxInk': 30,
+          },
+        ]),
+      );
+      final out = StringBuffer();
+      expect(run(['--max', '2'], root: root.path, out: out), 0);
+      expect(out.toString(), contains('(room: 30.0%)'));
+      // Over its own room it fails, whatever --max says.
+      File('${root.path}/test/parity/parity.json').writeAsStringSync(
+        jsonEncode([
+          {'id': 'same', 'storyId': 'ui-x--same', 'theme': 'night', 'appTest': 'x_test.dart'},
+          {
+            'id': 'off',
+            'storyId': 'ui-x--off',
+            'theme': 'night',
+            'appTest': 'x_test.dart',
+            'maxInk': 1,
+          },
+        ]),
+      );
+      expect(run(['--max', '2'], root: root.path, out: StringBuffer()), 1);
+    });
+
     test('a pair with known differences says so, on its line and in the summary', () {
       File('${root.path}/test/parity/parity.json').writeAsStringSync(
         jsonEncode([

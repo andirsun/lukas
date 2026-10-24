@@ -1,5 +1,5 @@
-// The ported tests of apps/web/app/features/settings/settings-model.test.ts, the zones' part (the
-// account deletion's email and the export's file name come with their screens).
+// The ported tests of apps/web/app/features/settings/settings-model.test.ts: the account deletion's
+// email, the export's file name and the zones.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/capture/parser/dates.dart';
 import 'package:lukitas/profile/timezone.dart';
@@ -8,6 +8,49 @@ import 'package:lukitas/settings/settings_model.dart';
 void main() {
   linkZonesTest();
   icuSpellingsTest();
+  group('emailMatches', () {
+    test('accepts the exact email, ignoring case and surrounding spaces', () {
+      expect(emailMatches('ana@example.com', 'ana@example.com'), isTrue);
+      expect(emailMatches('  ANA@Example.com ', 'ana@example.com'), isTrue);
+      expect(emailMatches('ana@example.com', 'Ana@Example.COM'), isTrue);
+    });
+
+    test('refuses anything else', () {
+      expect(emailMatches('', 'ana@example.com'), isFalse);
+      expect(emailMatches('ana@example.co', 'ana@example.com'), isFalse);
+      expect(emailMatches('ana @example.com', 'ana@example.com'), isFalse);
+      expect(emailMatches('ana@example.com.', 'ana@example.com'), isFalse);
+    });
+
+    test('an account with no email is never matched, not even by nothing', () {
+      expect(emailMatches('', ''), isFalse);
+      expect(emailMatches('  ', '  '), isFalse);
+    });
+  });
+
+  group('filenameFrom', () {
+    test('reads the quoted or bare filename of a content-disposition', () {
+      expect(
+        filenameFrom('attachment; filename="lukas-export-2026-10-22.csv"', 'x'),
+        'lukas-export-2026-10-22.csv',
+      );
+      expect(filenameFrom('attachment; filename=lukas.json', 'x'), 'lukas.json');
+    });
+
+    test('falls back when there is none, or it carries a path', () {
+      expect(filenameFrom(null, 'lukas-export.json'), 'lukas-export.json');
+      expect(filenameFrom('attachment', 'lukas-export.json'), 'lukas-export.json');
+      expect(
+        filenameFrom('attachment; filename="../x.csv"', 'lukas-export.csv'),
+        'lukas-export.csv',
+      );
+    });
+
+    test('also falls back for a name that starts with a dot or has a backslash', () {
+      expect(filenameFrom('attachment; filename=".bashrc"', 'a.json'), 'a.json');
+      expect(filenameFrom(r'attachment; filename="..\x.csv"', 'a.csv'), 'a.csv');
+    });
+  });
   group('zones', () {
     const zones = [
       'America/Argentina/Buenos_Aires',

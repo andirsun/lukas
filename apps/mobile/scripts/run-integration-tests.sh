@@ -74,6 +74,8 @@ run granted "budgets" integration_test/budgets_test.dart
 run granted "categories" integration_test/categories_test.dart
 run granted "recurring" integration_test/recurring_test.dart
 run granted "import" integration_test/import_test.dart
+run granted "export" integration_test/export_test.dart
+run granted "delete account" integration_test/delete_account_test.dart
 run granted "welcome" integration_test/welcome_test.dart
 run granted "capture" integration_test/capture_test.dart
 run granted "entry" integration_test/entry_test.dart

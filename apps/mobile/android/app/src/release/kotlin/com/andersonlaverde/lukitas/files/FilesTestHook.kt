@@ -9,4 +9,6 @@ internal object FilesTestHook {
     fun handle(call: MethodCall, result: MethodChannel.Result): Boolean = false
 
     fun take(): Uri? = null
+
+    fun takeSave(): Uri? = null
 }

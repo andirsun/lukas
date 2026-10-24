@@ -33,6 +33,9 @@ class FakeFlagStore implements FlagStore {
 
   @override
   Future<void> write(bool on) async => value = on;
+
+  @override
+  Future<void> clear() async => value = null;
 }
 
 /// `PATCH /v1/me` on the server in memory: it changes the profile [home] answers with (and the zone

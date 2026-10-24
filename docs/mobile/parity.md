@@ -351,16 +351,20 @@ when the app's picture changes. The web shots are regenerated only when the web 
     passkeys, the account has none (`GET /api/auth/passkey/list-user-passkeys`) and it has not answered on this phone.
     The answer is kept per account on the phone (`passkey.offered`, as the web keeps `lukas.passkey.offered` in
     `localStorage`). Its pairs are the stories' `Offer`, `OfferDayEnglish`, `WaitingForTheFingerprint` and `Failed`.
-- **Settings (`settings-*`).** The web's Settings has five cards; the app draws four as the web does (Preferencias, "Hora y
-  moneda", the passkeys and "Tus datos", whose import link opens the app's own page) and keeps the export and the delete card for
-  Task 7 of Stage 3c. The app's `SettingsScreen(webSectionsOnly: true)` draws what the stories leave on the page: no "Automático"
+- **Settings (`settings-*`).** The web's Settings has five cards, and the app draws all five as the web does (Preferencias,
+  "Hora y moneda", the passkeys, "Tus datos" with its import link to the app's own page and the export's two buttons, and the
+  danger-bordered card that deletes the account). The app's `SettingsScreen(webSectionsOnly: true)` draws what the stories leave on the page: no "Automático"
   language (the web has two languages; the app's third follows the phone) and none of the app's own cards.
   - **Stories.** `manage-settings--app-sections`, `--app-sections-day-english` and `--app-sections-sound-off` are the page from
     the top. The stories that look at a card further down scroll the page to it (`--app-sections-currency-open`, its options 16px
     under the top; `--app-sections-passkeys` and `--app-sections-data`, which the page's end stops at); the sheets are
     `--time-zone-sheet-open` (a country searched), `--time-zone-sheet-current` ("Actual"), `--time-zone-no-match` and
-    `--passkey-remove-sheet-open`. Their `play` hides what the app does not have yet (`onlyWhatTheAppHas`: the delete card and the
-    export's buttons): Task 7 takes those lines out.
+    `--passkey-remove-sheet-open`. The delete card is `--app-sections-delete` (the page's end), and its sheet is
+    `--delete-sheet-open`, `--delete-sheet-ready` (the email typed in capitals, the button on), `--delete-sheet-failed` (a
+    refused delete: the reason under the field, the focus ring on the button the story clicked) and
+    `--delete-sheet-day-english`. The export has no story of its own: its buttons are in `--app-sections-data`. What
+    follows a tap there is the app's own (a sheet that asks to save or share the file, since a phone has no download folder to
+    drop it in), so it has no pair; the widget tests cover it (`test/settings/export_test.dart`).
   - **Scrolling.** The app's test scrolls as the story did, to a whole pixel (Chrome scrolls to whole pixels); a page that ends
     on a half pixel is rounded up by Chrome (0.5px more scroll), which the test gives the frame (`_page(roundedUp: true)`). The
     story that clicks a button below the fold scrolls the browser to centre it: the test centres it too.
@@ -378,8 +382,14 @@ when the app's picture changes. The web shots are regenerated only when the web 
     does the same (`SettingSwitch`).
   - **Paragraphs** are broken as Blink breaks them (`CssParagraph`): a line that is exactly as wide as its column breaks in a
     different place when its words are measured whole, as Flutter does.
-  - **Day pairs** sit at 1.8–1.9% of ink: the text is placed to the pixel, and what is left is how Chrome and Flutter draw the same
-    glyphs.
+  - **Day pairs** sit at 1.8–2.2% of ink: the text is placed to the pixel, and what is left is how Chrome and Flutter draw the same
+    glyphs (Flutter's dark-on-light text is a little heavier). The four pictures that show the most text at once
+    (`settings-currency-open`, `-passkeys`, `-data` and `-delete`, by day) carry `maxInk: 2.3` in parity.json, which gives
+    that pair that much room (compose never uses it to lower the limit, and prints it on the pair's line); the picture is
+    still looked at first.
+  - **Delete card.** `.lk-danger-zone` is a 2px border of the danger colour over the stroke's (55/45), inside the card
+    (`border-box`: the padding stays, the content is 2px narrower). The input's `aria-invalid` has no style on the web, so the
+    field keeps its border when the delete is refused.
 - **The confirm sheet (`confirm-sheet-open*`).** `ui-confirmsheet--*` were added (the web had no story of it). A `flex-1`
   button is its own padding and border and an equal share of what is left, so "Cancelar" (8px a side) is narrower than
   the action (24px and a 2px border): `flexOneRow`. The guest's questions (`ChoiceSheet`: sign out, change server, the

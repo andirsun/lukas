@@ -115,7 +115,13 @@ class FilesChannel(
             .addCategory(Intent.CATEGORY_OPENABLE)
             .setType(mime)
             .putExtra(Intent.EXTRA_TITLE, FileTransfer.safeName(name))
-        save = PendingSave(result, bytes)
+        val pendingSave = PendingSave(result, bytes)
+        save = pendingSave
+        val stand = FilesTestHook.takeSave()
+        if (stand != null) {
+            write(stand, pendingSave)
+            return
+        }
         try {
             activity.startActivityForResult(intent, SAVE)
         } catch (e: ActivityNotFoundException) {

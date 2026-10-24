@@ -10,6 +10,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/api/session.dart';
 import 'package:lukitas/recurring/recurring_repository.dart';
+import 'package:lukitas/home/home_repository.dart';
+import 'package:lukitas/settings/account_repository.dart';
 import 'package:lukitas/settings/passkeys_settings.dart';
 import 'package:lukitas/settings/preferences.dart';
 import 'package:lukitas/settings/settings_screen.dart';
@@ -24,12 +26,11 @@ import '../support/parity_home.dart';
 /// and `--passkey-remove-sheet-open` (apps/web/app/features/settings/Settings.stories.tsx), each as
 /// Storybook shows it after its `play` function.
 ///
-/// The web's page has five cards; the app has Preferencias, "Hora y moneda", the passkeys and "Tus
-/// datos" as the web draws them. The export's buttons and the delete card come with Task 7 of Stage
-/// 3c: the stories leave them out of the picture, and the pairs draw what the web's stories leave
-/// (`SettingsScreen.webSectionsOnly`: no "Automático" language, which the web has not, and none of
-/// the app's own cards). The app's own cards have goldens of their own in `test/settings/goldens`,
-/// to review by eye. The stories that look at a card below the fold scroll the page to it (the card
+/// The web's page has five cards, and the app draws them as the web does (the sheets and the
+/// export's buttons too): Preferencias, "Hora y moneda", the passkeys, "Tus datos" and the delete
+/// card. The pairs draw what the web's stories draw (`SettingsScreen.webSectionsOnly`: no "Automático"
+/// language, which the web has not, and none of the app's own cards). The app's own cards have
+/// goldens of their own in `test/settings/goldens`, to review by eye. The stories that look at a card below the fold scroll the page to it (the card
 /// starts 16px under the top, or as near as the page's end lets it), and so does the app's test.
 ///
 /// The app reads who is signed in from what the story's fake API answered (test/parity/fixtures).
@@ -113,6 +114,15 @@ List<Override> _overrides(
   ];
 }
 
+/// The account's server: a delete it refuses (the story's `failDelete`, a 503).
+class _RefusingAccount implements AccountRepository {
+  @override
+  Future<ExportFile> export(ExportFormat format) => throw const HomeFailure(503);
+
+  @override
+  Future<void> deleteAccount() => throw const HomeFailure(503, code: 'internal_error');
+}
+
 class _Theme extends ThemeModeSetting {
   _Theme(this.mode);
 
@@ -144,6 +154,21 @@ Future<void> _openZones(WidgetTester t, String query) async {
   await t.pumpAndSettle();
   await t.tap(find.byKey(const Key('settings.timezone.search')));
   await t.enterText(find.byKey(const Key('settings.timezone.search')), query);
+  await t.pumpAndSettle();
+}
+
+/// The story's `openDeleteSheet`: the card scrolled to (16px under the top, or as near as the page's
+/// end lets it), then its button pressed, as the story's click does.
+Future<void> _openDeleteSheet(WidgetTester t) async {
+  await _scrollTo(t, 'settings.card.delete');
+  t.widget<PressButton>(find.byKey(const Key('settings.delete'))).onPressed!();
+  await t.pumpAndSettle();
+}
+
+/// What the story's `userEvent.type` does: focuses the email field and types.
+Future<void> _typeEmail(WidgetTester t, String text) async {
+  await t.tap(find.byKey(const Key('settings.delete.field')));
+  await t.enterText(find.byKey(const Key('settings.delete.field')), text);
   await t.pumpAndSettle();
 }
 
@@ -254,6 +279,68 @@ void main() {
       );
     });
 
+    testWidgets('settings parity: the delete card at the foot of the page ($theme)', (t) async {
+      final fixture = ParityFixtures.load('manage-settings--app-sections-delete');
+      await parityGolden(
+        t,
+        'settings-delete',
+        _page(),
+        theme: theme,
+        overrides: _overrides(fixture, theme),
+        act: (t) => _scrollTo(t, 'settings.card.delete'),
+      );
+    });
+
+    testWidgets('settings parity: the question before deleting the account ($theme)', (t) async {
+      final fixture = ParityFixtures.load('manage-settings--delete-sheet-open');
+      await parityGolden(
+        t,
+        'settings-delete-sheet',
+        _page(),
+        theme: theme,
+        overrides: _overrides(fixture, theme),
+        act: _openDeleteSheet,
+      );
+    });
+
+    testWidgets('settings parity: the email typed, the deleting button on ($theme)', (t) async {
+      final fixture = ParityFixtures.load('manage-settings--delete-sheet-ready');
+      await parityGolden(
+        t,
+        'settings-delete-sheet-ready',
+        _page(),
+        theme: theme,
+        overrides: _overrides(fixture, theme),
+        act: (t) async {
+          await _openDeleteSheet(t);
+          await _typeEmail(t, '  ANA@Example.com ');
+        },
+      );
+    });
+
+    testWidgets('settings parity: a delete the server refused ($theme)', (t) async {
+      final fixture = ParityFixtures.load('manage-settings--delete-sheet-failed');
+      await parityGolden(
+        t,
+        'settings-delete-sheet-failed',
+        _page(),
+        theme: theme,
+        overrides: [
+          ..._overrides(fixture, theme),
+          accountRepositoryProvider.overrideWithValue(_RefusingAccount()),
+        ],
+        act: (t) async {
+          await _openDeleteSheet(t);
+          await _typeEmail(t, 'ana@example.com');
+          await t.tap(find.byKey(const Key('settings.delete.confirm')));
+          await t.pumpAndSettle();
+          // The story's click leaves the focus, and Chrome's ring, on the button (the click came
+          // from a script, which counts as the keyboard): Tab twice from the field (past "Cancelar") lands on it.
+          await _tab(t, 2);
+        },
+      );
+    });
+
     testWidgets('settings parity: the question before deleting a passkey ($theme)', (t) async {
       final fixture = ParityFixtures.load('manage-settings--passkey-remove-sheet-open');
       await parityGolden(
@@ -286,6 +373,19 @@ void main() {
       );
     });
   }
+
+  testWidgets('settings parity: the deletion sheet by day, in English (day)', (t) async {
+    final fixture = ParityFixtures.load('manage-settings--delete-sheet-day-english');
+    await parityGolden(
+      t,
+      'settings-delete-sheet-day-english',
+      _page(),
+      theme: 'day',
+      locale: const Locale('en'),
+      overrides: _overrides(fixture, 'day'),
+      act: _openDeleteSheet,
+    );
+  });
 
   testWidgets('settings parity: by day, in English (day)', (t) async {
     final fixture = ParityFixtures.load('manage-settings--app-sections-day-english');

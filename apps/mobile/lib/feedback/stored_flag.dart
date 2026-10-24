@@ -9,6 +9,9 @@ abstract interface class FlagStore {
   /// Null when the person never chose.
   Future<bool?> read();
   Future<void> write(bool on);
+
+  /// Forgets the choice: it reads as never made.
+  Future<void> clear();
 }
 
 class SecureFlagStore implements FlagStore {
@@ -26,6 +29,9 @@ class SecureFlagStore implements FlagStore {
 
   @override
   Future<void> write(bool on) => _storage.write(key: key, value: on ? 'on' : 'off');
+
+  @override
+  Future<void> clear() => _storage.delete(key: key);
 }
 
 /// The store of the setting kept under [key] (e.g. `setting.sound`). Tests replace it.

@@ -16,16 +16,26 @@ import '../ui/pressable.dart';
 /// A card of settings named by its heading (`SettingsSection`): `lk-hero`, 16px between what is in
 /// it, the title in Fredoka 20 and, under it, a muted line on what the card is for.
 class SettingsSection extends StatelessWidget {
-  const SettingsSection({super.key, required this.title, this.lead, required this.children});
+  const SettingsSection({
+    super.key,
+    required this.title,
+    this.lead,
+    this.danger = false,
+    required this.children,
+  });
 
   final String title;
   final String? lead;
+
+  /// `tone="danger"`: deleting the account. The title is in the danger colour and the card has
+  /// `.lk-danger-zone`'s border, 2px of the danger colour over the stroke's (55%).
+  final bool danger;
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.lkColors;
-    final titleStyle = LkText.sectionTitle.copyWith(color: colors.ink);
+    final titleStyle = LkText.sectionTitle.copyWith(color: danger ? colors.over : colors.ink);
     final leadStyle = LkText.bodySm.copyWith(color: colors.inkMuted);
     final lead = this.lead;
     return Semantics(
@@ -33,6 +43,7 @@ class SettingsSection extends StatelessWidget {
       explicitChildNodes: true,
       label: title,
       child: HeroCard(
+        borderColor: danger ? Color.lerp(colors.stroke, colors.over, 0.55) : null,
         padding: const EdgeInsets.fromLTRB(
           LukitasTokens.space4,
           LukitasTokens.space3,

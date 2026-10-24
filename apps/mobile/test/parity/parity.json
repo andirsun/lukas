@@ -1364,7 +1364,7 @@
     "theme": "night",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1373,7 +1373,7 @@
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1382,7 +1382,7 @@
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1391,7 +1391,7 @@
     "theme": "night",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1400,7 +1400,7 @@
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1413,7 +1413,11 @@
     "id": "settings-currency-open",
     "storyId": "manage-settings--app-sections-currency-open",
     "theme": "day",
-    "appTest": "test/parity/settings_parity_test.dart"
+    "appTest": "test/parity/settings_parity_test.dart",
+    "maxInk": 2.3,
+    "knownDifferences": [
+      "Dark text on the day's light cards: Chrome and Flutter draw the glyph edges a little differently, and this picture has more text in it than the 2% rule leaves room for (docs/mobile/parity.md, Settings)"
+    ]
   },
   {
     "id": "settings-passkeys",
@@ -1425,7 +1429,11 @@
     "id": "settings-passkeys",
     "storyId": "manage-settings--app-sections-passkeys",
     "theme": "day",
-    "appTest": "test/parity/settings_parity_test.dart"
+    "appTest": "test/parity/settings_parity_test.dart",
+    "maxInk": 2.3,
+    "knownDifferences": [
+      "Dark text on the day's light cards: Chrome and Flutter draw the glyph edges a little differently, and this picture has more text in it than the 2% rule leaves room for (docs/mobile/parity.md, Settings)"
+    ]
   },
   {
     "id": "settings-data",
@@ -1437,7 +1445,11 @@
     "id": "settings-data",
     "storyId": "manage-settings--app-sections-data",
     "theme": "day",
-    "appTest": "test/parity/settings_parity_test.dart"
+    "appTest": "test/parity/settings_parity_test.dart",
+    "maxInk": 2.3,
+    "knownDifferences": [
+      "Dark text on the day's light cards: Chrome and Flutter draw the glyph edges a little differently, and this picture has more text in it than the 2% rule leaves room for (docs/mobile/parity.md, Settings)"
+    ]
   },
   {
     "id": "settings-time-zone-sheet",
@@ -1484,6 +1496,64 @@
   {
     "id": "settings-passkey-remove-sheet",
     "storyId": "manage-settings--passkey-remove-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-delete",
+    "storyId": "manage-settings--app-sections-delete",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-delete",
+    "storyId": "manage-settings--app-sections-delete",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart",
+    "maxInk": 2.3,
+    "knownDifferences": [
+      "Dark text on the day's light cards: Chrome and Flutter draw the glyph edges a little differently, and this picture has more text in it than the 2% rule leaves room for (docs/mobile/parity.md, Settings)"
+    ]
+  },
+  {
+    "id": "settings-delete-sheet",
+    "storyId": "manage-settings--delete-sheet-open",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-delete-sheet",
+    "storyId": "manage-settings--delete-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-delete-sheet-ready",
+    "storyId": "manage-settings--delete-sheet-ready",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-delete-sheet-ready",
+    "storyId": "manage-settings--delete-sheet-ready",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-delete-sheet-failed",
+    "storyId": "manage-settings--delete-sheet-failed",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-delete-sheet-failed",
+    "storyId": "manage-settings--delete-sheet-failed",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-delete-sheet-day-english",
+    "storyId": "manage-settings--delete-sheet-day-english",
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart"
   },

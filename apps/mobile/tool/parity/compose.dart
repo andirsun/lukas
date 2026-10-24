@@ -78,11 +78,17 @@ int run(List<String> args, {required String root, required StringSink out}) {
       'image': image,
       if (known.isNotEmpty) 'knownDifferences': known,
     };
-    final over = maxPercent != null && diff.inkShare * 100 > maxPercent;
+    // A pair may be given a little more room than `--max` (parity.json's `maxInk`, in percent): a
+    // page of dark text on the day's light cards, whose glyph edges Chrome and Flutter draw a
+    // little differently. It never lowers the limit, and the pair says so on its line.
+    final room = (pair['maxInk'] as num?)?.toDouble();
+    final limit = maxPercent == null ? null : max(maxPercent, room ?? maxPercent);
+    final over = limit != null && diff.inkShare * 100 > limit;
     if (over) failed = true;
     out.writeln(
       '$name: ${_percent(diff.inkShare)} of the ink differs '
-      '(${_percent(diff.canvasShare)} of the page)  $image${over ? '  FAIL: over $maxPercent%' : ''}'
+      '(${_percent(diff.canvasShare)} of the page)  $image${over ? '  FAIL: over $limit%' : ''}'
+      '${room != null && room > (maxPercent ?? 0) ? '  (room: $room%)' : ''}'
       '${known.isEmpty ? '' : '  KNOWN DIFFERENCE: ${known.join('; ')}'}',
     );
   }

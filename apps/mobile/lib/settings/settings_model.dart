@@ -1,10 +1,28 @@
-// The settings screen's rules that need no widget: finding and naming time zones. A port of the zones'
-// part of apps/web/app/features/settings/settings-model.ts (the account deletion's email check and
-// the export's file name come with their screens).
+// The settings screen's rules that need no widget: confirming an account deletion by email, the name
+// of an exported file, and finding and naming time zones. A port of
+// apps/web/app/features/settings/settings-model.ts.
 import 'package:timezone/timezone.dart' as tz;
 
 import '../profile/timezone.dart';
 import 'zone_countries.dart';
+
+/// Whether what was typed is the account's email: case-insensitive, surrounding spaces trimmed. An
+/// account with no email is matched by nothing.
+bool emailMatches(String typed, String email) {
+  final wanted = email.trim().toLowerCase();
+  return wanted.isNotEmpty && typed.trim().toLowerCase() == wanted;
+}
+
+final _filename = RegExp(r'filename\s*=\s*(?:"([^"]*)"|([^;\s]+))', caseSensitive: false);
+
+/// The file name a `content-disposition` header gives (`attachment; filename="x.csv"`), or
+/// [fallback] when it gives none or one with a path in it.
+String filenameFrom(String? disposition, String fallback) {
+  final match = _filename.firstMatch(disposition ?? '');
+  final name = (match?.group(1) ?? match?.group(2) ?? '').trim();
+  final bad = name.isEmpty || name.contains('/') || name.contains(r'\') || name.startsWith('.');
+  return bad ? fallback : name;
+}
 
 String _words(String part) => part.replaceAll('_', ' ');
 

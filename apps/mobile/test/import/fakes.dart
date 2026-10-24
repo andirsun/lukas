@@ -222,6 +222,13 @@ class FakeFilesChannel implements FilesChannel {
   /// While set, the pick waits for it.
   Completer<void>? hold;
 
+  /// What the person does at the save picker: false closes it.
+  bool saveAnswer = true;
+
+  /// What the next save / share throws instead (then cleared).
+  Object? saveFailure;
+  Object? shareFailure;
+
   final asked = <({List<String> mimeTypes, int maxBytes})>[];
   final saved = <(String, Uint8List, String)>[];
   final shared = <(String, Uint8List, String)>[];
@@ -249,11 +256,21 @@ class FakeFilesChannel implements FilesChannel {
   @override
   Future<bool> saveFile(String name, Uint8List bytes, String mime) async {
     saved.add((name, bytes, mime));
-    return true;
+    final error = saveFailure;
+    if (error != null) {
+      saveFailure = null;
+      throw error;
+    }
+    return saveAnswer;
   }
 
   @override
   Future<bool> shareFile(String name, Uint8List bytes, String mime) async {
+    final error = shareFailure;
+    if (error != null) {
+      shareFailure = null;
+      throw error;
+    }
     shared.add((name, bytes, mime));
     return true;
   }

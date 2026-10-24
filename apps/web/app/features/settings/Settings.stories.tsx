@@ -290,7 +290,7 @@ export const TimeZoneNoMatch: Story = {
   render: (args) => stage(args),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
     const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
     await userEvent.type(sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" }), "zzzz");
@@ -491,28 +491,6 @@ export const English: Story = {
 };
 
 /**
- * The phone app has the page's header, who is signed in, Preferencias (language, theme, sounds),
- * "Hora y moneda", the passkeys and "Tus datos" (its import link) as the web draws them. What it
- * does not have yet, the export and deleting the account (Task 7 of Stage 3c), is left out of the
- * picture by these stories, for the mobile parity pairs (docs/mobile/parity.md).
- */
-async function onlyWhatTheAppHas(canvas: Canvas, heading = "Ajustes") {
-  await title(canvas, heading);
-  for (const section of canvas.getAllByRole("region")) {
-    const name = within(section).getByRole("heading", { level: 2 }).textContent;
-    if (name === "Eliminar tu cuenta" || name === "Delete your account") {
-      section.style.display = "none";
-    }
-    if (name === "Tus datos" || name === "Your data") {
-      // The card's blocks: the heading, the import, then the export (its title, hint and two
-      // buttons).
-      const exportBlock = section.children[2];
-      if (exportBlock instanceof HTMLElement) exportBlock.style.display = "none";
-    }
-  }
-}
-
-/**
  * Where the page stops so a card below the fold fills the phone's viewport: the card starts this
  * many px under the top of it, or as near as the page's end lets it (the same rule as Insights'
  * scrolled stories). The app's test scrolls to the same place.
@@ -524,12 +502,12 @@ async function scrollTo(card: HTMLElement) {
   await waitFor(() => expect(window.scrollY).toBeGreaterThan(0));
 }
 
-/** The page as the phone app has it: Preferencias, with the other sections out of the picture. */
+/** The page as the phone app draws it (docs/mobile/parity.md): every card, from the top. */
 export const AppSections: Story = {
   render: (args) => stage(args),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     await expect(canvas.getByRole("switch", { name: "Sonidos" })).toBeChecked();
   },
 };
@@ -540,7 +518,7 @@ export const AppSectionsDayEnglish: Story = {
   render: (args) => stage(args),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas, "Settings");
+    await title(canvas, "Settings");
     await expect(canvas.getByRole("switch", { name: "Sounds" })).toBeChecked();
   },
 };
@@ -554,7 +532,7 @@ export const AppSectionsSoundOff: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     const sound = canvas.getByRole("switch", { name: "Sonidos" });
     await userEvent.click(sound);
     await expect(sound).not.toBeChecked();
@@ -566,7 +544,7 @@ export const AppSectionsCurrencyOpen: Story = {
   render: (args) => stage(args, { data: "empty", noRecurrences: true }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     const time = await region(canvas, "Hora y moneda");
     await time.findByRole("radio", { name: /Euro/ });
     await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
@@ -590,19 +568,19 @@ export const AppSectionsPasskeys: Story = {
     }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     const keys = await region(canvas, "Entrar con tu huella");
     await keys.findByText("Creada el 2 oct 2026");
     await scrollTo(canvas.getByRole("region", { name: "Entrar con tu huella" }));
   },
 };
 
-/** "Tus datos" at the foot of the page, scrolled into view. */
+/** "Tus datos" (import and export) near the foot of the page, scrolled into view. */
 export const AppSectionsData: Story = {
   render: (args) => stage(args, { data: "empty", noRecurrences: true }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     // The passkeys' list has loaded: the page is as tall as it will be.
     await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
     await scrollTo(canvas.getByRole("region", { name: "Tus datos" }));
@@ -614,7 +592,7 @@ export const TimeZoneSheetOpen: Story = {
   render: (args) => stage(args),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
     const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
     await userEvent.type(
@@ -630,7 +608,7 @@ export const TimeZoneSheetCurrent: Story = {
   render: (args) => stage(args),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
     const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
     await userEvent.type(
@@ -651,7 +629,7 @@ export const PasskeyRemoveSheetOpen: Story = {
     }),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await onlyWhatTheAppHas(canvas);
+    await title(canvas);
     const keys = await region(canvas, "Entrar con tu huella");
     await userEvent.click(
       await keys.findByRole("button", { name: "Eliminar la huella creada el 2 oct 2026" }),
@@ -659,5 +637,84 @@ export const PasskeyRemoveSheetOpen: Story = {
     await expect(
       await screen.findByRole("dialog", { name: "¿Eliminar esta huella?" }),
     ).toBeVisible();
+  },
+};
+
+/** The card that deletes the account, at the foot of the page, scrolled into view. */
+export const AppSectionsDelete: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    // The passkeys' list has loaded: the page is as tall as it will be.
+    await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+    await scrollTo(canvas.getByRole("region", { name: "Eliminar tu cuenta" }));
+  },
+};
+
+/** Opens the deletion sheet from the card, scrolled into view first as the phone's test does. */
+async function openDeleteSheet(canvas: Canvas) {
+  await title(canvas);
+  await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+  const card = canvas.getByRole("region", { name: "Eliminar tu cuenta" });
+  await scrollTo(card);
+  await userEvent.click(within(card).getByRole("button", { name: "Eliminar mi cuenta" }));
+  const dialog = await screen.findByRole("dialog", { name: "¿Eliminar tu cuenta?" });
+  return { dialog, sheet: within(dialog) };
+}
+
+/** The question before deleting the account: what goes, the export, the email to type. */
+export const DeleteSheetOpen: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const { sheet } = await openDeleteSheet(within(canvasElement));
+    await expect(sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" })).toBeDisabled();
+  },
+};
+
+/** The email typed (in capitals, with spaces around it): the deleting button is on. */
+export const DeleteSheetReady: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const { sheet } = await openDeleteSheet(within(canvasElement));
+    await userEvent.type(
+      sheet.getByRole("textbox", { name: "Escribe tu correo para confirmar" }),
+      "  ANA@Example.com ",
+    );
+    await expect(sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" })).toBeEnabled();
+  },
+};
+
+/** A delete the server refused: the sheet stays, with the reason under the field. */
+export const DeleteSheetFailed: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true, failDelete: true }),
+  play: async ({ canvasElement, args }) => {
+    const { sheet } = await openDeleteSheet(within(canvasElement));
+    await userEvent.type(
+      sheet.getByRole("textbox", { name: "Escribe tu correo para confirmar" }),
+      "ana@example.com",
+    );
+    await userEvent.click(sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" }));
+    await expect(
+      await sheet.findByText(
+        "Tuvimos un problema de nuestro lado. Inténtalo de nuevo en un momento.",
+      ),
+    ).toHaveAttribute("role", "alert");
+    await expect(args.signOut).not.toHaveBeenCalled();
+  },
+};
+
+/** The same sheet by day and in English. */
+export const DeleteSheetDayEnglish: Story = {
+  globals: { theme: "day", locale: "en" },
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas, "Settings");
+    await canvas.findByText("You don't have one yet: you sign in with the code in your email.");
+    const card = canvas.getByRole("region", { name: "Delete your account" });
+    await scrollTo(card);
+    await userEvent.click(within(card).getByRole("button", { name: "Delete my account" }));
+    await expect(await screen.findByRole("dialog", { name: "Delete your account?" })).toBeVisible();
   },
 };

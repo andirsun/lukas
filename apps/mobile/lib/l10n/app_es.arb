@@ -3114,5 +3114,112 @@
   "welcomeBudgetsLead": "Ponle un presupuesto a cada categoría. Puedes dejar alguna vacía y ponerlo después.",
   "@welcomeBudgetsLead": {
     "description": "Welcome, budgets step: the lead."
+  },
+  "settingsExportTitle": "Descarga tus datos",
+  "@settingsExportTitle": {
+    "description": "Settings, Tus datos: the export setting's name."
+  },
+  "settingsExportLead": "Todo en JSON, o tus movimientos en CSV para abrirlos en Excel o Google Sheets.",
+  "@settingsExportLead": {
+    "description": "Settings: what the export gives."
+  },
+  "settingsExportJson": "Descargar JSON",
+  "@settingsExportJson": {
+    "description": "Settings: the button that exports everything."
+  },
+  "settingsExportCsv": "Descargar CSV",
+  "@settingsExportCsv": {
+    "description": "Settings: the button that exports the transactions."
+  },
+  "settingsExportGuest": "Primero guarda tu progreso con un correo; después podrás descargar tus datos.",
+  "@settingsExportGuest": {
+    "description": "Settings: a guest has no account to export yet."
+  },
+  "settingsExportReadyTitle": "Tu archivo está listo",
+  "@settingsExportReadyTitle": {
+    "description": "Settings: the sheet that asks what to do with the exported file."
+  },
+  "settingsExportReadyBody": "¿Qué hacemos con {file}?",
+  "@settingsExportReadyBody": {
+    "description": "Settings: the exported file's name, and the question.",
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsExportSave": "Guardar en el teléfono",
+  "@settingsExportSave": {
+    "description": "Settings: saves the export where the person chooses (the system's save picker)."
+  },
+  "settingsExportShare": "Compartir",
+  "@settingsExportShare": {
+    "description": "Settings: hands the export to the share sheet."
+  },
+  "settingsExportSaved": "Listo: guardamos {file}.",
+  "@settingsExportSaved": {
+    "description": "Settings: the export was saved.",
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsExportSaveFailed": "No pudimos guardar el archivo. Inténtalo otra vez.",
+  "@settingsExportSaveFailed": {
+    "description": "Settings: saving the export failed."
+  },
+  "settingsExportShareFailed": "No encontramos una app para compartir el archivo.",
+  "@settingsExportShareFailed": {
+    "description": "Settings: the phone has nothing to share the export with."
+  },
+  "settingsAccountDeleteTitle": "Eliminar tu cuenta",
+  "@settingsAccountDeleteTitle": {
+    "description": "Settings: the card that deletes the account."
+  },
+  "settingsAccountDeleteLead": "Borramos tu cuenta y todos tus movimientos de inmediato. Las copias de seguridad que los incluyan se borran solas en 14 días.",
+  "@settingsAccountDeleteLead": {
+    "description": "Settings: what deleting the account does."
+  },
+  "settingsAccountDeleteAction": "Eliminar mi cuenta",
+  "@settingsAccountDeleteAction": {
+    "description": "Settings: opens the question before deleting."
+  },
+  "settingsAccountDeleteSheetTitle": "¿Eliminar tu cuenta?",
+  "@settingsAccountDeleteSheetTitle": {
+    "description": "Settings: the deletion sheet's title."
+  },
+  "settingsAccountDeleteSheetBody": "Se borran de inmediato tus movimientos, categorías, presupuestos, recurrentes y huellas. Las copias de seguridad que los incluyan se borran solas en 14 días.",
+  "@settingsAccountDeleteSheetBody": {
+    "description": "Settings: what goes when the account is deleted."
+  },
+  "settingsAccountDeleteExportFirst": "Descarga tus datos antes",
+  "@settingsAccountDeleteExportFirst": {
+    "description": "Settings: exports before deleting."
+  },
+  "settingsAccountDeleteConfirmLabel": "Escribe tu correo para confirmar",
+  "@settingsAccountDeleteConfirmLabel": {
+    "description": "Settings: the field that unlocks the deletion."
+  },
+  "settingsAccountDeleteConfirmHint": "Tu correo es {email}.",
+  "@settingsAccountDeleteConfirmHint": {
+    "description": "Settings: under the field, the email to type.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAccountDeleteConfirm": "Sí, eliminar mi cuenta",
+  "@settingsAccountDeleteConfirm": {
+    "description": "Settings: deletes the account."
+  },
+  "settingsAccountDeleting": "Eliminando…",
+  "@settingsAccountDeleting": {
+    "description": "Settings: while the account is being deleted."
+  },
+  "settingsAccountDeleteGuest": "Primero guarda tu progreso con un correo; después podrás eliminar tu cuenta.",
+  "@settingsAccountDeleteGuest": {
+    "description": "Settings: a guest cannot delete the account from here."
   }
 }

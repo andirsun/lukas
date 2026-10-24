@@ -65,6 +65,18 @@ class PasskeyOffer {
       // Not kept: it may be asked again, and nothing breaks.
     }
   }
+
+  /// The account is gone: its answer is forgotten with it (the others stay).
+  Future<void> forget(String accountId) async {
+    final ids = await _decided();
+    if (!ids.contains(accountId)) return;
+    final rest = ids.where((id) => id != accountId).toList();
+    if (rest.isEmpty) {
+      await store.delete(passkeyOfferedKey);
+    } else {
+      await store.write(passkeyOfferedKey, jsonEncode(rest));
+    }
+  }
 }
 
 final passkeyOfferProvider = Provider<PasskeyOffer>(

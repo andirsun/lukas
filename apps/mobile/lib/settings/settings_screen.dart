@@ -34,6 +34,8 @@ import '../ui/press_link.dart';
 import '../ui/sheet.dart';
 import '../ui/toast.dart';
 import '../ui/web_text_field.dart';
+import 'delete_account.dart';
+import 'export_settings.dart';
 import 'passkeys_section.dart';
 import 'preferences.dart';
 import 'profile_settings.dart';
@@ -317,8 +319,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
               ],
             ),
+            ExportBlock(guest: guest),
           ],
         ),
+        // The web's last card; in the app it is the page's last, under signing out.
+        if (webOnly) const DeleteAccountCard(),
         if (!webOnly) ...[
           SettingsSection(
             title: l10n.settingsPhone,
@@ -434,6 +439,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ],
           ),
+          const DeleteAccountCard(),
         ],
       ],
     );

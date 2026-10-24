@@ -165,10 +165,14 @@ class HomeHeroPlaceholder extends StatelessWidget {
 
 /// `.lk-hero`: the `surface` card, radius `xl`, on `edge-md`.
 class HeroCard extends StatelessWidget {
-  const HeroCard({super.key, required this.padding, required this.child});
+  const HeroCard({super.key, required this.padding, required this.child, this.borderColor});
 
-  final EdgeInsetsGeometry padding;
+  final EdgeInsets padding;
   final Widget child;
+
+  /// A 2px border of this colour inside the card (`.lk-danger-zone`). The card keeps its size, as
+  /// a `border-box` does: the padding stays, and the content is that much narrower.
+  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -179,8 +183,12 @@ class HeroCard extends StatelessWidget {
         color: lk.colors.surface,
         borderRadius: LkSurface.radius(LkRadius.xl),
         boxShadow: LkSurface.edgeShadow(lk, LkEdge.md),
+        border: borderColor == null ? null : Border.all(color: borderColor!, width: 2),
       ),
-      child: Padding(padding: padding, child: child),
+      child: Padding(
+        padding: borderColor == null ? padding : padding + const EdgeInsets.all(2),
+        child: child,
+      ),
     );
   }
 }

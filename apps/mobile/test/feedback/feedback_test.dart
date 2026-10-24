@@ -375,4 +375,7 @@ class _BrokenStore implements SoundSettingStore {
 
   @override
   Future<void> write(bool on) async => throw PlatformException(code: 'keystore');
+
+  @override
+  Future<void> clear() async => throw PlatformException(code: 'keystore');
 }

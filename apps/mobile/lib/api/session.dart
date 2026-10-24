@@ -408,6 +408,19 @@ class SessionController extends Notifier<SessionState> {
     state = SessionState.signedOut;
   }
 
+  /// The account was deleted on the server (or the server says the session is gone, which comes to
+  /// the same for this phone): its session ends here without asking the server to end it. The home
+  /// cache goes first and is waited for, then the widget says "Abre Lukitas para empezar" and is
+  /// redrawn, and the token goes last: a process that dies in between still finds the session,
+  /// is told by the server it is gone, and puts the rest right at the next start.
+  Future<void> accountDeleted() async {
+    await ready;
+    await clearHomeCache(ref.read(homeCacheStoreProvider));
+    await ref.read(widgetSyncProvider).signedOut().timeout(widgetWait, onTimeout: () {});
+    await _store.clear();
+    state = SessionState.signedOut;
+  }
+
   /// The most a sign-out waits for the widget's storage.
   static const widgetWait = Duration(seconds: 2);
 

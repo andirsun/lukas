@@ -40,6 +40,9 @@ class FakeSoundStore implements SoundSettingStore {
   }
 
   @override
+  Future<void> clear() async => value = null;
+
+  @override
   Future<void> write(bool on) async {
     writes++;
     value = on;
