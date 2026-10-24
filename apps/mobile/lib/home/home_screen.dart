@@ -53,6 +53,23 @@ const _maxContentWidth = 480.0;
 /// The two lists under the hero: Movimientos first.
 enum HomeView { transactions, budgets }
 
+/// A tab to show on home, asked from outside it: the face menu's Categorías (the web's link to its
+/// categories page is, in the app, home's Categorías tab), or a screen that sends the person there.
+/// Home takes the request when it sees it (at once, or when it opens), shows the tab and clears it,
+/// so asking for the same tab twice works the second time too.
+class HomeViewRequest extends Notifier<HomeView?> {
+  @override
+  HomeView? build() => null;
+
+  /// Asks home to show [view].
+  void show(HomeView view) => state = view;
+
+  /// Home has taken it.
+  void clear() => state = null;
+}
+
+final homeViewRequestProvider = NotifierProvider<HomeViewRequest, HomeView?>(HomeViewRequest.new);
+
 /// Home (spec section 6.1.2), as the web draws it (apps/web/app/features/home/Home.tsx): the
 /// header (the wordmark, the month with ‹ ›, the face button), Lukitas' line, "Te quedan" (or,
 /// without budgets, "Gastado este mes") in large type, a card or two for an account that skipped
@@ -64,7 +81,7 @@ enum HomeView { transactions, budgets }
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key, this.onEdit, this.menu, this.initialMonth});
 
-  /// What the face button's menu holds, as [HomeMenuLink]s: Ajustes, and a guest's "Guarda tu
+  /// What the face button's menu holds, as [HomeMenuLink]s: Recurrentes, Categorías, Ajustes, and a guest's "Guarda tu
   /// progreso". Null (tests, goldens): no menu.
   final Widget Function(BuildContext context, VoidCallback close)? menu;
 
@@ -120,6 +137,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         if (mounted) unawaited(_controller.showMonth(month));
       });
     }
+    // Asked for a tab before home was here (from a screen over it, then back).
+    final requested = ref.read(homeViewRequestProvider);
+    if (requested != null) scheduleMicrotask(() => _takeRequest(requested));
+  }
+
+  /// The import card's button. Back from the import the account may have movements now.
+  Future<void> _openImport() async {
+    await context.push<void>('/import');
+    if (mounted) ref.invalidate(hasTransactionsProvider);
+  }
+
+  /// Shows the tab [view] that was asked for, and clears the request.
+  void _takeRequest(HomeView view) {
+    if (!mounted) return;
+    ref.read(homeViewRequestProvider.notifier).clear();
+    if (view == HomeView.budgets) {
+      _showBudgets();
+    } else {
+      _selectView(view);
+    }
   }
 
   @override
@@ -150,7 +187,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Back in the app: the figures (and the widget) catch up.
-    if (state == AppLifecycleState.resumed) unawaited(_controller.refresh());
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_controller.refresh());
+      ref.invalidate(hasTransactionsProvider);
+    }
   }
 
   void _selectView(HomeView view) {
@@ -322,6 +362,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     ref.listen(homeProvider.select((s) => s.event), (_, next) => _onEvent(next));
     // A batch from quick capture has no event of its own to talk about: he just celebrates.
     ref.listen(celebrationProvider, (_, _) => _celebrate());
+    ref.listen(homeViewRequestProvider, (_, next) {
+      if (next != null) scheduleMicrotask(() => _takeRequest(next));
+    });
     final home = ref.watch(homeProvider);
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     final l10n = AppLocalizations.of(context);
@@ -503,26 +546,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     );
   }
 
-  /// The cards for an account without budgets (the web's `Nudges`): not for an account with a
-  /// budget on any category, nor one put away.
+  /// The cards for an account that skipped the setup (the web's `Nudges`), budgets first: one for
+  /// an account without a budget on any category, one for an account with no movements at all to
+  /// bring its history in. Each is gone once put away ("Ahora no", kept on this phone).
   Widget? _nudges(HomeData data, AppLocalizations l10n) {
     final categories = data.categories.values.where((c) => !c.archived).toList();
     final noBudgets =
         data.summary.budgetTotal == 0 &&
         categories.any((c) => c.kind == CategoryKindEnum.expense) &&
         categories.every((c) => c.currentBudget == null);
-    final key = nudgeKey(data.userId, Nudge.budgets);
-    if (!noBudgets || ref.watch(nudgeDismissedProvider(key)) != false) return null;
+    final budgetsKey = nudgeKey(data.userId, Nudge.budgets);
+    final importKey = nudgeKey(data.userId, Nudge.import);
+    final showBudgets = noBudgets && ref.watch(nudgeDismissedProvider(budgetsKey)) == false;
+    // Movements on screen settle it; otherwise the account is asked (any month counts).
+    final showImport =
+        data.items.isEmpty &&
+        ref.watch(hasTransactionsProvider).value == false &&
+        ref.watch(nudgeDismissedProvider(importKey)) == false;
+    if (!showBudgets && !showImport) return null;
     return Semantics(
       container: true,
       explicitChildNodes: true,
       label: l10n.homeNudgesLabel,
-      child: NudgeCard(
-        title: l10n.homeNudgeBudgetsTitle,
-        lead: l10n.homeNudgeBudgetsLead,
-        actionLabel: l10n.homeNudgeBudgetsAction,
-        onAction: _showBudgets,
-        onDismiss: () => unawaited(ref.read(nudgeDismissedProvider(key).notifier).dismiss()),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: LukitasTokens.space2,
+        children: [
+          if (showBudgets)
+            NudgeCard(
+              key: const Key('home.nudge.budgets'),
+              title: l10n.homeNudgeBudgetsTitle,
+              lead: l10n.homeNudgeBudgetsLead,
+              actionLabel: l10n.homeNudgeBudgetsAction,
+              onAction: _showBudgets,
+              onDismiss: () =>
+                  unawaited(ref.read(nudgeDismissedProvider(budgetsKey).notifier).dismiss()),
+            ),
+          if (showImport)
+            NudgeCard(
+              key: const Key('home.nudge.import'),
+              title: l10n.homeNudgeImportTitle,
+              lead: l10n.homeNudgeImportLead,
+              actionLabel: l10n.homeNudgeImportAction,
+              onAction: _openImport,
+              onDismiss: () =>
+                  unawaited(ref.read(nudgeDismissedProvider(importKey).notifier).dismiss()),
+            ),
+        ],
       ),
     );
   }

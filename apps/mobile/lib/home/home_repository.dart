@@ -87,6 +87,10 @@ abstract interface class HomeRepository {
   Future<Transaction> restore(String id);
 
   Future<Transaction> markPaid(String id);
+
+  /// Whether the account has any transaction at all, in any month (the web's
+  /// `useHasTransactions`): it decides whether home offers the import.
+  Future<bool> hasTransactions();
 }
 
 /// [HomeRepository] over the generated client.
@@ -127,6 +131,12 @@ class ApiHomeRepository implements HomeRepository {
       () => _api.listTransactions(month: month, cursor: cursor, limit: transactionsPageSize),
     );
     return TransactionsPage(page.items.toList(), page.nextCursor);
+  }
+
+  @override
+  Future<bool> hasTransactions() async {
+    final page = await _settle(() => _api.listTransactions(limit: 1));
+    return page.items.isNotEmpty;
   }
 
   @override

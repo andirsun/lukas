@@ -886,7 +886,7 @@
   },
   "settingsAbout": "About",
   "settingsWeb": "More on the web",
-  "settingsWebHint": "Time and currency, your fingerprints, your data, categories, recurring payments and deleting your account.",
+  "settingsWebHint": "Lukitas' home page and what's coming.",
   "settingsWebFailed": "We couldn't open the browser.",
   "settingsSignedInAs": "Signed in as {email}",
   "@settingsSignedInAs": {
@@ -898,7 +898,7 @@
   },
   "settingsPhone": "On this phone",
   "settingsSoundHintVibrationOff": "They play when you add and celebrate. Vibration stays off.",
-  "settingsWebOpen": "Open in the browser",
+  "settingsWebOpen": "See Lukitas' page",
   "settingsAboutOpen": "Licences and more",
   "aboutBack": "Back to Settings",
   "aboutBackShort": "Settings",
@@ -1339,5 +1339,19 @@
   "passkeyOfferNotNow": "Not now",
   "passkeyOfferFailed": "We couldn't save your fingerprint. Try again or carry on without it.",
   "resendIn": "Resend in {seconds} s",
-  "passkeyOfferAdded": "Done: next time you'll sign in with your fingerprint."
+  "passkeyOfferAdded": "Done: next time you'll sign in with your fingerprint.",
+  "homeMenuRecurring": "Recurring",
+  "homeMenuCategories": "Categories",
+  "homeNudgeImportTitle": "Bring your history",
+  "homeNudgeImportLead": "Import what you have in Budge and start with your real numbers.",
+  "homeNudgeImportAction": "Bring my history",
+  "recurringTitle": "Recurring",
+  "recurringAdd": "New recurring",
+  "importPageTitle": "Bring your history",
+  "importPageLead": "Bring your transactions from another app.",
+  "settingsDataTitle": "Your data",
+  "settingsImportTitle": "Bring your history",
+  "settingsImportLead": "Import what you have in Budge.",
+  "settingsImportAction": "Import from Budge",
+  "settingsRoadmapOpen": "See what's coming"
 }

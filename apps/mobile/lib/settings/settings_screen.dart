@@ -2,8 +2,9 @@
 // who is signed in, and a card per kind of setting, drawn with the web's parts (`parts.tsx`).
 //
 // What the web has and the app does not, stays on the web: time zone and currency, the passkeys'
-// list, importing and the export, and deleting the account. One card says so and links to it
-// ("Más en la web"). What only the app has (vibration, the two local notices, the widget, the voice
+// list, the export, and deleting the account (until their ports land). The import has its page in
+// the app ("Tus datos" links to it). One card ("Más en la web") links to the web's public pages:
+// the landing and the roadmap. What only the app has (vibration, the two local notices, the widget, the voice
 // models, the server, About, signing out) is drawn in the same style: a card per kind, a muted
 // line on what it is, and the web's switches and buttons.
 import 'dart:async';
@@ -126,10 +127,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   // -- the rest ------------------------------------------------------------------------------
 
-  Future<void> _openWeb() async {
+  /// Opens one of the web's public pages in the browser: the landing, or the roadmap. They are
+  /// prerendered per language, Spanish with no prefix and English under `/en` (the web's
+  /// `LANDING_PATH` and `ROADMAP_PATH`).
+  Future<void> _openWeb({bool roadmap = false}) async {
     final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
-    final opened = await ref.read(urlOpenerProvider).open(ref.read(serverUrlProvider));
+    final server = ref.read(serverUrlProvider);
+    final english = l10n.localeName == 'en';
+    final page = switch ((english, roadmap)) {
+      (false, false) => server,
+      (true, false) => server.resolve('/en'),
+      (false, true) => server.resolve('/roadmap'),
+      (true, true) => server.resolve('/en/roadmap'),
+    };
+    final opened = await ref.read(urlOpenerProvider).open(page);
     if (!opened && mounted) toasts.say(l10n.settingsWebFailed, error: true);
   }
 
@@ -279,6 +291,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
         if (!webOnly) ...[
+          // The web's "Tus datos" (Settings.tsx): the import links to its page; the export joins it.
+          SettingsSection(
+            title: l10n.settingsDataTitle,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: LukitasTokens.space2,
+                children: [
+                  SettingLabel(label: l10n.settingsImportTitle, hint: l10n.settingsImportLead),
+                  _SelfStart(
+                    child: PressLink.text(
+                      l10n.settingsImportAction,
+                      key: const Key('settings.import'),
+                      tone: PressTone.secondary,
+                      onPressed: () => unawaited(context.push<void>('/import')),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           SettingsSection(
             title: l10n.settingsPhone,
             children: [
@@ -351,6 +384,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   key: const Key('settings.web'),
                   tone: PressTone.secondary,
                   onPressed: _openWeb,
+                ),
+              ),
+              _SelfStart(
+                child: PressLink.text(
+                  l10n.settingsRoadmapOpen,
+                  key: const Key('settings.roadmap'),
+                  tone: PressTone.secondary,
+                  onPressed: () => unawaited(_openWeb(roadmap: true)),
                 ),
               ),
             ],

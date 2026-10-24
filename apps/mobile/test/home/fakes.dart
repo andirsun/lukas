@@ -127,6 +127,14 @@ class FakeHomeRepository implements HomeRepository {
     return TransactionsPage(live.sublist(start, end), end < live.length ? '$end' : null);
   }
 
+  /// Not in [calls]: the many tests that list them are about the month, not this.
+  @override
+  Future<bool> hasTransactions() async {
+    final failure = failures.remove('hasTransactions');
+    if (failure != null) throw failure;
+    return items.isNotEmpty;
+  }
+
   @override
   Future<void> delete(String id) async {
     _call('delete $id');

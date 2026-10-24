@@ -3,11 +3,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../feedback/stored_flag.dart';
+import 'home_repository.dart';
 
-/// The cards home shows an account that skipped the setup (the web's `Nudges`). The app has the
-/// budgets one; the history import stays on the web (spec 3.4).
+/// The cards home shows an account that skipped the setup (the web's `Nudges`): budgets, and
+/// bringing a history.
 enum Nudge {
-  budgets('budgets');
+  budgets('budgets'),
+  import('import');
 
   const Nudge(this.id);
   final String id;
@@ -60,3 +62,14 @@ final nudgeDismissedProvider = NotifierProvider.family<NudgeDismissed, bool?, St
 
 /// The key of [nudge] for the person [userId].
 String nudgeKey(String userId, Nudge nudge) => 'home.dismissed.$userId.${nudge.id}';
+
+/// Whether the account has any transaction, in any month (the web's `useHasTransactions`): the
+/// import card is for an account with none. Null while it is asked, and when it could not be (the
+/// card waits for an answer rather than guess).
+final hasTransactionsProvider = FutureProvider.autoDispose<bool?>((ref) async {
+  try {
+    return await ref.watch(homeRepositoryProvider).hasTransactions();
+  } on Object {
+    return null;
+  }
+});

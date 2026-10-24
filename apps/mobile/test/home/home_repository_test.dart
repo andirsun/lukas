@@ -126,6 +126,11 @@ void main() {
     });
   });
 
+  test('asks whether there is any transaction at all: one, in no month in particular', () async {
+    expect(await repo.hasTransactions(), isTrue);
+    expect(adapter.requests.single.queryParameters, {'limit': 1});
+  });
+
   test('deletes, restores and marks paid with the right calls', () async {
     await repo.delete('t1');
     final back = await repo.restore('t1');

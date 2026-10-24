@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../api/session.dart';
 import '../home/home_header.dart';
+import '../home/home_screen.dart' show HomeView, homeViewRequestProvider;
 import '../l10n/app_localizations.dart';
 import '../theme/tokens.g.dart';
 
-/// What the face button's menu on home holds: Ajustes (Settings), and, for a guest, "Guarda tu
-/// progreso". Each closes the menu and goes there.
+/// What the face button's menu on home holds, as the web's does (`HomeHeader`'s sections):
+/// Recurrentes, Categorías and Ajustes, and, for a guest, "Guarda tu progreso" first. Each closes
+/// the menu and goes there. The web's Categorías is its categories page; the app has none, its
+/// categories are home's Categorías tab, so that is shown.
 class HomeMenuLinks extends ConsumerWidget {
   const HomeMenuLinks({super.key, required this.close});
 
@@ -33,6 +36,22 @@ class HomeMenuLinks extends ConsumerWidget {
               context.push('/progress');
             },
           ),
+        HomeMenuLink(
+          key: const Key('home.recurring'),
+          label: l10n.homeMenuRecurring,
+          onPressed: () {
+            close();
+            context.push('/recurring');
+          },
+        ),
+        HomeMenuLink(
+          key: const Key('home.categories'),
+          label: l10n.homeMenuCategories,
+          onPressed: () {
+            close();
+            ref.read(homeViewRequestProvider.notifier).show(HomeView.budgets);
+          },
+        ),
         HomeMenuLink(
           key: const Key('home.settings'),
           label: l10n.settingsOpenLabel,

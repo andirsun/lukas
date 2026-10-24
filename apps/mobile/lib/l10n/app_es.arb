@@ -1253,7 +1253,7 @@
   },
   "settingsAbout": "Acerca de",
   "settingsWeb": "Más en la web",
-  "settingsWebHint": "Hora y moneda, tus huellas, tus datos, categorías, recurrentes y eliminar tu cuenta.",
+  "settingsWebHint": "La página de Lukitas y lo que viene.",
   "settingsWebFailed": "No pudimos abrir el navegador.",
   "settingsSignedInAs": "Entraste como {email}",
   "@settingsSignedInAs": {
@@ -1265,7 +1265,7 @@
   },
   "settingsPhone": "En este teléfono",
   "settingsSoundHintVibrationOff": "Suenan al anotar y al celebrar. La vibración sigue igual.",
-  "settingsWebOpen": "Abrir en el navegador",
+  "settingsWebOpen": "Ver la página de Lukitas",
   "settingsAboutOpen": "Licencias y más",
   "aboutBack": "Volver a Ajustes",
   "aboutBackShort": "Ajustes",
@@ -1933,5 +1933,61 @@
   "passkeyOfferAdded": "Listo: la próxima vez entras con tu huella.",
   "@passkeyOfferAdded": {
     "description": "Passkey offer: the confirmation, shown after the passkey was made."
+  },
+  "homeMenuRecurring": "Recurrentes",
+  "@homeMenuRecurring": {
+    "description": "Home menu: the link to the recurring payments."
+  },
+  "homeMenuCategories": "Categorías",
+  "@homeMenuCategories": {
+    "description": "Home menu: the link that opens home's Categorías tab."
+  },
+  "homeNudgeImportTitle": "Trae tu historial",
+  "@homeNudgeImportTitle": {
+    "description": "Home: title of the card for an account with no movements."
+  },
+  "homeNudgeImportLead": "Importa lo que llevas en Budge y empieza con tus números de verdad.",
+  "@homeNudgeImportLead": {
+    "description": "Home: the import card's explanation."
+  },
+  "homeNudgeImportAction": "Traer mi historial",
+  "@homeNudgeImportAction": {
+    "description": "Home: the import card's button, which opens the import."
+  },
+  "recurringTitle": "Recurrentes",
+  "@recurringTitle": {
+    "description": "Recurring payments: the page's title."
+  },
+  "recurringAdd": "Nuevo recurrente",
+  "@recurringAdd": {
+    "description": "Recurring payments: the button that adds one."
+  },
+  "importPageTitle": "Trae tu historial",
+  "@importPageTitle": {
+    "description": "Import: the page's title."
+  },
+  "importPageLead": "Trae tus movimientos de otra app.",
+  "@importPageLead": {
+    "description": "Import: the line under the title."
+  },
+  "settingsDataTitle": "Tus datos",
+  "@settingsDataTitle": {
+    "description": "Settings: the card for importing and exporting."
+  },
+  "settingsImportTitle": "Trae tu historial",
+  "@settingsImportTitle": {
+    "description": "Settings: the import setting's name."
+  },
+  "settingsImportLead": "Importa lo que llevas en Budge.",
+  "@settingsImportLead": {
+    "description": "Settings: what the import does."
+  },
+  "settingsImportAction": "Importar desde Budge",
+  "@settingsImportAction": {
+    "description": "Settings: the button that opens the import."
+  },
+  "settingsRoadmapOpen": "Ver lo que viene",
+  "@settingsRoadmapOpen": {
+    "description": "Settings: the link that opens the roadmap page in the browser."
   }
 }

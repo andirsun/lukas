@@ -8,7 +8,6 @@ import 'package:lukitas/entry/entry_screen.dart';
 import 'package:lukitas/settings/licenses.dart';
 import 'package:lukitas/settings/preferences.dart';
 import 'package:lukitas/settings/settings_parts.dart' show LkSwitch;
-import 'package:lukitas/ui/press_link.dart';
 import 'package:lukitas/ui/sheet.dart' show LkSheetScope;
 import 'package:lukitas/api/server_url.dart';
 
@@ -48,16 +47,17 @@ void main() {
       expect(find.text('Entraste como ana@correo.com'), findsOneWidget);
     });
 
-    testWidgets('the sections the app has not stay on the web, behind one link that says so', (
+    testWidgets('the web\'s public pages (landing, roadmap) have a card of their own, with links', (
       tester,
     ) async {
       final handle = tester.ensureSemantics();
       final env = await pumpSettingsApp(tester, location: '/settings');
       await _scrollTo(tester, 'settings.web');
-      // What the web has and the app has not: named in the card, with the link.
+      // The pages the app has not (the landing, the roadmap): named in the card, with the links.
+      // The web's app pages (import, recurring, categories) have their places in the app.
       expect(find.bySemanticsLabel('Más en la web'), findsWidgets);
-      expect(find.bySemanticsLabel(RegExp('Hora y moneda.*eliminar tu cuenta')), findsOneWidget);
-      expect(find.byType(PressLink), findsOneWidget);
+      expect(find.bySemanticsLabel('La página de Lukitas y lo que viene.'), findsOneWidget);
+      expect(find.byKey(const Key('settings.roadmap')), findsOneWidget);
       await tester.tap(find.byKey(const Key('settings.web')));
       await tester.pumpAndSettle();
       expect(env.opener.opened, [defaultServerUrl]);

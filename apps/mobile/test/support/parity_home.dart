@@ -73,6 +73,10 @@ class FixtureHomeRepository implements HomeRepository {
     return items[index] = items[index].rebuild((b) => b.status = TransactionStatusEnum.paid);
   }
 
+  /// The story is the demo's, which has no import and a history: the card is not offered.
+  @override
+  Future<bool> hasTransactions() async => true;
+
   @override
   Future<void> delete(String id) async => throw UnimplementedError();
 

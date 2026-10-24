@@ -9,11 +9,14 @@ import 'entry/entry_screen.dart';
 import 'entry/verify_link_screen.dart';
 import 'budgets/category_detail_screen.dart';
 import 'home/home_screen.dart';
+import 'import/import_screen.dart';
 import 'insights/insights_screen.dart';
 import 'progress/progress_screen.dart';
+import 'recurring/recurring_screen.dart';
 import 'settings/about_screen.dart';
 import 'settings/home_actions.dart';
 import 'settings/settings_screen.dart';
+import 'welcome/welcome_screen.dart';
 
 const _offerPath = '/entry/passkey-offer';
 
@@ -74,6 +77,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           initialMonth: state.uri.queryParameters['month'],
         ),
       ),
+      // The web's pages (apps/web/app/routes.ts), under `/app` there. There is no categories page:
+      // categories are managed in home's Categorías tab and in the category's detail above, so the
+      // face menu's Categorías asks home for that tab (`homeViewRequestProvider`).
+      GoRoute(path: '/recurring', builder: (context, state) => const RecurringScreen()),
+      GoRoute(path: '/import', builder: (context, state) => const ImportScreen()),
+      // `/welcome/:step?`, the onboarding (the web's, outside `/app`).
+      GoRoute(
+        path: '/welcome/:step',
+        builder: (context, state) => WelcomeScreen(step: state.pathParameters['step']),
+      ),
+      GoRoute(path: '/welcome', builder: (context, state) => const WelcomeScreen()),
       GoRoute(
         path: '/insights',
         builder: (context, state) =>
