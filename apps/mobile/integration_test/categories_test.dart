@@ -44,6 +44,14 @@ Future<void> _pumpUntilGone(
   throw TestFailure('Timed out waiting for $finder to go');
 }
 
+/// What a person does with the keyboard that a field opened before reaching for a button under it:
+/// puts it away. On a short phone with a soft keyboard (CI's emulator has a hardware one) the keyboard
+/// covers the rest of the sheet, and a tap there would land on it.
+Future<void> _dismissKeyboard(WidgetTester tester) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.pump(const Duration(milliseconds: 500));
+}
+
 Future<void> _reveal(WidgetTester tester, Finder finder) async {
   // On a short phone a row or button can sit under the bottom bar: scroll it well into view first.
   final element = tester.element(finder.first);
@@ -106,6 +114,7 @@ void main() {
     await _tap(tester, 'categories.add');
     await _pumpUntil(tester, find.byKey(const Key('category.name')));
     await tester.enterText(find.byKey(const Key('category.name')), name);
+    await _dismissKeyboard(tester);
     await tester.pump();
     await _tap(tester, 'category.glyph.🐶');
     await _tap(tester, 'category.save');
@@ -125,6 +134,7 @@ void main() {
     await _tap(tester, 'detail.edit');
     await _pumpUntil(tester, find.byKey(const Key('category.name')));
     await tester.enterText(find.byKey(const Key('category.name')), renamed);
+    await _dismissKeyboard(tester);
     await tester.pump();
     await _tap(tester, 'category.tint.blue');
     await _tap(tester, 'category.save');

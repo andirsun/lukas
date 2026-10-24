@@ -70,6 +70,14 @@ Future<void> _reveal(WidgetTester tester, Finder finder) async {
   }
 }
 
+/// What a person does with the keyboard that a field opened before reaching for a button under it:
+/// puts it away. On a short phone with a soft keyboard (CI's emulator has a hardware one) the keyboard
+/// covers the rest of the sheet, and a tap there would land on it.
+Future<void> _dismissKeyboard(WidgetTester tester) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.pump(const Duration(milliseconds: 500));
+}
+
 Future<void> _tap(WidgetTester tester, String key) async {
   await _pumpUntil(tester, find.byKey(Key(key)));
   // On a short phone the button may be below the fold: bring it up, as a person would.
@@ -288,6 +296,7 @@ void main() {
       await _tap(tester, 'home.saveProgress');
       await _pumpUntil(tester, find.byKey(const Key('progress.email')));
       await tester.enterText(find.byKey(const Key('progress.email')), email);
+      await _dismissKeyboard(tester);
       await _tap(tester, 'progress.save');
       await _pumpUntil(tester, find.byKey(const Key('entry.code')));
 
