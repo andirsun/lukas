@@ -28,6 +28,7 @@ class WebTextField extends StatefulWidget {
     this.autofillHints,
     this.inputFormatters,
     this.maxLines = 1,
+    this.enableSuggestions = false,
     this.onSubmitted,
     this.onChanged,
   });
@@ -49,6 +50,10 @@ class WebTextField extends StatefulWidget {
 
   /// How many lines show before it scrolls: the web's `<textarea rows>`; one is the plain input.
   final int maxLines;
+
+  /// Whether the keyboard's suggestion strip shows. Off for a code or an address; on for a sentence
+  /// the person types. Autocorrect stays off either way: it must never rewrite an amount.
+  final bool enableSuggestions;
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
 
@@ -148,7 +153,7 @@ class _WebTextFieldState extends State<WebTextField> {
                   textInputAction: widget.textInputAction,
                   autofillHints: widget.autofillHints,
                   autocorrect: false,
-                  enableSuggestions: false,
+                  enableSuggestions: widget.enableSuggestions,
                   onSubmitted: widget.onSubmitted,
                   onChanged: widget.onChanged,
                 ),

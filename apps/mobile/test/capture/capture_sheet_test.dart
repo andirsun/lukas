@@ -255,6 +255,10 @@ void main() {
     );
     await _open(tester);
     expect(find.byKey(const Key('capture.field')), findsOneWidget);
+    // A sentence typed keeps the phone's suggestion strip; autocorrect never rewrites an amount.
+    final typing = tester.widget<EditableText>(find.byKey(const Key('capture.field')));
+    expect(typing.enableSuggestions, isTrue);
+    expect(typing.autocorrect, isFalse);
     expect(
       find.text('Sin permiso para el micrófono no puedo escucharte, así que escríbelo aquí.'),
       findsOneWidget,

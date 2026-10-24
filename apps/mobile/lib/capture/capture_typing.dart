@@ -54,6 +54,7 @@ class CaptureTypingBody extends StatelessWidget {
               label: l10n.captureFieldLabel,
               placeholder: l10n.captureFieldHint,
               maxLines: 3,
+              enableSuggestions: true,
               inputFormatters: [LengthLimitingTextInputFormatter(500)],
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => session.readTyped(),
