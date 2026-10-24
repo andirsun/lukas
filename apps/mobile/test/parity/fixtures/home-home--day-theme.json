@@ -243,6 +243,44 @@
         ]
       }
     },
+    "GET /v1/transactions?category=cat-fun&limit=50&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "00000000-0000-4000-8000-000000000006",
+            "name": "Spotify",
+            "amount": -353,
+            "currency": "EUR",
+            "date": "2026-10-23",
+            "status": "pending",
+            "note": null,
+            "categoryId": "cat-fun",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-23T09:00:00.000Z",
+            "updatedAt": "2026-10-23T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000004",
+            "name": "cine",
+            "amount": -26280,
+            "currency": "EUR",
+            "date": "2026-10-01",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-fun",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-01T09:00:00.000Z",
+            "updatedAt": "2026-10-01T09:00:00.000Z"
+          }
+        ],
+        "nextCursor": null
+      }
+    },
     "GET /v1/transactions?limit=1": {
       "status": 200,
       "body": {

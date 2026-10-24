@@ -360,6 +360,22 @@
         ]
       }
     },
+    "GET /v1/transactions?category=cat-fun&limit=50&month=2026-10": {
+      "status": 422,
+      "body": {
+        "type": "about:blank",
+        "title": "Unprocessable Content",
+        "status": 422,
+        "code": "validation_failed",
+        "detail": "The request is invalid",
+        "errors": [
+          {
+            "path": "category",
+            "message": "Invalid UUID"
+          }
+        ]
+      }
+    },
     "GET /v1/transactions?limit=1": {
       "status": 200,
       "body": {
@@ -376,8 +392,8 @@
             "recurrenceId": "00000000-0000-4000-8000-00000000000c",
             "importId": null,
             "source": "recurrence",
-            "createdAt": "2026-10-21T18:00:00.055Z",
-            "updatedAt": "2026-10-21T18:00:00.055Z"
+            "createdAt": "2026-10-21T18:00:00.043Z",
+            "updatedAt": "2026-10-21T18:00:00.043Z"
           }
         ],
         "nextCursor": "MjAyNi0xMC0yOHwwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwNjk"
@@ -399,8 +415,8 @@
             "recurrenceId": "00000000-0000-4000-8000-00000000000c",
             "importId": null,
             "source": "recurrence",
-            "createdAt": "2026-10-21T18:00:00.055Z",
-            "updatedAt": "2026-10-21T18:00:00.055Z"
+            "createdAt": "2026-10-21T18:00:00.043Z",
+            "updatedAt": "2026-10-21T18:00:00.043Z"
           },
           {
             "id": "00000000-0000-4000-8000-000000000068",
@@ -872,8 +888,8 @@
             "recurrenceId": "00000000-0000-4000-8000-00000000000c",
             "importId": null,
             "source": "recurrence",
-            "createdAt": "2026-10-21T18:00:00.055Z",
-            "updatedAt": "2026-10-21T18:00:00.055Z"
+            "createdAt": "2026-10-21T18:00:00.043Z",
+            "updatedAt": "2026-10-21T18:00:00.043Z"
           },
           {
             "id": "00000000-0000-4000-8000-000000000068",

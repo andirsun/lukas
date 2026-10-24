@@ -198,6 +198,13 @@
         ]
       }
     },
+    "GET /v1/transactions?category=cat-fun&limit=50&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [],
+        "nextCursor": null
+      }
+    },
     "GET /v1/transactions?limit=1": {
       "status": 200,
       "body": {
