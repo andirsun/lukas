@@ -1581,8 +1581,9 @@
 @layer components {
   /*
    * Home's tabs on phones: stuck under the header (the demo's banner sets --lk-sticky-top) once the
-   * summary scrolls away. The negative margins keep the layout as it was; the background hides the
-   * list scrolling under it.
+   * summary scrolls away. The negative margins keep the layout as it was. It paints no background
+   * of its own (founder decision 2026-10-24): the tabs and the list sit on the page's own
+   * gradient, not on a darker band.
    */
   .lk-tabs-sticky {
     position: sticky;
@@ -1590,6 +1591,5 @@
     z-index: 20;
     margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-4)) calc(-1 * var(--space-1));
     padding: var(--space-2) var(--space-4) var(--space-1);
-    background: var(--bg);
   }
 }

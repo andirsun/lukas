@@ -16,7 +16,7 @@ import '../support/parity.dart';
 
 enum _View { budgets, transactions }
 
-/// The story's `HomeViewSwitch`: `max-w-[360px]` around the control, Presupuestos selected.
+/// The story's `HomeViewSwitch`: `max-w-[360px]` around the control, Categorías selected.
 class _HomeViewSwitch extends StatefulWidget {
   const _HomeViewSwitch({required this.label, required this.budgets, required this.transactions});
 
@@ -48,7 +48,7 @@ class _HomeViewSwitchState extends State<_HomeViewSwitch> {
 
 void main() {
   for (final theme in ['night', 'day']) {
-    testWidgets('segmented control parity: the story\'s clicks and keys end on Presupuestos '
+    testWidgets('segmented control parity: the story\'s clicks and keys end on Categorías '
         '($theme)', (t) async {
       await parityGolden(
         t,
@@ -57,7 +57,7 @@ void main() {
           block: true,
           child: _HomeViewSwitch(
             label: 'Vista',
-            budgets: 'Presupuestos',
+            budgets: 'Categorías',
             transactions: 'Movimientos',
           ),
         ),
@@ -78,7 +78,7 @@ void main() {
       'segmented-control-day-english',
       const ParityStoryFrame(
         block: true,
-        child: _HomeViewSwitch(label: 'View', budgets: 'Budgets', transactions: 'Transactions'),
+        child: _HomeViewSwitch(label: 'View', budgets: 'Categories', transactions: 'Transactions'),
       ),
       theme: 'day',
       locale: const Locale('en'),

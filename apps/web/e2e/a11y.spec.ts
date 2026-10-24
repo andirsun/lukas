@@ -132,14 +132,14 @@ test.describe("signed in, with the sample imported", () => {
     await expectAccessible(page, "/app, Movimientos");
 
     if (isPhone(page)) {
-      await page.getByRole("tab", { name: "Presupuestos" }).click();
-      await expect(page.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+      await page.getByRole("tab", { name: "Categorías" }).click();
+      await expect(page.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
         "aria-selected",
         "true",
       );
     }
-    await expect(page.getByRole("tabpanel", { name: "Presupuestos" })).toBeVisible();
-    await expectAccessible(page, "/app, Presupuestos");
+    await expect(page.getByRole("tabpanel", { name: "Categorías" })).toBeVisible();
+    await expectAccessible(page, "/app, Categorías");
 
     await page.getByRole("button", { name: "Agregar", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();

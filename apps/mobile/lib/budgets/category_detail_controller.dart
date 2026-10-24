@@ -84,7 +84,7 @@ int _newestFirst(Transaction a, Transaction b) {
 /// swipes (delete with Deshacer, pay).
 ///
 /// A budget that is saved reaches home through home's controller ([HomeController.budgetChanged]),
-/// so Te quedan, the Presupuestos bars and the widget follow; a change to a movement tells home too.
+/// so Te quedan, the Categorías bars and the widget follow; a change to a movement tells home too.
 class CategoryDetailController extends Notifier<CategoryDetailState> {
   CategoryDetailController(this.categoryId);
 

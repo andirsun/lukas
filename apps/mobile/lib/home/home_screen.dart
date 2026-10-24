@@ -56,7 +56,7 @@ enum HomeView { transactions, budgets }
 /// Home (spec section 6.1.2), as the web draws it (apps/web/app/features/home/Home.tsx): the
 /// header (the wordmark, the month with ‹ ›, the face button), Lukitas' line, "Te quedan" (or,
 /// without budgets, "Gastado este mes") in large type, a card or two for an account that skipped
-/// the setup, and under the Movimientos | Presupuestos tabs the movements by day, with the web's
+/// the setup, and under the Movimientos | Categorías tabs the movements by day, with the web's
 /// gestures: swipe left deletes (with an 8 s Deshacer), swipe right edits, or marks a pending row
 /// paid. Lukitas names a save or a payment for 10 s, then goes back to the month's line. The last
 /// figures stay on screen while offline. The bottom bar has Inicio, ＋ (the add sheet), the 🎤
@@ -99,7 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   final _scroll = ScrollController();
   final _aboveTabs = GlobalKey();
 
-  /// Where the tabs' thumb is, in tabs: 0 Movimientos, 1 Presupuestos.
+  /// Where the tabs' thumb is, in tabs: 0 Movimientos, 1 Categorías.
   late final AnimationController _thumb = AnimationController(
     vsync: this,
     duration: LukitasTokens.durationSheet,
@@ -165,7 +165,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   /// The card's "Ir a Categorías" (the web's goes to its categories page; the app's categories
-  /// are the Presupuestos tab): shows that tab, and brings its strip up to the top of the screen,
+  /// are the Categorías tab): shows that tab, and brings its strip up to the top of the screen,
   /// so the categories are what is in view, not the card above them.
   void _showBudgets() {
     _selectView(HomeView.budgets);

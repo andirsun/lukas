@@ -161,7 +161,7 @@ export type GestureOwner = "row" | "pager";
 /**
  * THE one place that decides who owns a sideways gesture (founder ruling, 2026-10-22; it may
  * change): a gesture that starts on a swipeable row belongs to the row; anything else (the summary
- * card, the tabs, the day headings, empty space, the whole Presupuestos page) belongs to the tab
+ * card, the tabs, the day headings, empty space, the whole Categorías page) belongs to the tab
  * pager. Both the pager and the rows ask this, so changing the rule here changes it everywhere.
  */
 export function gestureOwner(

@@ -42,7 +42,7 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     const list = canvas.getByRole("tablist", { name: "Vista" });
     await expect(list).toHaveClass("lk-seg");
-    const budgets = canvas.getByRole("tab", { name: "Presupuestos" });
+    const budgets = canvas.getByRole("tab", { name: "Categorías" });
     const transactions = canvas.getByRole("tab", { name: "Movimientos" });
     await expect(budgets).toHaveAttribute("aria-selected", "true");
     await expect(budgets).toHaveAttribute("tabindex", "0");

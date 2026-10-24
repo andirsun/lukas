@@ -48,7 +48,7 @@ export interface Pager {
 }
 
 /**
- * Pages that follow the finger (home's Movimientos ⇄ Presupuestos, spec §2.5): the content tracks
+ * Pages that follow the finger (home's Movimientos ⇄ Categorías, spec §2.5): the content tracks
  * a sideways drag 1:1, resists past the first and last page (0.3×), and on release springs to the
  * nearer page, or one page on in a flick's direction. A drag picks its axis after a few pixels:
  * mostly down is the page's scroll, untouched. A drag that starts on a swipeable row is the row's

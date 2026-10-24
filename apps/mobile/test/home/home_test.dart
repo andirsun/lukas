@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/home/home_repository.dart';
+import 'package:lukitas/home/home_screen.dart' show HomeView;
+import 'package:lukitas/home/home_widgets.dart' show HomeTabsStrip;
+import 'package:lukitas/ui/segmented_control.dart';
 
 import '../support/page_gradient.dart';
 import 'fakes.dart';
@@ -666,28 +669,46 @@ void main() {
   });
 
   group('the tabs, the cards and the bottom bar', () {
-    testWidgets('Movimientos | Presupuestos are the web\'s tabs, Movimientos first', (
-      tester,
-    ) async {
+    testWidgets('Movimientos | Categorías are the web\'s tabs, Movimientos first', (tester) async {
       final handle = tester.ensureSemantics();
       await pumpHome(tester, monthWithBudgets());
       expect(find.text('Movimientos'), findsOneWidget);
-      expect(find.text('Presupuestos'), findsOneWidget);
+      expect(find.text('Categorías'), findsOneWidget);
       expect(find.bySemanticsLabel('Vista'), findsOneWidget);
       expect(
         tester.getTopLeft(find.text('Movimientos')).dx,
-        lessThan(tester.getTopLeft(find.text('Presupuestos')).dx),
+        lessThan(tester.getTopLeft(find.text('Categorías')).dx),
       );
       expect(find.text('Café'), findsOneWidget);
 
-      // Presupuestos shows the categories, not the movements.
-      await tester.tap(find.text('Presupuestos'));
+      // Categorías shows the categories, not the movements.
+      await tester.tap(find.text('Categorías'));
       await tester.pumpAndSettle();
       expect(find.text('Café'), findsNothing);
       await tester.tap(find.text('Movimientos'));
       await tester.pumpAndSettle();
       expect(find.text('Café'), findsOneWidget);
       handle.dispose();
+    });
+
+    testWidgets('the tabs sit on the page\'s own background: no darker band around them', (
+      tester,
+    ) async {
+      await pumpHome(tester, monthWithBudgets());
+      final strip = find.byType(HomeTabsStrip);
+      expect(strip, findsOneWidget);
+      // Nothing between the strip and the control paints a fill of its own (the page's gradient,
+      // painted by the shell behind the whole screen, is what shows around the tabs).
+      final fills = find.descendant(
+        of: strip,
+        matching: find.ancestor(
+          of: find.byType(SegmentedControl<HomeView>),
+          matching: find.byWidgetPredicate(
+            (w) => w is ColoredBox || (w is DecoratedBox && w.decoration is BoxDecoration),
+          ),
+        ),
+      );
+      expect(fills, findsNothing);
     });
 
     testWidgets('an account without budgets gets the web\'s card, which can be put away', (
@@ -714,7 +735,7 @@ void main() {
       expect(find.text('Ponle presupuesto a tus categorías'), findsNothing);
     });
 
-    testWidgets('the card\'s button goes to Presupuestos', (tester) async {
+    testWidgets('the card\'s button goes to Categorías', (tester) async {
       await pumpHome(tester, monthWithBudgets()..budgetTotal = 0);
       await tester.tap(find.text('IR A CATEGORÍAS'));
       await tester.pumpAndSettle();
@@ -994,10 +1015,10 @@ void main() {
       expect(scrolled.height, closeTo(start.height, start.height * 0.02));
     });
 
-    testWidgets('Presupuestos: the same, over its own list', (tester) async {
+    testWidgets('Categorías: the same, over its own list', (tester) async {
       final repo = monthWithBudgets();
       await pumpHome(tester, repo);
-      await tester.tap(find.text('Presupuestos'));
+      await tester.tap(find.text('Categorías'));
       await tester.pumpAndSettle();
       // A short screen, so the list has somewhere to go.
       tester.view.physicalSize = const Size(390, 300);

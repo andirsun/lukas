@@ -33,10 +33,10 @@ const eur = (cents: number) =>
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 1024;
 
-/** Presupuestos is the second tab on phones; on wide screens both lists show side by side. */
+/** Categorías is the second tab on phones; on wide screens both lists show side by side. */
 async function showBudgets(page: Page) {
-  if (isPhone(page)) await page.getByRole("tab", { name: "Presupuestos" }).click();
-  return page.getByRole("tabpanel", { name: "Presupuestos" });
+  if (isPhone(page)) await page.getByRole("tab", { name: "Categorías" }).click();
+  return page.getByRole("tabpanel", { name: "Categorías" });
 }
 
 /** Recurrentes lives in the avatar menu on phones and in the sidebar on wide screens. */

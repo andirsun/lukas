@@ -14,7 +14,7 @@
   "home": {
     "view": {
       "label": "Vista",
-      "budgets": "Presupuestos",
+      "budgets": "Categorías",
       "transactions": "Movimientos"
     },
     "spent_label": "Gastado este mes",

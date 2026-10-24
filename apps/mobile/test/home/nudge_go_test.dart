@@ -9,7 +9,7 @@ import 'fakes.dart';
 import 'fixtures.dart';
 
 /// The home card "Ponle presupuesto a tus categorías": on the web "Ir a Categorías" opens the
-/// categories page, which the app has not; in the app the categories are Presupuestos, a tab of
+/// categories page, which the app has not; in the app the categories are Categorías, a tab of
 /// home. So the button must show that tab, with the categories in view, not leave the card on
 /// screen with a thumb that moved somewhere below it.
 
@@ -21,7 +21,7 @@ FakeHomeRepository _noBudgets() => FakeHomeRepository(
 void main() {
   for (final size in const [Size(412, 915), Size(360, 640)]) {
     testWidgets('on a ${size.width.toInt()} × ${size.height.toInt()} phone "Ir a Categorías" shows '
-        'Presupuestos with the first category in view', (tester) async {
+        'Categorías with the first category in view', (tester) async {
       final home = _noBudgets();
       await pumpBudgets(tester, home: home, budgets: FakeBudgetsRepository(home));
       tester.view.physicalSize = size;
@@ -32,11 +32,11 @@ void main() {
       await tester.tap(find.text('IR A CATEGORÍAS'));
       await tester.pumpAndSettle();
 
-      // The tab is Presupuestos, and the tabs' strip has come up to the top of the screen: the
+      // The tab is Categorías, and the tabs' strip has come up to the top of the screen: the
       // card above it is scrolled away, the categories fill the screen.
       expect(find.byType(CategoryRow), findsWidgets);
       expect(find.text('Mercado'), findsNothing);
-      expect(tester.getTopLeft(find.text('Presupuestos')).dy, lessThan(80));
+      expect(tester.getTopLeft(find.text('Categorías')).dy, lessThan(80));
       final first = tester.getRect(find.byType(CategoryRow).first);
       final bar = tester.getTopLeft(find.byType(BottomBar)).dy;
       expect(first.top, greaterThan(0));
@@ -59,6 +59,6 @@ void main() {
     await tester.tap(find.text('IR A CATEGORÍAS'));
     await tester.pumpAndSettle();
     expect(find.byType(CategoryRow), findsWidgets);
-    expect(tester.getTopLeft(find.text('Presupuestos')).dy, lessThan(80));
+    expect(tester.getTopLeft(find.text('Categorías')).dy, lessThan(80));
   });
 }

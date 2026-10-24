@@ -583,7 +583,7 @@ class HomeController extends Notifier<HomeState> {
   }
 
   /// A budget was set or changed (from a category's detail): the month's summary (Te quedan, the
-  /// Presupuestos bars) and the categories (what each has in force) are asked again, silently: the
+  /// Categorías bars) and the categories (what each has in force) are asked again, silently: the
   /// last figures stay on screen while it is on its way, or when it fails (then they are marked as
   /// possibly old). Only the latest summary counts, and the widget and the saved month follow it
   /// (on an earlier month the widget is told the current one meanwhile).

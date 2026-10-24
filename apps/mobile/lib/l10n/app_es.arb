@@ -305,9 +305,9 @@
   },
   "homeViewLabel": "Vista",
   "@homeViewLabel": {
-    "description": "Screen-reader name of the Movimientos | Presupuestos tab list on home."
+    "description": "Screen-reader name of the Movimientos | Categorías tab list on home."
   },
-  "homeBudgetsTab": "Presupuestos",
+  "homeBudgetsTab": "Categorías",
   "@homeBudgetsTab": {
     "description": "Home: the second tab, one row per spending category."
   },
@@ -1401,11 +1401,11 @@
   },
   "homeNoExpenseCategories": "No tienes categorías de gasto activas.",
   "@homeNoExpenseCategories": {
-    "description": "Presupuestos tab: the account has no active spending category."
+    "description": "Categorías tab: the account has no active spending category."
   },
   "budgetsArchivedNote": "archivada",
   "@budgetsArchivedNote": {
-    "description": "A short word after an archived category's name in the Presupuestos list."
+    "description": "A short word after an archived category's name in the Categorías list."
   },
   "manageBack": "Volver al inicio",
   "@manageBack": {

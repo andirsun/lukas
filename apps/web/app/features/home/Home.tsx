@@ -57,7 +57,7 @@ const VIEWS: readonly HomeView[] = ["transactions", "budgets"];
  * Home (`/app`, spec §2.5): the month (the person's current one by default, earlier ones
  * browsable), Lukitas with a line about it, what is left (or, without budgets, what was spent),
  * and two lists: Movimientos (by day: today on top, the upcoming pending ones next, then the past)
- * and Presupuestos (one row per spending category, opening its detail). On phones they are two
+ * and Categorías (one row per spending category, opening its detail). On phones they are two
  * pages that follow the finger (a sideways drag anywhere on the screen but a row, which has its
  * own swipes; `gestureOwner` decides), or the segmented control above them; Movimientos first and
  * by default, the choice remembered on the device. On wide screens they sit side by side,

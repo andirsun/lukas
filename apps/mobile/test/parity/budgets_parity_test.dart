@@ -14,7 +14,7 @@ import 'package:lukitas/ui/app_shell.dart';
 import '../support/parity.dart';
 import '../support/parity_home.dart';
 
-/// Presupuestos, a category's detail and the budget sheet against the stories that show them:
+/// Categorías, a category's detail and the budget sheet against the stories that show them:
 /// `home-home--budgets` (apps/web/app/features/home/Home.stories.tsx) and
 /// `manage-categories--detail`, `--budget-sheet-open` and `--budget-sheet-negative`
 /// (apps/web/app/features/categories/Categories.stories.tsx), each as Storybook shows it after its
@@ -70,7 +70,7 @@ Future<void> _keyboardMode(WidgetTester t) => t.sendKeyEvent(LogicalKeyboardKey.
 
 void main() {
   for (final theme in ['night', 'day']) {
-    testWidgets('budgets parity: home, Presupuestos tapped ($theme)', (t) async {
+    testWidgets('budgets parity: home, Categorías tapped ($theme)', (t) async {
       final fixture = ParityFixtures.load('home-home--budgets');
       await parityGolden(
         t,
@@ -84,7 +84,7 @@ void main() {
         overrides: parityHomeOverrides(FixtureHomeRepository(fixture)),
         act: (t) async {
           await precacheLukitas(t);
-          await t.tap(find.text('Presupuestos'));
+          await t.tap(find.text('Categorías'));
           await t.pumpAndSettle();
           await _keyboardMode(t);
         },

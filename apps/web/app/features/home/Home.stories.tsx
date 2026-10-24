@@ -104,15 +104,20 @@ export const Budgets: Story = {
     await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
     await expect(region).toHaveTextContent(`Gastado ${eur("718,87")}`);
     await expect(region).toHaveTextContent(`de ${eur("1220,00")}`);
-    // Movimientos comes first and is the default; Presupuestos is one tap away.
+    // Movimientos comes first and is the default; Categorías is one tap away.
     const tabs = canvas.getAllByRole("tab");
-    await expect(tabs.map((tab) => tab.textContent)).toEqual(["Movimientos", "Presupuestos"]);
+    await expect(tabs.map((tab) => tab.textContent)).toEqual(["Movimientos", "Categorías"]);
     await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
-    const panel = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    // The tabs sit on the page's own background: no darker band of their own around them
+    // (founder decision 2026-10-24).
+    const strip = canvasElement.querySelector(".lk-tabs-sticky");
+    await expect(strip).not.toBeNull();
+    await expect(getComputedStyle(strip as Element).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Categorías" }));
     // Status in words, never color alone.
     await expect(
       panel.getByRole("button", { name: endsInEuros("Supermercado Te pasaste", "14,12") }),
@@ -161,10 +166,10 @@ export const ViewRememberedAndSwiped: Story = {
     const canvas = within(canvasElement);
     await hero(canvas);
     const card = canvas.getByRole("region", { name: "Te quedan este mes" });
-    // The pages follow the finger: dragged left (from the summary card), Presupuestos comes in.
+    // The pages follow the finger: dragged left (from the summary card), Categorías comes in.
     await fingerDrag(card, { dx: -260, steps: 16 });
     await waitFor(() =>
-      expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+      expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
         "aria-selected",
         "true",
       ),
@@ -172,18 +177,18 @@ export const ViewRememberedAndSwiped: Story = {
     // The choice wins over the default after a reload.
     await userEvent.click(canvas.getByRole("button", { name: "Recargar (stand-in)" }));
     await hero(canvas);
-    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+    await expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     // A mostly vertical drag is a scroll, not a swipe.
-    const list = canvas.getByRole("tabpanel", { name: "Presupuestos" });
+    const list = canvas.getByRole("tabpanel", { name: "Categorías" });
     await fingerDrag(list, { dx: -60, dy: 240, steps: 12 });
-    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+    await expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    // Dragged right, anywhere on Presupuestos (its rows do not swipe): back to Movimientos.
+    // Dragged right, anywhere on Categorías (its rows do not swipe): back to Movimientos.
     await fingerDrag(list, { dx: 260, steps: 16 });
     await waitFor(() =>
       expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
@@ -545,7 +550,7 @@ export const NoCategories: Story = {
     );
     // The tabs come back once the new categories are read again: wait for them, not a moment.
     await userEvent.click(
-      await canvas.findByRole("tab", { name: "Presupuestos" }, { timeout: 5000 }),
+      await canvas.findByRole("tab", { name: "Categorías" }, { timeout: 5000 }),
     );
     await expect(await canvas.findByRole("button", { name: /^Supermercado/ })).toBeVisible();
   },
@@ -657,8 +662,8 @@ export const BudgetRowOpensDetail: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await hero(canvas);
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
-    const panel = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Categorías" }));
     await userEvent.click(await panel.findByRole("button", { name: /^Ocio/ }));
     await expect(await canvas.findByRole("heading", { level: 1, name: "Ocio" })).toBeVisible();
     await expect(screen.queryByRole("dialog")).toBeNull();
@@ -679,7 +684,7 @@ export const Desktop: Story = {
     const canvas = within(canvasElement);
     await hero(canvas);
     await expect(canvas.queryByRole("tab", { name: "Movimientos" })).toBeNull();
-    const budgets = canvas.getByRole("tabpanel", { name: "Presupuestos" });
+    const budgets = canvas.getByRole("tabpanel", { name: "Categorías" });
     const transactions = canvas.getByRole("tabpanel", { name: "Movimientos" });
     await expect(budgets).toBeVisible();
     await expect(transactions).toBeVisible();
@@ -723,8 +728,8 @@ export const ArchivedCategory: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await hero(canvas);
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
-    const budgets = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
+    const budgets = within(canvas.getByRole("tabpanel", { name: "Categorías" }));
     await expect(await budgets.findByRole("button", { name: /^Transporte/ })).toHaveAccessibleName(
       "Transporte · archivada Sin presupuesto",
     );

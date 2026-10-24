@@ -358,27 +358,24 @@ class _DashedBorder extends CustomPainter {
       old.color != color || old.radius != radius || old.width != width;
 }
 
-/// The Movimientos | Presupuestos tabs, stuck under the top of the screen once the summary scrolls
-/// away (`.lk-tabs-sticky`: 8px above and 4px below the control, with `bg` behind them so the list
-/// scrolling under is hidden). [inset] is the side padding of the content, which the strip
-/// bleeds past.
+/// The Movimientos | Categorías tabs, stuck under the top of the screen once the summary scrolls
+/// away (`.lk-tabs-sticky`: 8px above and 4px below the control). It paints no fill of its own
+/// (founder decision 2026-10-24): the tabs and the list sit on the page's own gradient, with no
+/// darker band around them. [bleed] is the side padding of the content, which the strip reaches
+/// past.
 class HomeTabsStrip extends StatelessWidget {
   const HomeTabsStrip({super.key, required this.child, this.bleed = LukitasTokens.space4});
 
   final Widget child;
 
-  /// How far the strip's background reaches past the content on each side (`-mx-4`).
+  /// How far the strip reaches past the content on each side (`-mx-4`).
   final double bleed;
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.lkColors;
-    return ColoredBox(
-      color: colors.bg,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(bleed, LukitasTokens.space2, bleed, LukitasTokens.space1),
-        child: child,
-      ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(bleed, LukitasTokens.space2, bleed, LukitasTokens.space1),
+      child: child,
     );
   }
 }

@@ -1,4 +1,4 @@
-// Presupuestos on an Android emulator against the dev stack (`docker compose up -d` at the repo
+// Categorías on an Android emulator against the dev stack (`docker compose up -d` at the repo
 // root), as docs/mobile/setup.md describes:
 //
 //   flutter test integration_test/budgets_test.dart -d emulator-5554 \
@@ -89,10 +89,10 @@ void main() {
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump(const Duration(seconds: 1));
 
-    // Presupuestos (Budgets), the category, its detail.
+    // Categorías (Categories), the category, its detail.
     await tester.tap(
       find
-          .byWidgetPredicate((w) => w is Text && (w.data == 'Presupuestos' || w.data == 'Budgets'))
+          .byWidgetPredicate((w) => w is Text && (w.data == 'Categorías' || w.data == 'Categories'))
           .first,
     );
     await _pumpUntil(tester, find.text(name));

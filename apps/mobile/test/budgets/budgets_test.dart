@@ -22,7 +22,7 @@ import '../settings/harness.dart';
 import '../support/page_gradient.dart';
 import 'fakes.dart';
 
-/// Presupuestos, a category's detail and the budget sheet, in the whole app (the real router, home
+/// Categorías, a category's detail and the budget sheet, in the whole app (the real router, home
 /// under the detail) against fakes of the server. How they look is the parity pairs' business
 /// (test/parity/budgets_parity_test.dart); here is what they do.
 
@@ -69,7 +69,7 @@ Future<Env> pumpBudgets(
 }
 
 Future<void> openBudgetsTab(WidgetTester tester) async {
-  await tester.tap(find.text('Presupuestos'));
+  await tester.tap(find.text('Categorías'));
   await tester.pumpAndSettle();
 }
 
@@ -124,8 +124,8 @@ void testBudgets(String description, Future<void> Function(WidgetTester tester) 
 }
 
 void main() {
-  group('the Presupuestos tab', () {
-    testBudgets('the Presupuestos tab lists each category with its bar, like the web', (
+  group('the Categorías tab', () {
+    testBudgets('the Categorías tab lists each category with its bar, like the web', (
       tester,
     ) async {
       await pumpBudgets(tester);
@@ -183,7 +183,7 @@ void main() {
 
     testBudgets('in English the copy is English', (tester) async {
       await pumpBudgets(tester, locale: const Locale('en'));
-      await tester.tap(find.text('Budgets'));
+      await tester.tap(find.text('Categories'));
       await tester.pumpAndSettle();
       expect(_row(r'Supermercado COP\s67,000 left'), findsOneWidget);
     });
@@ -391,12 +391,12 @@ void main() {
       expect(find.text(r'Quedan $117.000'), findsOneWidget);
       expect(find.text(r'Gastado $183.000 de $300.000'), findsOneWidget);
 
-      // Home, behind it: Te quedan and the Presupuestos bars follow.
+      // Home, behind it: Te quedan and the Categorías bars follow.
       await tester.tap(find.bySemanticsLabel('Volver al inicio').first);
       await tester.pumpAndSettle();
       expect(find.text(r'$717.000'), findsOneWidget, reason: 'Te quedan, after');
       expect(find.text(r'de $900.000'), findsOneWidget);
-      // Presupuestos is still the tab it was left on.
+      // Categorías is still the tab it was left on.
       final row = find.ancestor(of: find.text('Supermercado'), matching: find.byType(CategoryRow));
       expect(_row(r'Supermercado Quedan \$117\.000'), findsOneWidget);
       expect(find.descendant(of: row, matching: find.text(r'$300.000')), findsOneWidget);
@@ -530,7 +530,7 @@ void main() {
   });
 
   group('offline', () {
-    testBudgets('Presupuestos shows the current month\'s cached figures, with the offline note', (
+    testBudgets('Categorías shows the current month\'s cached figures, with the offline note', (
       tester,
     ) async {
       final store = FakeCacheStore();

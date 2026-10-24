@@ -79,7 +79,7 @@ void main() {
     }
   });
 
-  testWidgets('and so does the last Presupuestos row', (tester) async {
+  testWidgets('and so does the last Categorías row', (tester) async {
     final home = budgetsMonth();
     for (var i = 0; i < 8; i++) {
       home.categoryList.add(category('cat-$i', 'Categoría $i'));
@@ -88,7 +88,7 @@ void main() {
     tester.view.physicalSize = const Size(360, 640);
     _insetBottom(tester, 48);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Presupuestos'));
+    await tester.tap(find.text('Categorías'));
     await tester.pumpAndSettle();
     await _toTheEnd(tester);
     final last = tester.getBottomLeft(find.byType(CategoryRow).last).dy;

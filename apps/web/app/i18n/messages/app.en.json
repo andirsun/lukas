@@ -14,7 +14,7 @@
   "home": {
     "view": {
       "label": "View",
-      "budgets": "Budgets",
+      "budgets": "Categories",
       "transactions": "Transactions"
     },
     "spent_label": "Spent this month",

@@ -1,4 +1,4 @@
-// The Presupuestos tab of home: the web's `Budgets` (apps/web/app/features/home/Home.tsx), inside
+// The Categorías tab of home: the web's `Budgets` (apps/web/app/features/home/Home.tsx), inside
 // `.lk-panel` (a flex column with a gap of `--space-2`).
 import 'package:flutter/material.dart';
 

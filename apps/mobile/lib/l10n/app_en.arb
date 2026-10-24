@@ -110,9 +110,9 @@
   },
   "homeViewLabel": "View",
   "@homeViewLabel": {
-    "description": "Screen-reader name of the Movimientos | Presupuestos tab list on home."
+    "description": "Screen-reader name of the Movimientos | Categorías tab list on home."
   },
-  "homeBudgetsTab": "Budgets",
+  "homeBudgetsTab": "Categories",
   "@homeBudgetsTab": {
     "description": "Home: the second tab, one row per spending category."
   },
