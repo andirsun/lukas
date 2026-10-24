@@ -215,7 +215,8 @@ test("archiving a category stops its recurring payment, and home follows", async
   ).json()) as { items: { name: string; status: string }[] };
   expect(october.items.some((t) => t.name === "Gimnasio" && t.status === "pending")).toBe(false);
 
-  // Home's figures are the API's, and Ocio is no longer among the tab's rows.
+  // Home's figures are the API's. Ocio has spending in the month, so it stays among the tab's
+  // rows, noted "archivada", and does not wait in the "Archivadas" fold.
   const summary = (await (
     await page.request.get("/api/v1/summary?month=2026-10")
   ).json()) as Summary;
@@ -224,9 +225,8 @@ test("archiving a category stops its recurring payment, and home follows", async
     eur(summary.remaining),
   );
   const tab = await showBudgets(page);
-  await expect(tab.getByRole("button", { name: /^Ocio/ })).toHaveCount(0);
-  await tab.getByRole("button", { name: "Archivadas (1)" }).click();
-  await expect(tab.getByRole("button", { name: "Restaurar Ocio" })).toBeVisible();
+  await expect(tab.getByRole("button", { name: /^Ocio · archivada/ })).toBeVisible();
+  await expect(tab.getByRole("button", { name: /^Archivadas/ })).toHaveCount(0);
 });
 
 test("a monthly payment on the 23rd shows as pending in this month's Movimientos", async ({

@@ -500,6 +500,9 @@ export const EditAndDelete: Story = {
     const toast = await toastSaying("Eliminado: cine");
     await waitFor(() => expect(panel.queryByRole("button", { name: /^cine/ })).toBeNull());
     await userEvent.click(toast.getByRole("button", { name: "Deshacer" }));
+    // The "De vuelta" toast replaces the first: wait until it has finished fading in, or axe
+    // reads its text mid-fade (1.14:1) when the story ends.
+    await toastSaying("De vuelta: cine");
     // It slides back in (unfolding from nothing), then it is fully there.
     const back = await panel.findByRole("button", { name: /^cine/ });
     await waitFor(() => expect(back).toBeVisible());
