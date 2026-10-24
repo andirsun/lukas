@@ -1851,5 +1851,15 @@
   "settingsAccountDeleteConfirmHint": "Your email is {email}.",
   "settingsAccountDeleteConfirm": "Yes, delete my account",
   "settingsAccountDeleting": "Deleting…",
-  "settingsAccountDeleteGuest": "Save your progress with an email first; then you can delete your account."
+  "settingsAccountDeleteGuest": "Save your progress with an email first; then you can delete your account.",
+  "settingsFeedbackTitle": "Feedback and ideas",
+  "settingsFeedbackLead": "Something not working, or want Lukitas to do something more? Tell us by email.",
+  "settingsFeedbackAction": "Write to us",
+  "settingsFeedbackAddress": "If your email doesn't open, write to {email}.",
+  "settingsFeedbackMailSubject": "Lukitas: feedback",
+  "settingsFeedbackMailBody": "Lukitas version: {version}\nLanguage: {language}",
+  "settingsFeedbackNoAppTitle": "We couldn't find an email app",
+  "settingsFeedbackNoAppBody": "Write to us at {email}.",
+  "settingsFeedbackCopy": "Copy address",
+  "settingsFeedbackCopied": "We copied {email}."
 }

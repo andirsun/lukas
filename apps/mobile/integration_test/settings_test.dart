@@ -3,10 +3,11 @@
 //   flutter test integration_test/settings_test.dart -d emulator-5554
 //
 // The licences About adds to Flutter's are registered when the app starts, and "Más en la web"
-// hands only http and https addresses to Android. (The Dart packages' own licences are collected
+// hands only http, https and mailto addresses to Android. (The Dart packages' own licences are collected
 // by `flutter build`, which tests never run: scripts/check-licenses.sh checks them in the release
 // APK.)
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:lukitas/main.dart' as app;
@@ -54,4 +55,26 @@ void main() {
     expect(await const ChannelUrlOpener().open(Uri.parse('file:///etc/hosts')), isFalse);
     expect(await const ChannelUrlOpener().open(Uri.parse('market://details?id=x')), isFalse);
   });
+
+  testWidgets(
+    'MainActivity itself refuses javascript:, intent: and the like, and knows its version',
+    (tester) async {
+      await app.bootstrap();
+      // The channel asked directly, as a compromised Dart side would: the Android side checks too.
+      const channel = MethodChannel('lukitas/device');
+      for (final address in [
+        'javascript:alert(1)',
+        'intent:#Intent;action=android.intent.action.CALL;end',
+        'file:///etc/hosts',
+        'content://com.android.contacts/contacts',
+        'tel:+34600000000',
+        'sms:+34600000000',
+        ' mailto:a@b.co',
+      ]) {
+        expect(await channel.invokeMethod<bool>('openUrl', address), isFalse, reason: address);
+      }
+      // The version the email to the founder carries.
+      expect(await channel.invokeMethod<String>('appVersion'), isNotEmpty);
+    },
+  );
 }

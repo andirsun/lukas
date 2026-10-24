@@ -36,6 +36,7 @@ import '../ui/toast.dart';
 import '../ui/web_text_field.dart';
 import 'delete_account.dart';
 import 'export_settings.dart';
+import 'feedback.dart';
 import 'passkeys_section.dart';
 import 'preferences.dart';
 import 'profile_settings.dart';
@@ -322,7 +323,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ExportBlock(guest: guest),
           ],
         ),
-        // The web's last card; in the app it is the page's last, under signing out.
+        // The web's next card, and its last: in the app it is the page's last, under signing out.
+        const FeedbackSection(),
         if (webOnly) const DeleteAccountCard(),
         if (!webOnly) ...[
           SettingsSection(

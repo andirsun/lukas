@@ -130,9 +130,18 @@ class MainActivity : FlutterActivity() {
         MethodChannel(messenger, "lukitas/device").setMethodCallHandler { call, result ->
             when (call.method) {
                 "timeZone" -> result.success(ZoneId.systemDefault().id)
-                // "Más en la web" (lib/settings/url_opener.dart): the address in the phone's
-                // browser, as any link does. True when a browser took it.
-                "openUrl" -> result.success(openInBrowser(call.arguments as? String))
+                // "Más en la web" and "Comentarios e ideas" (lib/settings/url_opener.dart): a page in
+                // the phone's browser, or a message in its email app, as any link does. True when an
+                // app took it; any other address is refused.
+                "openUrl" -> result.success(openExternal(call.arguments as? String))
+                // The version the build was given, for the email to the founder.
+                "appVersion" -> result.success(
+                    try {
+                        packageManager.getPackageInfo(packageName, 0).versionName
+                    } catch (_: Exception) {
+                        null
+                    },
+                )
                 else -> result.notImplemented()
             }
         }
@@ -268,11 +277,15 @@ class MainActivity : FlutterActivity() {
 
     /** Opens an http or https [address] with `ACTION_VIEW`; false when it is neither or no app
      *  takes it. Nothing else is ever opened from a string Dart sends. */
-    private fun openInBrowser(address: String?): Boolean {
-        val uri = address?.let { Uri.parse(it) } ?: return false
-        if (uri.scheme != "https" && uri.scheme != "http") return false
+    /**
+     * Opens a web page in the browser or starts a message in the email app (lib/settings/url_opener.dart);
+     * nothing else (see ExternalLinks). True when an app took it, false when none did or the address
+     * is not one the app opens.
+     */
+    private fun openExternal(address: String?): Boolean {
+        val intent = ExternalLinks.intentFor(address) ?: return false
         return try {
-            startActivity(Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE))
+            startActivity(intent)
             true
         } catch (_: ActivityNotFoundException) {
             false

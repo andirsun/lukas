@@ -4,6 +4,7 @@ import { expectTarget } from "../../../.storybook/story-utils.ts";
 import { SOUND_STORAGE_KEY } from "../../feedback/feedback.ts";
 import { THEME_STORAGE_KEY } from "../../theme/theme-bootstrap.ts";
 import { HomeStage, STORY_TODAY, storyPasskeys } from "../home/story-harness.tsx";
+import { APP_VERSION, FEEDBACK_EMAIL } from "./feedback.ts";
 
 /**
  * Settings (spec §2.7): language, theme, sound, time zone, currency (while it can still change),
@@ -81,6 +82,7 @@ export const Overview: Story = {
       "Hora y moneda",
       "Entrar con tu huella",
       "Tus datos",
+      "Comentarios e ideas",
       "Eliminar tu cuenta",
     ]) {
       await expect(canvas.getByRole("region", { name })).toBeVisible();
@@ -701,6 +703,9 @@ export const DeleteSheetFailed: Story = {
       ),
     ).toHaveAttribute("role", "alert");
     await expect(args.signOut).not.toHaveBeenCalled();
+    // Whether the button keeps the focus depends on when the browser disables it while it deletes;
+    // the picture is of the sheet at rest, with the focus nowhere.
+    (document.activeElement as HTMLElement | null)?.blur();
   },
 };
 
@@ -716,5 +721,53 @@ export const DeleteSheetDayEnglish: Story = {
     await scrollTo(card);
     await userEvent.click(within(card).getByRole("button", { name: "Delete my account" }));
     await expect(await screen.findByRole("dialog", { name: "Delete your account?" })).toBeVisible();
+  },
+};
+
+/**
+ * Comments and ideas: a link that opens the email app with a message to the founder, its subject
+ * in the person's language and its body only the version and the language.
+ */
+export const Feedback: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    const card = await region(canvas, "Comentarios e ideas");
+    const link = card.getByRole("link", { name: "Escribirnos" });
+    await expect(link).toHaveAttribute(
+      "href",
+      `mailto:${FEEDBACK_EMAIL}?subject=Lukitas%3A%20comentarios&body=%0A%0AVersi%C3%B3n%20de%20Lukitas%3A%20${encodeURIComponent(APP_VERSION)}%0AIdioma%3A%20es`,
+    );
+    await expectTarget(link);
+    await expect(
+      card.getByText(`Si no se abre tu correo, escribe a ${FEEDBACK_EMAIL}.`),
+    ).toBeVisible();
+  },
+};
+
+/** The same in English: the subject and the body speak it. */
+export const FeedbackEnglish: Story = {
+  globals: { locale: "en" },
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas, "Settings");
+    const card = await region(canvas, "Feedback and ideas");
+    await expect(card.getByRole("link", { name: "Write to us" })).toHaveAttribute(
+      "href",
+      `mailto:${FEEDBACK_EMAIL}?subject=Lukitas%3A%20feedback&body=%0A%0ALukitas%20version%3A%20${encodeURIComponent(APP_VERSION)}%0ALanguage%3A%20en`,
+    );
+  },
+};
+
+/** The card between "Tus datos" and deleting the account, scrolled into view. */
+export const AppSectionsFeedback: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+    await scrollTo(canvas.getByRole("region", { name: "Comentarios e ideas" }));
   },
 };

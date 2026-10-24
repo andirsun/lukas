@@ -1445,11 +1445,7 @@
     "id": "settings-data",
     "storyId": "manage-settings--app-sections-data",
     "theme": "day",
-    "appTest": "test/parity/settings_parity_test.dart",
-    "maxInk": 2.3,
-    "knownDifferences": [
-      "Dark text on the day's light cards: Chrome and Flutter draw the glyph edges a little differently, and this picture has more text in it than the 2% rule leaves room for (docs/mobile/parity.md, Settings)"
-    ]
+    "appTest": "test/parity/settings_parity_test.dart"
   },
   {
     "id": "settings-time-zone-sheet",
@@ -1509,11 +1505,19 @@
     "id": "settings-delete",
     "storyId": "manage-settings--app-sections-delete",
     "theme": "day",
-    "appTest": "test/parity/settings_parity_test.dart",
-    "maxInk": 2.3,
-    "knownDifferences": [
-      "Dark text on the day's light cards: Chrome and Flutter draw the glyph edges a little differently, and this picture has more text in it than the 2% rule leaves room for (docs/mobile/parity.md, Settings)"
-    ]
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-feedback",
+    "storyId": "manage-settings--app-sections-feedback",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-feedback",
+    "storyId": "manage-settings--app-sections-feedback",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
   },
   {
     "id": "settings-delete-sheet",

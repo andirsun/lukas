@@ -611,6 +611,14 @@
       "export_csv": "Download CSV",
       "exported": "Done: we downloaded {file}."
     },
+    "feedback": {
+      "title": "Feedback and ideas",
+      "lead": "Something not working, or want Lukitas to do something more? Tell us by email.",
+      "action": "Write to us",
+      "address": "If your email doesn't open, write to {email}.",
+      "mail_subject": "Lukitas: feedback",
+      "mail_body": "Lukitas version: {version}\nLanguage: {language}"
+    },
     "delete": {
       "title": "Delete your account",
       "lead": "We delete your account and all your entries right away. Backups that include them delete themselves within 14 days.",

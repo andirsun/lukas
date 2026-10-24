@@ -611,6 +611,14 @@
       "export_csv": "Descargar CSV",
       "exported": "Listo: descargamos {file}."
     },
+    "feedback": {
+      "title": "Comentarios e ideas",
+      "lead": "¿Algo no funciona, o quieres que Lukitas haga algo más? Cuéntanos por correo.",
+      "action": "Escribirnos",
+      "address": "Si no se abre tu correo, escribe a {email}.",
+      "mail_subject": "Lukitas: comentarios",
+      "mail_body": "Versión de Lukitas: {version}\nIdioma: {language}"
+    },
     "delete": {
       "title": "Eliminar tu cuenta",
       "lead": "Borramos tu cuenta y todos tus movimientos de inmediato. Las copias de seguridad que los incluyan se borran solas en 14 días.",

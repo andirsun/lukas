@@ -26,9 +26,9 @@ import '../support/parity_home.dart';
 /// and `--passkey-remove-sheet-open` (apps/web/app/features/settings/Settings.stories.tsx), each as
 /// Storybook shows it after its `play` function.
 ///
-/// The web's page has five cards, and the app draws them as the web does (the sheets and the
-/// export's buttons too): Preferencias, "Hora y moneda", the passkeys, "Tus datos" and the delete
-/// card. The pairs draw what the web's stories draw (`SettingsScreen.webSectionsOnly`: no "Automático"
+/// The web's page has six cards, and the app draws them as the web does (the sheets and the
+/// export's buttons too): Preferencias, "Hora y moneda", the passkeys, "Tus datos", "Comentarios e
+/// ideas" and the delete card. The pairs draw what the web's stories draw (`SettingsScreen.webSectionsOnly`: no "Automático"
 /// language, which the web has not, and none of the app's own cards). The app's own cards have
 /// goldens of their own in `test/settings/goldens`, to review by eye. The stories that look at a card below the fold scroll the page to it (the card
 /// starts 16px under the top, or as near as the page's end lets it), and so does the app's test.
@@ -291,6 +291,21 @@ void main() {
       );
     });
 
+    testWidgets(
+      'settings parity: comments and ideas, between the data and the delete card ($theme)',
+      (t) async {
+        final fixture = ParityFixtures.load('manage-settings--app-sections-feedback');
+        await parityGolden(
+          t,
+          'settings-feedback',
+          _page(),
+          theme: theme,
+          overrides: _overrides(fixture, theme),
+          act: (t) => _scrollTo(t, 'settings.card.feedback'),
+        );
+      },
+    );
+
     testWidgets('settings parity: the question before deleting the account ($theme)', (t) async {
       final fixture = ParityFixtures.load('manage-settings--delete-sheet-open');
       await parityGolden(
@@ -334,9 +349,10 @@ void main() {
           await _typeEmail(t, 'ana@example.com');
           await t.tap(find.byKey(const Key('settings.delete.confirm')));
           await t.pumpAndSettle();
-          // The story's click leaves the focus, and Chrome's ring, on the button (the click came
-          // from a script, which counts as the keyboard): Tab twice from the field (past "Cancelar") lands on it.
-          await _tab(t, 2);
+          // The story ends with the focus nowhere (the browser takes it off the button while it
+          // deletes, and the story lets go of whatever has it).
+          FocusManager.instance.primaryFocus?.unfocus();
+          await t.pumpAndSettle();
         },
       );
     });

@@ -3221,5 +3221,68 @@
   "settingsAccountDeleteGuest": "Primero guarda tu progreso con un correo; después podrás eliminar tu cuenta.",
   "@settingsAccountDeleteGuest": {
     "description": "Settings: a guest cannot delete the account from here."
+  },
+  "settingsFeedbackTitle": "Comentarios e ideas",
+  "@settingsFeedbackTitle": {
+    "description": "Settings: the card that writes to the founder."
+  },
+  "settingsFeedbackLead": "¿Algo no funciona, o quieres que Lukitas haga algo más? Cuéntanos por correo.",
+  "@settingsFeedbackLead": {
+    "description": "Settings: what the feedback card is for."
+  },
+  "settingsFeedbackAction": "Escribirnos",
+  "@settingsFeedbackAction": {
+    "description": "Settings: opens the email app with a message to the founder."
+  },
+  "settingsFeedbackAddress": "Si no se abre tu correo, escribe a {email}.",
+  "@settingsFeedbackAddress": {
+    "description": "Settings: under the button, the address in writing.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsFeedbackMailSubject": "Lukitas: comentarios",
+  "@settingsFeedbackMailSubject": {
+    "description": "The subject of the email to the founder."
+  },
+  "settingsFeedbackMailBody": "Versión de Lukitas: {version}\nIdioma: {language}",
+  "@settingsFeedbackMailBody": {
+    "description": "The email's body: only the app's version and the language (two lines, after two blank ones to write above).",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsFeedbackNoAppTitle": "No encontramos una app de correo",
+  "@settingsFeedbackNoAppTitle": {
+    "description": "Settings: the sheet shown when no email app answers."
+  },
+  "settingsFeedbackNoAppBody": "Escríbenos a {email}.",
+  "@settingsFeedbackNoAppBody": {
+    "description": "Settings: the address, when no email app answers.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsFeedbackCopy": "Copiar dirección",
+  "@settingsFeedbackCopy": {
+    "description": "Settings: copies the address."
+  },
+  "settingsFeedbackCopied": "Copiamos {email}.",
+  "@settingsFeedbackCopied": {
+    "description": "Settings: the address was copied.",
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
   }
 }
