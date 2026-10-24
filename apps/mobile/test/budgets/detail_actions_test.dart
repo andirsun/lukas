@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/add/add_repository.dart';
+import 'package:lukitas/api/gen/lukitas_api.dart' show Transaction;
 import 'package:lukitas/budgets/budgets_repository.dart';
 import 'package:lukitas/budgets/category_detail_controller.dart';
+import 'package:lukitas/budgets/category_detail_screen.dart';
 import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/home/home_repository.dart';
@@ -14,7 +16,7 @@ import 'package:lukitas/ui/transaction_row.dart';
 import '../add/fakes.dart';
 import '../home/fakes.dart';
 import '../home/fixtures.dart';
-import 'budgets_test.dart' show pumpBudgets, testBudgets;
+import 'budgets_test.dart' show openDetail, pumpBudgets, testBudgets;
 import 'fakes.dart';
 
 /// What the detail does with its movements: those added from it, paging, delete with Deshacer, pay.
@@ -164,6 +166,36 @@ void main() {
       await tester.pump(const Duration(seconds: 11));
     });
 
+    testBudgets(
+      'Deshacer still brings the row back after the person left the detail',
+      (tester) async {
+        final home = budgetsMonth();
+        final env = await pumpBudgets(tester, home: home);
+        await openDetail(tester, 'Supermercado');
+        await swipeLeft(tester, find.text('Frutas'));
+        expect(find.text('Eliminado: Frutas'), findsOneWidget);
+        expect(home.calls, contains('delete fruit'));
+
+        // Back on home, the toast (it sits above the router) is still there.
+        env.settings.router.pop();
+        await tester.pumpAndSettle();
+        expect(find.byType(CategoryDetailScreen), findsNothing);
+        expect(find.text('Eliminado: Frutas'), findsOneWidget);
+
+        await tester.tap(find.text('Deshacer'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(home.calls, contains('restore fruit'), reason: 'the server has it back');
+        expect(find.text('De vuelta: Frutas'), findsOneWidget);
+
+        // And it is in its month: home's Movimientos lists it again.
+        await tester.tap(find.text('Movimientos'));
+        await tester.pumpAndSettle();
+        expect(find.text('Frutas'), findsOneWidget);
+        await tester.pump(const Duration(seconds: 11));
+      },
+    );
+
     testBudgets('a delete the server refuses puts the row back and says so', (tester) async {
       final home = budgetsMonth();
       await pumpBudgets(tester, home: home, location: '/categories/cat-groceries');
@@ -234,6 +266,12 @@ void main() {
     CategoryDetailController controller(ProviderContainer c) =>
         c.read(categoryDetailProvider('cat-groceries').notifier);
 
+    /// Deshacer: home's controller brings it back, and the detail shows it where it belongs.
+    Future<void> bringBack(ProviderContainer c, Transaction tx) async {
+      await c.read(homeProvider.notifier).restore(tx);
+      controller(c).showRestored(tx);
+    }
+
     test('a page that lands after another month was chosen is dropped, rows and cursor', () async {
       final (container, home, _) = await detail();
       expect(read(container).items!.map((t) => t.id), ['market']);
@@ -269,7 +307,7 @@ void main() {
         await controller(container).remove(fruit);
 
         await controller(container).showMonth('2026-09');
-        await controller(container).restore(fruit);
+        await bringBack(container, fruit);
         expect(read(container).items, isEmpty, reason: 'a October row is not in September\'s list');
         expect(read(container).restored, isEmpty);
 
@@ -286,7 +324,7 @@ void main() {
       final fruit = home.items.firstWhere((t) => t.id == 'fruit');
       await controller(container).loadMore();
       await controller(container).remove(fruit);
-      await controller(container).restore(fruit);
+      await bringBack(container, fruit);
       final state = read(container);
       expect(state.nextCursor, isNotNull);
       final ids = state.items!.map((t) => t.id).toList();

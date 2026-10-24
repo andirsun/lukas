@@ -324,6 +324,9 @@ class _DetailViewState extends ConsumerState<_DetailView> {
   Future<void> _delete(Transaction tx) async {
     final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
+    // Deshacer outlives this screen (the toast sits above the router): it goes through home's
+    // controller, as the add and capture sheets do, never through this screen's `ref`.
+    final container = ProviderScope.containerOf(context);
     ref.read(feedbackProvider)(FeedbackEvent.deleted);
     try {
       await _controller.remove(tx);
@@ -334,18 +337,25 @@ class _DetailViewState extends ConsumerState<_DetailView> {
     toasts.say(
       l10n.transactionDeleted(tx.name),
       actionLabel: l10n.undo,
-      onAction: () => unawaited(_restore(tx, toasts, l10n)),
+      onAction: () => unawaited(_restore(container, toasts, l10n, tx)),
     );
   }
 
-  Future<void> _restore(Transaction tx, ToastController toasts, AppLocalizations l10n) async {
+  Future<void> _restore(
+    ProviderContainer container,
+    ToastController toasts,
+    AppLocalizations l10n,
+    Transaction tx,
+  ) async {
     try {
-      await _controller.restore(tx);
+      await container.read(homeProvider.notifier).restore(tx);
     } on HomeFailure catch (failure) {
       toasts.say(_failureMessage(l10n, failure), error: true);
       return;
     }
-    if (mounted) ref.read(feedbackProvider)(FeedbackEvent.undo);
+    container.read(feedbackProvider)(FeedbackEvent.undo);
+    // Still here: the row slides in. Gone: home has it, and the detail loads afresh when opened.
+    if (mounted) _controller.showRestored(tx);
     toasts.say(l10n.transactionRestored(tx.name));
   }
 

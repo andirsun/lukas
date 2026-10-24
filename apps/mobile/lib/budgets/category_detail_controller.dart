@@ -298,23 +298,14 @@ class CategoryDetailController extends Notifier<CategoryDetailState> {
     unawaited(_refreshSummary(month));
   }
 
-  /// Brings a deleted [tx] back (Deshacer): the same row, in its place, sliding in.
-  Future<void> restore(Transaction tx) async {
-    final Transaction back;
-    try {
-      back = await _home.restore(tx.id);
-    } on Object catch (error) {
-      throw _failure(error);
-    }
-    if (!_alive) return;
-    // The server has it back. It shows only where it belongs: Deshacer outlives a change of month,
-    // and a September row never appears in August's list (it is there when September is).
-    if (state.items != null && back.date.startsWith(state.month)) {
-      _set(state.copyWith(restored: {...state.restored, back.id}));
-      _place(back);
-    }
-    _tellHome();
-    unawaited(_refreshSummary(state.month));
+  /// Shows [tx], which Deshacer brought back through home's controller, among the rows: the same
+  /// row, in its place, sliding in. Only where it belongs: Deshacer outlives a change of month, and
+  /// a September row never appears in August's list (it is there when September is). Home's
+  /// change reaches the figures and the list by itself (the screen follows home).
+  void showRestored(Transaction tx) {
+    if (state.items == null || !tx.date.startsWith(state.month)) return;
+    _set(state.copyWith(restored: {...state.restored, tx.id}));
+    _place(tx);
   }
 
   /// Marks a pending [tx] paid. A refusal puts the row back to pending and throws a [HomeFailure].
