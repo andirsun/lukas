@@ -68,10 +68,43 @@ class AmountWithHint extends StatelessWidget {
   final TextStyle? style;
   final bool hintShownElsewhere;
 
+  /// The amount and its hint as the line says them (also what [BudgetsTotal] measures to know
+  /// whether it fits beside its label).
+  static TextSpan span(
+    BuildContext context, {
+    required int cents,
+    required String currency,
+    TextStyle? style,
+    bool hintShownElsewhere = false,
+  }) {
+    final locale = Localizations.localeOf(context).languageCode;
+    final colors = context.lkColors;
+    final hint = lukasHint(cents, locale, currency: currency);
+    final base = (style ?? LkText.note).copyWith(
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    return TextSpan(
+      style: base,
+      children: [
+        TextSpan(text: formatMoney(cents, currency, locale)),
+        if (hint != null && !hintShownElsewhere) ...[
+          const TextSpan(text: ' '),
+          TextSpan(
+            text: hint,
+            style: TextStyle(
+              fontSize: (base.fontSize ?? 16) * 0.8,
+              fontWeight: FontWeight.w700,
+              color: colors.inkMuted,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
-    final colors = context.lkColors;
     final hint = lukasHint(cents, locale, currency: currency);
     final base = (style ?? LkText.note).copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
@@ -83,22 +116,12 @@ class AmountWithHint extends StatelessWidget {
       child: CssLines(
         style: base,
         child: Text.rich(
-          TextSpan(
-            style: base,
-            children: [
-              TextSpan(text: money),
-              if (hint != null && !hintShownElsewhere) ...[
-                const TextSpan(text: ' '),
-                TextSpan(
-                  text: hint,
-                  style: TextStyle(
-                    fontSize: (base.fontSize ?? 16) * 0.8,
-                    fontWeight: FontWeight.w700,
-                    color: colors.inkMuted,
-                  ),
-                ),
-              ],
-            ],
+          span(
+            context,
+            cents: cents,
+            currency: currency,
+            style: style,
+            hintShownElsewhere: hintShownElsewhere,
           ),
         ),
       ),
@@ -117,6 +140,10 @@ class BudgetsTotal extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = context.lkColors;
+    final labelStyle = LkText.note.copyWith(color: colors.inkMuted);
+    final amountStyle = LkText.sectionTitle.copyWith(fontSize: 24, height: 1.5, color: colors.good);
+    final label = NoteText(l10n.budgetsTotalLabel, labelStyle);
+    final amount = AmountWithHint(cents: total, currency: currency, style: amountStyle);
     return Semantics(
       liveRegion: true,
       container: true,
@@ -125,21 +152,46 @@ class BudgetsTotal extends StatelessWidget {
         decoration: BoxDecoration(
           border: Border(top: BorderSide(color: colors.stroke, width: 2)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          spacing: LukitasTokens.space3,
-          children: [
-            Flexible(
-              child: NoteText(l10n.budgetsTotalLabel, LkText.note.copyWith(color: colors.inkMuted)),
-            ),
-            AmountWithHint(
-              cents: total,
-              currency: currency,
-              style: LkText.sectionTitle.copyWith(fontSize: 24, height: 1.5, color: colors.good),
-            ),
-          ],
+        // `flex flex-wrap items-baseline justify-between gap-x-3`: the amount drops to a line of
+        // its own, at the start, when it does not fit beside the label.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double width(InlineSpan span) {
+              final painter = TextPainter(
+                text: span,
+                textDirection: TextDirection.ltr,
+                textScaler: MediaQuery.textScalerOf(context),
+              )..layout();
+              final w = painter.width;
+              painter.dispose();
+              return w;
+            }
+
+            final fits =
+                width(TextSpan(text: l10n.budgetsTotalLabel, style: labelStyle)) +
+                    LukitasTokens.space3 +
+                    width(
+                      AmountWithHint.span(
+                        context,
+                        cents: total,
+                        currency: currency,
+                        style: amountStyle,
+                      ),
+                    ) <=
+                constraints.maxWidth;
+            return fits
+                ? Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    spacing: LukitasTokens.space3,
+                    children: [
+                      Flexible(child: label),
+                      amount,
+                    ],
+                  )
+                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [label, amount]);
+          },
         ),
       ),
     );

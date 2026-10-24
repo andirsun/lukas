@@ -2737,5 +2737,182 @@
   "importPrefilled": "Llenamos tus presupuestos con lo que gastas en promedio cada mes.",
   "@importPrefilled": {
     "description": "Import: said once budgets were filled from the file (the welcome)."
+  },
+  "welcomeProgress": "Paso {current} de {total}",
+  "@welcomeProgress": {
+    "description": "Welcome: the step counter over the progress bar.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeBack": "Atrás",
+  "@welcomeBack": {
+    "description": "Welcome: the back button's accessible name (it shows an arrow)."
+  },
+  "welcomeSkip": "Saltar",
+  "@welcomeSkip": {
+    "description": "Welcome: moves on with the step's defaults."
+  },
+  "welcomeSaving": "Guardando…",
+  "@welcomeSaving": {
+    "description": "Welcome: the buttons while a step saves."
+  },
+  "welcomeNext": "Siguiente",
+  "@welcomeNext": {
+    "description": "Welcome: applies what is on screen and moves on."
+  },
+  "welcomeTitle": "Te damos la bienvenida a Lukitas",
+  "@welcomeTitle": {
+    "description": "Welcome: the first screen's title."
+  },
+  "welcomeLead": "Configura tu moneda, tus categorías y tu presupuesto en un minuto, o entra directo y hazlo después.",
+  "@welcomeLead": {
+    "description": "Welcome: the first screen's lead."
+  },
+  "welcomeSetup": "Configurar en 1 minuto",
+  "@welcomeSetup": {
+    "description": "Welcome: goes to the currency step."
+  },
+  "welcomeDirect": "Entrar directo",
+  "@welcomeDirect": {
+    "description": "Welcome: enters with the defaults."
+  },
+  "welcomeDirectNote": "Si entras directo, tu moneda será {currency} y usamos las categorías sugeridas. Puedes cambiarla en Ajustes antes de tu primer movimiento.",
+  "@welcomeDirectNote": {
+    "description": "Welcome: what going straight in sets.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "welcomeCurrencyTitle": "¿En qué moneda llevas tus cuentas?",
+  "@welcomeCurrencyTitle": {
+    "description": "Welcome, currency step: the title."
+  },
+  "welcomeCurrencyLead": "La usamos para mostrar tus montos. Si traes tu historial, usamos la moneda del archivo.",
+  "@welcomeCurrencyLead": {
+    "description": "Welcome, currency step: the lead."
+  },
+  "welcomeCurrencyLabel": "Moneda",
+  "@welcomeCurrencyLabel": {
+    "description": "Welcome, currency step: the radio group's accessible name."
+  },
+  "welcomeImportTitle": "¿Vienes de otra app?",
+  "@welcomeImportTitle": {
+    "description": "Welcome, import step: the title."
+  },
+  "welcomeImportLead": "Trae tus movimientos y empezamos con tus números de verdad.",
+  "@welcomeImportLead": {
+    "description": "Welcome, import step: the lead."
+  },
+  "welcomeCategoriesTitle": "¿En qué se te va el dinero?",
+  "@welcomeCategoriesTitle": {
+    "description": "Welcome, categories step: the title."
+  },
+  "welcomeCategoriesLead": "Estas son tus categorías. Toca una para quitarla, edítalas o agrega las tuyas.",
+  "@welcomeCategoriesLead": {
+    "description": "Welcome, categories step: the lead when the person has categories."
+  },
+  "welcomeCategoriesLeadFresh": "Ya elegimos algunas por ti. Toca una para quitarla, edítalas o agrega las tuyas.",
+  "@welcomeCategoriesLeadFresh": {
+    "description": "Welcome, categories step: the lead when only suggestions are shown."
+  },
+  "welcomeCategoriesExpenses": "Gastos",
+  "@welcomeCategoriesExpenses": {
+    "description": "Welcome, categories step: the spending group."
+  },
+  "welcomeCategoriesIncome": "Ingresos",
+  "@welcomeCategoriesIncome": {
+    "description": "Welcome, categories step: the income group."
+  },
+  "welcomeCategoriesAdd": "Agregar categoría",
+  "@welcomeCategoriesAdd": {
+    "description": "Welcome, categories step: opens the new category sheet."
+  },
+  "welcomeCategoriesEditToggle": "Editar categorías",
+  "@welcomeCategoriesEditToggle": {
+    "description": "Welcome, categories step: turns the chips into edit buttons."
+  },
+  "welcomeCategoriesEditDone": "Listo",
+  "@welcomeCategoriesEditDone": {
+    "description": "Welcome, categories step: turns them back into choices."
+  },
+  "welcomeCategoriesEditHint": "Toca una categoría para editarla.",
+  "@welcomeCategoriesEditHint": {
+    "description": "Welcome, categories step: the hint while editing."
+  },
+  "welcomeCategoriesEditLabel": "Editar {name}",
+  "@welcomeCategoriesEditLabel": {
+    "description": "Welcome, categories step: a chip's accessible name while editing.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "welcomeCategoriesCantRemove": "«{name}» no se puede quitar porque tiene {count, plural, one{{count} movimiento} other{{count} movimientos}}. Puedes archivarla en Editar categorías para que no aparezca al anotar.",
+  "@welcomeCategoriesCantRemove": {
+    "description": "Welcome, categories step: why a tapped category stayed chosen.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "welcomeCategoriesCantRemoveUnknown": "No pudimos comprobar si «{name}» tiene movimientos, así que sigue elegida.",
+  "@welcomeCategoriesCantRemoveUnknown": {
+    "description": "Welcome, categories step: the count failed, so a tapped category stayed chosen.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryFormCounting": "Contando sus movimientos…",
+  "@categoryFormCounting": {
+    "description": "Category sheet: while the transactions are counted."
+  },
+  "categoryFormDelete": "Eliminar categoría",
+  "@categoryFormDelete": {
+    "description": "Category sheet (welcome): deletes a category with no transactions."
+  },
+  "categoryFormHasTransactions": "No se puede borrar porque tiene {count, plural, one{{count} movimiento} other{{count} movimientos}}. Puedes archivarla para que no aparezca al anotar.",
+  "@categoryFormHasTransactions": {
+    "description": "Category sheet (welcome): why it can't be deleted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryFormHasManyTransactions": "No se puede borrar porque tiene más de {count} movimientos. Puedes archivarla para que no aparezca al anotar.",
+  "@categoryFormHasManyTransactions": {
+    "description": "Category sheet (welcome): why it can't be deleted, when the count stopped at its cap.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryFormCountFailed": "No pudimos contar sus movimientos. Puedes archivarla para que no aparezca al anotar.",
+  "@categoryFormCountFailed": {
+    "description": "Category sheet (welcome): the count failed, only archiving is safe."
+  },
+  "welcomeBudgetsTitle": "¿Cuánto quieres gastar al mes?",
+  "@welcomeBudgetsTitle": {
+    "description": "Welcome, budgets step: the title."
+  },
+  "welcomeBudgetsLead": "Ponle un presupuesto a cada categoría. Puedes dejar alguna vacía y ponerlo después.",
+  "@welcomeBudgetsLead": {
+    "description": "Welcome, budgets step: the lead."
   }
 }

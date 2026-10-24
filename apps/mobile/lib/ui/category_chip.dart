@@ -22,6 +22,8 @@ class CategoryChip extends StatelessWidget {
     required this.selected,
     required this.onSelect,
     this.expanded,
+    this.editLabel,
+    this.tileFill,
   });
 
   /// The category's emoji.
@@ -37,6 +39,12 @@ class CategoryChip extends StatelessWidget {
   /// The chip opens or closes more chips ("Más"/"Menos"): the web's `aria-expanded`.
   final bool? expanded;
 
+  /// The welcome's categories step while it edits them: the chip is a button named [editLabel]
+  /// ("Editar Mascotas"), not a toggle, and its tile has a dashed edge and [tileFill] for colour
+  /// (`lk-chip-button`, `border-dashed`, `color-mix(in srgb, tint 35%, var(--surface-row))`).
+  final String? editLabel;
+  final Color? tileFill;
+
   @override
   Widget build(BuildContext context) {
     final lk = context.lk;
@@ -44,9 +52,11 @@ class CategoryChip extends StatelessWidget {
     final radius = LkSurface.radius(LkRadius.md);
     final note = this.note;
 
+    final editing = editLabel != null;
     return Pressable(
       onPressed: onSelect,
-      selected: expanded == null ? selected : null,
+      label: editLabel,
+      selected: expanded == null && !editing ? selected : null,
       expanded: expanded,
       builder: (context, state) {
         final pressed = state.pressed;
@@ -54,9 +64,12 @@ class CategoryChip extends StatelessWidget {
         final tile = PressSurface(
           pressDy: pressed ? 3 : 0,
           decoration: BoxDecoration(
-            color: colors.surfaceRow,
+            color: tileFill ?? colors.surfaceRow,
             borderRadius: radius,
-            border: LkSurface.border(colors),
+            // The dashed edge of a chip being edited is drawn over the child, in the border's place.
+            border: editing
+                ? Border.all(color: const Color(0x00000000), width: 2)
+                : LkSurface.border(colors),
             boxShadow: pressed ? LkSurface.pressedEdge(lk) : LkSurface.edgeShadow(lk, LkEdge.sm),
           ),
           // `.lk-chip.is-selected .lk-chip-tile { outline: 3px solid var(--gold); outline-offset: 1px }`.
@@ -70,6 +83,19 @@ class CategoryChip extends StatelessWidget {
             ),
           ),
         );
+        final framed = editing
+            ? Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  tile,
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: CustomPaint(painter: _DashedEdge(colors.stroke, radius)),
+                    ),
+                  ),
+                ],
+              )
+            : tile;
         return RingBox(
           radius: state.focusVisible ? radius : null,
           color: colors.focus,
@@ -80,7 +106,7 @@ class CategoryChip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               spacing: 4,
               children: [
-                tile,
+                framed,
                 BlinkLine(
                   style: LkText.chip,
                   child: Text(
@@ -109,6 +135,33 @@ class CategoryChip extends StatelessWidget {
       },
     );
   }
+}
+
+/// The 2px dashed edge of a tile (`border-dashed`): dashes as long as the line is thick, twice over.
+class _DashedEdge extends CustomPainter {
+  const _DashedEdge(this.color, this.radius);
+
+  final Color color;
+  final BorderRadius radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()..addRRect(radius.toRRect(Offset.zero & size).deflate(1));
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = color;
+    for (final metric in path.computeMetrics()) {
+      var at = 0.0;
+      while (at < metric.length) {
+        canvas.drawPath(metric.extractPath(at, at + 4), paint);
+        at += 8;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedEdge old) => old.color != color || old.radius != radius;
 }
 
 /// `.lk-chips`: the chips four to a row, with an 8px gap, each in a column of the same width. The

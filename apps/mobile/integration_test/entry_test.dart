@@ -5,6 +5,10 @@
 //     --dart-define=LUKITAS_SERVER=http://10.0.2.2:3000 \
 //     --dart-define=MAILPIT_URL=http://10.0.2.2:8025
 //
+// A new email account has not been through the welcome (no onboardingCompletedAt), so signing in with
+// a code, a link or an intent lands on it (integration_test/welcome_test.dart goes through it); a
+// guest, and a guest that saves its progress with an email, land on home.
+//
 // The emulator reaches the Mac at 10.0.2.2. Buttons are found by key: the emulator's language
 // decides the copy (the widget tests check the Spanish and English words).
 import 'package:dio/dio.dart';
@@ -40,7 +44,12 @@ Future<void> _pumpUntil(
     await tester.pump(const Duration(milliseconds: 200));
     if (finder.evaluate().isNotEmpty) return;
   }
-  throw TestFailure('Timed out waiting for $finder');
+  // What was on screen, to say what the person would have seen.
+  final texts = [
+    for (final e in find.byType(Text).evaluate())
+      (e.widget as Text).data ?? (e.widget as Text).textSpan?.toPlainText(),
+  ];
+  throw TestFailure('Timed out waiting for $finder; the screen says: $texts');
 }
 
 Future<void> _tap(WidgetTester tester, String key) async {
@@ -139,7 +148,7 @@ void main() {
     final mail = await _mailTo(email);
     await tester.enterText(find.byKey(const Key('entry.code')), _codeFrom(mail.subject));
     await _tap(tester, 'entry.submitCode');
-    await _pumpUntil(tester, find.byType(HomeScreen));
+    await _pumpUntil(tester, find.byKey(const Key('welcome.page')));
 
     final me = await _me();
     expect(me['email'], email);
@@ -184,7 +193,7 @@ void main() {
       query: link.query,
     );
     await const MethodChannel('lukitas/test').invokeMethod<void>('openLink', appLink.toString());
-    await _pumpUntil(tester, find.byType(HomeScreen));
+    await _pumpUntil(tester, find.byKey(const Key('welcome.page')));
 
     final me = await _me();
     expect(me['email'], email);
@@ -224,7 +233,7 @@ void main() {
         '#Intent;scheme=${server.scheme};package=com.andersonlaverde.lukitas;'
         'S.browser_fallback_url=${Uri.encodeComponent(fallback.toString())};end';
     await const MethodChannel('lukitas/test').invokeMethod<void>('openIntentUri', intentUri);
-    await _pumpUntil(tester, find.byType(HomeScreen));
+    await _pumpUntil(tester, find.byKey(const Key('welcome.page')));
 
     final me = await _me();
     expect(me['email'], email);

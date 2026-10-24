@@ -192,6 +192,60 @@ void main() {
     expect(last().headers['Authorization'], 'Bearer tok');
   });
 
+  group('standing, the account as /v1/me says it', () {
+    const base = {
+      'id': 'u1',
+      'email': 'ana@correo.com',
+      'timezone': 'America/Bogota',
+      'locale': 'es',
+      'currency': 'COP',
+    };
+
+    test('a new email account is not a guest and has the welcome to do', () async {
+      adapter.replies['GET /api/v1/me'] = const _Reply(200, {
+        ...base,
+        'onboardingCompletedAt': null,
+        'isAnonymous': false,
+      });
+      final standing = await api.standing('tok');
+      expect(standing.guest, isFalse);
+      expect(standing.onboardingPending, isTrue);
+      expect(last().headers['Authorization'], 'Bearer tok');
+    });
+
+    test('an account with onboardingCompletedAt has not', () async {
+      adapter.replies['GET /api/v1/me'] = const _Reply(200, {
+        ...base,
+        'onboardingCompletedAt': '2026-10-21T10:00:00.000Z',
+        'isAnonymous': false,
+      });
+      expect((await api.standing('tok')).onboardingPending, isFalse);
+    });
+
+    test('a guest never has a welcome to do', () async {
+      adapter.replies['GET /api/v1/me'] = const _Reply(200, {
+        ...base,
+        'onboardingCompletedAt': null,
+        'isAnonymous': true,
+      });
+      final standing = await api.standing('tok');
+      expect(standing.guest, isTrue);
+      expect(standing.onboardingPending, isFalse);
+    });
+
+    test('completeOnboarding sends the boolean true, which is what the API reads', () async {
+      adapter.replies['PATCH /api/v1/me'] = const _Reply(200, {
+        ...base,
+        'onboardingCompletedAt': '2026-10-21T10:00:00.000Z',
+        'isAnonymous': false,
+      });
+      await api.completeOnboarding('tok');
+      expect(last().method, 'PATCH');
+      expect(last().headers['Authorization'], 'Bearer tok');
+      expect(jsonDecode(jsonEncode(adapter.bodies.last)), {'onboardingCompleted': true});
+    });
+  });
+
   group('passkeyCount, the web\'s listUserPasskeys', () {
     test('counts the passkeys Better Auth lists for the signed-in user', () async {
       adapter.replies['GET /api/auth/passkey/list-user-passkeys'] = const _Reply(200, [

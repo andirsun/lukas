@@ -130,6 +130,8 @@ void main() {
         'verifyCode ana@correo.com 123456',
         'accountId email-token-1',
         'passkeyCount email-token-1',
+        // And whether the account still has the welcome to do (test/api/onboarding_session_test.dart).
+        'isGuest email-token-1',
       ]);
       expect(container.read(sessionProvider).stored?.token, 'email-token-1');
       expect(container.read(sessionProvider).stored?.guest, isFalse);
@@ -167,6 +169,8 @@ void main() {
         expect(auth.calls.where((c) => !c.startsWith('isGuest')), [
           'claimSend guest-token-0 ana@correo.com',
           'claimVerify guest-token-0 ana@correo.com 111222',
+          // The guest's start was its welcome.
+          'completeOnboarding guest-token-0',
         ]);
         final stored = await SessionStore().read();
         expect(stored?.token, 'guest-token-0');

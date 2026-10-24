@@ -28,6 +28,14 @@ class FakeAuthApi implements AuthApi {
   /// What `GET /v1/me` says about `isAnonymous`, per token.
   final guests = <String, bool>{};
 
+  /// Whether `GET /v1/me` says the account has not finished the welcome (`onboardingCompletedAt` is
+  /// null), per token. A token not here is an account that has.
+  final pendingOnboarding = <String, bool>{};
+
+  /// Whether an account that signs in with an email or a passkey from now on is a new one, that has
+  /// not been through the welcome.
+  bool newAccounts = false;
+
   /// Who `GET /v1/me` says every token is, and how many passkeys the server lists for them.
   String account = 'user-1';
   int passkeysOnAccount = 0;
@@ -64,6 +72,7 @@ class FakeAuthApi implements AuthApi {
     _fail('verifyCode');
     final token = _newToken('email');
     guests[token] = false;
+    pendingOnboarding[token] = newAccounts;
     return token;
   }
 
@@ -72,6 +81,25 @@ class FakeAuthApi implements AuthApi {
     calls.add('isGuest $token');
     _fail('isGuest');
     return guests[token] ?? false;
+  }
+
+  @override
+  Future<AccountStanding> standing(String token) async {
+    calls.add('isGuest $token');
+    _fail('isGuest');
+    final guest = guests[token] ?? false;
+    return AccountStanding(
+      guest: guest,
+      // Like the API's profile: a guest has no welcome to finish.
+      onboardingPending: !guest && (pendingOnboarding[token] ?? false),
+    );
+  }
+
+  @override
+  Future<void> completeOnboarding(String token) async {
+    calls.add('completeOnboarding $token');
+    _fail('completeOnboarding');
+    pendingOnboarding[token] = false;
   }
 
   @override
@@ -104,6 +132,8 @@ class FakeAuthApi implements AuthApi {
     calls.add('claimVerify $token $email $code');
     _fail('claimVerify');
     guests[token] = false;
+    // A guest never went through the welcome: the claimed account has not finished it either.
+    pendingOnboarding[token] = true;
   }
 
   @override
@@ -119,6 +149,7 @@ class FakeAuthApi implements AuthApi {
     _fail('passkeySignIn');
     final token = _newToken('passkey');
     guests[token] = passkeyBelongsToGuest;
+    pendingOnboarding[token] = newAccounts;
     return token;
   }
 
@@ -199,11 +230,12 @@ class FakePasskeys implements Passkeys {
 }
 
 /// Secure storage in memory, holding [token] already when given (a returning person).
-void mockStorage({String? token, bool guest = false}) {
+void mockStorage({String? token, bool guest = false, bool onboarding = false}) {
   FlutterSecureStorage.setMockInitialValues({
     if (token != null) ...{
       SessionStore.tokenKey: token,
       SessionStore.guestKey: guest ? 'true' : 'false',
+      if (onboarding) SessionStore.onboardingKey: 'pending',
     },
   });
 }

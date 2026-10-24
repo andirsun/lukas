@@ -52,7 +52,7 @@ Future<void> openCategorySheet(BuildContext context, {Category? editing}) {
   return LkSheet.show<void>(
     context,
     title: editing == null ? l10n.categoryFormAddTitle : l10n.categoryFormEditTitle,
-    children: [_FormBody(form: form)],
+    children: [CategoryFormBody(form: form)],
   ).whenComplete(form.dispose);
 }
 
@@ -87,27 +87,13 @@ Future<bool> openArchiveSheet(
 }
 
 /// What the sheet holds: the values, the error being shown, whether a save is under way, and
-/// whether the kind is fixed.
-class _CategoryForm extends ChangeNotifier {
-  _CategoryForm({
-    required this.editing,
-    required this.l10n,
-    required this.actions,
-    required this.toasts,
-    required this.onArchive,
-  }) : values = editing == null ? NewCategory.blank() : NewCategory.of(editing),
-       name = TextEditingController(text: editing?.name ?? ''),
-       nameFocus = FocusNode() {
-    final category = editing;
-    if (category != null) {
-      stopping = category.archived ? null : actions.recurrencesStopped(category.id);
-      unawaited(
-        actions.hasTransactions(category.id).then((has) {
-          kindLocked = has ? _Locked.yes : _Locked.no;
-          notifyListeners();
-        }),
-      );
-    }
+/// whether the kind is fixed. The sheet over a category of home's Categorías tab ([_CategoryForm])
+/// and the welcome's ([WelcomeCategoryForm]) differ in what they save and what else they offer.
+abstract class CategoryFormModel extends ChangeNotifier {
+  CategoryFormModel({required this.l10n, required NewCategory initial})
+    : values = initial,
+      name = TextEditingController(text: initial.name),
+      nameFocus = FocusNode() {
     name.addListener(() {
       final text = name.text;
       if (text == values.name) return;
@@ -116,39 +102,35 @@ class _CategoryForm extends ChangeNotifier {
     });
   }
 
-  final Category? editing;
   final AppLocalizations l10n;
-  final CategoriesActions actions;
-  final ToastController toasts;
-
-  /// Asks the archive question once the sheet has closed, with the recurring payments it stops.
-  final void Function(int stopping)? onArchive;
 
   NewCategory values;
   final TextEditingController name;
   final FocusNode nameFocus;
   String? error;
   bool saving = false;
-  bool _disposed = false;
+  bool disposed = false;
 
-  /// While the transactions are counted the kind is fixed too, without saying why.
-  _Locked kindLocked = _Locked.counting;
+  /// The kind is fixed (it has transactions, or they are being counted).
+  bool get locked;
 
-  /// How many recurring payments archiving stops, asked when the sheet opens.
-  Future<int>? stopping;
+  /// ... and the line saying why shows.
+  bool get sayLocked;
 
-  bool get editingExisting => editing != null;
-  bool get locked => editing != null && kindLocked != _Locked.no;
-  bool get sayLocked => editing != null && kindLocked == _Locked.yes;
+  /// "Archivar categoría" under the save button, which asks its question after the sheet.
+  bool get canArchive => false;
+
+  /// What else the sheet offers when editing (the welcome's delete or archive), under the button.
+  Widget? removalSection(BuildContext context) => null;
 
   @override
   void notifyListeners() {
-    if (!_disposed) super.notifyListeners();
+    if (!disposed) super.notifyListeners();
   }
 
   @override
   void dispose() {
-    _disposed = true;
+    disposed = true;
     name.dispose();
     nameFocus.dispose();
     super.dispose();
@@ -159,6 +141,54 @@ class _CategoryForm extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> save(BuildContext context);
+
+  /// "Archivar categoría": the sheet goes, and the question comes after it.
+  Future<void> archive(BuildContext context) async {}
+}
+
+class _CategoryForm extends CategoryFormModel {
+  _CategoryForm({
+    required this.editing,
+    required super.l10n,
+    required this.actions,
+    required this.toasts,
+    required this.onArchive,
+  }) : super(initial: editing == null ? NewCategory.blank() : NewCategory.of(editing)) {
+    final category = editing;
+    if (category != null) {
+      stopping = category.archived ? null : actions.recurrencesStopped(category.id);
+      unawaited(
+        actions.hasTransactions(category.id).then((has) {
+          kindLocked = has ? _Locked.yes : _Locked.no;
+          notifyListeners();
+        }),
+      );
+    }
+  }
+
+  final Category? editing;
+  final CategoriesActions actions;
+  final ToastController toasts;
+
+  /// Asks the archive question once the sheet has closed, with the recurring payments it stops.
+  final void Function(int stopping)? onArchive;
+
+  /// While the transactions are counted the kind is fixed too, without saying why.
+  _Locked kindLocked = _Locked.counting;
+
+  /// How many recurring payments archiving stops, asked when the sheet opens.
+  Future<int>? stopping;
+
+  bool get editingExisting => editing != null;
+  @override
+  bool get locked => editing != null && kindLocked != _Locked.no;
+  @override
+  bool get sayLocked => editing != null && kindLocked == _Locked.yes;
+  @override
+  bool get canArchive => onArchive != null;
+
+  @override
   Future<void> save(BuildContext context) async {
     if (saving) return;
     final trimmed = values.name.trim();
@@ -185,7 +215,7 @@ class _CategoryForm extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    if (_disposed) {
+    if (disposed) {
       // Closed meanwhile (a drag down): it was still saved, and it says so.
     } else {
       saving = false;
@@ -196,11 +226,11 @@ class _CategoryForm extends ChangeNotifier {
     );
   }
 
-  /// "Archivar categoría": the sheet goes, and the question comes after it.
+  @override
   Future<void> archive(BuildContext context) async {
     if (saving || onArchive == null) return;
     final count = await stopping ?? 0;
-    if (_disposed || !context.mounted) return;
+    if (disposed || !context.mounted) return;
     Navigator.of(context).pop();
     onArchive!(count);
   }
@@ -209,10 +239,10 @@ class _CategoryForm extends ChangeNotifier {
 enum _Locked { counting, yes, no }
 
 /// `<form className="flex flex-col gap-(--space-4) pt-(--space-3)">`.
-class _FormBody extends StatelessWidget {
-  const _FormBody({required this.form});
+class CategoryFormBody extends StatelessWidget {
+  const CategoryFormBody({super.key, required this.form});
 
-  final _CategoryForm form;
+  final CategoryFormModel form;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -228,7 +258,7 @@ class _FormBody extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           spacing: LukitasTokens.space4,
           children: [
-            _Group(
+            CategoryFormGroup(
               label: l10n.categoryFormNameLabel,
               child: WebTextField(
                 controller: form.name,
@@ -242,14 +272,14 @@ class _FormBody extends StatelessWidget {
                 onSubmitted: (_) => unawaited(form.save(context)),
               ),
             ),
-            _Group(
+            CategoryFormGroup(
               label: l10n.categoryFormKindLabel,
               disabled: form.locked,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 spacing: LukitasTokens.space2,
                 children: [
-                  _OptionGrid(
+                  CategoryOptionGrid(
                     columns: 2,
                     children: [
                       for (final (kind, label, key) in [
@@ -264,7 +294,7 @@ class _FormBody extends StatelessWidget {
                           'category.kind.income',
                         ),
                       ])
-                        _OptionTile(
+                        CategoryOptionTile(
                           key: Key(key),
                           label: label,
                           selected: values.kind == kind,
@@ -283,13 +313,13 @@ class _FormBody extends StatelessWidget {
                 ],
               ),
             ),
-            _Group(
+            CategoryFormGroup(
               label: l10n.categoryFormGlyphLabel,
-              child: _OptionGrid(
+              child: CategoryOptionGrid(
                 columns: 5,
                 children: [
                   for (final glyph in glyphChoices(values.glyph))
-                    _OptionTile(
+                    CategoryOptionTile(
                       key: Key('category.glyph.$glyph'),
                       label: glyph,
                       selected: values.glyph == glyph,
@@ -299,13 +329,13 @@ class _FormBody extends StatelessWidget {
                 ],
               ),
             ),
-            _Group(
+            CategoryFormGroup(
               label: l10n.categoryFormTintLabel,
-              child: _OptionGrid(
+              child: CategoryOptionGrid(
                 columns: 6,
                 children: [
                   for (final name in categoryTintNames)
-                    _OptionTile(
+                    CategoryOptionTile(
                       key: Key('category.tint.$name'),
                       label: _tintLabel(l10n, name),
                       selected: values.tint == categoryTintHex(name),
@@ -338,7 +368,7 @@ class _FormBody extends StatelessWidget {
                 onPressed: form.saving ? null : () => unawaited(form.save(context)),
               ),
             ),
-            if (form.onArchive != null)
+            if (form.canArchive)
               Align(
                 alignment: Alignment.center,
                 child: PressButton(
@@ -351,6 +381,7 @@ class _FormBody extends StatelessWidget {
                   ),
                 ),
               ),
+            ?form.removalSection(context),
           ],
         ),
       );
@@ -386,8 +417,13 @@ String _tintLabel(AppLocalizations l10n, String name) => switch (name) {
 /// `<legend className="pb-(--space-1) text-[15px] text-ink-muted">` of a group of tiles): the web
 /// gives a label and a legend the same room, 4px under it. A [disabled] group (`<fieldset
 /// disabled>`) is read as one that cannot be changed.
-class _Group extends StatelessWidget {
-  const _Group({required this.label, required this.child, this.disabled = false});
+class CategoryFormGroup extends StatelessWidget {
+  const CategoryFormGroup({
+    super.key,
+    required this.label,
+    required this.child,
+    this.disabled = false,
+  });
 
   final String label;
   final Widget child;
@@ -417,8 +453,8 @@ class _Group extends StatelessWidget {
 }
 
 /// `grid grid-cols-N gap-(--space-2)`: equal columns with an 8px gap.
-class _OptionGrid extends StatelessWidget {
-  const _OptionGrid({required this.columns, required this.children});
+class CategoryOptionGrid extends StatelessWidget {
+  const CategoryOptionGrid({super.key, required this.columns, required this.children});
 
   final int columns;
   final List<Widget> children;
@@ -441,8 +477,8 @@ class _OptionGrid extends StatelessWidget {
 /// The web's `OPTION` radio tile: a 44px tile that sits on its edge (`border-2 border-stroke
 /// shadow-edge-sm`, `rounded-md`), outlined in gold while chosen (`has-checked:outline-3
 /// outline-gold outline-offset-1`) and ringed while the keyboard is on it, at 60% when disabled.
-class _OptionTile extends StatelessWidget {
-  const _OptionTile({
+class CategoryOptionTile extends StatelessWidget {
+  const CategoryOptionTile({
     super.key,
     required this.label,
     required this.selected,

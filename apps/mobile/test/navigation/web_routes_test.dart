@@ -5,7 +5,6 @@ import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/ui/bottom_bar.dart';
 import 'package:lukitas/ui/category_row.dart';
 import 'package:lukitas/ui/press_button.dart';
-import 'package:lukitas/welcome/welcome_screen.dart';
 
 import '../budgets/budgets_test.dart' show pumpBudgets;
 import '../budgets/fakes.dart';
@@ -178,18 +177,14 @@ void main() {
     });
 
     for (final path in ['/welcome', '/welcome/currency', '/welcome/budgets']) {
-      testWidgets('$path is the welcome\'s empty screen, with the step it was asked', (
+      testWidgets('$path is not for an account that has finished the welcome: it goes home', (
         tester,
       ) async {
         final env = await pumpSettingsApp(tester, homeRepo: _withMovements());
         env.router.go(path);
         await tester.pumpAndSettle();
-        expect(find.byKey(const Key('welcome.page')), findsOneWidget);
-        expect(_location(env), path);
-        expect(
-          tester.widget<WelcomeScreen>(find.byType(WelcomeScreen)).step,
-          path == '/welcome' ? null : path.substring('/welcome/'.length),
-        );
+        expect(find.byKey(const Key('welcome.page')), findsNothing);
+        expect(_location(env), '/');
       });
     }
 

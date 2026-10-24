@@ -73,7 +73,10 @@ void main() {
       await tester.enterText(field, '123456');
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
-      expect(auth.calls.last, 'verifyCode ana@correo.com 123456');
+      expect(
+        auth.calls.where((c) => !c.startsWith('isGuest')).last,
+        'verifyCode ana@correo.com 123456',
+      );
     });
 
     testWidgets('the boxes are the code field: six of them, and the email in bold in the lead', (

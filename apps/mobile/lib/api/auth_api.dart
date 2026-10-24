@@ -23,6 +23,18 @@ class AuthFailure implements Exception {
   String toString() => 'AuthFailure($status, $code)';
 }
 
+/// Who the account behind a token is, as `GET /v1/me` says it: a guest or not, and whether it still
+/// has the welcome to do. The web decides the welcome with `onboardingCompletedAt` (apps/web/app/
+/// auth/session.ts, `requireOnboarded`); a guest has none, as the web has no guests.
+class AccountStanding {
+  const AccountStanding({required this.guest, required this.onboardingPending});
+
+  final bool guest;
+
+  /// A signed-up account whose `onboardingCompletedAt` is still null.
+  final bool onboardingPending;
+}
+
 /// A passkey ceremony's options from the server, and the challenge cookie that must go back with
 /// the phone's answer (Better Auth keeps the challenge behind a signed cookie).
 class PasskeyChallenge {
@@ -49,6 +61,13 @@ abstract interface class AuthApi {
 
   /// Whether the user behind [token] is still a guest (`GET /v1/me`, `isAnonymous`).
   Future<bool> isGuest(String token);
+
+  /// Whether the user behind [token] is a guest and has the welcome to do (`GET /v1/me`).
+  Future<AccountStanding> standing(String token);
+
+  /// Marks the welcome done for the account behind [token] (`PATCH /v1/me` with
+  /// `onboardingCompleted`). The API stamps it once; a later call keeps the first time.
+  Future<void> completeOnboarding(String token);
 
   /// The id of the account behind [token] (`GET /v1/me`): what the passkey offer's answer is kept for.
   Future<String> accountId(String token);
@@ -165,6 +184,28 @@ class HttpAuthApi implements AuthApi {
     final profile = response.data;
     if (profile == null) throw const AuthFailure(status: 500);
     return profile.isAnonymous;
+  });
+
+  @override
+  Future<AccountStanding> standing(String token) => _settle(() async {
+    final response = await _api.getMe(headers: _bearer(token));
+    final profile = response.data;
+    if (profile == null) throw const AuthFailure(status: 500);
+    return AccountStanding(
+      guest: profile.isAnonymous,
+      onboardingPending: !profile.isAnonymous && profile.onboardingCompletedAt == null,
+    );
+  });
+
+  @override
+  Future<void> completeOnboarding(String token) => _settle(() async {
+    // Plain JSON: the generated client writes the flag's `true` as the text "true", which the API
+    // refuses.
+    await dio.patch<Object?>(
+      '/v1/me',
+      data: {'onboardingCompleted': true},
+      options: Options(headers: _bearer(token)),
+    );
   });
 
   @override

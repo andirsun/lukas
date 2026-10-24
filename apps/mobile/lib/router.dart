@@ -29,6 +29,9 @@ const _offerFirst = {'/', '/loading', '/entry', '/entry/email'};
 /// - signed out, only the entry screens;
 /// - signed in, never the first-run screen, and the email screen and "Guarda tu progreso" only for
 ///   a guest (to save their progress, or to sign in as another account after a warning);
+/// - signed in with the welcome to do (an account with no `onboardingCompletedAt`), the welcome from
+///   every other screen, as the web's `requireOnboarded`; and nothing else but the welcome, which
+///   an account that finished it, and a guest, never see;
 /// - right after an email sign-in that is due the passkey offer, the offer comes first, wherever the
 ///   person was going from the sign-in screens; its address is for that moment only.
 String? sessionRedirect(SessionState session, Uri location) {
@@ -41,7 +44,17 @@ String? sessionRedirect(SessionState session, Uri location) {
       return path == '/entry' || path == '/entry/email' ? null : '/entry';
     case SessionStatus.signedIn:
       if (session.offerPasskeyFor != null && _offerFirst.contains(path)) return _offerPath;
-      if (path == _offerPath && session.offerPasskeyFor == null) return '/';
+      if (path == _offerPath && session.offerPasskeyFor == null) {
+        return session.onboardingPending ? '/welcome' : '/';
+      }
+      final inWelcome = path == '/welcome' || path.startsWith('/welcome/');
+      if (session.onboardingPending) {
+        // The passkey offer, while it is due, comes before the welcome (the web's offer leads on to
+        // the page the person was going to).
+        if (path == _offerPath) return null;
+        return inWelcome ? null : '/welcome';
+      }
+      if (inWelcome) return '/';
       if (path == '/loading' || path == '/entry') return '/';
       if ((path == '/entry/email' || path == '/progress') && !session.isGuest) return '/';
       return null;
@@ -84,12 +97,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       // face menu's Categorías asks home for that tab (`homeViewRequestProvider`).
       GoRoute(path: '/recurring', builder: (context, state) => const RecurringScreen()),
       GoRoute(path: '/import', builder: (context, state) => const ImportScreen()),
-      // `/welcome/:step?`, the onboarding (the web's, outside `/app`).
-      GoRoute(
-        path: '/welcome/:step',
-        builder: (context, state) => WelcomeScreen(step: state.pathParameters['step']),
+      // `/welcome/:step?`, the onboarding (the web's, outside `/app`). One screen holds all its steps,
+      // so its state (what was chosen, the import, the budgets typed) lives across them: moving
+      // between steps changes only the address, as the web's `shouldRevalidate` has it.
+      ShellRoute(
+        builder: (context, state, child) =>
+            WelcomeScreen(step: state.uri.pathSegments.skip(1).firstOrNull),
+        routes: [
+          GoRoute(path: '/welcome', builder: (context, state) => const SizedBox.shrink()),
+          GoRoute(path: '/welcome/:step', builder: (context, state) => const SizedBox.shrink()),
+        ],
       ),
-      GoRoute(path: '/welcome', builder: (context, state) => const WelcomeScreen()),
       GoRoute(
         path: '/insights',
         builder: (context, state) =>

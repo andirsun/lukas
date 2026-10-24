@@ -1696,5 +1696,137 @@
     "storyId": "onboarding-import-page--budgets-saved",
     "theme": "day",
     "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "welcome-intro",
+    "storyId": "onboarding-welcome--welcome",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-intro",
+    "storyId": "onboarding-welcome--welcome",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-currency",
+    "storyId": "onboarding-welcome--currency",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-currency",
+    "storyId": "onboarding-welcome--currency",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-categories",
+    "storyId": "onboarding-welcome--categories-preselected",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-categories",
+    "storyId": "onboarding-welcome--categories-preselected",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-categories-english",
+    "storyId": "onboarding-welcome--categories-in-english",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-import-sources",
+    "storyId": "onboarding-welcome--import-sources",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-import-sources",
+    "storyId": "onboarding-welcome--import-sources",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-import-preview",
+    "storyId": "onboarding-welcome--import-preview",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-import-preview",
+    "storyId": "onboarding-welcome--import-preview",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-import-rejected",
+    "storyId": "onboarding-welcome--import-many-rejected",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-import-rejected",
+    "storyId": "onboarding-welcome--import-many-rejected",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-import-switched",
+    "storyId": "onboarding-welcome--import-switched-currency",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-import-switched",
+    "storyId": "onboarding-welcome--import-switched-currency",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-imported",
+    "storyId": "onboarding-welcome--imported",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-imported",
+    "storyId": "onboarding-welcome--imported",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-budgets",
+    "storyId": "onboarding-welcome--budgets-running-total",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-budgets",
+    "storyId": "onboarding-welcome--budgets-running-total",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-budgets-pesos",
+    "storyId": "onboarding-welcome--budgets-in-pesos",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-budgets-empty",
+    "storyId": "onboarding-welcome--budgets-without-categories",
+    "theme": "night",
+    "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "welcome-budgets-empty",
+    "storyId": "onboarding-welcome--budgets-without-categories",
+    "theme": "day",
+    "appTest": "test/parity/welcome_parity_test.dart"
   }
 ]

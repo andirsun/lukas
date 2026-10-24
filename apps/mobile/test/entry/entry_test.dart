@@ -27,6 +27,11 @@ Future<void> _enterCode(WidgetTester tester, String code, {String submit = 'Entr
 
 StoredSession? _stored(ProviderContainer container) => container.read(sessionProvider).stored;
 
+/// The calls of the sign-in itself, without the profile reads that follow it (whether the account is
+/// a guest, and whether it has the welcome to do) and the welcome's mark.
+Iterable<String> _signInCalls(FakeAuthApi auth) =>
+    auth.calls.where((c) => !c.startsWith('isGuest') && !c.startsWith('completeOnboarding'));
+
 void main() {
   late FakeAuthApi auth;
   setUp(() {
@@ -105,7 +110,7 @@ void main() {
 
       await _enterCode(tester, '123456');
 
-      expect(auth.calls.last, 'verifyCode ana@correo.com 123456');
+      expect(_signInCalls(auth).last, 'verifyCode ana@correo.com 123456');
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(_stored(container)?.guest, isFalse);
       expect((await SessionStore().read())?.token, 'email-token-1');
@@ -136,7 +141,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.widgetWithText(PressButton, 'ENTRAR'));
       await tester.pumpAndSettle();
-      expect(auth.calls.last, 'verifyCode ana@correo.com 123456');
+      expect(_signInCalls(auth).last, 'verifyCode ana@correo.com 123456');
       expect(find.byType(HomeScreen), findsOneWidget);
     });
 
@@ -236,7 +241,7 @@ void main() {
       container.read(routerProvider).go('/auth/verify?email=ana%40correo.com&code=654321&lang=es');
       await tester.pumpAndSettle();
 
-      expect(auth.calls, ['verifyCode ana@correo.com 654321']);
+      expect(_signInCalls(auth), ['verifyCode ana@correo.com 654321']);
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(_stored(container)?.guest, isFalse);
     });
@@ -292,7 +297,9 @@ void main() {
 
       await _enterCode(tester, '111222', submit: 'Guardar');
 
-      expect(auth.calls.last, 'claimVerify guest-token-0 ana@correo.com 111222');
+      expect(_signInCalls(auth).last, 'claimVerify guest-token-0 ana@correo.com 111222');
+      // The guest's start was its welcome: the claimed account is marked as having done it.
+      expect(auth.calls.last, 'completeOnboarding guest-token-0');
       // The same user, the same token: no second account, nothing left behind.
       expect(
         auth.calls.where((c) => c.startsWith('sendCode') || c.startsWith('verifyCode')),
@@ -381,7 +388,7 @@ void main() {
 
       await tester.tap(find.text('ENTRAR DE TODOS MODOS'));
       await tester.pumpAndSettle();
-      expect(auth.calls, ['verifyCode ana@correo.com 654321']);
+      expect(_signInCalls(auth), ['verifyCode ana@correo.com 654321']);
       expect(_stored(container)?.guest, isFalse);
       expect(find.byType(HomeScreen), findsOneWidget);
     });

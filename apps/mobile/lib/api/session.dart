@@ -16,15 +16,20 @@ import 'passkeys.dart';
 export 'auth_api.dart' show authApiProvider;
 export 'passkeys.dart' show passkeysProvider, passkeysSupportedProvider;
 
-/// The session kept on the phone: the bearer token, and whether it belongs to a guest.
+/// The session kept on the phone: the bearer token, whether it belongs to a guest, and whether its
+/// account still has the welcome to do.
 class StoredSession {
-  const StoredSession({required this.token, required this.guest});
+  const StoredSession({required this.token, required this.guest, this.onboardingPending = false});
 
   final String token;
 
   /// A guest's token is the only way back to their account (it has no email), so the app never
   /// replaces it without asking (spec section 4.2).
   final bool guest;
+
+  /// The account has no `onboardingCompletedAt` yet: wherever it goes, it goes to the welcome first
+  /// (the web's `requireOnboarded`). Never a guest's.
+  final bool onboardingPending;
 }
 
 /// The session token in `flutter_secure_storage`, which encrypts it with a key kept in the Android
@@ -34,6 +39,7 @@ class SessionStore {
 
   static const tokenKey = 'session.token';
   static const guestKey = 'session.guest';
+  static const onboardingKey = 'session.onboarding';
 
   final FlutterSecureStorage _storage;
 
@@ -43,23 +49,32 @@ class SessionStore {
     try {
       final token = await _storage.read(key: tokenKey);
       if (token == null || token.isEmpty) return null;
-      final guest = await _storage.read(key: guestKey);
-      return StoredSession(token: token, guest: guest != 'false');
+      final guest = await _storage.read(key: guestKey) != 'false';
+      // Missing is an account that has finished: an older install never had a welcome to do, and
+      // the start asks the server.
+      final onboarding = await _storage.read(key: onboardingKey) == 'pending';
+      return StoredSession(token: token, guest: guest, onboardingPending: !guest && onboarding);
     } on PlatformException {
       // The Keystore key is gone (a restored backup, a reset lock screen): nothing usable.
       return null;
     }
   }
 
-  Future<void> write(String token, {required bool guest}) async {
-    // The flag first: a token is never stored next to a stale "not a guest".
+  Future<void> write(String token, {required bool guest, bool onboardingPending = false}) async {
+    // The flags first: a token is never stored next to a stale "not a guest" or "welcome done".
     await _storage.write(key: guestKey, value: guest ? 'true' : 'false');
+    if (onboardingPending && !guest) {
+      await _storage.write(key: onboardingKey, value: 'pending');
+    } else {
+      await _storage.delete(key: onboardingKey);
+    }
     await _storage.write(key: tokenKey, value: token);
   }
 
   Future<void> clear() async {
     await _storage.delete(key: tokenKey);
     await _storage.delete(key: guestKey);
+    await _storage.delete(key: onboardingKey);
   }
 }
 
@@ -84,6 +99,9 @@ class SessionState {
   final String? offerPasskeyFor;
 
   bool get isGuest => stored?.guest ?? false;
+
+  /// The signed-in account has the welcome to do (see [StoredSession.onboardingPending]).
+  bool get onboardingPending => stored?.onboardingPending ?? false;
 }
 
 /// A sign-in with another account, or a sign-out, was asked for while a guest is signed in. Going
@@ -127,13 +145,22 @@ class SessionController extends Notifier<SessionState> {
   }
 
   /// Asks the server who the stored token belongs to: a token it no longer knows signs out; a guest
-  /// that has meanwhile claimed an email (or the other way round) gets the right flag. Offline,
-  /// the stored session stands.
+  /// that has meanwhile claimed an email (or the other way round) gets the right flag, and so does
+  /// an account whose welcome was done elsewhere. Offline, the stored session stands.
   Future<void> _refresh(StoredSession stored) async {
     try {
-      final guest = await _auth.isGuest(stored.token);
+      final standing = await _auth.standing(stored.token);
       if (state.stored?.token != stored.token) return;
-      if (guest != stored.guest) await _signedIn(stored.token, guest: guest);
+      // What the server says about the welcome wins over what was kept (another phone, or the web,
+      // may have finished it).
+      if (standing.guest != stored.guest ||
+          standing.onboardingPending != stored.onboardingPending) {
+        await _signedIn(
+          stored.token,
+          guest: standing.guest,
+          onboardingPending: standing.onboardingPending,
+        );
+      }
     } on AuthFailure catch (failure) {
       if (failure.status == 401 && state.stored?.token == stored.token) {
         await _forgetWidget();
@@ -143,14 +170,19 @@ class SessionController extends Notifier<SessionState> {
     }
   }
 
-  Future<void> _signedIn(String token, {required bool guest, String? offerPasskeyFor}) async {
+  Future<void> _signedIn(
+    String token, {
+    required bool guest,
+    bool onboardingPending = false,
+    String? offerPasskeyFor,
+  }) async {
     // Another token is another session (a guest replaced by an email account, say): what the old
     // one left on this phone goes with it. The same token (a claim, a corrected flag) keeps it.
     final previous = state.stored?.token;
     if (previous != null && previous != token) await _forgetWidget();
-    await _store.write(token, guest: guest);
+    await _store.write(token, guest: guest, onboardingPending: onboardingPending);
     state = SessionState.signedIn(
-      StoredSession(token: token, guest: guest),
+      StoredSession(token: token, guest: guest, onboardingPending: !guest && onboardingPending),
       offerPasskeyFor: guest ? null : offerPasskeyFor,
     );
     ref.read(widgetSyncProvider).signedIn();
@@ -192,7 +224,33 @@ class SessionController extends Notifier<SessionState> {
     // After an email sign-in (code or magic link) a passkey may be offered; asking is a nicety, so a
     // failure just means no offer, and the answer is waited for only a few seconds.
     final offer = await ref.read(passkeyOfferProvider).dueFor(token);
-    await _signedIn(token, guest: false, offerPasskeyFor: offer);
+    await _signedIn(
+      token,
+      guest: false,
+      onboardingPending: await _onboardingPending(token),
+      offerPasskeyFor: offer,
+    );
+  }
+
+  /// Whether the account behind [token] has the welcome to do. Not knowing is no: the person is
+  /// let in, and the next start asks again.
+  Future<bool> _onboardingPending(String token) async {
+    try {
+      return (await _auth.standing(token)).onboardingPending;
+    } on AuthFailure {
+      return false;
+    }
+  }
+
+  /// The welcome ended (finished or skipped): the account no longer has it to do.
+  Future<void> onboardingDone() async {
+    final stored = state.stored;
+    if (stored == null || !stored.onboardingPending) return;
+    await _store.write(stored.token, guest: stored.guest);
+    state = SessionState.signedIn(
+      StoredSession(token: stored.token, guest: stored.guest),
+      offerPasskeyFor: state.offerPasskeyFor,
+    );
   }
 
   /// The passkey offer was answered ("Crear mi huella" or "Ahora no"): it is kept for the account,
@@ -218,6 +276,13 @@ class SessionController extends Notifier<SessionState> {
     if (!state.isGuest) throw StateError('Only a guest claims an email');
     final token = _requireToken();
     await _auth.claimVerify(token, email, code);
+    // The guest has been using the app: its start was its welcome, and the web's would only offer
+    // to set up what it has. A failure here only means the next start sends it there.
+    try {
+      await _auth.completeOnboarding(token);
+    } on AuthFailure {
+      // See above.
+    }
     await _signedIn(token, guest: false);
   }
 
@@ -256,13 +321,16 @@ class SessionController extends Notifier<SessionState> {
     // A guest can add a passkey (spec section 4.3), so the passkey may belong to one: ask, so a
     // guest stays a guest (warned on sign-out, offered "Guarda tu progreso"). If the server can't
     // say, the safe side is a guest, which /v1/me corrects at the next start.
-    bool guest;
+    var guest = true;
+    var pending = false;
     try {
-      guest = await _auth.isGuest(token);
+      final standing = await _auth.standing(token);
+      guest = standing.guest;
+      pending = standing.onboardingPending;
     } on AuthFailure {
       guest = true;
     }
-    await _signedIn(token, guest: guest);
+    await _signedIn(token, guest: guest, onboardingPending: pending);
   }
 
   /// Adds a passkey on this phone to the signed-in user, a guest included (spec section 4.3).
