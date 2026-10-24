@@ -165,7 +165,9 @@ void main() {
         ],
       );
       await t.pumpAndSettle();
-      await t.tap(find.byKey(const Key('capture.card.0')));
+      // The second card: it has a category (Uber), so the open card shows the brand's rim, the
+      // category chosen in the grid and no "elige categoría".
+      await t.tap(find.byKey(const Key('capture.card.1')));
       await t.pumpAndSettle();
       await _picture(t, 'card_open', theme);
     });
