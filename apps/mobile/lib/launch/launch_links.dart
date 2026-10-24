@@ -105,12 +105,18 @@ class LaunchLinks {
     if (action == null) return;
     final controller = _ref.read(sessionProvider.notifier);
     await controller.ready;
-    // Whether the account has the welcome to do is the server's to say (an install that predates it
-    // does not know yet): asked, for a moment at most, so a link never waits on a bad connection.
-    try {
-      await controller.refreshed.timeout(refreshWait);
-    } on Object {
-      // Offline or slow: what was kept stands.
+    // Whether the account has the welcome to do is the server's to say. An account the phone knows
+    // has finished it (or is still at it) opens the link at once, with no wait at all: a cold tap of
+    // the widget's 🎤 is not slowed by a round trip. One it does not know yet (a session stored before
+    // the welcome, or whose profile could not be read) is asked, for a moment at most, so the link
+    // never waits on a bad connection.
+    final known = _ref.read(sessionProvider);
+    if (known.status == SessionStatus.signedIn && !known.onboardingKnown) {
+      try {
+        await controller.refreshed.timeout(refreshWait);
+      } on Object {
+        // Offline or slow: what was kept stands.
+      }
     }
     final session = _ref.read(sessionProvider);
     if (session.status != SessionStatus.signedIn) return;

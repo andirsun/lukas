@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/add/add_sheet.dart';
+import 'package:lukitas/api/auth_api.dart';
+import 'package:lukitas/api/session.dart';
 import 'package:lukitas/capture/capture_sheet.dart';
 import 'package:lukitas/capture/engine/speech_engine.dart';
 import 'package:lukitas/entry/entry_screen.dart';
@@ -15,6 +17,7 @@ import 'package:lukitas/launch/launch_links.dart';
 import 'package:lukitas/router.dart';
 
 import '../capture/fakes.dart';
+import '../entry/fakes.dart' show FakeAuthApi;
 import '../home/fakes.dart';
 import '../home/fixtures.dart';
 import '../settings/harness.dart';
@@ -37,6 +40,29 @@ class FakeLaunchLinks implements LaunchLinkSource {
   Stream<String> get links => _later.stream;
 
   void open(String link) => _later.add(link);
+}
+
+/// A server that takes its time to say who the account is (a bad connection): the profile read of a
+/// start never comes back.
+class _HangingProfile extends FakeAuthApi {
+  final hold = Completer<void>();
+
+  @override
+  Future<AccountStanding> standing(String token) async {
+    calls.add('isGuest $token');
+    await hold.future;
+    return super.standing(token);
+  }
+}
+
+/// A session store holding [session] as it was kept on the phone.
+class _KeptSession extends SessionStore {
+  _KeptSession(this.session);
+
+  final StoredSession session;
+
+  @override
+  Future<StoredSession?> read() async => session;
 }
 
 void main() {
@@ -385,6 +411,94 @@ void main() {
       await pumpSettingsApp(tester);
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.textContaining('glance-action'), findsNothing);
+    });
+  });
+
+  group('a cold start waits for the welcome only when the phone does not know how it stands', () {
+    testWidgets(
+      'a session known to be onboarded opens the link at once, even if the server hangs',
+      (tester) async {
+        final auth = _HangingProfile();
+        await pumpSettingsApp(
+          tester,
+          auth: auth,
+          settle: false,
+          overrides: [
+            sessionStoreProvider.overrideWithValue(
+              _KeptSession(const StoredSession(token: 'email-token-0', guest: false)),
+            ),
+            launchLinkSourceProvider.overrideWithValue(FakeLaunchLinks('lukitas://add')),
+          ],
+        );
+        // Two seconds of frames, less than the wait there would be: the sheet is already open.
+        expect(find.byType(AddSheet), findsOneWidget);
+        expect(find.byType(HomeScreen), findsOneWidget);
+      },
+    );
+
+    testWidgets('a session that does not know waits for the server, three seconds at most', (
+      tester,
+    ) async {
+      final auth = _HangingProfile();
+      await pumpSettingsApp(
+        tester,
+        auth: auth,
+        settle: false,
+        overrides: [
+          sessionStoreProvider.overrideWithValue(
+            _KeptSession(
+              const StoredSession(token: 'email-token-0', guest: false, onboardingKnown: false),
+            ),
+          ),
+          launchLinkSourceProvider.overrideWithValue(FakeLaunchLinks('lukitas://add')),
+        ],
+      );
+      // Still waiting after two seconds of frames...
+      expect(find.byType(AddSheet), findsNothing);
+      // ...and past the three seconds it opens, the server still silent.
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.byType(AddSheet), findsOneWidget);
+    });
+
+    testWidgets('a session that does not know, asked in time, is dropped if the welcome is to do', (
+      tester,
+    ) async {
+      final auth = FakeAuthApi()..pendingOnboarding['email-token-0'] = true;
+      final env = await pumpSettingsApp(
+        tester,
+        auth: auth,
+        overrides: [
+          sessionStoreProvider.overrideWithValue(
+            _KeptSession(
+              const StoredSession(token: 'email-token-0', guest: false, onboardingKnown: false),
+            ),
+          ),
+          launchLinkSourceProvider.overrideWithValue(FakeLaunchLinks('lukitas://add')),
+        ],
+      );
+      expect(env.router.state.uri.path, '/welcome');
+      expect(find.byType(AddSheet), findsNothing);
+    });
+
+    testWidgets('a session known to be at the welcome drops the link at once', (tester) async {
+      final auth = _HangingProfile();
+      final env = await pumpSettingsApp(
+        tester,
+        auth: auth,
+        settle: false,
+        overrides: [
+          sessionStoreProvider.overrideWithValue(
+            _KeptSession(
+              const StoredSession(token: 'email-token-0', guest: false, onboardingPending: true),
+            ),
+          ),
+          launchLinkSourceProvider.overrideWithValue(FakeLaunchLinks('lukitas://add')),
+        ],
+      );
+      expect(env.router.state.uri.path, '/welcome');
+      expect(find.byType(AddSheet), findsNothing);
     });
   });
 }

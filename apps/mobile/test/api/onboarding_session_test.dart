@@ -37,6 +37,32 @@ void main() {
       expect((await SessionStore().read())?.onboardingPending, isFalse);
     });
 
+    test('knows when the welcome is done, and when it does not know', () async {
+      final store = SessionStore();
+      await store.write('abc', guest: false);
+      expect((await store.read())?.onboardingKnown, isTrue);
+      await store.write('abc', guest: false, onboardingPending: true);
+      expect((await store.read())?.onboardingKnown, isTrue);
+      await store.write('abc', guest: false, onboardingKnown: false);
+      final unknown = await store.read();
+      expect(unknown?.onboardingKnown, isFalse);
+      expect(unknown?.onboardingPending, isFalse);
+      // A session stored before the app knew of the welcome says nothing either.
+      FlutterSecureStorage.setMockInitialValues({
+        SessionStore.tokenKey: 'abc',
+        SessionStore.guestKey: 'false',
+      });
+      expect((await SessionStore().read())?.onboardingKnown, isFalse);
+    });
+
+    test('a guest has nothing to know: it is never pending', () async {
+      FlutterSecureStorage.setMockInitialValues({
+        SessionStore.tokenKey: 'abc',
+        SessionStore.guestKey: 'true',
+      });
+      expect((await SessionStore().read())?.onboardingKnown, isTrue);
+    });
+
     test('a guest never has a welcome to do', () async {
       final store = SessionStore();
       await store.write('abc', guest: true, onboardingPending: true);
@@ -121,6 +147,29 @@ void main() {
       final next = containerWith();
       await next.read(sessionProvider.notifier).refreshed;
       expect(next.read(sessionProvider).onboardingPending, isTrue);
+    });
+
+    test('an account the server could not be asked about is not known to be onboarded', () async {
+      auth.failures['isGuest'] = const AuthFailure(status: 0);
+      final container = containerWith();
+      final controller = await ready(container);
+      await controller.verifyCode('ana@example.com', '123456');
+      expect(container.read(sessionProvider).stored?.onboardingKnown, isFalse);
+      // The start asks, and then it is known.
+      final next = containerWith();
+      await next.read(sessionProvider.notifier).refreshed;
+      expect(next.read(sessionProvider).stored?.onboardingKnown, isTrue);
+      expect((await SessionStore().read())?.onboardingKnown, isTrue);
+    });
+
+    test('finishing the welcome is remembered as done', () async {
+      auth.newAccounts = true;
+      final container = containerWith();
+      final controller = await ready(container);
+      await controller.verifyCode('ana@example.com', '123456');
+      await controller.onboardingDone();
+      expect(container.read(sessionProvider).stored?.onboardingKnown, isTrue);
+      expect((await SessionStore().read())?.onboardingKnown, isTrue);
     });
 
     test('the start asks the server, which can send an account to the welcome', () async {

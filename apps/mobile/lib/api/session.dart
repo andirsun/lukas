@@ -19,7 +19,12 @@ export 'passkeys.dart' show passkeysProvider, passkeysSupportedProvider;
 /// The session kept on the phone: the bearer token, whether it belongs to a guest, and whether its
 /// account still has the welcome to do.
 class StoredSession {
-  const StoredSession({required this.token, required this.guest, this.onboardingPending = false});
+  const StoredSession({
+    required this.token,
+    required this.guest,
+    this.onboardingPending = false,
+    this.onboardingKnown = true,
+  });
 
   final String token;
 
@@ -30,6 +35,12 @@ class StoredSession {
   /// The account has no `onboardingCompletedAt` yet: wherever it goes, it goes to the welcome first
   /// (the web's `requireOnboarded`). Never a guest's.
   final bool onboardingPending;
+
+  /// Whether the phone knows how the welcome stands for this account (the server said it, or the
+  /// person finished it here). A session stored before the app knew of the welcome, or whose profile
+  /// could not be read at sign-in, does not: it is asked at the next start, and what must not wait
+  /// on that (a widget's link) waits only for these.
+  final bool onboardingKnown;
 }
 
 /// The session token in `flutter_secure_storage`, which encrypts it with a key kept in the Android
@@ -52,19 +63,32 @@ class SessionStore {
       final guest = await _storage.read(key: guestKey) != 'false';
       // Missing is an account that has finished: an older install never had a welcome to do, and
       // the start asks the server.
-      final onboarding = await _storage.read(key: onboardingKey) == 'pending';
-      return StoredSession(token: token, guest: guest, onboardingPending: !guest && onboarding);
+      final onboarding = await _storage.read(key: onboardingKey);
+      return StoredSession(
+        token: token,
+        guest: guest,
+        onboardingPending: !guest && onboarding == 'pending',
+        // A guest has no welcome to know about.
+        onboardingKnown: guest || onboarding == 'pending' || onboarding == 'done',
+      );
     } on PlatformException {
       // The Keystore key is gone (a restored backup, a reset lock screen): nothing usable.
       return null;
     }
   }
 
-  Future<void> write(String token, {required bool guest, bool onboardingPending = false}) async {
+  Future<void> write(
+    String token, {
+    required bool guest,
+    bool onboardingPending = false,
+    bool onboardingKnown = true,
+  }) async {
     // The flags first: a token is never stored next to a stale "not a guest" or "welcome done".
     await _storage.write(key: guestKey, value: guest ? 'true' : 'false');
     if (onboardingPending && !guest) {
       await _storage.write(key: onboardingKey, value: 'pending');
+    } else if (onboardingKnown && !guest) {
+      await _storage.write(key: onboardingKey, value: 'done');
     } else {
       await _storage.delete(key: onboardingKey);
     }
@@ -102,6 +126,10 @@ class SessionState {
 
   /// The signed-in account has the welcome to do (see [StoredSession.onboardingPending]).
   bool get onboardingPending => stored?.onboardingPending ?? false;
+
+  /// The phone knows how the welcome stands for the signed-in account (see
+  /// [StoredSession.onboardingKnown]).
+  bool get onboardingKnown => stored?.onboardingKnown ?? true;
 }
 
 /// A sign-in with another account, or a sign-out, was asked for while a guest is signed in. Going
@@ -150,11 +178,12 @@ class SessionController extends Notifier<SessionState> {
   Future<void> _refresh(StoredSession stored) async {
     try {
       final standing = await _auth.standing(stored.token);
-      if (state.stored?.token != stored.token) return;
+      if (!ref.mounted || state.stored?.token != stored.token) return;
       // What the server says about the welcome wins over what was kept (another phone, or the web,
       // may have finished it).
       if (standing.guest != stored.guest ||
-          standing.onboardingPending != stored.onboardingPending) {
+          standing.onboardingPending != stored.onboardingPending ||
+          !stored.onboardingKnown) {
         await _signedIn(
           stored.token,
           guest: standing.guest,
@@ -174,15 +203,28 @@ class SessionController extends Notifier<SessionState> {
     String token, {
     required bool guest,
     bool onboardingPending = false,
+    bool onboardingKnown = true,
     String? offerPasskeyFor,
   }) async {
     // Another token is another session (a guest replaced by an email account, say): what the old
     // one left on this phone goes with it. The same token (a claim, a corrected flag) keeps it.
     final previous = state.stored?.token;
     if (previous != null && previous != token) await _forgetWidget();
-    await _store.write(token, guest: guest, onboardingPending: onboardingPending);
+    await _store.write(
+      token,
+      guest: guest,
+      onboardingPending: onboardingPending,
+      onboardingKnown: onboardingKnown,
+    );
+    // The app was closed while the session was being kept (a start that asked the server late).
+    if (!ref.mounted) return;
     state = SessionState.signedIn(
-      StoredSession(token: token, guest: guest, onboardingPending: !guest && onboardingPending),
+      StoredSession(
+        token: token,
+        guest: guest,
+        onboardingPending: !guest && onboardingPending,
+        onboardingKnown: onboardingKnown,
+      ),
       offerPasskeyFor: guest ? null : offerPasskeyFor,
     );
     ref.read(widgetSyncProvider).signedIn();
@@ -224,28 +266,30 @@ class SessionController extends Notifier<SessionState> {
     // After an email sign-in (code or magic link) a passkey may be offered; asking is a nicety, so a
     // failure just means no offer, and the answer is waited for only a few seconds.
     final offer = await ref.read(passkeyOfferProvider).dueFor(token);
+    final pending = await _onboardingPending(token);
     await _signedIn(
       token,
       guest: false,
-      onboardingPending: await _onboardingPending(token),
+      onboardingPending: pending ?? false,
+      onboardingKnown: pending != null,
       offerPasskeyFor: offer,
     );
   }
 
-  /// Whether the account behind [token] has the welcome to do. Not knowing is no: the person is
-  /// let in, and the next start asks again.
-  Future<bool> _onboardingPending(String token) async {
+  /// Whether the account behind [token] has the welcome to do; null when the server could not say.
+  /// Not knowing lets the person in, and the next start asks again.
+  Future<bool?> _onboardingPending(String token) async {
     try {
       return (await _auth.standing(token)).onboardingPending;
     } on AuthFailure {
-      return false;
+      return null;
     }
   }
 
   /// The welcome ended (finished or skipped): the account no longer has it to do.
   Future<void> onboardingDone() async {
     final stored = state.stored;
-    if (stored == null || !stored.onboardingPending) return;
+    if (stored == null || (!stored.onboardingPending && stored.onboardingKnown)) return;
     await _store.write(stored.token, guest: stored.guest);
     state = SessionState.signedIn(
       StoredSession(token: stored.token, guest: stored.guest),
