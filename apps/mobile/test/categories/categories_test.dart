@@ -385,6 +385,30 @@ void main() {
       await tester.pump(const Duration(seconds: 10));
     });
 
+    testBudgets('a create whose answer is lost shows the category the server made', (tester) async {
+      final env = await pumpCategories(tester);
+      env.categories.lostAnswers.add('create');
+      await openBudgetsTab(tester);
+      await openNewCategory(tester);
+
+      await typeName(tester, 'Mascotas');
+      await saveCategory(tester);
+      await tester.pumpAndSettle();
+      expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
+      // The categories were read again behind the sheet: the one the server made is on the tab, so
+      // another Guardar is not a second one.
+      expect(
+        env.app.settings.container
+            .read(homeProvider)
+            .data!
+            .categories
+            .values
+            .any((c) => c.name == 'Mascotas'),
+        isTrue,
+      );
+      await tester.pump(const Duration(seconds: 10));
+    });
+
     testBudgets('Guardar categoría while it saves sends it once', (tester) async {
       final env = await pumpCategories(tester);
       env.categories.hold = Completer<void>();

@@ -351,6 +351,44 @@ void main() {
       await tester.pump(const Duration(seconds: 10));
     });
 
+    testBudgets(
+      'a create whose answer is lost shows the rule the server made, so a retry is not a copy',
+      (tester) async {
+        final env = await pumpRecurring(tester);
+        env.server.lostAnswers.add('create');
+        await openNew(tester);
+        await typeDigits(tester, '9');
+        await typeName(tester, 'Nube');
+        await tapKey(tester, 'recurring.category.cat-home');
+        await save(tester);
+        await tester.pumpAndSettle();
+
+        expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
+        expect(env.server.rules.map((r) => r.name), ['Nube'], reason: 'the server made it');
+        expect(rowOf('Nube'), findsOneWidget, reason: 'the list was read again behind the sheet');
+        expect(
+          env.container.read(homeProvider).data!.items.where((t) => t.name == 'Nube'),
+          hasLength(1),
+          reason: 'home was loaded again too',
+        );
+        await tester.pump(const Duration(seconds: 10));
+      },
+    );
+
+    testBudgets('a refusal that changed nothing does not reload anything', (tester) async {
+      final env = await pumpRecurring(tester);
+      env.server.failures['create'] = const HomeFailure(422, code: 'category_not_found');
+      await openNew(tester);
+      await typeDigits(tester, '9');
+      await typeName(tester, 'Nube');
+      await tapKey(tester, 'recurring.category.cat-home');
+      final listed = env.server.calls.where((c) => c == 'list').length;
+      await save(tester);
+      await tester.pumpAndSettle();
+      expect(env.server.calls.where((c) => c == 'list'), hasLength(listed));
+      await tester.pump(const Duration(seconds: 10));
+    });
+
     testBudgets('offline says so; a server error says it is ours', (tester) async {
       final env = await pumpRecurring(tester);
       env.server.failures['create'] = const HomeFailure(0);
@@ -572,6 +610,33 @@ void main() {
       await tester.tap(find.byKey(const Key('recurring.delete.confirm')));
       await tester.pumpAndSettle();
       expect(rowOf('Spotify'), findsNothing);
+      await tester.pump(const Duration(seconds: 10));
+    });
+
+    testBudgets('a delete whose answer is lost: the row is gone, and the notices look again', (
+      tester,
+    ) async {
+      final env = await pumpRecurring(
+        tester,
+        rules: [rule('spotify', 'cat-groceries', name: 'Spotify', day: 22)],
+      );
+      await env.container.read(noticeSyncProvider).idle;
+      expect(env.platform.callsNamed('scheduleDue'), isNotEmpty);
+      env.platform.clear();
+      env.server.lostAnswers.add('delete');
+      await openEdit(tester, 'Spotify');
+      await deleteIt(tester);
+      await env.container.read(noticeSyncProvider).idle;
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
+      expect(env.server.rules, isEmpty, reason: 'the server deleted it');
+      expect(rowOf('Spotify'), findsNothing, reason: 'the list was read again');
+      expect(
+        env.container.read(homeProvider).data!.items.where((t) => t.name == 'Spotify'),
+        isEmpty,
+      );
+      expect(env.platform.callsNamed('cancelDue'), isNotEmpty);
       await tester.pump(const Duration(seconds: 10));
     });
 

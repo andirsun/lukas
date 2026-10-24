@@ -109,11 +109,32 @@ class RecurringActions {
     return error;
   }
 
+  /// Whether a failed request may still have reached the server: no answer at all (offline, a
+  /// timeout, a lost response) or a server error. A definite refusal (a 4xx) changed nothing.
+  static bool _mayHaveReached(HomeFailure failure) => failure.offline || failure.status >= 500;
+
+  /// A request, settled even when it fails (the web's `onSettled` runs on error too): when the
+  /// change may have been made all the same, the list, home and the notices look again, so a rule
+  /// made by a request whose answer was lost shows up (instead of being made twice by the next try)
+  /// and a deleted one goes.
   Future<T> _call<T>(Future<T> Function() request) async {
     try {
       return await request();
     } on Object catch (error) {
-      throw _failure(error);
+      final failure = _failure(error);
+      if (_mayHaveReached(failure)) unawaited(_settleAfterFailure());
+      throw failure;
+    }
+  }
+
+  Future<void> _settleAfterFailure() async {
+    try {
+      if (_ref.exists(recurringListProvider)) {
+        await _ref.read(recurringListProvider.notifier).refresh();
+      }
+      await _settle();
+    } on Object {
+      // Still offline: what is on screen stays, and nothing breaks.
     }
   }
 

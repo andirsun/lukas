@@ -60,6 +60,10 @@ class FakeRecurringRepository implements RecurringRepository {
   /// What the next call of that name throws (then cleared): `list`, `create`, `update`, `delete`.
   final failures = <String, Object>{};
 
+  /// Calls named here are made on the server, and then their answer is lost (offline): the next
+  /// call of that name throws after it has done its work.
+  final lostAnswers = <String>{};
+
   /// While set, [create], [update] and [delete] wait for it.
   Completer<void>? hold;
 
@@ -128,6 +132,7 @@ class FakeRecurringRepository implements RecurringRepository {
     rules.add(made);
     _materialize(made);
     budgets?.publish();
+    if (lostAnswers.remove('create')) throw const HomeFailure(0);
     return made;
   }
 
@@ -168,6 +173,7 @@ class FakeRecurringRepository implements RecurringRepository {
     _dropPending(id);
     rules.removeWhere((r) => r.id == id);
     budgets?.publish();
+    if (lostAnswers.remove('delete')) throw const HomeFailure(0);
   }
 }
 

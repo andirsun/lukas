@@ -55,11 +55,30 @@ class CategoriesActions {
     return error;
   }
 
+  /// Whether a failed request may still have reached the server: no answer at all (offline, a
+  /// timeout, a lost response) or a server error. A definite refusal (a 4xx) changed nothing.
+  static bool _mayHaveReached(HomeFailure failure) => failure.offline || failure.status >= 500;
+
+  /// A request, settled even when it fails (the web's `onSettled` runs on error too): when the
+  /// change may have been made all the same, home's categories and month look again, and so do the
+  /// notices (an archive ends recurring payments), so a category made by a request whose answer
+  /// was lost shows up instead of being made, and refused as a duplicate, by the next try.
   Future<T> _call<T>(Future<T> Function() request) async {
     try {
       return await request();
     } on Object catch (error) {
-      throw _failure(error);
+      final failure = _failure(error);
+      if (_mayHaveReached(failure)) unawaited(_settleAfterFailure());
+      throw failure;
+    }
+  }
+
+  Future<void> _settleAfterFailure() async {
+    try {
+      await _home.reloaded();
+      _ref.read(noticeSyncProvider).request();
+    } on Object {
+      // Still offline: what is on screen stays, and nothing breaks.
     }
   }
 

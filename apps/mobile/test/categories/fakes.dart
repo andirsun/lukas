@@ -52,6 +52,10 @@ class FakeCategoriesRepository implements CategoriesRepository {
   /// `recurrences`.
   final failures = <String, Object>{};
 
+  /// Calls named here are made on the server, and then their answer is lost (offline): the next
+  /// call of that name throws after it has done its work.
+  final lostAnswers = <String>{};
+
   /// While set, [create] and [update] wait for it.
   Completer<void>? hold;
 
@@ -82,6 +86,7 @@ class FakeCategoriesRepository implements CategoriesRepository {
     ).rebuild((b) => b.sortOrder = home.categoryList.length);
     home.categoryList.add(made);
     budgets.publish();
+    if (lostAnswers.remove('create')) throw const HomeFailure(0);
     return made;
   }
 
