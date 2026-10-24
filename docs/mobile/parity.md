@@ -385,7 +385,7 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - **Day pairs** sit at 1.8–2.2% of ink: the text is placed to the pixel, and what is left is how Chrome and Flutter draw the same
     glyphs (Flutter's dark-on-light text is a little heavier). The two pictures that show the most text at once
     (`settings-currency-open` and `-passkeys`, by day) carry `maxInk: 2.3` in parity.json, which gives
-    that pair that much room (compose never uses it to lower the limit, and prints it on the pair's line); the picture is
+    that pair that much room (compose never uses it to lower the limit, prints it on the pair's line, and refuses any `maxInk` over 2.5%: a pair that needs more is wrong, not noisy); the picture is
     still looked at first.
   - **Delete card.** `.lk-danger-zone` is a 2px border of the danger colour over the stroke's (55/45), inside the card
     (`border-box`: the padding stays, the content is 2px narrower). The input's `aria-invalid` has no style on the web, so the

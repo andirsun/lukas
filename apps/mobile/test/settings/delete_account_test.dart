@@ -6,9 +6,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/session.dart';
 import 'package:lukitas/home/home_repository.dart';
+import 'package:lukitas/settings/account_deletion.dart';
 import 'package:lukitas/settings/account_repository.dart';
 import 'package:lukitas/ui/press_button.dart';
 
@@ -357,6 +359,109 @@ void main() {
         expect(find.textContaining('NO se eliminó'), findsNothing);
       },
     );
+  });
+
+  group('while the DELETE is on its way the sheet stays', () {
+    Future<AccountEnv> busy(WidgetTester t) async {
+      final env = await pumpAccount(t);
+      env.accounts.holdDelete = Completer<void>();
+      await _openSheet(t);
+      await _type(t, 'ana@example.com');
+      await t.tap(find.byKey(const Key('settings.delete.confirm')));
+      await t.pump();
+      expect(find.text('ELIMINANDO…'), findsOneWidget);
+      return env;
+    }
+
+    testWidgets('a tap outside, a drag down, Escape and the back button do nothing', (t) async {
+      final env = await busy(t);
+      // Outside: the backdrop above the sheet.
+      await t.tapAt(const Offset(195, 60));
+      await t.pump(const Duration(milliseconds: 400));
+      expect(find.text('¿Eliminar tu cuenta?'), findsOneWidget);
+      // A drag down from the sheet's title, and a fling.
+      await t.fling(find.text('¿Eliminar tu cuenta?'), const Offset(0, 600), 2000);
+      await t.pump(const Duration(milliseconds: 600));
+      expect(find.text('¿Eliminar tu cuenta?'), findsOneWidget);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await t.pump(const Duration(milliseconds: 400));
+      expect(find.text('¿Eliminar tu cuenta?'), findsOneWidget);
+      await t.binding.handlePopRoute();
+      await t.pump(const Duration(milliseconds: 400));
+      expect(find.text('¿Eliminar tu cuenta?'), findsOneWidget);
+      // There is no "Cerrar" to press either.
+      expect(find.text('CERRAR'), findsNothing);
+      expect(env.accounts.deletes, 1);
+      env.accounts.holdDelete!.complete();
+      await t.pumpAndSettle();
+    });
+
+    testWidgets('a failure after a slow answer reaches the person, and the sheet is theirs again', (
+      t,
+    ) async {
+      final handle = t.ensureSemantics();
+      final env = await busy(t);
+      env.accounts.deleteFailure = const HomeFailure(503, code: 'internal_error');
+      env.accounts.holdDelete!.complete();
+      await t.pumpAndSettle();
+      expect(
+        _said('Tuvimos un problema de nuestro lado. Inténtalo de nuevo en un momento.'),
+        findsOneWidget,
+      );
+      expect(find.text('¿Eliminar tu cuenta?'), findsOneWidget);
+      expect(_confirmOn(t), isTrue);
+      // Free again: the back button closes it, as before.
+      await t.binding.handlePopRoute();
+      await t.pumpAndSettle();
+      expect(find.text('¿Eliminar tu cuenta?'), findsNothing);
+      handle.dispose();
+    });
+
+    testWidgets('a sheet that is closed by the app anyway still says a failure', (t) async {
+      final env = await busy(t);
+      // Something other than the person closes it (a link opening a page, say).
+      Navigator.of(
+        t.element(find.byKey(const Key('settings.delete.field'))),
+        rootNavigator: true,
+      ).pop();
+      await t.pumpAndSettle();
+      expect(find.text('¿Eliminar tu cuenta?'), findsNothing);
+      env.accounts.deleteFailure = const HomeFailure(0);
+      env.accounts.holdDelete!.complete();
+      await t.pumpAndSettle();
+      expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
+      await t.pump(const Duration(seconds: 10));
+    });
+
+    testWidgets(
+      'a second request meanwhile gets the same answer: one DELETE, never a false success',
+      (t) async {
+        final env = await pumpAccount(t);
+        env.accounts.holdDelete = Completer<void>();
+        env.accounts.deleteFailure = const HomeFailure(503);
+        final deletion = env.app.container.read(accountDeletionProvider);
+        final first = deletion.delete();
+        final second = deletion.delete();
+        env.accounts.holdDelete!.complete();
+        await expectLater(first, throwsA(isA<HomeFailure>()));
+        await expectLater(second, throwsA(isA<HomeFailure>()));
+        expect(env.accounts.deletes, 1);
+        expect(env.app.stored, isNotNull);
+      },
+    );
+
+    testWidgets('at rest the sheet still closes by a tap outside and by back', (t) async {
+      await pumpAccount(t);
+      await _openSheet(t);
+      await t.tapAt(const Offset(195, 60));
+      await t.pumpAndSettle();
+      expect(find.text('¿Eliminar tu cuenta?'), findsNothing);
+      await t.tap(find.byKey(const Key('settings.delete')));
+      await t.pumpAndSettle();
+      await t.binding.handlePopRoute();
+      await t.pumpAndSettle();
+      expect(find.text('¿Eliminar tu cuenta?'), findsNothing);
+    });
   });
 
   group('the export first', () {

@@ -30,6 +30,11 @@ const colourTolerance = 24;
 /// the parity's device pixel ratio of 2 (spec §5's one-pixel wobble).
 const shiftTolerance = 2;
 
+/// The most room (parity.json's `maxInk`, in percent) a pair may be given over `--max`. It is for day
+/// pages of dark text, whose glyph edges Chrome and Flutter draw a little differently; a pair that
+/// needs more is not noisy, it is wrong.
+const maxInkCeiling = 2.5;
+
 const _gutter = 24;
 const _scale = 4;
 const _label = 7 * _scale + 16;
@@ -82,6 +87,14 @@ int run(List<String> args, {required String root, required StringSink out}) {
     // page of dark text on the day's light cards, whose glyph edges Chrome and Flutter draw a
     // little differently. It never lowers the limit, and the pair says so on its line.
     final room = (pair['maxInk'] as num?)?.toDouble();
+    if (room != null && room > maxInkCeiling) {
+      // Not a way to wave a pair through: past the ceiling a pair is wrong, not noisy.
+      out.writeln(
+        '$name: maxInk ${room.toStringAsFixed(1)}% is over the ceiling of $maxInkCeiling% (parity.json)',
+      );
+      failed = true;
+      continue;
+    }
     final limit = maxPercent == null ? null : max(maxPercent, room ?? maxPercent);
     final over = limit != null && diff.inkShare * 100 > limit;
     if (over) failed = true;

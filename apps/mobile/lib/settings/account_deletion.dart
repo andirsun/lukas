@@ -33,14 +33,11 @@ class AccountDeletion {
   AccountDeletion(this._ref);
 
   final Ref _ref;
-  var _running = false;
+  Future<void>? _inFlight;
 
   /// The session token of an attempt whose answer may have been lost (no answer at all, or a 5xx):
   /// the account may be gone already, so a later 401 with that same token means it is.
   String? _mayBeGoneFor;
-
-  /// Whether a deletion is under way (a second call while it is, does nothing).
-  bool get running => _running;
 
   /// `DELETE /v1/me` and then the phone. A failure that is the server's refusal or no answer is
   /// thrown as a [HomeFailure] and changes nothing, here or there. A 401 is the server saying it no
@@ -48,31 +45,30 @@ class AccountDeletion {
   /// gone, and the phone is cleared as after a delete. On a first attempt it means the session had
   /// expired and the account still exists: the phone signs out and throws [AccountSessionExpired],
   /// so the person is told plainly that nothing was deleted.
-  Future<void> delete() async {
-    if (_running) return;
-    _running = true;
+  ///
+  /// A call while one is under way gets that one's answer (the same success, the same failure): it
+  /// never sends a second DELETE, and never reports a success that has not happened.
+  Future<void> delete() => _inFlight ??= _delete().whenComplete(() => _inFlight = null);
+
+  Future<void> _delete() async {
+    // Before the account is gone: who it is, for what is kept under its id.
+    final id = await _accountId();
+    final token = _ref.read(sessionProvider).stored?.token;
     try {
-      // Before the account is gone: who it is, for what is kept under its id.
-      final id = await _accountId();
-      final token = _ref.read(sessionProvider).stored?.token;
-      try {
-        await _ref.read(accountRepositoryProvider).deleteAccount();
-      } on HomeFailure catch (failure) {
-        if (!failure.unauthorized) {
-          if (failure.offline || failure.status >= 500) _mayBeGoneFor = token;
-          rethrow;
-        }
-        if (token == null || token != _mayBeGoneFor) {
-          _mayBeGoneFor = null;
-          await _ref.read(sessionProvider.notifier).signOut(discardGuest: true);
-          throw const AccountSessionExpired();
-        }
+      await _ref.read(accountRepositoryProvider).deleteAccount();
+    } on HomeFailure catch (failure) {
+      if (!failure.unauthorized) {
+        if (failure.offline || failure.status >= 500) _mayBeGoneFor = token;
+        rethrow;
       }
-      _mayBeGoneFor = null;
-      await _clearPhone(id);
-    } finally {
-      _running = false;
+      if (token == null || token != _mayBeGoneFor) {
+        _mayBeGoneFor = null;
+        await _ref.read(sessionProvider.notifier).signOut(discardGuest: true);
+        throw const AccountSessionExpired();
+      }
     }
+    _mayBeGoneFor = null;
+    await _clearPhone(id);
   }
 
   Future<String?> _accountId() async {

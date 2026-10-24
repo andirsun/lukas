@@ -70,17 +70,30 @@ class DeleteAccountCard extends ConsumerWidget {
     );
   }
 
-  Future<void> _open(BuildContext context, String email) => LkSheet.show<bool>(
-    context,
-    title: AppLocalizations.of(context).settingsAccountDeleteSheetTitle,
-    children: [_DeleteForm(email: email)],
-  );
+  Future<void> _open(BuildContext context, String email) async {
+    // While the DELETE is on its way the person cannot close the sheet, as the web's `close()`
+    // ignores `busy`: the form turns this on and off.
+    final busy = ValueNotifier(false);
+    try {
+      await LkSheet.show<bool>(
+        context,
+        title: AppLocalizations.of(context).settingsAccountDeleteSheetTitle,
+        locked: busy,
+        children: [_DeleteForm(email: email, busy: busy)],
+      );
+    } finally {
+      busy.dispose();
+    }
+  }
 }
 
 class _DeleteForm extends ConsumerStatefulWidget {
-  const _DeleteForm({required this.email});
+  const _DeleteForm({required this.email, required this.busy});
 
   final String email;
+
+  /// Told whether a delete is under way, for the sheet around the form.
+  final ValueNotifier<bool> busy;
 
   @override
   ConsumerState<_DeleteForm> createState() => _DeleteFormState();
@@ -107,6 +120,7 @@ class _DeleteFormState extends ConsumerState<_DeleteForm> {
     final l10n = AppLocalizations.of(context);
     final navigator = Navigator.of(context);
     final toasts = ToastHost.of(context);
+    widget.busy.value = true;
     setState(() {
       _busy = true;
       _error = null;
@@ -116,17 +130,27 @@ class _DeleteFormState extends ConsumerState<_DeleteForm> {
     } on AccountSessionExpired {
       // Signed out, with the account still there: say so where the person is now (entry).
       toasts.say(l10n.settingsAccountDeleteExpired, error: true);
-      if (mounted) navigator.pop(false);
+      if (mounted) {
+        widget.busy.value = false;
+        navigator.pop(false);
+      }
       return;
     } on Object catch (error) {
-      if (!mounted) return;
       final failure = error is HomeFailure ? error : const HomeFailure(0, code: 'internal_error');
+      final message = profileFailureMessage(l10n, failure);
+      if (!mounted) {
+        // Something other than the person closed the sheet meanwhile: the failure is still said.
+        toasts.say(message, error: true);
+        return;
+      }
+      widget.busy.value = false;
       setState(() {
         _busy = false;
-        _error = profileFailureMessage(l10n, failure);
+        _error = message;
       });
       return;
     }
+    widget.busy.value = false;
     // The session is over and entry is showing under the sheet: the sheet goes.
     if (mounted) navigator.pop(true);
   }

@@ -3,6 +3,7 @@
 // `.lk-sheet-pinned`, `.lk-sheet-body`, `.lk-sheet-footer`).
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
@@ -49,6 +50,11 @@ abstract final class LkSheet {
   /// sheet scrolls; then [stuck] (the web's `.lk-sheet-footer` in a sheet that scrolls as a whole:
   /// a budget's Guardar) stays at the bottom of the sheet while the rest scrolls above it.
   ///
+  /// While [locked] is true the sheet cannot be closed by the person at all (no backdrop, drag, Escape,
+  /// "Cerrar" or back button), and is again when it turns false: a sheet that is busy with something
+  /// that must not be walked away from (the web's `close()` ignoring `busy`). What is in the sheet
+  /// and the caller can still pop the route.
+  ///
   /// With [dismissible] false only what is in the sheet closes it (the caller pops the route): the
   /// backdrop, the drag, Escape and the header's "Cerrar" are gone. The system's back button then
   /// closes it with [backResult]'s value, or does nothing without one. A pop that does not come
@@ -63,6 +69,7 @@ abstract final class LkSheet {
     StuckGaps stuckGaps = StuckGaps.budget,
     bool useRootNavigator = true,
     bool dismissible = true,
+    ValueListenable<bool>? locked,
     T Function()? backResult,
     String Function(BuildContext context)? titleOf,
     Widget Function(Widget sheet)? wrap,
@@ -79,6 +86,7 @@ abstract final class LkSheet {
         stuck: stuck,
         stuckGaps: stuckGaps,
         dismissible: dismissible,
+        locked: locked,
         backResult: backResult,
         themes: InheritedTheme.capture(from: context, to: navigator.context),
         barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
@@ -165,6 +173,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
     required this.stuck,
     required this.stuckGaps,
     required this.dismissible,
+    required this.locked,
     required this.backResult,
     required this.themes,
     required this.barrierLabel,
@@ -179,6 +188,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
   final List<Widget>? stuck;
   final StuckGaps stuckGaps;
   final bool dismissible;
+  final ValueListenable<bool>? locked;
   final T Function()? backResult;
   final CapturedThemes themes;
 
@@ -215,6 +225,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
       stuck: stuck,
       stuckGaps: stuckGaps,
       dismissible: dismissible,
+      locked: locked,
       backResult: backResult == null ? null : () => backResult!(),
       children: children,
     ),
@@ -234,6 +245,7 @@ class _SheetPage extends StatefulWidget {
     required this.stuck,
     required this.stuckGaps,
     required this.dismissible,
+    required this.locked,
     required this.backResult,
   });
 
@@ -248,6 +260,7 @@ class _SheetPage extends StatefulWidget {
   final List<Widget>? stuck;
   final StuckGaps stuckGaps;
   final bool dismissible;
+  final ValueListenable<bool>? locked;
   final Object? Function()? backResult;
 
   @override
@@ -268,11 +281,19 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
   double _from = 0;
   double _height = 1;
 
+  /// Whether the person may close the sheet now: it is [_SheetPage.dismissible] and not locked.
+  bool get _dismissible => widget.dismissible && !(widget.locked?.value ?? false);
+
+  void _lockChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
     _dragY.addListener(() => setState(() {}));
     _scroll.addListener(_onScroll);
+    widget.locked?.addListener(_lockChanged);
   }
 
   @override
@@ -283,6 +304,7 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
 
   @override
   void dispose() {
+    widget.locked?.removeListener(_lockChanged);
     _dragY.dispose();
     _scroll.dispose();
     super.dispose();
@@ -294,6 +316,7 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
   }
 
   void _close() {
+    if (!_dismissible) return;
     if (widget.route.isCurrent) Navigator.of(context).pop();
   }
 
@@ -371,7 +394,7 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     _springBack();
   }
 
-  Map<Type, GestureRecognizerFactory> get _gestures => !widget.dismissible
+  Map<Type, GestureRecognizerFactory> get _gestures => !_dismissible
       ? const {}
       : {
           SheetDragRecognizer: GestureRecognizerFactoryWithHandlers<SheetDragRecognizer>(
@@ -425,7 +448,7 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
                 ),
               ),
             ),
-            if (widget.dismissible)
+            if (_dismissible)
               PressButton.text(
                 l10n.close,
                 tone: PressTone.ghost,
@@ -624,9 +647,7 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
           explicitChildNodes: true,
           label: widget.titleOf?.call(context) ?? widget.title,
           child: CallbackShortcuts(
-            bindings: {
-              if (widget.dismissible) const SingleActivator(LogicalKeyboardKey.escape): _close,
-            },
+            bindings: {if (_dismissible) const SingleActivator(LogicalKeyboardKey.escape): _close},
             child: Focus(
               autofocus: true,
               child: Stack(
@@ -638,7 +659,7 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         // Not dismissible: the backdrop still takes the tap, and does nothing.
-                        onTap: widget.dismissible ? _close : () {},
+                        onTap: _dismissible ? _close : () {},
                         child: ColoredBox(color: scrim),
                       ),
                     ),
@@ -661,14 +682,16 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
       ),
     );
     final wrapped = widget.wrap?.call(page) ?? page;
-    if (widget.dismissible) return wrapped;
-    // The system's back button: the caller's answer, or nothing. A pop from the app itself does
-    // not come here.
+    if (widget.dismissible && widget.locked == null) return wrapped;
+    // The system's back button: free while the person may close the sheet; otherwise the caller's
+    // answer, or nothing, and nothing at all while it is locked. A pop from the app itself does not
+    // come here.
+    final locked = widget.locked?.value ?? false;
     return PopScope<Object?>(
-      canPop: false,
+      canPop: widget.dismissible && !locked,
       onPopInvokedWithResult: (didPop, _) {
         final answer = widget.backResult;
-        if (!didPop && answer != null && widget.route.isCurrent) {
+        if (!didPop && !locked && answer != null && widget.route.isCurrent) {
           Navigator.of(context).pop(answer());
         }
       },

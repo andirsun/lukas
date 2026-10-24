@@ -100,6 +100,7 @@ void main() {
 
   group('run', () {
     late Directory root;
+    var lines = '';
 
     setUp(() {
       root = Directory.systemTemp.createTempSync('parity-compose');
@@ -139,36 +140,51 @@ void main() {
       expect(run(['--max', '30'], root: root.path, out: StringBuffer()), 0);
     });
 
-    test('a pair\'s maxInk gives it room over --max, and never less', () {
-      File('${root.path}/test/parity/parity.json').writeAsStringSync(
+    test('a pair\'s maxInk gives it room over --max, never less, and never past the ceiling', () {
+      // "near" differs on 81 of 3,681 ink pixels: 2.2%.
+      final web = page(size: 80, x: 5, y: 5, w: 60, h: 60);
+      final app = page(size: 80, x: 5, y: 5, w: 60, h: 60);
+      for (var j = 68; j < 77; j++) {
+        for (var i = 68; i < 77; i++) {
+          app.pixels.fillRange(app.offset(i, j), app.offset(i, j) + 3, 240);
+        }
+      }
+      writePng('${root.path}/test/parity/web/near-night.png', web);
+      writePng('${root.path}/test/parity/app/near-night.png', app);
+      void pairs(Object? room) => File('${root.path}/test/parity/parity.json').writeAsStringSync(
         jsonEncode([
-          {'id': 'same', 'storyId': 'ui-x--same', 'theme': 'night', 'appTest': 'x_test.dart'},
           {
-            'id': 'off',
-            'storyId': 'ui-x--off',
+            'id': 'near',
+            'storyId': 'ui-x--near',
             'theme': 'night',
             'appTest': 'x_test.dart',
-            'maxInk': 30,
+            'maxInk': ?room,
           },
         ]),
       );
-      final out = StringBuffer();
-      expect(run(['--max', '2'], root: root.path, out: out), 0);
-      expect(out.toString(), contains('(room: 30.0%)'));
-      // Over its own room it fails, whatever --max says.
-      File('${root.path}/test/parity/parity.json').writeAsStringSync(
-        jsonEncode([
-          {'id': 'same', 'storyId': 'ui-x--same', 'theme': 'night', 'appTest': 'x_test.dart'},
-          {
-            'id': 'off',
-            'storyId': 'ui-x--off',
-            'theme': 'night',
-            'appTest': 'x_test.dart',
-            'maxInk': 1,
-          },
-        ]),
-      );
-      expect(run(['--max', '2'], root: root.path, out: StringBuffer()), 1);
+      int exit(String line, [Object? room]) {
+        pairs(room);
+        final out = StringBuffer();
+        final code = run(['--max', '2'], root: root.path, out: out);
+        lines = out.toString();
+        return code;
+      }
+
+      // Without room 2.2% is over 2.
+      expect(exit('plain'), 1);
+      expect(lines, contains('FAIL: over 2.0%'));
+      // With room under the ceiling, it passes, and the line says so.
+      expect(exit('room', 2.4), 0);
+      expect(lines, contains('(room: 2.4%)'));
+      // Room that is not enough still fails, at its own limit; it never lowers --max.
+      expect(exit('small', 2.1), 1);
+      expect(lines, contains('FAIL: over 2.1%'));
+      expect(exit('lower', 1), 1);
+      expect(lines, contains('FAIL: over 2.0%'));
+      // Past the ceiling the allowance is not accepted at all, and the line says so.
+      expect(maxInkCeiling, 2.5);
+      expect(exit('huge', 30), 1);
+      expect(lines, contains('maxInk 30.0% is over the ceiling of 2.5%'));
     });
 
     test('a pair with known differences says so, on its line and in the summary', () {
