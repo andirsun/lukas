@@ -134,6 +134,7 @@ class DateField extends StatelessWidget {
     required this.date,
     required this.locale,
     required this.onTap,
+    this.invalid = false,
   });
 
   final String label;
@@ -142,6 +143,9 @@ class DateField extends StatelessWidget {
   final String date;
   final String locale;
   final VoidCallback onTap;
+
+  /// The field has a mistake: its border is `over` (`border-over`).
+  final bool invalid;
 
   @override
   Widget build(BuildContext context) {
@@ -154,6 +158,7 @@ class DateField extends StatelessWidget {
         label: label,
         child: InputBox(
           focused: state.focusVisible,
+          borderColor: invalid ? colors.over : null,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

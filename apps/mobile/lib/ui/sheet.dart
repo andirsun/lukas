@@ -60,6 +60,7 @@ abstract final class LkSheet {
     List<Widget> pinned = const [],
     List<Widget>? footer,
     List<Widget>? stuck,
+    StuckGaps stuckGaps = StuckGaps.budget,
     bool useRootNavigator = true,
     bool dismissible = true,
     T Function()? backResult,
@@ -76,6 +77,7 @@ abstract final class LkSheet {
         pinned: pinned,
         footer: footer,
         stuck: stuck,
+        stuckGaps: stuckGaps,
         dismissible: dismissible,
         backResult: backResult,
         themes: InheritedTheme.capture(from: context, to: navigator.context),
@@ -103,6 +105,23 @@ class LkSheetScope extends InheritedWidget {
 
 /// Phones up to 844 px tall (`@media (max-height: 859.98px)`) get the tighter footer and keys.
 const compactFooterBelow = 860.0;
+
+/// The two gaps around a stuck footer, which follow the web form the footer is in: the form's own
+/// gap (the room between its last row and the footer) and how far the footer's bottom edge sits
+/// above the sheet's bottom, under its own padding.
+class StuckGaps {
+  const StuckGaps({required this.form, required this.bottom});
+
+  final double form;
+  final double bottom;
+
+  /// The budget sheet's form, `gap-(--space-2)`.
+  static const budget = StuckGaps(form: _formGap, bottom: _stuckBottomGap);
+
+  /// The recurring form, `gap-(--space-3)`: its footer sits flush on the sheet's padding
+  /// (calibrated against its picture).
+  static const recurring = StuckGaps(form: LukitasTokens.space3, bottom: 0);
+}
 
 /// How far a stuck footer's bottom edge sits above the sheet's bottom, under the footer's own
 /// padding: the sheet's padding (`space-4`) less the form's gap that the web's toast slot adds under
@@ -144,6 +163,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
     required this.pinned,
     required this.footer,
     required this.stuck,
+    required this.stuckGaps,
     required this.dismissible,
     required this.backResult,
     required this.themes,
@@ -157,6 +177,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
   final List<Widget> pinned;
   final List<Widget>? footer;
   final List<Widget>? stuck;
+  final StuckGaps stuckGaps;
   final bool dismissible;
   final T Function()? backResult;
   final CapturedThemes themes;
@@ -192,6 +213,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
       pinned: pinned,
       footer: footer,
       stuck: stuck,
+      stuckGaps: stuckGaps,
       dismissible: dismissible,
       backResult: backResult == null ? null : () => backResult!(),
       children: children,
@@ -210,6 +232,7 @@ class _SheetPage extends StatefulWidget {
     required this.pinned,
     required this.footer,
     required this.stuck,
+    required this.stuckGaps,
     required this.dismissible,
     required this.backResult,
   });
@@ -223,6 +246,7 @@ class _SheetPage extends StatefulWidget {
   final List<Widget> pinned;
   final List<Widget>? footer;
   final List<Widget>? stuck;
+  final StuckGaps stuckGaps;
   final bool dismissible;
   final Object? Function()? backResult;
 
@@ -439,7 +463,7 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
           10,
           side,
           // With a stuck footer the form's gap is all that follows the content, then the footer.
-          stuck == null ? bottom : _formGap,
+          stuck == null ? bottom : widget.stuckGaps.form,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -460,7 +484,11 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
                 verticalDirection: VerticalDirection.up,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _SheetFooter(safeBottom: safe, bottomGap: _stuckBottomGap, children: stuck),
+                  _SheetFooter(
+                    safeBottom: safe,
+                    bottomGap: widget.stuckGaps.bottom,
+                    children: stuck,
+                  ),
                   Flexible(
                     child: ClipRect(
                       clipper: const _KeyEdgeClip(),

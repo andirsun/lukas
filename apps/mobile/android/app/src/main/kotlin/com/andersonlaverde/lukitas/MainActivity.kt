@@ -17,6 +17,7 @@ import com.andersonlaverde.lukitas.notices.DueWorker
 import com.andersonlaverde.lukitas.notices.GuestWorker
 import com.andersonlaverde.lukitas.notices.NOTICE_OUTCOME
 import com.andersonlaverde.lukitas.notices.NoticePoster
+import com.andersonlaverde.lukitas.notices.NoticeSettings
 import com.andersonlaverde.lukitas.notices.NoticesChannel
 import com.andersonlaverde.lukitas.passkeys.PasskeyChannel
 import com.andersonlaverde.lukitas.sounds.SoundChannel
@@ -216,6 +217,9 @@ class MainActivity : FlutterActivity() {
                     // 9:00 and 45 days on; they post only when the person allowed notifications.
                     "runDueNotice" -> runOnce(OneTimeWorkRequestBuilder<DueWorker>().build(), NOTICE_OUTCOME, result)
                     "runGuestNotice" -> runOnce(OneTimeWorkRequestBuilder<GuestWorker>().build(), NOTICE_OUTCOME, result)
+                    // Whether "Hoy vence…" is scheduled: the switch the app sets when it schedules the
+                    // job and clears when it cancels it (NoticeScheduler).
+                    "dueScheduled" -> result.success(NoticeSettings(this).dueEnabled)
                     // The text of each notice this app has on the shade.
                     "activeNotices" -> result.success(
                         getSystemService(NotificationManager::class.java).activeNotifications.map {

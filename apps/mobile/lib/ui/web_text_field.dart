@@ -28,6 +28,7 @@ class WebTextField extends StatefulWidget {
     this.autofillHints,
     this.inputFormatters,
     this.maxLines = 1,
+    this.inputMinHeight = 36,
     this.enableSuggestions = false,
     this.onSubmitted,
     this.onChanged,
@@ -47,6 +48,10 @@ class WebTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final Iterable<String>? autofillHints;
   final List<TextInputFormatter>? inputFormatters;
+
+  /// The input's own least height inside the box: `min-h-9` (36) on the sign-in fields; a field
+  /// with only `min-h-11` on the box is as tall as its line (24 for the page's 16px text).
+  final double inputMinHeight;
 
   /// How many lines show before it scrolls: the web's `<textarea rows>`; one is the plain input.
   final int maxLines;
@@ -113,7 +118,7 @@ class _WebTextFieldState extends State<WebTextField> {
         borderColor: widget.invalid ? colors.over : null,
         child: ConstrainedBox(
           // `min-h-9`: the input inside the box.
-          constraints: const BoxConstraints(minHeight: 36),
+          constraints: BoxConstraints(minHeight: widget.inputMinHeight),
           child: Semantics(
             label: widget.label,
             textField: true,

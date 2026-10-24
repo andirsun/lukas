@@ -2229,5 +2229,199 @@
   "categoryErrorHasTransactions": "Esta categoría ya tiene movimientos, así que su tipo no puede cambiar.",
   "@categoryErrorHasTransactions": {
     "description": "Category sheet: changing the kind of a category with transactions."
+  },
+  "recurringLead": "Lo que se repite cada mes o cada año. Lukitas lo anota como pendiente para que no se te pase.",
+  "@recurringLead": {
+    "description": "Recurring payments: the line under the title, when there are some."
+  },
+  "recurringEmpty": "Aquí van tus pagos fijos: arriendo, Spotify, el salario… Créalos una vez y cada mes te esperan como pendientes.",
+  "@recurringEmpty": {
+    "description": "Recurring payments: what Lukitas says when there are none."
+  },
+  "recurringMonthlyRule": "Cada mes, el día {day}",
+  "@recurringMonthlyRule": {
+    "description": "A recurring payment's rule in words, monthly.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "recurringYearlyRule": "Cada año, el {day} de {month}",
+  "@recurringYearlyRule": {
+    "description": "A recurring payment's rule in words, yearly.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String",
+        "example": "marzo"
+      }
+    }
+  },
+  "recurringNext": "Próximo: {date}",
+  "@recurringNext": {
+    "description": "A recurring payment's next date.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "23 oct 2026"
+      }
+    }
+  },
+  "recurringEnded": "Ya terminó",
+  "@recurringEnded": {
+    "description": "A recurring payment with no next date."
+  },
+  "recurringSaved": "Guardaste {name}.",
+  "@recurringSaved": {
+    "description": "Toast after saving a recurring payment.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Spotify"
+      }
+    }
+  },
+  "recurringDeleted": "Eliminaste {name}. Lo que ya pagaste se queda.",
+  "@recurringDeleted": {
+    "description": "Toast after deleting a recurring payment.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Spotify"
+      }
+    }
+  },
+  "recurringFormTitleNew": "Nuevo recurrente",
+  "@recurringFormTitleNew": {
+    "description": "Recurring form: the sheet's title for a new one."
+  },
+  "recurringFormTitleEdit": "Editar recurrente",
+  "@recurringFormTitleEdit": {
+    "description": "Recurring form: the sheet's title when editing."
+  },
+  "recurringFormKindLabel": "Tipo",
+  "@recurringFormKindLabel": {
+    "description": "Recurring form: names the expense / income switch."
+  },
+  "recurringFormExpense": "Gasto",
+  "@recurringFormExpense": {
+    "description": "Recurring form: the expense option."
+  },
+  "recurringFormIncome": "Ingreso",
+  "@recurringFormIncome": {
+    "description": "Recurring form: the income option."
+  },
+  "recurringFormNameLabel": "Nombre",
+  "@recurringFormNameLabel": {
+    "description": "Recurring form: the name field's label."
+  },
+  "recurringFormNamePlaceholder": "Arriendo",
+  "@recurringFormNamePlaceholder": {
+    "description": "Recurring form: the name field's example."
+  },
+  "recurringFormCategoryLabel": "Categoría",
+  "@recurringFormCategoryLabel": {
+    "description": "Recurring form: the categories' label."
+  },
+  "recurringFormNoCategoriesExpense": "Aún no tienes categorías de gasto. Crea una en Categorías.",
+  "@recurringFormNoCategoriesExpense": {
+    "description": "Recurring form: no spending category to pick."
+  },
+  "recurringFormNoCategoriesIncome": "Aún no tienes categorías de ingreso. Crea una en Categorías.",
+  "@recurringFormNoCategoriesIncome": {
+    "description": "Recurring form: no income category to pick."
+  },
+  "recurringFormFrequencyLabel": "Se repite",
+  "@recurringFormFrequencyLabel": {
+    "description": "Recurring form: the label of the monthly / yearly switch."
+  },
+  "recurringFormMonthly": "Cada mes",
+  "@recurringFormMonthly": {
+    "description": "Recurring form: the monthly option."
+  },
+  "recurringFormYearly": "Cada año",
+  "@recurringFormYearly": {
+    "description": "Recurring form: the yearly option."
+  },
+  "recurringFormDayLabel": "Día del mes",
+  "@recurringFormDayLabel": {
+    "description": "Recurring form: the day-of-month field's label."
+  },
+  "recurringFormShortMonths": "En los meses que no llegan a ese día, cae el último día del mes.",
+  "@recurringFormShortMonths": {
+    "description": "Recurring form: a day past 28 falls on the last day of shorter months."
+  },
+  "recurringFormMonthLabel": "Mes",
+  "@recurringFormMonthLabel": {
+    "description": "Recurring form: the month field's label (yearly)."
+  },
+  "recurringFormMonthPlaceholder": "Elige un mes",
+  "@recurringFormMonthPlaceholder": {
+    "description": "Recurring form: the month field before one is picked."
+  },
+  "recurringFormStartLabel": "Desde",
+  "@recurringFormStartLabel": {
+    "description": "Recurring form: the start date's label."
+  },
+  "recurringFormEndLabel": "Hasta (opcional)",
+  "@recurringFormEndLabel": {
+    "description": "Recurring form: the optional end date's label."
+  },
+  "recurringFormSave": "Guardar",
+  "@recurringFormSave": {
+    "description": "Recurring form: the save button."
+  },
+  "recurringFormDelete": "Eliminar recurrente",
+  "@recurringFormDelete": {
+    "description": "Recurring form: the delete button (editing)."
+  },
+  "recurringFormAmountRequired": "Escribe el monto.",
+  "@recurringFormAmountRequired": {
+    "description": "Recurring form: no amount typed."
+  },
+  "recurringFormNameRequired": "Ponle un nombre.",
+  "@recurringFormNameRequired": {
+    "description": "Recurring form: no name."
+  },
+  "recurringFormCategoryRequired": "Elige una categoría.",
+  "@recurringFormCategoryRequired": {
+    "description": "Recurring form: no category picked."
+  },
+  "recurringFormMonthRequired": "Elige el mes en que se repite.",
+  "@recurringFormMonthRequired": {
+    "description": "Recurring form: a yearly one without its month."
+  },
+  "recurringFormStartRequired": "Elige desde cuándo.",
+  "@recurringFormStartRequired": {
+    "description": "Recurring form: no start date."
+  },
+  "recurringFormEndBeforeStart": "La fecha final va después de la inicial.",
+  "@recurringFormEndBeforeStart": {
+    "description": "Recurring form: the end is before the start."
+  },
+  "recurringDeleteTitle": "¿Eliminar {name}?",
+  "@recurringDeleteTitle": {
+    "description": "Deleting a recurring payment: the question.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Spotify"
+      }
+    }
+  },
+  "recurringDeleteBody": "Ya no se anotará solo, y sus pendientes de este mes en adelante se borran. Lo que ya pagaste se queda.",
+  "@recurringDeleteBody": {
+    "description": "Deleting a recurring payment: what it means."
+  },
+  "recurringDeleteConfirm": "Sí, eliminar",
+  "@recurringDeleteConfirm": {
+    "description": "Deleting a recurring payment: the confirming button."
+  },
+  "recurringFormClearEnd": "Quitar la fecha final",
+  "@recurringFormClearEnd": {
+    "description": "Recurring form: clears the optional end date (the web's date field clears with its own control)."
   }
 }

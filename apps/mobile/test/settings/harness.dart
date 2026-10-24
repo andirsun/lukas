@@ -11,6 +11,7 @@ import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
+import 'package:lukitas/recurring/recurring_repository.dart';
 import 'package:lukitas/router.dart';
 import 'package:lukitas/settings/settings_store.dart';
 import 'package:lukitas/settings/url_opener.dart';
@@ -19,6 +20,7 @@ import '../capture/fakes.dart';
 import '../entry/fakes.dart';
 import '../feedback/fakes.dart';
 import '../home/fakes.dart';
+import '../recurring/fakes.dart';
 import 'fakes.dart';
 
 /// Opens URLs into a list instead of a browser.
@@ -120,6 +122,9 @@ Future<SettingsEnv> pumpSettingsApp(
     modelStoreProvider.overrideWithValue(models),
     feedbackPlatformProvider.overrideWithValue(FakeFeedbackPlatform()),
     homeRepositoryProvider.overrideWithValue(homeRepo ?? FakeHomeRepository()),
+    recurringRepositoryProvider.overrideWithValue(
+      FakeRecurringRepository(homeRepo ?? FakeHomeRepository()),
+    ),
     widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
     homeCacheStoreProvider.overrideWithValue(FakeCacheStore()),
     widgetSnapshotWriterProvider.overrideWithValue(

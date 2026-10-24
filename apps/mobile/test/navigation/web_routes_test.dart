@@ -4,6 +4,7 @@ import 'package:lukitas/api/server_url.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/ui/bottom_bar.dart';
 import 'package:lukitas/ui/category_row.dart';
+import 'package:lukitas/ui/press_button.dart';
 import 'package:lukitas/welcome/welcome_screen.dart';
 
 import '../budgets/budgets_test.dart' show pumpBudgets;
@@ -148,17 +149,24 @@ void main() {
       }
     });
 
-    testWidgets('/recurring shows the web\'s page frame: back, title, the add button off', (
-      tester,
-    ) async {
-      final env = await pumpSettingsApp(tester, homeRepo: _withMovements());
-      env.router.go('/recurring');
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('recurring.page')), findsOneWidget);
-      expect(find.text('Recurrentes'), findsOneWidget);
-      expect(find.text('INICIO'), findsOneWidget);
-      expect(find.text('NUEVO RECURRENTE'), findsOneWidget);
-    });
+    testWidgets(
+      '/recurring shows the web\'s page: back, title, the add button and the empty list',
+      (tester) async {
+        final env = await pumpSettingsApp(tester, homeRepo: _withMovements());
+        env.router.go('/recurring');
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('recurring.page')), findsOneWidget);
+        expect(find.text('Recurrentes'), findsOneWidget);
+        expect(find.text('INICIO'), findsOneWidget);
+        expect(find.text('NUEVO RECURRENTE'), findsOneWidget);
+        expect(
+          tester.widget<PressButton>(find.byKey(const Key('recurring.add'))).onPressed,
+          isNotNull,
+          reason: 'the categories are in: the add button is on',
+        );
+        expect(find.textContaining('Aquí van tus pagos fijos'), findsOneWidget);
+      },
+    );
 
     testWidgets('/import shows the page\'s head: Lukitas and "Trae tu historial"', (tester) async {
       final env = await pumpSettingsApp(tester, homeRepo: _withMovements());

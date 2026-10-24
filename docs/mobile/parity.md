@@ -288,6 +288,22 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - **Text height.** A paragraph whose line is 22.5px (15px at 1.5: the confirm sheet's words, the budget card's "Sin
     presupuesto en…") is `CssLines`, as the other fractional lines are: without it every line is a half pixel taller
     than the web's and the sheet is 3px short at the top.
+- **Recurring payments (`manage-recurring--*`).** The page at `/recurring` and its sheets (new, edit, the delete question).
+  The pairs are `recurring-list`, `recurring-empty`, `recurring-pesos`, `recurring-new-sheet`, `recurring-edit-sheet`,
+  `recurring-delete-sheet`, `recurring-new-sheet-yearly` (day only) and the three "after a save" pictures
+  (`recurring-yearly-saved`, `recurring-income-saved`, `recurring-deleted`).
+  - A story that ends with a save or a delete holds the list the fake API answered *after* it, so the app renders that
+    list from the fixture. The toast is gone by the time the web's picture is taken; the ring a script's click leaves on
+    the add button is not, so the app test focuses it and sends a key (`_ringOnAdd`).
+  - `NewSheetOpen`, `EditSheetOpen`, `DeleteSheetOpen` and `NewSheetYearly` were added to `Recurring.stories.tsx` to give
+    the sheets a pair. (`DesktopDay` cannot be one: it looks for the desktop sidebar, so at 412px its play function throws
+    and the shot is the page without the sheet.)
+  - **The footer.** The form's footer is stuck (`StuckGaps.recurring`): the form's gap is `space-3`, so the figure sits 12px
+    above the keypad (`AmountField.gap`), and the footer sits flush on the sheet's padding. Its two buttons stretch to the
+    tallest, as the flex row does.
+  - **The selects and the dates** are drawn as the web's fields but open the app's own pickers: a sheet of choices for the
+    day and the month, and the date picker for the dates. The end date has a small button to take it out again, which the
+    browser's own date control does by itself. The pictures stop above them (the sheet scrolls), so they carry no pair.
 - **Análisis (`insights-insights--*`).** The page is as long as its three cards (about 2130px), and a pair
   compares the viewport only, so the stories that look at a card below the fold scroll the page to it
   (`TrendScrolled`, `TrendYearScrolled`, `TrendGapsScrolled` and `CostOfLivingScrolled` were added to

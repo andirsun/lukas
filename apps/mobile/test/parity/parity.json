@@ -1486,5 +1486,119 @@
     "storyId": "feedback-celebration--mid-flight-reduced-motion",
     "theme": "day",
     "appTest": "test/parity/celebration_parity_test.dart"
+  },
+  {
+    "id": "recurring-list",
+    "storyId": "manage-recurring--list",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-list",
+    "storyId": "manage-recurring--list",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-empty",
+    "storyId": "manage-recurring--empty",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-empty",
+    "storyId": "manage-recurring--empty",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-yearly-saved",
+    "storyId": "manage-recurring--yearly-requires-month",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-yearly-saved",
+    "storyId": "manage-recurring--yearly-requires-month",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-income-saved",
+    "storyId": "manage-recurring--create-monthly-income",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-income-saved",
+    "storyId": "manage-recurring--create-monthly-income",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-deleted",
+    "storyId": "manage-recurring--edit-and-delete",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-deleted",
+    "storyId": "manage-recurring--edit-and-delete",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-pesos",
+    "storyId": "manage-recurring--pesos-recurring",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-pesos",
+    "storyId": "manage-recurring--pesos-recurring",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-new-sheet",
+    "storyId": "manage-recurring--new-sheet-open",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-new-sheet",
+    "storyId": "manage-recurring--new-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-edit-sheet",
+    "storyId": "manage-recurring--edit-sheet-open",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-edit-sheet",
+    "storyId": "manage-recurring--edit-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-delete-sheet",
+    "storyId": "manage-recurring--delete-sheet-open",
+    "theme": "night",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-delete-sheet",
+    "storyId": "manage-recurring--delete-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "recurring-new-sheet-yearly",
+    "storyId": "manage-recurring--new-sheet-yearly",
+    "theme": "day",
+    "appTest": "test/parity/recurring_parity_test.dart"
   }
 ]

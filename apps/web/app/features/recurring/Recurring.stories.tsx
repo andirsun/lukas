@@ -184,6 +184,54 @@ export const EditAndDelete: Story = {
   },
 };
 
+/** The new-recurring sheet as it opens: expense, monthly, today as the day, the keypad. */
+export const NewSheetOpen: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/recurring" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const sheet = await openNew(canvas);
+    await expect(sheet.getByRole("tab", { name: "Gasto" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  },
+};
+
+/** A yearly one asks for its month too: the sheet with "Cada año" chosen, in the day theme. */
+export const NewSheetYearly: Story = {
+  globals: { theme: "day" },
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/recurring" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const sheet = await openNew(canvas);
+    await userEvent.click(sheet.getByRole("tab", { name: "Cada año" }));
+    await expect(sheet.getByRole("combobox", { name: "Mes" })).toBeVisible();
+  },
+};
+
+/** Editing Spotify: its name, amount, category and day come filled in, with "Eliminar recurrente". */
+export const EditSheetOpen: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/recurring" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: /^Spotify/ }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Editar recurrente" }));
+    await expect(sheet.getByRole("textbox", { name: "Nombre" })).toHaveValue("Spotify");
+  },
+};
+
+/** The question before deleting one, with what stays and what goes. */
+export const DeleteSheetOpen: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/recurring" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: /^Spotify/ }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Editar recurrente" }));
+    await userEvent.click(sheet.getByRole("button", { name: "Eliminar recurrente" }));
+    await expect(await screen.findByRole("dialog", { name: "¿Eliminar Spotify?" })).toBeVisible();
+  },
+};
+
 /**
  * Pesos: no decimal key, the muted lukas hint follows the typed figure (worked out from the ×100
  * amount that is sent), and the expense is stored negative in hundredths.

@@ -22,6 +22,8 @@ class ManagePage extends StatelessWidget {
     required this.header,
     required this.children,
     this.controller,
+    this.mainGap = LukitasTokens.space4,
+    this.mainBottom = LukitasTokens.space4,
   });
 
   /// The section the bottom bar marks (`home`, `insights`, or another one: none).
@@ -36,6 +38,11 @@ class ManagePage extends StatelessWidget {
   final List<Widget> children;
 
   final ScrollController? controller;
+
+  /// The gap between [children] and the room under them: `<main className="flex flex-col gap-(--space-4)
+  /// pb-(--space-4)">` on most pages, `gap-(--space-3)` and no padding on the recurring one.
+  final double mainGap;
+  final double mainBottom;
 
   /// `max-w-[480px]`.
   static const _maxWidth = 480.0;
@@ -84,10 +91,10 @@ class ManagePage extends StatelessWidget {
                             header,
                             // `<main className="flex flex-col gap-(--space-4) pb-(--space-4)">`
                             Padding(
-                              padding: const EdgeInsets.only(bottom: LukitasTokens.space4),
+                              padding: EdgeInsets.only(bottom: mainBottom),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                                spacing: LukitasTokens.space4,
+                                spacing: mainGap,
                                 children: children,
                               ),
                             ),

@@ -278,7 +278,12 @@ class AmountField extends StatelessWidget {
     this.invalid = false,
     this.compact = false,
     this.onNegative,
+    this.gap = LukitasTokens.space2,
   });
+
+  /// The room between the figure and the keypad: the form's own gap, which the web's fragment
+  /// leaves to its parent (`gap-2` in the budget sheet, `gap-3` in the recurring one).
+  final double gap;
 
   final String raw;
   final ValueChanged<String> onChanged;
@@ -304,7 +309,7 @@ class AmountField extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: LukitasTokens.space2,
+        spacing: gap,
         children: [
           AmountDisplay(raw: raw, currency: currency, sign: sign, tone: tone, invalid: invalid),
           Keypad(
