@@ -24,6 +24,7 @@ class ManagePage extends StatelessWidget {
     this.controller,
     this.mainGap = LukitasTokens.space4,
     this.mainBottom = LukitasTokens.space4,
+    this.top = LukitasTokens.space3,
   });
 
   /// The section the bottom bar marks (`home`, `insights`, or another one: none).
@@ -32,8 +33,8 @@ class ManagePage extends StatelessWidget {
   final VoidCallback onMic;
   final ValueChanged<String> onNavigate;
 
-  /// The back link.
-  final PageHeader header;
+  /// The back link; null for a page with none (the import's).
+  final PageHeader? header;
 
   final List<Widget> children;
 
@@ -43,6 +44,9 @@ class ManagePage extends StatelessWidget {
   /// pb-(--space-4)">` on most pages, `gap-(--space-3)` and no padding on the recurring one.
   final double mainGap;
   final double mainBottom;
+
+  /// The room above the header (or the first child): 12px, `pt-4` (16px) on the import page.
+  final double top;
 
   /// `max-w-[480px]`.
   static const _maxWidth = 480.0;
@@ -80,7 +84,7 @@ class ManagePage extends StatelessWidget {
                       child: Padding(
                         padding: EdgeInsets.fromLTRB(
                           inset + sides.left,
-                          LukitasTokens.space3,
+                          top,
                           inset + sides.right,
                           ShellRoom.of(context),
                         ),
@@ -88,7 +92,7 @@ class ManagePage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           spacing: LukitasTokens.space3,
                           children: [
-                            header,
+                            ?header,
                             // `<main className="flex flex-col gap-(--space-4) pb-(--space-4)">`
                             Padding(
                               padding: EdgeInsets.only(bottom: mainBottom),

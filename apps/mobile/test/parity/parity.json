@@ -1600,5 +1600,101 @@
     "storyId": "manage-recurring--new-sheet-yearly",
     "theme": "day",
     "appTest": "test/parity/recurring_parity_test.dart"
+  },
+  {
+    "id": "import-sources",
+    "storyId": "onboarding-import-page--sources",
+    "theme": "night",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-sources",
+    "storyId": "onboarding-import-page--sources",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-how-to",
+    "storyId": "onboarding-import-page--how-to",
+    "theme": "night",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-how-to",
+    "storyId": "onboarding-import-page--how-to",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-preview",
+    "storyId": "onboarding-import-page--preview",
+    "theme": "night",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-preview",
+    "storyId": "onboarding-import-page--preview",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-preview-english",
+    "storyId": "onboarding-import-page--preview-english",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-preview-rejected",
+    "storyId": "onboarding-import-page--preview-rejected-open",
+    "theme": "night",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-preview-rejected",
+    "storyId": "onboarding-import-page--preview-rejected-open",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-preview-switching",
+    "storyId": "onboarding-import-page--preview-switching",
+    "theme": "night",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-preview-switching",
+    "storyId": "onboarding-import-page--preview-switching",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-imported",
+    "storyId": "onboarding-import-page--imported",
+    "theme": "night",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-imported",
+    "storyId": "onboarding-import-page--imported",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-imported-switched",
+    "storyId": "onboarding-import-page--imported-switched",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-budgets-saved",
+    "storyId": "onboarding-import-page--budgets-saved",
+    "theme": "night",
+    "appTest": "test/parity/import_parity_test.dart"
+  },
+  {
+    "id": "import-budgets-saved",
+    "storyId": "onboarding-import-page--budgets-saved",
+    "theme": "day",
+    "appTest": "test/parity/import_parity_test.dart"
   }
 ]

@@ -2423,5 +2423,319 @@
   "recurringFormClearEnd": "Quitar la fecha final",
   "@recurringFormClearEnd": {
     "description": "Recurring form: clears the optional end date (the web's date field clears with its own control)."
+  },
+  "importSourcesLabel": "Desde dónde",
+  "@importSourcesLabel": {
+    "description": "Import: the heading over the list of apps to bring a history from."
+  },
+  "importSourceBudge": "Budge",
+  "@importSourceBudge": {
+    "description": "Import: the source Budge."
+  },
+  "importSourceSheet": "Excel, Google Sheets o CSV",
+  "@importSourceSheet": {
+    "description": "Import: the source \"Excel, Google Sheets or CSV\" (not available yet)."
+  },
+  "importSourceBuddy": "Buddy",
+  "@importSourceBuddy": {
+    "description": "Import: the source Buddy (not available yet)."
+  },
+  "importSourceOther": "Otras apps",
+  "@importSourceOther": {
+    "description": "Import: other apps (not available yet)."
+  },
+  "importSoon": "Pronto",
+  "@importSoon": {
+    "description": "Import: the badge on a source that is not available yet."
+  },
+  "importBudgeTitle": "Exporta tus movimientos de Budge",
+  "@importBudgeTitle": {
+    "description": "Import: the how-to for a Budge file, its heading."
+  },
+  "importBudgeStep1": "En Budge, busca la opción para exportar tus movimientos en CSV.",
+  "@importBudgeStep1": {
+    "description": "Import: how to get the file out of Budge, step 1."
+  },
+  "importBudgeStep2": "Guarda el archivo en este dispositivo.",
+  "@importBudgeStep2": {
+    "description": "Import: how to get the file out of Budge, step 2."
+  },
+  "importBudgeStep3": "Súbelo aquí: te mostramos qué vamos a importar antes de hacerlo.",
+  "@importBudgeStep3": {
+    "description": "Import: how to get the file out of Budge, step 3."
+  },
+  "importChoose": "Subir archivo de Budge",
+  "@importChoose": {
+    "description": "Import: the button that opens the document picker."
+  },
+  "importOtherSource": "Elegir otra fuente",
+  "@importOtherSource": {
+    "description": "Import: goes back to the list of sources."
+  },
+  "importReading": "Leyendo tu archivo…",
+  "@importReading": {
+    "description": "Import: shown while the file is read."
+  },
+  "importPreviewTitle": "Esto es lo que vamos a importar",
+  "@importPreviewTitle": {
+    "description": "Import: the heading of what the file holds."
+  },
+  "importFile": "Archivo: {name}",
+  "@importFile": {
+    "description": "Import: the file chosen.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importRange": "Del {from} al {to}",
+  "@importRange": {
+    "description": "Import: the dates the file covers.",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "importTransactions": "Movimientos",
+  "@importTransactions": {
+    "description": "Import: the count of transactions in the file."
+  },
+  "importDuplicates": "Repetidos (ya los tienes)",
+  "@importDuplicates": {
+    "description": "Import: the count of transactions that are already there."
+  },
+  "importRejected": "Filas con problemas",
+  "@importRejected": {
+    "description": "Import: the count of rows with problems."
+  },
+  "importNewCategories": "Categorías nuevas",
+  "@importNewCategories": {
+    "description": "Import: the categories the file would add."
+  },
+  "importRejectedDetails": "Ver las filas con problemas",
+  "@importRejectedDetails": {
+    "description": "Import: opens the list of rows with problems."
+  },
+  "importRejectedLine": "Línea {line}: {reason}",
+  "@importRejectedLine": {
+    "description": "Import: one row with a problem.",
+    "placeholders": {
+      "line": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "importReasonInvalidDate": "fecha no válida",
+  "@importReasonInvalidDate": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonInvalidAmount": "monto no válido",
+  "@importReasonInvalidAmount": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonZeroAmount": "monto en cero",
+  "@importReasonZeroAmount": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonMissingCategory": "sin categoría",
+  "@importReasonMissingCategory": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonCurrencyMismatch": "otra moneda",
+  "@importReasonCurrencyMismatch": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonOther": "no se pudo leer",
+  "@importReasonOther": {
+    "description": "Import: why a row was rejected, for a reason the app does not know."
+  },
+  "importRejectedMore": "y {count} más",
+  "@importRejectedMore": {
+    "description": "Import: how many rows with problems are not listed.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importCurrencySwitched": "Tu archivo está en {currency}, así que tu cuenta ahora usa {currency}.",
+  "@importCurrencySwitched": {
+    "description": "Import: the account now uses the file's currency.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "importCurrencySwitching": "Tu archivo está en {currency}: al importarlo, tu cuenta pasará a usar {currency}.",
+  "@importCurrencySwitching": {
+    "description": "Import: importing will switch the account to the file's currency.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "importBudgetsDropped": "Tus presupuestos en {old} se borrarán al cambiar a {currency}.",
+  "@importBudgetsDropped": {
+    "description": "Import: the budgets go with the old currency.",
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "importCurrencyLocked": "Tu archivo está en {file}, pero tu cuenta ya usa {account}: esas filas no se importan.",
+  "@importCurrencyLocked": {
+    "description": "Import: the account keeps its currency, so the file's rows are not imported.",
+    "placeholders": {
+      "file": {
+        "type": "String"
+      },
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "importConfirm": "Importar {count, plural, one{{count} movimiento} other{{count} movimientos}}",
+  "@importConfirm": {
+    "description": "Import: the button that imports.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importImporting": "Importando…",
+  "@importImporting": {
+    "description": "Import: the button while it imports."
+  },
+  "importOtherFile": "Usar otro archivo",
+  "@importOtherFile": {
+    "description": "Import: drops the preview to pick another file."
+  },
+  "importImported": "Importamos {count, plural, one{{count} movimiento} other{{count} movimientos}}.",
+  "@importImported": {
+    "description": "Import: the heading once it is done.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageBudgetsTitle": "Tus presupuestos",
+  "@importPageBudgetsTitle": {
+    "description": "Import page: the budgets heading after an import."
+  },
+  "importPageBudgetsLead": "Revísalos y guárdalos. Puedes dejar alguno vacío.",
+  "@importPageBudgetsLead": {
+    "description": "Import page: the line under the budgets heading."
+  },
+  "importSaveBudgets": "Guardar presupuestos",
+  "@importSaveBudgets": {
+    "description": "Import page: saves the budgets."
+  },
+  "importSavingBudgets": "Guardando…",
+  "@importSavingBudgets": {
+    "description": "Import page: the save button while it saves."
+  },
+  "importBudgetsSaved": "Guardamos tus presupuestos.",
+  "@importBudgetsSaved": {
+    "description": "Import page: the budgets were saved."
+  },
+  "importGoHome": "Ir al inicio",
+  "@importGoHome": {
+    "description": "Import page: goes home."
+  },
+  "importPrefillBasis": "Basado en lo que gastaste en {months, plural, one{tu último mes} other{tus últimos {months} meses}}",
+  "@importPrefillBasis": {
+    "description": "Import page: where the prefilled budgets come from.",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "importPrefillBasisActivity": "Basado en {months, plural, one{tu último mes} other{tus últimos {months} meses}} con movimientos",
+  "@importPrefillBasisActivity": {
+    "description": "Import page: where the prefilled budgets come from, for an old file.",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetsAmountLabel": "Presupuesto de {category}",
+  "@budgetsAmountLabel": {
+    "description": "Budgets form: the name of a category's field.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsInvalid": "Escribe solo el número, como {example}.",
+  "@budgetsInvalid": {
+    "description": "Budgets form: a field that is not an amount.",
+    "placeholders": {
+      "example": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsNone": "Sin presupuesto",
+  "@budgetsNone": {
+    "description": "Budgets form: a field left empty."
+  },
+  "budgetsTotalLabel": "Lo que puedes gastar al mes",
+  "@budgetsTotalLabel": {
+    "description": "Budgets form: the label of the total."
+  },
+  "budgetsEmpty": "No tienes categorías de gasto. Puedes crearlas después en Categorías.",
+  "@budgetsEmpty": {
+    "description": "Budgets form: there are no spending categories."
+  },
+  "errorImportDuplicateFile": "Ya importaste este archivo.",
+  "@errorImportDuplicateFile": {
+    "description": "Import: the same file was imported before."
+  },
+  "errorImportTooLarge": "El archivo es demasiado grande. El límite es de 5 MB.",
+  "@errorImportTooLarge": {
+    "description": "Import: the file is over the limit."
+  },
+  "errorImportUnrecognizedFormat": "No reconocemos este archivo. Usa una exportación de Budge.",
+  "@errorImportUnrecognizedFormat": {
+    "description": "Import: the file is not a Budge export."
+  },
+  "errorImportNotInPreview": "Esta importación ya no está en vista previa.",
+  "@errorImportNotInPreview": {
+    "description": "Import: the preview was already used or dropped."
+  },
+  "errorImportCurrencyChanged": "La moneda de tu cuenta cambió después de leer el archivo. Súbelo otra vez.",
+  "@errorImportCurrencyChanged": {
+    "description": "Import: the account's currency changed after the file was read."
+  },
+  "errorCurrencyLocked": "Ya tienes movimientos o recurrentes en esta cuenta, así que no puedes cambiar la moneda.",
+  "@errorCurrencyLocked": {
+    "description": "The account has movements, so the currency cannot change."
+  },
+  "importFresh": "No, empiezo de cero",
+  "@importFresh": {
+    "description": "Import: under the sources, to start without importing (the welcome)."
+  },
+  "importPrefilled": "Llenamos tus presupuestos con lo que gastas en promedio cada mes.",
+  "@importPrefilled": {
+    "description": "Import: said once budgets were filled from the file (the welcome)."
   }
 }

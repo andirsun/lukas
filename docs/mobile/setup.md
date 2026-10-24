@@ -146,6 +146,8 @@ flutter test integration_test/voice_engine_test.dart -d emulator-5554 \
 
 `integration_test/categories_test.dart` creates a category from home's Categorías tab, renames it and changes its colour in the detail, archives it (after the question) and restores it, checking the server after each step. It needs the notification permission given, like the others.
 
+`integration_test/import_test.dart` imports a Budge file through the real `lukitas/files` channel (`android/.../files/FilesChannel.kt`): the system's document picker cannot be driven from a test, so the debug build lets the test hand the next pick a file in the app's cache (`injectPick`, refused by a release build), and that file goes through the same bounded, off-the-main-thread read as a picked document. It checks a file over 5 MB (refused by the channel, nothing sent), a malformed one (the API's refusal), the sample (22 rows: the preview, nothing in the account until the confirm, then the transactions, the categories and the file's currency on the server), the same file again, and a 2,000-row file (imported whole, with the longest gap between frames kept short). The real picker (`ACTION_OPEN_DOCUMENT`) and the share sheet are not exercised by it.
+
 `integration_test/widget_test.dart` covers the home-screen widget (Task 15): it presses the
 widget's ＋, 🎤 and body the way the widget does (the very intent `launch/LaunchLinks.kt` builds, started
 through the debug-only `lukitas/test` channel; the body also with the `glance-action:/CALLBACK?...`

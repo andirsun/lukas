@@ -612,6 +612,14 @@ class HomeController extends Notifier<HomeState> {
     await refresh();
   }
 
+  /// The profile changed on the server under the app (an import switched the empty account to the
+  /// file's currency): the next load reads it again, and the month is loaded now, so the figures, the
+  /// widget's snapshot and the saved month follow the new currency.
+  Future<void> profileChanged() async {
+    _profile = null;
+    await reloaded();
+  }
+
   /// A row brought back by Deshacer has slid in: it is a plain row again.
   void settleRestored(String id) {
     if (!state.restored.contains(id)) return;

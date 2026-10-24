@@ -11,6 +11,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.andersonlaverde.lukitas.files.FilesChannel
 import com.andersonlaverde.lukitas.haptics.HapticsChannel
 import com.andersonlaverde.lukitas.launch.LaunchLinks
 import com.andersonlaverde.lukitas.notices.DueWorker
@@ -37,6 +38,7 @@ class MainActivity : FlutterActivity() {
     private var haptics: HapticsChannel? = null
     private var sounds: SoundChannel? = null
     private var notices: NoticesChannel? = null
+    private var files: FilesChannel? = null
     private var launch: MethodChannel? = null
 
     /** The widget's or the tile's `lukitas://` link, until Dart takes it (lib/launch/launch_links.dart). */
@@ -119,6 +121,9 @@ class MainActivity : FlutterActivity() {
 
         // The two local notices (lib/notices): scheduling them, and the notification permission.
         notices = NoticesChannel(this, messenger)
+
+        // Files in and out (lib/files): the document picker and the share sheet, no storage permission.
+        files = FilesChannel(this, messenger, debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
 
         // The phone's IANA time zone (lib/api/device.dart): Dart only knows its abbreviation. And
         // the browser, for "Más en la web".
@@ -290,6 +295,8 @@ class MainActivity : FlutterActivity() {
         sounds = null
         notices?.dispose()
         notices = null
+        files?.dispose()
+        files = null
         super.cleanUpFlutterEngine(flutterEngine)
     }
 
@@ -297,6 +304,14 @@ class MainActivity : FlutterActivity() {
         voice?.dispose()
         voice = null
         super.onDestroy()
+    }
+
+    @Deprecated("The platform's result callback; FlutterActivity has no ActivityResult API to use instead")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        // The document picker's answer (files/FilesChannel.kt); anything else is Flutter's or a plugin's.
+        if (files?.onActivityResult(requestCode, resultCode, data) == true) return
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     override fun onRequestPermissionsResult(
