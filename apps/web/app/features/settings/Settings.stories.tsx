@@ -504,8 +504,10 @@ async function onlyWhatTheAppHas(canvas: Canvas, heading = "Ajustes") {
       section.style.display = "none";
     }
     if (name === "Tus datos" || name === "Your data") {
-      // The card's blocks: the heading, the import, then the export's two buttons.
-      section.children[2]?.remove();
+      // The card's blocks: the heading, the import, then the export (its title, hint and two
+      // buttons).
+      const exportBlock = section.children[2];
+      if (exportBlock instanceof HTMLElement) exportBlock.style.display = "none";
     }
   }
 }

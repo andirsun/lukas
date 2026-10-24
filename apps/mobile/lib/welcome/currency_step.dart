@@ -9,6 +9,7 @@ import '../theme/surfaces.dart';
 import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
 import '../ui/lk_theme.dart';
+import '../ui/native_radio.dart';
 import '../ui/pressable.dart';
 import 'step_frame.dart';
 import 'steps.dart';
@@ -117,7 +118,7 @@ class _CurrencyOption extends StatelessWidget {
           child: Row(
             spacing: LukitasTokens.space3,
             children: [
-              _Radio(checked: selected, accent: colors.brand),
+              NativeRadio(checked: selected, accent: colors.brand),
               Expanded(
                 child: Text(name, style: LkText.copy.copyWith(color: colors.ink)),
               ),
@@ -134,43 +135,4 @@ class _CurrencyOption extends StatelessWidget {
       ),
     );
   }
-}
-
-/// A native radio as Chrome draws it with `accent-color` (`size-5`): a white disc with a 1px grey
-/// edge; chosen, the edge and a 12px dot are the accent.
-class _Radio extends StatelessWidget {
-  const _Radio({required this.checked, required this.accent});
-
-  final bool checked;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) =>
-      CustomPaint(size: const Size.square(20), painter: _RadioPainter(checked, accent));
-}
-
-class _RadioPainter extends CustomPainter {
-  const _RadioPainter(this.checked, this.accent);
-
-  final bool checked;
-  final Color accent;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = size.center(Offset.zero);
-    final radius = size.width / 2;
-    canvas.drawCircle(center, radius, Paint()..color = const Color(0xFFFFFFFF));
-    canvas.drawCircle(
-      center,
-      radius - 0.5,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = checked ? accent : const Color(0xFF767676),
-    );
-    if (checked) canvas.drawCircle(center, 6, Paint()..color = accent);
-  }
-
-  @override
-  bool shouldRepaint(_RadioPainter old) => old.checked != checked || old.accent != accent;
 }

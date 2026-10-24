@@ -167,7 +167,10 @@ class _ZoneSheetState extends ConsumerState<_ZoneSheet> {
   var _busy = false;
 
   late final List<String> _supported = pickableTimeZones();
-  late final List<String> _zones = _supported.contains(widget.zone)
+
+  /// The profile's zone in the list's spelling: the welcome may have saved the phone's (IANA's).
+  late final String _current = canonicalZone(widget.zone);
+  late final List<String> _zones = _supported.contains(_current)
       ? _supported
       : [widget.zone, ..._supported];
   late final ZoneSearchIndex _index = zoneSearchIndex(_zones);
@@ -189,7 +192,7 @@ class _ZoneSheetState extends ConsumerState<_ZoneSheet> {
 
   Future<void> _choose(String next) async {
     if (_busy) return;
-    if (next == widget.zone) {
+    if (canonicalZone(next) == _current) {
       Navigator.of(context).pop();
       return;
     }
@@ -211,8 +214,9 @@ class _ZoneSheetState extends ConsumerState<_ZoneSheet> {
     final colors = context.lkColors;
     final query = _query.text;
     final found = searchZones(_zones, query, zonesShown, _index);
-    final device = ref.watch(deviceHintsProvider).timezone;
-    final offerDevice = device != widget.zone && _supported.contains(device) ? device : null;
+    // The phone reports IANA's spelling; the list, the profile and the API have the web's.
+    final device = canonicalZone(ref.watch(deviceHintsProvider).timezone);
+    final offerDevice = device != _current && _supported.contains(device) ? device : null;
     final mutedStyle = LkText.copy.copyWith(color: colors.inkMuted, fontSize: 15);
     return Padding(
       padding: const EdgeInsets.only(top: LukitasTokens.space3),
@@ -260,7 +264,7 @@ class _ZoneSheetState extends ConsumerState<_ZoneSheet> {
                   _ZoneOption(
                     key: Key('settings.timezone.option.$candidate'),
                     zone: candidate,
-                    current: candidate == widget.zone,
+                    current: canonicalZone(candidate) == _current,
                     disabled: _busy,
                     onPick: () => unawaited(_choose(candidate)),
                   ),

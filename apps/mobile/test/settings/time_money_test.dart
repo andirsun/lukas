@@ -46,11 +46,13 @@ Future<_Env> _pump(
   bool movements = false,
   List<Recurrence> rules = const [],
   String deviceZone = 'America/Bogota',
+  String zone = 'America/Bogota',
   Locale locale = const Locale('es'),
   bool guest = false,
 }) async {
   final home = FakeHomeRepository(
     currency: currency,
+    timezone: zone,
     items: [if (movements) tx('t1', '2026-10-20', -1500000, currency: currency)],
   );
   final notices = FakeNoticeBackend(hasRecurring: rules.isNotEmpty);
@@ -207,6 +209,52 @@ void main() {
       await t.pumpAndSettle();
       expect(env.server.patches, [
         {'timezone': 'Europe/Madrid'},
+      ]);
+      await t.pump(const Duration(seconds: 10));
+    });
+
+    testPage(
+      'a phone on IANA\'s Buenos_Aires and a profile on the web\'s: it is "Actual", not offered again',
+      (t) async {
+        final env = await _pump(
+          t,
+          zone: 'America/Buenos_Aires',
+          deviceZone: 'America/Argentina/Buenos_Aires',
+        );
+        await _openZones(t);
+        expect(find.byKey(const Key('settings.timezone.useDevice')), findsNothing);
+        await _search(t, 'argentina');
+        expect(
+          find.byKey(const Key('settings.timezone.option.America/Buenos_Aires')),
+          findsOneWidget,
+        );
+        expect(find.text('ACTUAL'), findsOneWidget);
+        await t.tap(find.byKey(const Key('settings.timezone.option.America/Buenos_Aires')));
+        await t.pumpAndSettle();
+        expect(env.server.patches, isEmpty, reason: 'it is the zone in use');
+      },
+    );
+
+    testPage(
+      'a profile on IANA\'s spelling (the welcome saved the phone\'s) is "Actual" on the web\'s',
+      (t) async {
+        final env = await _pump(t, zone: 'Asia/Kolkata', deviceZone: 'Asia/Calcutta');
+        await _openZones(t);
+        expect(find.byKey(const Key('settings.timezone.useDevice')), findsNothing);
+        await _search(t, 'calcutta');
+        expect(find.text('ACTUAL'), findsOneWidget);
+        expect(env.server.patches, isEmpty);
+      },
+    );
+
+    testPage('the phone\'s zone is offered, and saved, in the web\'s spelling', (t) async {
+      final env = await _pump(t, deviceZone: 'Asia/Kolkata');
+      await _openZones(t);
+      expect(find.text('USAR LA DE ESTE DISPOSITIVO: CALCUTTA'), findsOneWidget);
+      await t.tap(find.byKey(const Key('settings.timezone.useDevice')));
+      await t.pumpAndSettle();
+      expect(env.server.patches, [
+        {'timezone': 'Asia/Calcutta'},
       ]);
       await t.pump(const Duration(seconds: 10));
     });

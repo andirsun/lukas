@@ -35,8 +35,6 @@ class AccountStanding {
   final bool onboardingPending;
 }
 
-/// A passkey ceremony's options from the server, and the challenge cookie that must go back with
-/// the phone's answer (Better Auth keeps the challenge behind a signed cookie).
 /// One of the person's passkeys, as Settings lists it (the web's `PasskeyItem`).
 class PasskeyItem {
   const PasskeyItem({required this.id, this.name, required this.createdAt, this.synced = false});
@@ -53,6 +51,8 @@ class PasskeyItem {
   final bool synced;
 }
 
+/// A passkey ceremony's options from the server, and the challenge cookie that must go back with
+/// the phone's answer (Better Auth keeps the challenge behind a signed cookie).
 class PasskeyChallenge {
   const PasskeyChallenge({required this.optionsJson, required this.cookie});
 

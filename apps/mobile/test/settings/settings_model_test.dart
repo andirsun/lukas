@@ -7,6 +7,7 @@ import 'package:lukitas/settings/settings_model.dart';
 
 void main() {
   linkZonesTest();
+  icuSpellingsTest();
   group('zones', () {
     const zones = [
       'America/Argentina/Buenos_Aires',
@@ -128,6 +129,65 @@ void linkZonesTest() {
       ];
       expect(unknown, isEmpty);
       expect(pickableTimeZones(), contains('Europe/Amsterdam'));
+    });
+  });
+}
+
+/// The ids the web offers are ICU's spellings (`Intl.supportedValuesOf("timeZone")`), and the server
+/// stores a new profile's zone in ICU's spelling too (`canonicalTimeZone` in apps/api/src/auth.ts);
+/// a phone reports the current IANA one. The two meet in [canonicalZone].
+const _icuSpellings = {
+  'America/Argentina/Buenos_Aires': 'America/Buenos_Aires',
+  'America/Argentina/Catamarca': 'America/Catamarca',
+  'America/Argentina/Cordoba': 'America/Cordoba',
+  'America/Argentina/Jujuy': 'America/Jujuy',
+  'America/Argentina/Mendoza': 'America/Mendoza',
+  'America/Atikokan': 'America/Coral_Harbour',
+  'America/Indiana/Indianapolis': 'America/Indianapolis',
+  'America/Kentucky/Louisville': 'America/Louisville',
+  'America/Nuuk': 'America/Godthab',
+  'Africa/Asmara': 'Africa/Asmera',
+  'Asia/Ho_Chi_Minh': 'Asia/Saigon',
+  'Asia/Kathmandu': 'Asia/Katmandu',
+  'Asia/Kolkata': 'Asia/Calcutta',
+  'Asia/Yangon': 'Asia/Rangoon',
+  'Atlantic/Faroe': 'Atlantic/Faeroe',
+  'Europe/Kyiv': 'Europe/Kiev',
+  'Pacific/Chuuk': 'Pacific/Truk',
+  'Pacific/Kanton': 'Pacific/Enderbury',
+  'Pacific/Pohnpei': 'Pacific/Ponape',
+};
+
+void icuSpellingsTest() {
+  group('the zone ids are the web\'s', () {
+    test('418 of them, in ICU\'s spelling, as Intl.supportedValuesOf lists them', () {
+      final zones = pickableTimeZones();
+      expect(zones, hasLength(418));
+      for (final entry in _icuSpellings.entries) {
+        expect(zones, contains(entry.value), reason: 'the web lists ${entry.value}');
+        expect(zones, isNot(contains(entry.key)), reason: '${entry.key} is IANA\'s spelling');
+      }
+    });
+
+    test('every one is a zone the clock reads (all are in the bundled database)', () {
+      final known = supportedTimeZones().toSet();
+      expect(pickableTimeZones().where((zone) => !known.contains(zone)), isEmpty);
+    });
+
+    test('a phone\'s IANA spelling is turned into the web\'s, and the web\'s stays', () {
+      for (final entry in _icuSpellings.entries) {
+        expect(canonicalZone(entry.key), entry.value);
+        expect(canonicalZone(entry.value), entry.value);
+      }
+      expect(canonicalZone('America/Bogota'), 'America/Bogota');
+      expect(canonicalZone('UTC'), 'UTC');
+      expect(canonicalZone('Not/AZone'), 'Not/AZone');
+    });
+
+    test('an Argentine zone is found by its country, in either spelling of the id', () {
+      final zones = pickableTimeZones();
+      final index = zoneSearchIndex(zones);
+      expect(searchZones(zones, 'argentina', 50, index).matches, contains('America/Buenos_Aires'));
     });
   });
 }

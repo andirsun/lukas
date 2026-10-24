@@ -87,6 +87,23 @@ flutter doctor -v
 
 Expected: Flutter and the Android toolchain are OK. Xcode, Chrome and Android Studio may show warnings or be missing; the Android app does not need them.
 
+## The time zone table
+
+`apps/mobile/lib/settings/zone_countries.dart` is generated: the time zones Settings offers (the web's 418, in ICU's
+spelling, which is what the API stores), the country of each and the countries' names. Rerun it only to move to
+another tz or ICU version:
+
+```sh
+cd apps/mobile
+node tool/gen_zone_countries.mjs > lib/settings/zone_countries.dart && dart format lib/settings/zone_countries.dart
+flutter test test/settings/settings_model_test.dart
+```
+
+It is pinned to Node 22 with ICU 78.2 (tz 2025c) and stops on any other, or if the ids are not exactly
+`Intl.supportedValuesOf("timeZone")`. The countries come from `tool/zone.tab` (tz 2026d), kept next to the script. To
+update, change the versions at the top of the script and replace `tool/zone.tab` together. The app's clock reads every
+id: they must all be in the `timezone` package's `latest_all` database (the test checks).
+
 ## Emulator (AVD `lukitas-api36`)
 
 Create it once:

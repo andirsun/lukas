@@ -134,9 +134,13 @@ String zoneOffset(String zone, String locale, [DateTime? at]) {
   return rest == 0 ? 'GMT$sign$hours' : 'GMT$sign$hours:${rest.toString().padLeft(2, '0')}';
 }
 
-/// The zones the picker lists, in order: the tz database's zones that have a country, the way
-/// `Intl.supportedValuesOf("timeZone")` lists them (no `Etc/*`, no old links, no `UTC`), that the
-/// app can also tell the time in.
+/// A zone in the web's spelling (ICU's, which the API stores): a phone reports IANA's current one
+/// (`America/Argentina/Buenos_Aires`), the profile and the list have `America/Buenos_Aires`. A zone
+/// that spells the same in both, or is not known, comes back as it is.
+String canonicalZone(String zone) => icuSpellings[zone] ?? zone;
+
+/// The zones the picker lists, in order: the 418 the web lists (`Intl.supportedValuesOf("timeZone")`,
+/// by ICU's ids: no `Etc/*`, no old links, no `UTC`), that the app can also tell the time in.
 List<String> pickableTimeZones() {
   final known = supportedTimeZones().toSet();
   return [
