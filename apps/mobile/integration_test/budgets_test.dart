@@ -117,7 +117,9 @@ void main() {
     // same refresh).
     await _pumpUntil(tester, find.byKey(const Key('detail.budget')));
     await tester.pump(const Duration(seconds: 1));
-    await tester.tap(find.bySemanticsLabel(RegExp(r'^(Volver al inicio|Back to home)$')).first);
+    await tester.tap(
+      find.bySemanticsLabel(RegExp(r'^(Volver a Categorías|Back to Categories)$')).first,
+    );
     await tester.pumpAndSettle();
     final summary = await _http.get<Map<String, dynamic>>(
       '$_server/api/v1/summary',

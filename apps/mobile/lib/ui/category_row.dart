@@ -30,6 +30,8 @@ class CategoryRow extends StatelessWidget {
     required this.state,
     required this.currency,
     required this.onOpen,
+    this.line,
+    this.control,
   });
 
   final String name;
@@ -61,6 +63,14 @@ class CategoryRow extends StatelessWidget {
   /// Opens the category detail.
   final VoidCallback onOpen;
 
+  /// A plain line instead of the budget's status, bar and figures: an income category ("Ingreso")
+  /// or an archived one ("Archivada"). The budget figures are then ignored.
+  final String? line;
+
+  /// A button of its own at the row's end (an archived category's "Restaurar"), above the row's
+  /// own press (`.lk-row-control`).
+  final Widget? control;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -69,13 +79,16 @@ class CategoryRow extends StatelessWidget {
     final locale = Localizations.localeOf(context).languageCode;
     String money(int cents) => formatMoney(cents, currency, locale);
 
-    final budget = this.budget;
+    final line = this.line;
+    final budget = line == null ? this.budget : null;
     final note = this.note;
-    final status = budget == null
-        ? l10n.categoryRowNoBudget
-        : state == BudgetState.over
-        ? l10n.categoryRowOver(money((remaining ?? budget - spent).abs()))
-        : l10n.categoryRowRemaining(money(remaining ?? budget - spent));
+    final status =
+        line ??
+        (budget == null
+            ? l10n.categoryRowNoBudget
+            : state == BudgetState.over
+            ? l10n.categoryRowOver(money((remaining ?? budget - spent).abs()))
+            : l10n.categoryRowRemaining(money(remaining ?? budget - spent)));
     final statusColor = budget == null
         ? colors.inkMuted
         : switch (state) {
@@ -200,7 +213,7 @@ class CategoryRow extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (budget == null && spent != 0)
+                            if (budget == null && line == null && spent != 0)
                               ExcludeSemantics(
                                 child: BlinkLine(
                                   style: statusStyle,
@@ -229,6 +242,7 @@ class CategoryRow extends StatelessWidget {
                     ],
                   ),
                 ),
+                ?control,
               ],
             ),
           ),

@@ -23,9 +23,8 @@ import '../support/parity_home.dart';
 /// The app reads what the story's fake API answered (test/parity/fixtures): the profile, the
 /// summary, the categories, the month's movements and Ocio's own.
 ///
-/// Category management stays on the web (the founder's ruling for Stage 3b): where the web's detail
-/// has "Editar", the app has a link to the web. The pairs draw it with the web's word, so that
-/// everything else is compared; the link's real label is `settingsWeb`, "Más en la web".
+/// Categories are managed from home's Categorías tab and the detail: "Editar" is the detail's own
+/// button (the pairs of the tab and the sheets are in test/parity/categories_parity_test.dart).
 ///
 /// Update the goldens with `flutter test --update-goldens test/parity`, then compare with
 /// `dart run tool/parity/compose.dart` (docs/mobile/parity.md).
@@ -61,7 +60,7 @@ class _FixtureBudgets implements BudgetsRepository {
 Widget _detail() => ShellFrame(
   padding: const EdgeInsets.all(16),
   showMic: false,
-  child: const CategoryDetailScreen(categoryId: 'cat-fun', manageLabel: 'Editar'),
+  child: const CategoryDetailScreen(categoryId: 'cat-fun'),
 );
 
 /// `userEvent.click` on a control, then a key: keyboard mode, where the focused control shows its

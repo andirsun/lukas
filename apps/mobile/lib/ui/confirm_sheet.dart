@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
+import 'css_text.dart';
 import 'lk_theme.dart';
 import 'press_button.dart';
 import 'sheet.dart';
@@ -169,6 +170,7 @@ class _ConfirmBodyState extends State<_ConfirmBody> {
     final l10n = AppLocalizations.of(context);
     final colors = context.lkColors;
     final note = widget.note;
+    final bodyStyle = LkText.body.copyWith(color: colors.ink);
     final confirm = Semantics(
       container: true,
       child: PressButton(
@@ -193,8 +195,16 @@ class _ConfirmBodyState extends State<_ConfirmBody> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: LukitasTokens.space4,
         children: [
-          Text(widget.body, style: LkText.body.copyWith(color: colors.ink)),
-          if (note != null) Text(note, style: LkText.body.copyWith(color: colors.ink)),
+          // As tall as CSS makes them: 22.5px a line, which Flutter would round to 23.
+          CssLines(
+            style: LkText.body,
+            child: Text(widget.body, style: bodyStyle),
+          ),
+          if (note != null)
+            CssLines(
+              style: LkText.body,
+              child: Text(note, style: bodyStyle),
+            ),
           if (wide)
             flexOneRow(
               gap: LukitasTokens.space2,

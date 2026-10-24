@@ -42,6 +42,8 @@ export const APP_GETS = [
   "/v1/recurrences",
   // A category's detail (Ocio, the stories' category): its month's movements, as the app asks.
   `/v1/transactions?category=cat-fun&limit=50&month=${MONTH}`,
+  // An archived category's detail (Casa, October's fixture), as the app asks.
+  `/v1/transactions?category=cat-casa&limit=50&month=${MONTH}`,
 ];
 
 /**

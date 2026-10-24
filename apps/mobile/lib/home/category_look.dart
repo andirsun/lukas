@@ -71,6 +71,48 @@ String? tintName(Color tint) {
   return null;
 }
 
+/// The value stored for a pickable tint (`#ffe66d` for `yellow`): the hex the web saves as `color`
+/// (`CATEGORY_TINTS`).
+String categoryTintHex(String name) {
+  final rgb = _importerTints[name]!.toARGB32() & 0xFFFFFF;
+  return '#${rgb.toRadixString(16).padLeft(6, '0')}';
+}
+
+/// A category's tint as the web's `categoryLook(...).tint` holds it, a string: the pickable tint's
+/// hex for an importer's name, the stored hex as it is (`#2FD388` stays upper case, so it matches no
+/// pickable tint, as on the web), and gray for anything else.
+String categoryTintValue({required String icon, required String color}) {
+  final named = _importerTints[color];
+  if (named != null) return categoryTintHex(color);
+  if (RegExp(r'^#[0-9a-fA-F]{3,8}$').hasMatch(color)) return color;
+  return categoryTintHex('gray');
+}
+
+/// Emoji a person can pick for a category: the suggestions' and a few common ones
+/// (`CATEGORY_GLYPHS`).
+const categoryGlyphs = [
+  '🏷️',
+  '🛒',
+  '🍽️',
+  '🏠',
+  '🚗',
+  '⭐',
+  '☂️',
+  '❤️',
+  '💰',
+  '🐶',
+  '🎓',
+  '✈️',
+  '🎁',
+  '👕',
+  '💊',
+  '📱',
+  '🏋️',
+  '🍺',
+  '🧾',
+  '📈',
+];
+
 /// The tints a person can pick for a category, by name, in the order the web lists them
 /// (`CATEGORY_TINTS`).
 const categoryTintNames = [

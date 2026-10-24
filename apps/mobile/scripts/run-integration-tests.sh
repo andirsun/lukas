@@ -71,6 +71,7 @@ run granted "feedback" integration_test/feedback_test.dart
 run granted "settings" integration_test/settings_test.dart
 run granted "add" integration_test/add_test.dart
 run granted "budgets" integration_test/budgets_test.dart
+run granted "categories" integration_test/categories_test.dart
 run granted "capture" integration_test/capture_test.dart
 run granted "entry" integration_test/entry_test.dart
 run granted "widget" integration_test/widget_test.dart

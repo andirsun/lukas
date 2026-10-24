@@ -144,6 +144,8 @@ flutter test integration_test/voice_engine_test.dart -d emulator-5554 \
   --dart-define=VOICE_MODELS_URL=http://10.0.2.2:8765
 ```
 
+`integration_test/categories_test.dart` creates a category from home's Categorías tab, renames it and changes its colour in the detail, archives it (after the question) and restores it, checking the server after each step. It needs the notification permission given, like the others.
+
 `integration_test/widget_test.dart` covers the home-screen widget (Task 15): it presses the
 widget's ＋, 🎤 and body the way the widget does (the very intent `launch/LaunchLinks.kt` builds, started
 through the debug-only `lukitas/test` channel; the body also with the `glance-action:/CALLBACK?...`

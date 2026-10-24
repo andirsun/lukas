@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/api/gen/lukitas_api.dart';
-import 'package:lukitas/api/server_url.dart';
 import 'package:lukitas/budgets/budgets_repository.dart';
 import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_controller.dart';
@@ -163,13 +162,16 @@ void main() {
       expect(find.descendant(of: market, matching: find.byType(BudgetBar)), findsNothing);
     });
 
-    testBudgets('an archived category with spending shows with the web\'s note', (tester) async {
+    testBudgets('an archived category with spending is in Archivadas, not among the budgets', (
+      tester,
+    ) async {
       final home = budgetsMonth();
       home.categoryList.add(category('cat-old', 'Gimnasio', icon: '🏋️', archived: true));
       home.items.add(tx('gym', '2026-10-03', -4000000, name: 'Mensualidad', categoryId: 'cat-old'));
       await pumpBudgets(tester, home: home);
       await openBudgetsTab(tester);
-      expect(_row(r'Gimnasio archivada Sin presupuesto'), findsOneWidget);
+      expect(find.text('Gimnasio'), findsNothing);
+      expect(find.text('ARCHIVADAS (1)'), findsOneWidget);
     });
 
     testBudgets('with no spending categories it says so, as the web does', (tester) async {
@@ -299,27 +301,21 @@ void main() {
       expect(find.byKey(const Key('detail.title')), findsNothing);
     });
 
-    testBudgets('Volver al inicio goes back to home', (tester) async {
+    testBudgets('opened from the tab, Volver a Categorías goes back to home', (tester) async {
       await pumpBudgets(tester);
       await openDetail(tester, 'Supermercado');
-      await tester.tap(find.bySemanticsLabel('Volver al inicio').first);
+      await tester.tap(find.bySemanticsLabel('Volver a Categorías').first);
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.byKey(const Key('detail.title')), findsNothing);
     });
 
-    testBudgets('creating, renaming and archiving stay on the web: one link, to the server', (
-      tester,
-    ) async {
-      final env = await pumpBudgets(tester);
-      await openDetail(tester, 'Supermercado');
-      expect(find.text('EDITAR'), findsNothing);
-      expect(find.textContaining('Archivar'), findsNothing);
-      expect(find.text('MÁS EN LA WEB'), findsOneWidget);
-
-      await tester.tap(find.text('MÁS EN LA WEB'));
+    testBudgets('opened by a link, Volver al inicio goes back to home', (tester) async {
+      await pumpBudgets(tester, location: '/categories/cat-groceries');
+      expect(find.bySemanticsLabel('Volver a Categorías'), findsNothing);
+      await tester.tap(find.bySemanticsLabel('Volver al inicio').first);
       await tester.pumpAndSettle();
-      expect(env.settings.opener.opened, [env.settings.container.read(serverUrlProvider)]);
+      expect(find.byType(HomeScreen), findsOneWidget);
     });
 
     testBudgets('a movement opens the edit sheet; saving it brings the detail up to date', (
@@ -392,7 +388,7 @@ void main() {
       expect(find.text(r'Gastado $183.000 de $300.000'), findsOneWidget);
 
       // Home, behind it: Te quedan and the Categorías bars follow.
-      await tester.tap(find.bySemanticsLabel('Volver al inicio').first);
+      await tester.tap(find.bySemanticsLabel('Volver a Categorías').first);
       await tester.pumpAndSettle();
       expect(find.text(r'$717.000'), findsOneWidget, reason: 'Te quedan, after');
       expect(find.text(r'de $900.000'), findsOneWidget);

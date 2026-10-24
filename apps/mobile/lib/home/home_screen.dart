@@ -8,7 +8,8 @@ import 'package:go_router/go_router.dart';
 
 import '../add/add_sheet.dart';
 import '../api/gen/lukitas_api.dart';
-import '../budgets/budgets_tab.dart';
+import '../budgets/category_detail_screen.dart' show detailFromCategories;
+import '../budgets/categories_tab.dart';
 import '../capture/capture_sheet.dart';
 import '../feedback/feedback.dart';
 import '../l10n/app_localizations.dart';
@@ -110,6 +111,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   Timer? _celebrateTimer;
 
   var _view = HomeView.transactions;
+
+  /// The Categorías tab's own choices: which kind is listed, and whether the archived ones are
+  /// unfolded. They stay while the other tab is on screen, as the web's panels keep theirs.
+  var _kind = CategoryKindEnum.expense;
+  var _showArchived = false;
 
   /// The page's scroll, and the box above the tabs' strip: where the strip comes to rest at the
   /// top of the screen is the end of that box (and the 4px under it).
@@ -512,13 +518,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(inset, LukitasTokens.space2, inset, room),
                     sliver: SliverToBoxAdapter(
-                      child: BudgetsTab(
+                      child: CategoriesTab(
                         summary: shown.summary,
                         categories: shown.categories,
                         currency: shown.currency,
-                        // Its detail, in the month on screen.
-                        onOpen: (id) =>
-                            unawaited(context.push<void>('/categories/$id?month=${shown.month}')),
+                        kind: _kind,
+                        onKind: (kind) => setState(() => _kind = kind),
+                        showArchived: _showArchived,
+                        onToggleArchived: () => setState(() => _showArchived = !_showArchived),
+                        // Its detail, in the month on screen, and back to this tab from it.
+                        onOpen: (id) => unawaited(
+                          context.push<void>(
+                            '/categories/$id?month=${shown.month}',
+                            extra: detailFromCategories,
+                          ),
+                        ),
                       ),
                     ),
                   )

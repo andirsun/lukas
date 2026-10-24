@@ -454,6 +454,30 @@ export const ArchiveSheetOpen: Story = {
   },
 };
 
+/**
+ * An archived category's detail (Casa, October's fixture: its budget and its two movements): the
+ * note with "Restaurar", the month's budget as it was, and no button to change it.
+ */
+export const ArchivedDetail: Story = {
+  render: (args) => (
+    <HomeStage
+      onRequest={args.onRequest}
+      path="/app/categories/cat-casa"
+      data="october"
+      archivedId="cat-casa"
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await expect(await canvas.findByText(/Esta categoría está archivada/)).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "Restaurar" })).toBeVisible();
+    const budget = await budgetRegion(canvas);
+    await waitFor(() => expect(budget).toHaveTextContent("Quedan"));
+    await expect(canvas.queryByRole("button", { name: "Cambiar presupuesto" })).toBeNull();
+    await expect(await canvas.findByRole("button", { name: /^luz/ })).toBeVisible();
+  },
+};
+
 /** An archived category's detail by day on a wide screen: the note, "Restaurar", no budget button. */
 export const ArchivedDetailDesktopDay: Story = {
   globals: { viewport: { value: "desktop", isRotated: false }, theme: "day" },

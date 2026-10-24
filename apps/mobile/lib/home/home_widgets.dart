@@ -252,7 +252,7 @@ class NudgeCard extends StatelessWidget {
       explicitChildNodes: true,
       label: title,
       child: CustomPaint(
-        foregroundPainter: _DashedBorder(
+        foregroundPainter: DashedBorderPainter(
           color: colors.stroke,
           radius: LukitasTokens.radiusLg,
           width: 2,
@@ -307,12 +307,22 @@ class NudgeCard extends StatelessWidget {
 /// A dashed border as Blink draws one: each straight side is its own dashed line, starting with a
 /// dash near where the side starts, dashes three widths long and gaps two (for borders under
 /// 3px); the corners are drawn unbroken.
-class _DashedBorder extends CustomPainter {
-  const _DashedBorder({required this.color, required this.radius, required this.width});
+class DashedBorderPainter extends CustomPainter {
+  const DashedBorderPainter({
+    required this.color,
+    required this.radius,
+    required this.width,
+    this.bottomPhase = 0,
+  });
 
   final Color color;
   final double radius;
   final double width;
+
+  /// How far the bottom side's dashes sit further along than the nudge card's. Blink's phase on that
+  /// side is not the same for every card (it was measured on the home nudge, and a card with a
+  /// different height, the detail's archived note, starts 4px later): the caller says which.
+  final double bottomPhase;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -349,13 +359,16 @@ class _DashedBorder extends CustomPainter {
     // right and bottom sides read left to right and top to bottom, the left side too.
     side(Offset(left + r, top), Offset(right - r, top));
     side(Offset(right, top + r + 1.5), Offset(right, bottom - r));
-    side(Offset(left + r + 1.5, bottom), Offset(right - r, bottom));
+    side(Offset(left + r + 1.5 + bottomPhase, bottom), Offset(right - r, bottom));
     side(Offset(left, top + r - 2), Offset(left, bottom - r));
   }
 
   @override
-  bool shouldRepaint(_DashedBorder old) =>
-      old.color != color || old.radius != radius || old.width != width;
+  bool shouldRepaint(DashedBorderPainter old) =>
+      old.color != color ||
+      old.radius != radius ||
+      old.width != width ||
+      old.bottomPhase != bottomPhase;
 }
 
 /// The Movimientos | Categorías tabs, stuck under the top of the screen once the summary scrolls

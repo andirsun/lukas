@@ -1989,5 +1989,245 @@
   "settingsRoadmapOpen": "Ver lo que viene",
   "@settingsRoadmapOpen": {
     "description": "Settings: the link that opens the roadmap page in the browser."
+  },
+  "categoriesKindLabel": "Tipo",
+  "@categoriesKindLabel": {
+    "description": "Names the Gastos | Ingresos switch of the Categorías tab for screen readers."
+  },
+  "categoriesExpenses": "Gastos",
+  "@categoriesExpenses": {
+    "description": "Categorías tab: the switch's spending side."
+  },
+  "categoriesIncome": "Ingresos",
+  "@categoriesIncome": {
+    "description": "Categorías tab: the switch's income side."
+  },
+  "categoriesAdd": "Nueva categoría",
+  "@categoriesAdd": {
+    "description": "Categorías tab: opens the new category sheet."
+  },
+  "categoriesNoneOfKind": "Aún no tienes categorías de este tipo.",
+  "@categoriesNoneOfKind": {
+    "description": "Categorías tab: no category of the chosen kind."
+  },
+  "categoriesIncomeLine": "Ingreso",
+  "@categoriesIncomeLine": {
+    "description": "Categorías tab: the line under an income category's name."
+  },
+  "categoriesArchivedFold": "Archivadas ({count})",
+  "@categoriesArchivedFold": {
+    "description": "Categorías tab: the fold that holds the archived categories.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoriesArchivedTitle": "Archivadas",
+  "@categoriesArchivedTitle": {
+    "description": "Categorías tab: names the archived categories' list."
+  },
+  "categoriesRestore": "Restaurar",
+  "@categoriesRestore": {
+    "description": "An archived category's button that brings it back."
+  },
+  "categoriesRestoreNamed": "Restaurar {name}",
+  "@categoriesRestoreNamed": {
+    "description": "The same button's name for screen readers.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoriesCreated": "Listo: creaste {name}.",
+  "@categoriesCreated": {
+    "description": "Toast after creating a category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoriesSaved": "Guardaste los cambios de {name}.",
+  "@categoriesSaved": {
+    "description": "Toast after saving a category's changes.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoriesRestored": "{name} está de vuelta.",
+  "@categoriesRestored": {
+    "description": "Toast after restoring an archived category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoriesArchivedToast": "Archivaste {name}. Sus movimientos se quedan.",
+  "@categoriesArchivedToast": {
+    "description": "Toast after archiving a category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryEditLabel": "Editar categoría",
+  "@categoryEditLabel": {
+    "description": "Category detail: the edit button's name for screen readers."
+  },
+  "categoryEditShort": "Editar",
+  "@categoryEditShort": {
+    "description": "Category detail: the edit button's visible text."
+  },
+  "categoryToCategories": "Ver mis categorías",
+  "@categoryToCategories": {
+    "description": "Category detail not found: the link back to the Categorías tab."
+  },
+  "manageBackCategories": "Volver a Categorías",
+  "@manageBackCategories": {
+    "description": "Category detail opened from the Categorías tab: the back link, for screen readers."
+  },
+  "manageBackCategoriesShort": "Categorías",
+  "@manageBackCategoriesShort": {
+    "description": "Category detail opened from the Categorías tab: the back link's visible text."
+  },
+  "archiveSheetTitle": "¿Archivar {name}?",
+  "@archiveSheetTitle": {
+    "description": "The question before archiving a category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveSheetBody": "Ya no aparece al anotar ni en tus presupuestos. Sus movimientos se quedan, y puedes restaurarla cuando quieras desde Categorías.",
+  "@archiveSheetBody": {
+    "description": "What archiving a category means."
+  },
+  "archiveSheetConfirm": "Sí, archivar",
+  "@archiveSheetConfirm": {
+    "description": "The archive question's action."
+  },
+  "archiveSheetStopsRecurring": "{count, plural, =1{También se detendrá {count} pago recurrente de esta categoría.} other{También se detendrán {count} pagos recurrentes de esta categoría.}}",
+  "@archiveSheetStopsRecurring": {
+    "description": "The archive question's note: how many recurring payments archiving stops.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryFormAddTitle": "Nueva categoría",
+  "@categoryFormAddTitle": {
+    "description": "The new category sheet's title."
+  },
+  "categoryFormEditTitle": "Editar categoría",
+  "@categoryFormEditTitle": {
+    "description": "The edit category sheet's title."
+  },
+  "categoryFormNameLabel": "Nombre",
+  "@categoryFormNameLabel": {
+    "description": "Category sheet: the name field."
+  },
+  "categoryFormNamePlaceholder": "Mascotas",
+  "@categoryFormNamePlaceholder": {
+    "description": "Category sheet: the name field's example."
+  },
+  "categoryFormNameRequired": "Escribe un nombre para la categoría.",
+  "@categoryFormNameRequired": {
+    "description": "Category sheet: saving with no name."
+  },
+  "categoryFormGlyphLabel": "Ícono",
+  "@categoryFormGlyphLabel": {
+    "description": "Category sheet: the emoji group."
+  },
+  "categoryFormTintLabel": "Color",
+  "@categoryFormTintLabel": {
+    "description": "Category sheet: the colour group."
+  },
+  "categoryFormKindLabel": "Tipo",
+  "@categoryFormKindLabel": {
+    "description": "Category sheet: the spending or income group."
+  },
+  "categoryFormKindExpense": "Gasto",
+  "@categoryFormKindExpense": {
+    "description": "Category sheet: the spending choice."
+  },
+  "categoryFormKindIncome": "Ingreso",
+  "@categoryFormKindIncome": {
+    "description": "Category sheet: the income choice."
+  },
+  "categoryFormSave": "Guardar categoría",
+  "@categoryFormSave": {
+    "description": "Category sheet: the save button."
+  },
+  "categoryFormArchive": "Archivar categoría",
+  "@categoryFormArchive": {
+    "description": "Category sheet: asks to archive the category."
+  },
+  "categoryFormKindLocked": "Con movimientos, su tipo no se puede cambiar aquí.",
+  "@categoryFormKindLocked": {
+    "description": "Category sheet: why the kind cannot change."
+  },
+  "categoryTintOrange": "Naranja",
+  "@categoryTintOrange": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintRed": "Rojo",
+  "@categoryTintRed": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintPurple": "Morado",
+  "@categoryTintPurple": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintIndigo": "Índigo",
+  "@categoryTintIndigo": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintBlue": "Azul",
+  "@categoryTintBlue": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintPink": "Rosado",
+  "@categoryTintPink": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintAmber": "Ámbar",
+  "@categoryTintAmber": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintGreen": "Verde",
+  "@categoryTintGreen": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintTeal": "Turquesa",
+  "@categoryTintTeal": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintGray": "Gris",
+  "@categoryTintGray": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintYellow": "Amarillo",
+  "@categoryTintYellow": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintSky": "Celeste",
+  "@categoryTintSky": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryErrorNameTaken": "Ya tienes una categoría con ese nombre.",
+  "@categoryErrorNameTaken": {
+    "description": "Category sheet: a name that another category has."
+  },
+  "categoryErrorHasTransactions": "Esta categoría ya tiene movimientos, así que su tipo no puede cambiar.",
+  "@categoryErrorHasTransactions": {
+    "description": "Category sheet: changing the kind of a category with transactions."
   }
 }

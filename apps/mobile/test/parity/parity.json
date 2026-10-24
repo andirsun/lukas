@@ -897,6 +897,78 @@
     "appTest": "test/parity/budgets_parity_test.dart"
   },
   {
+    "id": "categories-income",
+    "storyId": "home-home--categories-income",
+    "theme": "night",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "categories-income",
+    "storyId": "home-home--categories-income",
+    "theme": "day",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "categories-archived-open",
+    "storyId": "home-home--categories-archived-open",
+    "theme": "night",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "categories-archived-open",
+    "storyId": "home-home--categories-archived-open",
+    "theme": "day",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "category-new-sheet",
+    "storyId": "home-home--new-category-sheet",
+    "theme": "night",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "category-new-sheet",
+    "storyId": "home-home--new-category-sheet",
+    "theme": "day",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "category-edit-sheet",
+    "storyId": "manage-categories--edit-category-sheet",
+    "theme": "night",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "category-edit-sheet",
+    "storyId": "manage-categories--edit-category-sheet",
+    "theme": "day",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "category-archive-sheet",
+    "storyId": "manage-categories--archive-sheet-open",
+    "theme": "night",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "category-archive-sheet",
+    "storyId": "manage-categories--archive-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "category-detail-archived",
+    "storyId": "manage-categories--archived-detail",
+    "theme": "night",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "category-detail-archived",
+    "storyId": "manage-categories--archived-detail",
+    "theme": "day",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
     "id": "insights-donut",
     "storyId": "insights-insights--donut-by-category",
     "theme": "night",

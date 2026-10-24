@@ -44,11 +44,15 @@ class FakeBudgetsRepository implements BudgetsRepository {
       )
       .fold<int>(0, (sum, t) => sum - t.amount);
 
-  /// Makes [home]'s summary and categories follow [budgets], as the server computes them.
+  /// Makes [home]'s summary and categories follow [budgets], as the server computes them: an
+  /// archived category is in the summary only while it has spending that month.
   void publish() {
     final expense = [
       for (final c in home.categoryList)
-        if (c.kind == CategoryKindEnum.expense) c,
+        if (c.kind == CategoryKindEnum.expense &&
+            (!c.archived ||
+                home.items.any((t) => t.categoryId == c.id && t.date.startsWith('2026-10'))))
+          c,
     ];
     home.budgetTotal = [for (final c in expense) budgets[c.id] ?? 0].fold(0, (a, b) => a + b);
     home.categoryLines = [

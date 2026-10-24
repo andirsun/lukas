@@ -593,6 +593,25 @@ class HomeController extends Notifier<HomeState> {
     await _refreshSummary();
   }
 
+  /// A category was made, changed or brought back (from the Categorías tab or a category's detail):
+  /// the categories and the month's summary are asked again, silently, and the widget and the saved
+  /// month follow the summary (as for [budgetChanged]). Completes when both are in.
+  Future<void> categoriesChanged() async {
+    if (!_alive || state.data == null) return;
+    await Future.wait([_refreshCategories(), _refreshSummary()]);
+  }
+
+  /// Something the server changed reaches the movements as well as the categories (archiving a
+  /// category ends its recurring payments and drops their unpaid rows from today on): the whole
+  /// month is loaded again, after any load already under way (which may have started before the
+  /// change), and the widget and the saved month follow.
+  Future<void> reloaded() async {
+    if (!_alive) return;
+    final underWay = _loading;
+    if (underWay != null) await underWay.catchError((Object _) {});
+    await refresh();
+  }
+
   /// A row brought back by Deshacer has slid in: it is a plain row again.
   void settleRestored(String id) {
     if (!state.restored.contains(id)) return;

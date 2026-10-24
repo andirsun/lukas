@@ -1,8 +1,8 @@
 // The web's CategoryDetail (apps/web/app/features/categories/CategoryDetail.tsx) and the CSS it
 // uses: `ManageFrame`, `PageHeader`, `.lk-hero`, `.lk-tile`, `.lk-nudge`.
 //
-// Category management (creating, renaming, archiving, restoring) stays on the web: where the web
-// has "Editar" and "Restaurar", the app has one link to the web ("Más en la web").
+// Along with home's Categorías tab, this is where categories are managed: "Editar" opens the
+// category sheet (rename, emoji and colour, archive) and an archived one says so and has "Restaurar".
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -12,20 +12,21 @@ import 'package:go_router/go_router.dart';
 
 import '../add/add_sheet.dart';
 import '../api/gen/lukitas_api.dart';
-import '../api/server_url.dart';
 import '../capture/capture_sheet.dart';
+import '../categories/categories_actions.dart';
+import '../categories/category_sheet.dart';
 import '../feedback/feedback.dart';
 import '../home/category_look.dart';
 import '../home/day_groups.dart';
 import '../home/home_controller.dart';
 import '../home/home_format.dart';
 import '../home/home_repository.dart';
+import '../home/home_screen.dart' show HomeView, homeViewRequestProvider;
 import '../home/home_widgets.dart';
 import '../home/screen_error.dart';
 import '../home/shell_navigation.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
-import '../settings/url_opener.dart';
 import '../theme/surfaces.dart';
 import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
@@ -41,11 +42,18 @@ import '../ui/swipe_row.dart';
 import '../ui/toast.dart';
 import '../ui/transaction_row.dart';
 import 'budget_sheet.dart';
-import 'budgets_tab.dart';
+import 'categories_tab.dart';
 import 'category_detail_controller.dart';
 
 /// The widest the content grows on a big screen (the web's `max-w-[480px]`, padding included).
 const _maxContentWidth = 480.0;
+
+/// What a screen opening a category's detail from home's Categorías tab passes as the route's
+/// `extra`: "back" then says "Volver a Categorías" (the web's `DetailState`).
+const detailFromCategories = 'categories';
+
+/// The kind line under a category's name: `text-[13px] font-bold`, Nunito 13px 700.
+final _kindLineStyle = LkText.bodySm.copyWith(fontSize: 13);
 
 final _monthFormat = RegExp(r'^\d{4}-(0[1-9]|1[0-2])$');
 
@@ -54,14 +62,15 @@ final _monthFormat = RegExp(r'^\d{4}-(0[1-9]|1[0-2])$');
 /// month with a change that applies from it on, and the category's movements that month (each opens
 /// the edit sheet; the web's swipes work too).
 ///
-/// [manageLabel] is the link to the web's category management; null reads "Más en la web". The
-/// parity pairs pass the web's own word for the button it stands in for.
+/// "Editar" changes the category's name, emoji and colour and archives it, after asking; an archived
+/// category says so and can be restored. [fromCategories]: it was opened from home's Categorías
+/// tab, so "back" says so (the web's `DetailState`).
 class CategoryDetailScreen extends ConsumerStatefulWidget {
   const CategoryDetailScreen({
     super.key,
     required this.categoryId,
     this.initialMonth,
-    this.manageLabel,
+    this.fromCategories = false,
   });
 
   final String categoryId;
@@ -69,7 +78,7 @@ class CategoryDetailScreen extends ConsumerStatefulWidget {
   /// The month to open on (`YYYY-MM`), or null for the current one.
   final String? initialMonth;
 
-  final String? manageLabel;
+  final bool fromCategories;
 
   @override
   ConsumerState<CategoryDetailScreen> createState() => _CategoryDetailScreenState();
@@ -108,11 +117,10 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
   String _failureMessage(AppLocalizations l10n, HomeFailure failure) =>
       failure.offline ? l10n.errorNetwork : l10n.errorGeneric;
 
-  Future<void> _openWeb() async {
-    final toasts = ToastHost.of(context);
-    final l10n = AppLocalizations.of(context);
-    final opened = await ref.read(urlOpenerProvider).open(ref.read(serverUrlProvider));
-    if (!opened && mounted) toasts.say(l10n.settingsWebFailed, error: true);
+  /// "Ver mis categorías": back to home, on its Categorías tab.
+  void _toCategories() {
+    ref.read(homeViewRequestProvider.notifier).show(HomeView.budgets);
+    _back();
   }
 
   @override
@@ -151,15 +159,15 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
     final category = data.categories[widget.categoryId];
     final picker = MonthPicker(month: month, max: current, onChange: _step);
     final header = PageHeader(
-      backLabel: l10n.manageBack,
-      backShort: l10n.manageBackShort,
+      backLabel: widget.fromCategories ? l10n.manageBackCategories : l10n.manageBack,
+      backShort: widget.fromCategories ? l10n.manageBackCategoriesShort : l10n.manageBackShort,
       onBack: _back,
       aside: category == null ? null : picker,
     );
 
     final List<Widget> children;
     if (category == null) {
-      children = [header, _NotFound(onWeb: _openWeb, label: widget.manageLabel)];
+      children = [header, _NotFound(onCategories: _toCategories)];
     } else if (detail.failure != null) {
       children = [
         header,
@@ -180,8 +188,6 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
           today: data.todayAt(ref.read(clockProvider)()),
           currency: data.currency,
           controller: _controller,
-          manageLabel: widget.manageLabel ?? l10n.settingsWeb,
-          onWeb: _openWeb,
         ),
       ];
     }
@@ -245,10 +251,9 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
 }
 
 class _NotFound extends StatelessWidget {
-  const _NotFound({required this.onWeb, required this.label});
+  const _NotFound({required this.onCategories});
 
-  final VoidCallback onWeb;
-  final String? label;
+  final VoidCallback onCategories;
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +275,7 @@ class _NotFound extends StatelessWidget {
             style: LkText.title.copyWith(fontSize: 22, height: 1.5, color: colors.ink),
           ),
           Text(l10n.categoryNotFoundLead, style: LkText.bodySm.copyWith(color: colors.inkMuted)),
-          PressLink.text(label ?? l10n.settingsWeb, onPressed: onWeb),
+          PressLink.text(l10n.categoryToCategories, onPressed: onCategories),
         ],
       ),
     );
@@ -287,8 +292,6 @@ class _DetailView extends ConsumerStatefulWidget {
     required this.today,
     required this.currency,
     required this.controller,
-    required this.manageLabel,
-    required this.onWeb,
   });
 
   final Category category;
@@ -297,8 +300,6 @@ class _DetailView extends ConsumerStatefulWidget {
   final String today;
   final String currency;
   final CategoryDetailController controller;
-  final String manageLabel;
-  final VoidCallback onWeb;
 
   @override
   ConsumerState<_DetailView> createState() => _DetailViewState();
@@ -368,6 +369,22 @@ class _DetailViewState extends ConsumerState<_DetailView> {
     );
   }
 
+  /// "Restaurar" on an archived category: it comes back, and a toast says so. A failure says why.
+  void _restoreCategory() {
+    final toasts = ToastHost.of(context);
+    final l10n = AppLocalizations.of(context);
+    final actions = ref.read(categoriesActionsProvider);
+    unawaited(() async {
+      try {
+        await actions.restore(_category);
+      } on HomeFailure catch (failure) {
+        toasts.say(categoryFailureMessage(l10n, failure), error: true);
+        return;
+      }
+      toasts.say(l10n.categoriesRestored(_category.name));
+    }());
+  }
+
   Future<void> _loadMore() async {
     final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
@@ -428,32 +445,37 @@ class _DetailViewState extends ConsumerState<_DetailView> {
                     header: true,
                     child: CssLines(
                       style: nameStyle,
-                      child: Text(
-                        category.name,
-                        key: const Key('detail.title'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: nameStyle.copyWith(color: colors.ink),
+                      child: BlinkLine(
+                        style: nameStyle,
+                        child: Text(
+                          category.name,
+                          key: const Key('detail.title'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: nameStyle.copyWith(color: colors.ink),
+                        ),
                       ),
                     ),
                   ),
+                  // `<p className="m-0 text-[13px] font-bold text-ink-muted">`: 13px, 700.
                   CssLines(
-                    style: LkText.heroLabel,
-                    child: Text(kindLine, style: LkText.heroLabel.copyWith(color: colors.inkMuted)),
+                    style: _kindLineStyle,
+                    child: Text(kindLine, style: _kindLineStyle.copyWith(color: colors.inkMuted)),
                   ),
                 ],
               ),
             ),
-            PressLink.text(
-              widget.manageLabel,
-              key: const Key('detail.manage'),
+            PressButton.text(
+              l10n.categoryEditShort,
+              key: const Key('detail.edit'),
               tone: PressTone.secondary,
               size: PressSize.sm,
-              onPressed: widget.onWeb,
+              semanticLabel: l10n.categoryEditLabel,
+              onPressed: () => unawaited(openCategorySheet(context, editing: category)),
             ),
           ],
         ),
-        if (category.archived) _ArchivedNote(onWeb: widget.onWeb, label: widget.manageLabel),
+        if (category.archived) _ArchivedNote(onRestore: _restoreCategory),
         if (!income)
           _BudgetCard(
             key: const Key('detail.budget'),
@@ -496,12 +518,11 @@ class _DetailViewState extends ConsumerState<_DetailView> {
   }
 }
 
-/// `.lk-nudge`'s archived note: what an archived category means, and where it is restored.
+/// `.lk-nudge`'s archived note: what an archived category means, and "Restaurar".
 class _ArchivedNote extends StatelessWidget {
-  const _ArchivedNote({required this.onWeb, required this.label});
+  const _ArchivedNote({required this.onRestore});
 
-  final VoidCallback onWeb;
-  final String label;
+  final VoidCallback onRestore;
 
   @override
   Widget build(BuildContext context) {
@@ -510,30 +531,40 @@ class _ArchivedNote extends StatelessWidget {
     return Semantics(
       container: true,
       label: l10n.categoryArchivedLine,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.surfaceRow,
-          borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
-          border: Border.all(color: colors.stroke, width: 2),
+      child: CustomPaint(
+        // `.lk-nudge`: `border: 2px dashed var(--stroke)`.
+        foregroundPainter: DashedBorderPainter(
+          color: colors.stroke,
+          radius: LukitasTokens.radiusLg,
+          width: 2,
+          bottomPhase: 4,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(LukitasTokens.space3),
-          child: Row(
-            spacing: LukitasTokens.space3,
-            children: [
-              Expanded(
-                child: Text(
-                  l10n.categoryArchivedNote,
-                  style: LkText.bodySm.copyWith(color: colors.ink),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.surfaceRow,
+            borderRadius: BorderRadius.circular(LukitasTokens.radiusLg),
+          ),
+          child: Padding(
+            // `padding: var(--space-3)` inside the 2px border.
+            padding: const EdgeInsets.all(LukitasTokens.space3 + 2),
+            child: Row(
+              spacing: LukitasTokens.space3,
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.categoryArchivedNote,
+                    style: LkText.bodySm.copyWith(color: colors.ink),
+                  ),
                 ),
-              ),
-              PressLink.text(
-                label,
-                tone: PressTone.secondary,
-                size: PressSize.sm,
-                onPressed: onWeb,
-              ),
-            ],
+                PressButton.text(
+                  l10n.categoriesRestore,
+                  key: const Key('detail.restore'),
+                  tone: PressTone.secondary,
+                  size: PressSize.sm,
+                  onPressed: onRestore,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -590,8 +621,18 @@ class _BudgetCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: LukitasTokens.space2,
         children: [
-          Text(l10n.categoryNoBudget(monthName), style: LkText.body.copyWith(color: colors.ink)),
-          if (spent != 0) Text(l10n.categorySpent(monthName, money(spent)), style: meta),
+          CssLines(
+            style: LkText.body,
+            child: Text(
+              l10n.categoryNoBudget(monthName),
+              style: LkText.body.copyWith(color: colors.ink),
+            ),
+          ),
+          if (spent != 0)
+            CssLines(
+              style: LkText.meta,
+              child: Text(l10n.categorySpent(monthName, money(spent)), style: meta),
+            ),
         ],
       );
     } else {

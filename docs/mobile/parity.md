@@ -269,14 +269,25 @@ when the app's picture changes. The web shots are regenerated only when the web 
   - A row's 44px badge sits in a 20px line (`-my-3`): `OutsetBox` takes the room back, and
     `HitTargetBoost` lets a touch on the part outside the line still reach the badge, as a browser does
     for an overflowing element.
-- **Category management stays on the web (founder ruling, Stage 3b).** Where the web's category detail has
-  "Editar" (and "Restaurar" on an archived one), the app has a link to the web, "Más en la web". The detail's
-  pairs (`category-detail`, `budget-sheet`, `budget-sheet-negative`) draw it with the web's word through
-  `CategoryDetailScreen.manageLabel`, so everything else is compared; the box is the same (`PressLink`, secondary,
-  small). The real label is `settingsWeb`. There is no way to clear a budget: the web's sheet refuses zero and the
-  API has no delete, so the app has none either. The budget sheet's stories `manage-categories--budget-sheet-open`
-  and `--budget-sheet-negative` were added to `Categories.stories.tsx` for these pairs (no existing story leaves the
-  sheet open), and `APP_GETS` has Ocio's own movements as the app asks for them.
+- **Categories are managed from home's Categorías tab and the detail (founder ruling, Stage 3c).** There is no
+  categories page, on the web or in the app. The tab has the Gastos | Ingresos switch, "Nueva categoría" and the
+  archived ones folded at the end; the detail has "Editar" (the category sheet: name, kind, emoji, colour and
+  "Archivar categoría") and, on an archived one, "Restaurar". There is no way to clear a budget: the web's sheet refuses
+  zero and the API has no delete, so the app has none either. The pairs:
+  - `home-budgets` (the tab, Gastos), `categories-income` and `categories-archived-open` (every income category
+    archived, so the fold's row is in view), `category-new-sheet`, `category-edit-sheet` and `category-archive-sheet`
+    (the question, with its count of recurring payments) and `category-detail-archived` (Casa, October's fixture).
+    Their stories are `home-home--budgets`, `--categories-income`, `--categories-archived-open`, `--new-category-sheet`
+    and `manage-categories--detail`, `--edit-category-sheet`, `--archive-sheet-open`, `--archived-detail`; the
+    budget sheet's pairs (`budget-sheet`, `budget-sheet-negative`) are as they were.
+  - `APP_GETS` has Casa's own movements as the app asks for them. The edit sheet asks the web's one page (200 rows) of
+    the category's transactions, to say whether its kind is fixed.
+  - **The archived note's dashes.** Blink's dashed border starts the bottom side's dashes in a different place for
+    the detail's note than for the home nudge (the phase follows the card, which is not known), so the note passes
+    `DashedBorderPainter.bottomPhase: 4`, measured on the web's picture.
+  - **Text height.** A paragraph whose line is 22.5px (15px at 1.5: the confirm sheet's words, the budget card's "Sin
+    presupuesto en…") is `CssLines`, as the other fractional lines are: without it every line is a half pixel taller
+    than the web's and the sheet is 3px short at the top.
 - **Análisis (`insights-insights--*`).** The page is as long as its three cards (about 2130px), and a pair
   compares the viewport only, so the stories that look at a card below the fold scroll the page to it
   (`TrendScrolled`, `TrendYearScrolled`, `TrendGapsScrolled` and `CostOfLivingScrolled` were added to

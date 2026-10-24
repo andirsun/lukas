@@ -75,6 +75,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           categoryId: state.pathParameters['id']!,
           // The month it opens on (`?month=2026-09`), home's when it comes from a budget row.
           initialMonth: state.uri.queryParameters['month'],
+          // Opened from home's Categorías tab: "back" says so.
+          fromCategories: state.extra == detailFromCategories,
         ),
       ),
       // The web's pages (apps/web/app/routes.ts), under `/app` there. There is no categories page:

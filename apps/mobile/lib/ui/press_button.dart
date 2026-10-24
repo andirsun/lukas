@@ -34,6 +34,7 @@ class PressButton extends StatelessWidget {
     this.link = false,
     this.horizontalPadding,
     this.padding,
+    this.expanded,
   });
 
   /// A button whose label is [label], in upper case as the web shows it.
@@ -49,6 +50,7 @@ class PressButton extends StatelessWidget {
     this.link = false,
     this.horizontalPadding,
     this.padding,
+    this.expanded,
   }) : child = Text(LkText.upperCase(label));
 
   final Widget child;
@@ -73,6 +75,9 @@ class PressButton extends StatelessWidget {
 
   /// Replaces the padding altogether: the day/night switch is `p-0`, a 44px box with an icon in it.
   final EdgeInsets? padding;
+
+  /// The button opens or closes something (the web's `aria-expanded`); null when it does not.
+  final bool? expanded;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +110,7 @@ class PressButton extends StatelessWidget {
       autofocus: autofocus,
       label: semanticLabel,
       link: link,
+      expanded: expanded,
       builder: (context, state) {
         final pressed = state.pressed;
         final BoxDecoration decoration;

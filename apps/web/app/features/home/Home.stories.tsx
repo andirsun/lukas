@@ -795,6 +795,25 @@ export const CategoriesArchived: Story = {
   },
 };
 
+/**
+ * Ingresos with every income category archived: nothing active to list, and the archived one
+ * unfolded, as they rest (the mobile parity picture of the fold).
+ */
+export const CategoriesArchivedOpen: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedIncome />,
+  play: async ({ canvasElement }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    await userEvent.click(panel.getByRole("tab", { name: "Ingresos" }));
+    await expect(await panel.findByText("Aún no tienes categorías de este tipo.")).toBeVisible();
+    await userEvent.click(await panel.findByRole("button", { name: "Archivadas (1)" }));
+    await expect(
+      within(await panel.findByRole("region", { name: "Archivadas" })).getByRole("button", {
+        name: "Salario Archivada",
+      }),
+    ).toBeVisible();
+  },
+};
+
 /** "Nueva categoría": name, kind, emoji and tint; it joins the list. */
 export const CreateCategory: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} />,

@@ -286,6 +286,10 @@ export interface HomeApiOptions {
   createDelayMs?: number;
   /** Transporte is archived, with a taxi ride in it today (sample data only). */
   archivedCategory?: boolean;
+  /** Salario, the only income category, is archived (sample data only). */
+  archivedIncome?: boolean;
+  /** This category is archived, with its budget and its movements. */
+  archivedId?: string;
   /** No recurrences (the sample has Spotify, the salary and a yearly insurance). */
   noRecurrences?: boolean;
   /** How long each report (insights) takes to answer, in ms. */
@@ -351,6 +355,8 @@ function homeFetch({
   failCreate = false,
   createDelayMs = 0,
   archivedCategory = false,
+  archivedIncome = false,
+  archivedId,
   noRecurrences = false,
   reportDelayMs = 0,
   budgetsSince = 12,
@@ -379,6 +385,12 @@ function homeFetch({
       c.id === "cat-transport" ? { ...c, archived: true, currentBudget: null } : c,
     );
     transactions = [...transactions, transaction("taxi", "cat-transport", -1500, STORY_TODAY)];
+  }
+  if (archivedId) {
+    categories = categories.map((c) => (c.id === archivedId ? { ...c, archived: true } : c));
+  }
+  if (archivedIncome) {
+    categories = categories.map((c) => (c.id === "cat-salary" ? { ...c, archived: true } : c));
   }
   let budgets: FakeBudget[] = categories.flatMap((c) =>
     c.currentBudget === null
