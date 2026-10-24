@@ -5,8 +5,8 @@ import 'package:flutter/widgets.dart';
 import '../home/home_widgets.dart' show QuietSpinner;
 import '../theme/text_styles.dart';
 import '../theme/tokens.g.dart';
+import '../ui/failure_row.dart';
 import '../ui/keypad.dart';
-import '../ui/lk_theme.dart';
 import '../ui/press_button.dart';
 import '../ui/sheet.dart' show compactFooterBelow;
 import 'add_session.dart';
@@ -36,10 +36,11 @@ class AddFooter extends StatelessWidget {
       spacing: compact ? LukitasTokens.space1 : LukitasTokens.space2,
       children: [
         if (failure != null)
-          _FailureRow(
+          SaveFailureRow(
             message: saveFailureMessage(l10n, failure),
             retryLabel: canRetrySave(failure) ? l10n.retry : null,
             onRetry: () => unawaited(session.save()),
+            retryKey: const Key('add.retry'),
           ),
         if (!keyboardUp)
           Keypad(
@@ -79,38 +80,6 @@ class AddFooter extends StatelessWidget {
             ),
           ],
         ),
-      ],
-    );
-  }
-}
-
-class _FailureRow extends StatelessWidget {
-  const _FailureRow({required this.message, required this.retryLabel, required this.onRetry});
-
-  final String message;
-  final String? retryLabel;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.lkColors;
-    return Row(
-      spacing: LukitasTokens.space2,
-      children: [
-        Expanded(
-          child: Semantics(
-            liveRegion: true,
-            child: Text(message, style: LkText.label.copyWith(color: colors.over)),
-          ),
-        ),
-        if (retryLabel != null)
-          PressButton.text(
-            retryLabel!,
-            key: const Key('add.retry'),
-            tone: PressTone.ghost,
-            size: PressSize.sm,
-            onPressed: onRetry,
-          ),
       ],
     );
   }

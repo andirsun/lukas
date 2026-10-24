@@ -30,6 +30,10 @@ import 'toast.dart';
 /// - It slides over `--sheet` (260 ms) with the web's deceleration; under the system's "remove
 ///   animations" it only fades.
 /// - While open it hosts the toasts ([ToastSlot]).
+///
+/// A sheet that asks something only its own buttons may answer is not [dismissible]: no backdrop,
+/// no drag, no Escape and no "Cerrar" close it, and the system's back button does what the caller
+/// says ([show]'s `backResult`).
 abstract final class LkSheet {
   /// Opens a sheet and returns what it is popped with.
   ///
@@ -44,6 +48,11 @@ abstract final class LkSheet {
   /// the [children] scroll between them, and the footer is always in view. Without one the whole
   /// sheet scrolls; then [stuck] (the web's `.lk-sheet-footer` in a sheet that scrolls as a whole:
   /// a budget's Guardar) stays at the bottom of the sheet while the rest scrolls above it.
+  ///
+  /// With [dismissible] false only what is in the sheet closes it (the caller pops the route): the
+  /// backdrop, the drag, Escape and the header's "Cerrar" are gone. The system's back button then
+  /// closes it with [backResult]'s value, or does nothing without one. A pop that does not come
+  /// from the person (a link closing every sheet) still closes it, with a null result.
   static Future<T?> show<T>(
     BuildContext context, {
     required String title,
@@ -52,6 +61,8 @@ abstract final class LkSheet {
     List<Widget>? footer,
     List<Widget>? stuck,
     bool useRootNavigator = true,
+    bool dismissible = true,
+    T Function()? backResult,
     String Function(BuildContext context)? titleOf,
     Widget Function(Widget sheet)? wrap,
   }) {
@@ -65,6 +76,8 @@ abstract final class LkSheet {
         pinned: pinned,
         footer: footer,
         stuck: stuck,
+        dismissible: dismissible,
+        backResult: backResult,
         themes: InheritedTheme.capture(from: context, to: navigator.context),
         barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       ),
@@ -107,6 +120,8 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
     required this.pinned,
     required this.footer,
     required this.stuck,
+    required this.dismissible,
+    required this.backResult,
     required this.themes,
     required this.barrierLabel,
   });
@@ -118,6 +133,8 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
   final List<Widget> pinned;
   final List<Widget>? footer;
   final List<Widget>? stuck;
+  final bool dismissible;
+  final T Function()? backResult;
   final CapturedThemes themes;
 
   @override
@@ -151,6 +168,8 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
       pinned: pinned,
       footer: footer,
       stuck: stuck,
+      dismissible: dismissible,
+      backResult: backResult == null ? null : () => backResult!(),
       children: children,
     ),
   );
@@ -167,6 +186,8 @@ class _SheetPage extends StatefulWidget {
     required this.pinned,
     required this.footer,
     required this.stuck,
+    required this.dismissible,
+    required this.backResult,
   });
 
   final Route<dynamic> route;
@@ -178,6 +199,8 @@ class _SheetPage extends StatefulWidget {
   final List<Widget> pinned;
   final List<Widget>? footer;
   final List<Widget>? stuck;
+  final bool dismissible;
+  final Object? Function()? backResult;
 
   @override
   State<_SheetPage> createState() => _SheetPageState();
@@ -300,17 +323,19 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     _springBack();
   }
 
-  Map<Type, GestureRecognizerFactory> get _gestures => {
-    SheetDragRecognizer: GestureRecognizerFactoryWithHandlers<SheetDragRecognizer>(
-      SheetDragRecognizer.new,
-      (recognizer) => recognizer
-        ..onStart = _onStart
-        ..onLock = _onLock
-        ..onMove = _onMove
-        ..onRelease = _onRelease
-        ..onSettle = _onSettle,
-    ),
-  };
+  Map<Type, GestureRecognizerFactory> get _gestures => !widget.dismissible
+      ? const {}
+      : {
+          SheetDragRecognizer: GestureRecognizerFactoryWithHandlers<SheetDragRecognizer>(
+            SheetDragRecognizer.new,
+            (recognizer) => recognizer
+              ..onStart = _onStart
+              ..onLock = _onLock
+              ..onMove = _onMove
+              ..onRelease = _onRelease
+              ..onSettle = _onSettle,
+          ),
+        };
 
   // -- the layout ----------------------------------------------------------------------------
 
@@ -352,12 +377,13 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
                 ),
               ),
             ),
-            PressButton.text(
-              l10n.close,
-              tone: PressTone.ghost,
-              size: PressSize.sm,
-              onPressed: _close,
-            ),
+            if (widget.dismissible)
+              PressButton.text(
+                l10n.close,
+                tone: PressTone.ghost,
+                size: PressSize.sm,
+                onPressed: _close,
+              ),
           ],
         ),
       ],
@@ -537,7 +563,9 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
           explicitChildNodes: true,
           label: widget.titleOf?.call(context) ?? widget.title,
           child: CallbackShortcuts(
-            bindings: {const SingleActivator(LogicalKeyboardKey.escape): _close},
+            bindings: {
+              if (widget.dismissible) const SingleActivator(LogicalKeyboardKey.escape): _close,
+            },
             child: Focus(
               autofocus: true,
               child: Stack(
@@ -548,7 +576,8 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
                       opacity: backdrop,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: _close,
+                        // Not dismissible: the backdrop still takes the tap, and does nothing.
+                        onTap: widget.dismissible ? _close : () {},
                         child: ColoredBox(color: scrim),
                       ),
                     ),
@@ -570,7 +599,20 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
         ),
       ),
     );
-    return widget.wrap?.call(page) ?? page;
+    final wrapped = widget.wrap?.call(page) ?? page;
+    if (widget.dismissible) return wrapped;
+    // The system's back button: the caller's answer, or nothing. A pop from the app itself does
+    // not come here.
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        final answer = widget.backResult;
+        if (!didPop && answer != null && widget.route.isCurrent) {
+          Navigator.of(context).pop(answer());
+        }
+      },
+      child: wrapped,
+    );
   }
 }
 

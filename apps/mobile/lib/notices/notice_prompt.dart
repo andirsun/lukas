@@ -5,6 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../l10n/app_localizations.dart';
 import '../router.dart';
+import '../theme/text_styles.dart';
+import '../theme/tokens.g.dart';
+import '../ui/lk_theme.dart';
+import '../ui/press_button.dart';
+import '../ui/sheet.dart';
 
 /// Why the app asks to post notices: the notice that just became relevant.
 enum NoticeReason {
@@ -21,50 +26,82 @@ enum NoticeReason {
 /// is asked again at the next chance.
 typedef NoticePrompt = Future<bool?> Function(NoticeReason reason);
 
-/// The question, on home and only there (replaced in tests). Only its two buttons (and the back
-/// button, as "Ahora no") answer it: tapping outside does nothing.
+/// The question, on home and only there (replaced in tests), in the web's sheet: one sentence on
+/// why, "Permitir avisos" and "Ahora no". Only those two buttons (and the back button, as "Ahora
+/// no") answer it: the backdrop, a drag and Escape do nothing, and there is no "Cerrar".
 final noticePromptProvider = Provider<NoticePrompt>((ref) {
   return (reason) async {
     final context = await _homeContext(ref);
     if (context == null || !context.mounted) return null;
     final l10n = AppLocalizations.of(context);
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => PopScope(
-        canPop: false,
-        // The back button is "Ahora no"; a pop from the app itself (a link closing every sheet)
-        // does not come here and leaves the dialog's result null.
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) Navigator.of(context).pop(false);
-        },
-        child: AlertDialog(
-          key: const Key('notices.ask'),
-          title: Text(l10n.noticeAskTitle),
-          content: Text(
-            key: const Key('notices.askWhy'),
-            switch (reason) {
-              NoticeReason.due => l10n.noticeAskDue,
-              NoticeReason.guest => l10n.noticeAskGuest,
-            },
-          ),
-          actions: [
-            TextButton(
-              key: const Key('notices.askLater'),
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(l10n.noticeAskLater),
-            ),
-            FilledButton(
-              key: const Key('notices.askAllow'),
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(l10n.noticeAskAllow),
-            ),
-          ],
+    return LkSheet.show<bool>(
+      context,
+      title: l10n.noticeAskTitle,
+      dismissible: false,
+      // The back button is "Ahora no"; a pop from the app itself (a link closing every sheet) does
+      // not come here and leaves the result null.
+      backResult: () => false,
+      children: [
+        _NoticeQuestion(
+          why: switch (reason) {
+            NoticeReason.due => l10n.noticeAskDue,
+            NoticeReason.guest => l10n.noticeAskGuest,
+          },
+          allowLabel: l10n.noticeAskAllow,
+          laterLabel: l10n.noticeAskLater,
         ),
-      ),
+      ],
     );
   };
 });
+
+/// What the sheet says and offers: the reason, then the allowing button above the declining one
+/// (the web's `ChoiceSheet` order: the way forward first, the way out last).
+class _NoticeQuestion extends StatelessWidget {
+  const _NoticeQuestion({required this.why, required this.allowLabel, required this.laterLabel});
+
+  final String why;
+  final String allowLabel;
+  final String laterLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lkColors;
+    return Padding(
+      key: const Key('notices.ask'),
+      padding: const EdgeInsets.only(top: LukitasTokens.space3),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: LukitasTokens.space4,
+        children: [
+          Text(
+            why,
+            key: const Key('notices.askWhy'),
+            style: LkText.body.copyWith(color: colors.ink),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: LukitasTokens.space2,
+            children: [
+              PressButton.text(
+                allowLabel,
+                key: const Key('notices.askAllow'),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+              PressButton.text(
+                laterLabel,
+                key: const Key('notices.askLater'),
+                tone: PressTone.ghost,
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// How long the question waits for home to be free, and how often it looks.
 const _waitForHome = Duration(minutes: 5);

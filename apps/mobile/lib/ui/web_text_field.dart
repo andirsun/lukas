@@ -1,5 +1,6 @@
 // The web's text input (`<input className="lk-input ...">`, apps/web/app/features/sign-in/SignIn.tsx).
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show TextInputFormatter;
 
 import '../theme/text_styles.dart';
 import 'input_box.dart';
@@ -25,6 +26,8 @@ class WebTextField extends StatefulWidget {
     this.keyboardType,
     this.textInputAction,
     this.autofillHints,
+    this.inputFormatters,
+    this.maxLines = 1,
     this.onSubmitted,
     this.onChanged,
   });
@@ -42,6 +45,10 @@ class WebTextField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final Iterable<String>? autofillHints;
+  final List<TextInputFormatter>? inputFormatters;
+
+  /// How many lines show before it scrolls: the web's `<textarea rows>`; one is the plain input.
+  final int maxLines;
   final ValueChanged<String>? onSubmitted;
   final ValueChanged<String>? onChanged;
 
@@ -131,7 +138,8 @@ class _WebTextFieldState extends State<WebTextField> {
                   selectionControls: materialTextSelectionHandleControls,
                   contextMenuBuilder: (context, state) =>
                       AdaptiveTextSelectionToolbar.editableText(editableTextState: state),
-                  maxLines: 1,
+                  maxLines: widget.maxLines,
+                  inputFormatters: widget.inputFormatters,
                   // The box around it takes the taps and the long press (the field's own are rudimentary).
                   rendererIgnoresPointer: true,
                   readOnly: widget.readOnly,

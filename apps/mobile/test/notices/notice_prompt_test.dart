@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/add/add_sheet.dart';
 import 'package:lukitas/launch/launch_links.dart';
@@ -42,7 +43,11 @@ void main() {
       tester.widget<Text>(find.byKey(const Key('notices.askWhy'))).data,
       'Así Lukitas puede avisarte a las 9:00 los días en que vence un pago recurrente.',
     );
-    expect(platform.callsNamed('requestPermission'), isEmpty, reason: 'Android is asked after "Permitir"');
+    expect(
+      platform.callsNamed('requestPermission'),
+      isEmpty,
+      reason: 'Android is asked after "Permitir"',
+    );
 
     await tester.tap(find.byKey(const Key('notices.askAllow')));
     await tester.pumpAndSettle();
@@ -72,34 +77,36 @@ void main() {
       tester.widget<Text>(find.byKey(const Key('notices.askWhy'))).data,
       'So Lukitas can tell you at 9:00 on the days a recurring payment is due.',
     );
-    expect(find.text('Not now'), findsOneWidget);
-    expect(find.text('Allow notices'), findsOneWidget);
+    final ask = find.byKey(const Key('notices.ask'));
+    expect(find.descendant(of: ask, matching: find.text('NOT NOW')), findsOneWidget);
+    expect(find.descendant(of: ask, matching: find.text('ALLOW NOTICES')), findsOneWidget);
   });
 
-  testWidgets('the question waits for home, with no sheet over it, and does not appear over Settings', (
-    tester,
-  ) async {
-    final links = FakeLaunchLinks('lukitas://add');
-    final platform = FakeNoticePlatform();
-    final env = await pumpSettingsApp(
-      tester,
-      overrides: [
-        launchLinkSourceProvider.overrideWithValue(links),
-        noticePlatformProvider.overrideWithValue(platform),
-        noticeBackendProvider.overrideWithValue(FakeNoticeBackend(hasRecurring: true)),
-      ],
-    );
-    await tester.pump(const Duration(seconds: 2));
-    // The add sheet is open over home: no question over it.
-    expect(find.byType(AddSheet), findsOneWidget);
-    expect(find.byKey(const Key('notices.ask')), findsNothing);
+  testWidgets(
+    'the question waits for home, with no sheet over it, and does not appear over Settings',
+    (tester) async {
+      final links = FakeLaunchLinks('lukitas://add');
+      final platform = FakeNoticePlatform();
+      final env = await pumpSettingsApp(
+        tester,
+        overrides: [
+          launchLinkSourceProvider.overrideWithValue(links),
+          noticePlatformProvider.overrideWithValue(platform),
+          noticeBackendProvider.overrideWithValue(FakeNoticeBackend(hasRecurring: true)),
+        ],
+      );
+      await tester.pump(const Duration(seconds: 2));
+      // The add sheet is open over home: no question over it.
+      expect(find.byType(AddSheet), findsOneWidget);
+      expect(find.byKey(const Key('notices.ask')), findsNothing);
 
-    // The sheet closed: now home is free, and the question comes.
-    Navigator.of(env.router.routerDelegate.navigatorKey.currentContext!).pop();
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('notices.ask')), findsOneWidget);
-  });
+      // The sheet closed: now home is free, and the question comes.
+      Navigator.of(env.router.routerDelegate.navigatorKey.currentContext!).pop();
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('notices.ask')), findsOneWidget);
+    },
+  );
 
   testWidgets('not over Settings: it waits until the person is back on home', (tester) async {
     final platform = FakeNoticePlatform();
@@ -123,7 +130,9 @@ void main() {
     expect(find.byKey(const Key('notices.ask')), findsOneWidget);
   });
 
-  testWidgets('a link that arrives while it is up closes it without counting it as "Ahora no"', (tester) async {
+  testWidgets('a link that arrives while it is up closes it without counting it as "Ahora no"', (
+    tester,
+  ) async {
     final links = FakeLaunchLinks();
     final platform = FakeNoticePlatform();
     final env = await pumpSettingsApp(
@@ -157,5 +166,24 @@ void main() {
     await tester.tapAt(const Offset(5, 5));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('notices.ask')), findsOneWidget);
+  });
+
+  testWidgets('it is the web\'s sheet: no Cerrar, and Escape does not answer it', (tester) async {
+    await pump(tester);
+    expect(find.text('CERRAR'), findsNothing);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('notices.ask')), findsOneWidget);
+  });
+
+  testWidgets('the back button is "Ahora no": Android is not asked, and it is not asked again', (
+    tester,
+  ) async {
+    final (env, platform) = await pump(tester);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('notices.ask')), findsNothing);
+    expect(platform.callsNamed('requestPermission'), isEmpty);
+    expect(env.flags['notice.permission.asked']?.value, isTrue, reason: 'an answer');
   });
 }

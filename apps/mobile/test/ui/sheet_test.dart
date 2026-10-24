@@ -261,4 +261,71 @@ void main() {
     await t.pumpAndSettle();
     expect(find.text('Sin conexión'), findsOneWidget, reason: 'back on the page');
   });
+
+  group('not dismissible', () {
+    final answers = <bool?>[];
+
+    Widget opener({bool Function()? backResult}) => Builder(
+      builder: (context) => PressButton.text(
+        'Abrir',
+        onPressed: () async => answers.add(
+          await LkSheet.show<bool>(
+            context,
+            title: 'Avisos',
+            dismissible: false,
+            backResult: backResult,
+            children: [PressButton.text('Sí', onPressed: () => Navigator.of(context).pop(true))],
+          ),
+        ),
+      ),
+    );
+
+    setUp(answers.clear);
+
+    testWidgets('no Cerrar, and Escape, the backdrop and a drag leave it open', (t) async {
+      await _open(t, opener: opener());
+      expect(find.text('Avisos'), findsOneWidget);
+      expect(find.text('CERRAR'), findsNothing);
+      await t.sendKeyEvent(LogicalKeyboardKey.escape);
+      await t.pumpAndSettle();
+      await t.tapAt(const Offset(200, 100));
+      await t.pumpAndSettle();
+      final height = t.getSize(find.byType(Material).last).height;
+      await t.timedDrag(find.text('SÍ'), Offset(0, height), const Duration(milliseconds: 300));
+      await t.pumpAndSettle();
+      expect(find.text('Avisos'), findsOneWidget);
+      expect(answers, isEmpty);
+    });
+
+    testWidgets('its own button closes it with the answer', (t) async {
+      await _open(t, opener: opener());
+      await t.tap(find.text('SÍ'));
+      await t.pumpAndSettle();
+      expect(find.text('Avisos'), findsNothing);
+      expect(answers, [true]);
+    });
+
+    testWidgets('the back button does nothing without a backResult', (t) async {
+      await _open(t, opener: opener());
+      await t.binding.handlePopRoute();
+      await t.pumpAndSettle();
+      expect(find.text('Avisos'), findsOneWidget);
+    });
+
+    testWidgets('the back button closes it with the backResult', (t) async {
+      await _open(t, opener: opener(backResult: () => false));
+      await t.binding.handlePopRoute();
+      await t.pumpAndSettle();
+      expect(find.text('Avisos'), findsNothing);
+      expect(answers, [false]);
+    });
+
+    testWidgets('a pop from the app itself closes it with a null answer', (t) async {
+      await _open(t, opener: opener(backResult: () => false));
+      Navigator.of(t.element(find.text('Avisos'))).pop();
+      await t.pumpAndSettle();
+      expect(find.text('Avisos'), findsNothing);
+      expect(answers, [null]);
+    });
+  });
 }

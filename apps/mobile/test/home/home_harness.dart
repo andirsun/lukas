@@ -45,6 +45,8 @@ Future<HomeHarness> pumpHome(
   Locale locale = const Locale('es'),
   ThemeMode themeMode = ThemeMode.dark,
   Size size = const Size(390, 844),
+  double pixelRatio = 1,
+  ThemeData Function(ThemeData theme)? restyle,
   bool withEdit = false,
   bool settle = true,
   FakeCacheStore? cacheStore,
@@ -58,7 +60,7 @@ Future<HomeHarness> pumpHome(
   bool withMenu = false,
 }) async {
   tester.view.physicalSize = size;
-  tester.view.devicePixelRatio = 1;
+  tester.view.devicePixelRatio = pixelRatio;
   addTearDown(tester.view.reset);
   final snapshots = <WrittenSnapshot>[];
   final edited = <Transaction>[];
@@ -85,8 +87,8 @@ Future<HomeHarness> pumpHome(
     UncontrolledProviderScope(
       container: container,
       child: MaterialApp(
-        theme: dayTheme,
-        darkTheme: nightTheme,
+        theme: restyle?.call(dayTheme) ?? dayTheme,
+        darkTheme: restyle?.call(nightTheme) ?? nightTheme,
         themeMode: themeMode,
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,

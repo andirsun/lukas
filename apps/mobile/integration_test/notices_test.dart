@@ -79,6 +79,8 @@ void main() {
       tester.widget<Text>(find.byKey(const Key('notices.askWhy'))).data,
       contains('45'),
     );
+    // The question is a sheet: let it finish sliding in before pressing in it.
+    await tester.pump(const Duration(milliseconds: 500));
     // "Ahora no": Android's own prompt is not shown, and the question is not asked again.
     await tester.tap(find.byKey(const Key('notices.askLater')));
     for (var i = 0; i < 20; i++) {

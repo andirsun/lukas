@@ -14,6 +14,7 @@ import 'package:lukitas/capture/mic_level.dart';
 import 'package:lukitas/capture/models_download.dart';
 import 'package:lukitas/feedback/stored_flag.dart';
 import 'package:lukitas/home/home_repository.dart';
+import 'package:lukitas/ui/press_button.dart';
 import 'package:lukitas/ui/toast.dart';
 
 import '../home/fakes.dart';
@@ -92,8 +93,8 @@ Future<void> _openMoving(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 500));
 }
 
-FilledButton _save(WidgetTester tester) =>
-    tester.widget<FilledButton>(find.byKey(const Key('capture.save')));
+PressButton _save(WidgetTester tester) =>
+    tester.widget<PressButton>(find.byKey(const Key('capture.save')));
 
 Future<void> _pickCategory(WidgetTester tester, int card, String id) async {
   final pick = find.byKey(Key('capture.card.$card.pick'));
@@ -121,8 +122,8 @@ void main() {
     expect(find.byKey(const Key('capture.card.0')), findsOneWidget);
     expect(find.byKey(const Key('capture.card.1')), findsOneWidget);
     expect(find.byKey(const Key('capture.card.2')), findsNothing);
-    expect(find.text(r'$15.000'), findsOneWidget);
-    expect(find.text(r'$3.000'), findsOneWidget);
+    expect(find.text(r'−$15.000'), findsOneWidget);
+    expect(find.text(r'−$3.000'), findsOneWidget);
     expect(find.text('GUARDAR 2'), findsOneWidget);
     expect(find.text(_sentence), findsOneWidget);
   });
@@ -131,10 +132,10 @@ void main() {
     await _pump(tester);
     await _open(tester);
     // "uber" is a category's name; "almuerzo" is no category's.
-    expect(find.text('Elige categoría'), findsOneWidget);
+    expect(find.text('ELIGE CATEGORÍA'), findsOneWidget);
     expect(_save(tester).onPressed, isNull);
     await _pickCategory(tester, 0, 'cat-food');
-    expect(find.text('Elige categoría'), findsNothing);
+    expect(find.text('ELIGE CATEGORÍA'), findsNothing);
     expect(_save(tester).onPressed, isNotNull);
   });
 
@@ -284,7 +285,7 @@ void main() {
     final env = await _pump(tester, failure: const SpeechFailure(SpeechFailureKind.noModel));
     await _open(tester);
     final mb = (voiceModels['es']!.bytes / 1e6).round();
-    expect(find.text('Descargar $mb MB'), findsOneWidget);
+    expect(find.text('DESCARGAR $mb MB'), findsOneWidget);
     await tester.tap(find.byKey(const Key('capture.offer.decline')));
     await tester.pumpAndSettle();
     expect(env.models.downloads, 0);
@@ -331,7 +332,7 @@ void main() {
     );
     await _open(tester);
     expect(find.text('SAVE 2'), findsOneWidget);
-    expect(find.text('Pick a category'), findsOneWidget);
+    expect(find.text('PICK A CATEGORY'), findsOneWidget);
   });
 
   testWidgets('"¿En qué gastaste?" shows only once the engine is ready', (tester) async {
@@ -391,7 +392,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const Key('capture.offer.download')),
-        matching: find.text('Reintentar'),
+        matching: find.text('REINTENTAR'),
       ),
       findsOneWidget,
     );
@@ -436,7 +437,7 @@ void main() {
     await tester.tap(find.byKey(const Key('capture.offer.download')));
     await tester.pumpAndSettle();
     expect(find.textContaining("The voice didn't download"), findsOneWidget);
-    expect(find.text('Try again'), findsOneWidget);
+    expect(find.text('TRY AGAIN'), findsOneWidget);
   });
 
   testWidgets('after a lost answer, a change that changes nothing keeps the key: 2 rows', (

@@ -13,8 +13,9 @@ import '../theme/tokens.g.dart';
 /// Under the system's "remove animations" it is a plain static indicator instead: one bar as wide
 /// as the current level, which only changes, never moves in between.
 ///
-/// A widget of its own, with colours from the design tokens (`LukitasColors`: the brand for loud,
-/// the stroke for quiet), so the capture sheet's restyle can place it anywhere.
+/// A widget of its own, with colours and radii from the design tokens (`LukitasColors`: the
+/// stroke for quiet, the brand for loud, and the candy at the peaks; pill bars), so the capture
+/// sheet can place it anywhere. The sheet sets it in a sunken box (capture_listening.dart).
 class MicLevel extends StatefulWidget {
   const MicLevel({super.key, required this.levels, this.bars = defaultBars, this.height = 56});
 
@@ -34,8 +35,8 @@ class MicLevel extends StatefulWidget {
 }
 
 class _MicLevelState extends State<MicLevel> {
-  static const _barWidth = 5.0;
-  static const _gap = 3.0;
+  static const _barWidth = 6.0;
+  static const _gap = 4.0;
   static const _smallest = 4.0;
 
   late List<double> _history = List.filled(widget.bars, 0);
@@ -77,12 +78,13 @@ class _MicLevelState extends State<MicLevel> {
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     final plain = MediaQuery.disableAnimationsOf(context);
     return ExcludeSemantics(
-      child: SizedBox(
-        height: widget.height,
-        child: plain ? _static(colors) : _bars(colors),
-      ),
+      child: SizedBox(height: widget.height, child: plain ? _static(colors) : _bars(colors)),
     );
   }
+
+  /// Quiet is the stroke and a loud moment the brand; a little speech already reads as brand.
+  static Color? _tint(LukitasColors colors, double level) =>
+      Color.lerp(colors.stroke, colors.brand, (level * 1.3).clamp(0.0, 1.0));
 
   Widget _bars(LukitasColors colors) => Center(
     child: Row(
@@ -98,7 +100,7 @@ class _MicLevelState extends State<MicLevel> {
             width: _barWidth,
             height: _smallest + _history[i] * (widget.height - _smallest),
             decoration: BoxDecoration(
-              color: Color.lerp(colors.stroke, colors.brand, _history[i]),
+              color: _tint(colors, _history[i]),
               borderRadius: BorderRadius.circular(LukitasTokens.radiusPill),
             ),
           ),

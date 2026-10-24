@@ -364,6 +364,9 @@ when the app's picture changes. The web shots are regenerated only when the web 
     bar runs its real eight seconds.
   - `ui-bottombar--*`: the web has no 🎤, so the pairs hide it (`showMic: false`);
     `test/ui/bottom_bar_golden_test.dart` has its own pictures of the bar with the 🎤, to review by eye.
+  - Quick capture and the voice download have no web story, so no pair: `test/capture/capture_golden_test.dart`
+    has pictures of the listening, the preview, a card open, an unread fragment, the download offer and the
+    download under way, in night and day, to review by eye (`test/capture/goldens`).
   - `ui-namefield--two-rows-at-most` has no pair: `useRowLimit` measures before the fonts have loaded,
     so the story shows six shortcuts where the fonts' widths show seven.
   - A story's click leaves the focus on what it clicked, which Chrome rings; `act:` presses Tab to the
