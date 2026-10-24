@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../add/add_sheet.dart';
 import '../capture/capture_sheet.dart';
+import '../home/shell_navigation.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/text_styles.dart';
 import '../ui/lk_theme.dart';
@@ -18,7 +20,7 @@ import 'settings_parts.dart';
 /// settings style (a page header and a card). The licence page is Flutter's own, fed by the
 /// packages' LICENSE files (collected at build) and the extras of `registerExtraLicenses`: the
 /// voice models, the speech engine, the Android libraries and the sounds.
-class AboutScreen extends StatelessWidget {
+class AboutScreen extends ConsumerWidget {
   const AboutScreen({super.key});
 
   void _back(BuildContext context) {
@@ -31,21 +33,14 @@ class AboutScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = context.lkColors;
     return ManagePage(
       current: 'settings',
       onAdd: () => unawaited(openAddSheet(context)),
       onMic: () => unawaited(openCapture(context, listen: true)),
-      onNavigate: (to) {
-        final router = GoRouter.of(context);
-        if (to == 'insights') {
-          unawaited(router.push<void>('/insights'));
-        } else {
-          router.go('/');
-        }
-      },
+      onNavigate: (to) => navigateFromShell(context, ref, to, current: 'settings'),
       header: PageHeader(
         backLabel: l10n.aboutBack,
         backShort: l10n.aboutBackShort,

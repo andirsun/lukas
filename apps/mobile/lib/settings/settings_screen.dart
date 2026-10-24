@@ -19,6 +19,7 @@ import '../capture/capture_sheet.dart';
 import '../capture/models_download.dart';
 import '../feedback/feedback.dart';
 import '../home/home_repository.dart';
+import '../home/shell_navigation.dart';
 import '../l10n/app_localizations.dart';
 import '../progress/guest_warning.dart';
 import '../theme/text_styles.dart';
@@ -194,13 +195,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       current: 'settings',
       onAdd: () => unawaited(openAddSheet(context)),
       onMic: () => unawaited(openCapture(context, listen: true)),
-      onNavigate: (to) {
-        if (to == 'home') {
-          _back();
-        } else if (to == 'insights') {
-          unawaited(GoRouter.maybeOf(context)?.push<void>('/insights'));
-        }
-      },
+      onNavigate: (to) => navigateFromShell(context, ref, to, current: 'settings'),
       header: PageHeader(
         backLabel: l10n.manageBack,
         backShort: l10n.manageBackShort,

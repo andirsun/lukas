@@ -35,6 +35,7 @@ import 'lukas_line.dart';
 import 'lukitas_face.dart';
 import 'nudges.dart';
 import 'screen_error.dart';
+import 'shell_navigation.dart';
 
 /// Picks which of Lukitas' three phrasings a line uses (1 to 3). Replaced in tests.
 final lukasVariantProvider = Provider<int Function()>((ref) {
@@ -120,11 +121,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     super.didUpdateWidget(old);
     if (old.initialMonth == widget.initialMonth) return;
     final month = widget.initialMonth;
-    if (month == null) {
-      unawaited(_controller.showCurrentMonth());
-    } else if (_monthFormat.hasMatch(month)) {
-      unawaited(_controller.showMonth(month));
-    }
+    // Not while the tree builds: the controller changes state.
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      if (month == null) {
+        unawaited(_controller.showCurrentMonth());
+      } else if (_monthFormat.hasMatch(month)) {
+        unawaited(_controller.showMonth(month));
+      }
+    });
   }
 
   @override
@@ -322,11 +327,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // The same path the widget's 🎤 takes: quick capture, listening.
       onMic: () => unawaited(openCapture(context, listen: true)),
       // Análisis opens on the month on screen. Inicio is where the person is.
-      onNavigate: (to) {
-        if (to != 'insights') return;
-        final month = home.month ?? data.month;
-        unawaited(GoRouter.maybeOf(context)?.push<void>('/insights?month=$month'));
-      },
+      onNavigate: (to) =>
+          navigateFromShell(context, ref, to, current: 'home', month: home.month ?? data.month),
       child: SafeArea(bottom: false, child: _content(context, home, data, l10n)),
     );
   }

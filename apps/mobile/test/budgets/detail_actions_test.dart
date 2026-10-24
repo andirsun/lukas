@@ -166,35 +166,34 @@ void main() {
       await tester.pump(const Duration(seconds: 11));
     });
 
-    testBudgets(
-      'Deshacer still brings the row back after the person left the detail',
-      (tester) async {
-        final home = budgetsMonth();
-        final env = await pumpBudgets(tester, home: home);
-        await openDetail(tester, 'Supermercado');
-        await swipeLeft(tester, find.text('Frutas'));
-        expect(find.text('Eliminado: Frutas'), findsOneWidget);
-        expect(home.calls, contains('delete fruit'));
+    testBudgets('Deshacer still brings the row back after the person left the detail', (
+      tester,
+    ) async {
+      final home = budgetsMonth();
+      final env = await pumpBudgets(tester, home: home);
+      await openDetail(tester, 'Supermercado');
+      await swipeLeft(tester, find.text('Frutas'));
+      expect(find.text('Eliminado: Frutas'), findsOneWidget);
+      expect(home.calls, contains('delete fruit'));
 
-        // Back on home, the toast (it sits above the router) is still there.
-        env.settings.router.pop();
-        await tester.pumpAndSettle();
-        expect(find.byType(CategoryDetailScreen), findsNothing);
-        expect(find.text('Eliminado: Frutas'), findsOneWidget);
+      // Back on home, the toast (it sits above the router) is still there.
+      env.settings.router.pop();
+      await tester.pumpAndSettle();
+      expect(find.byType(CategoryDetailScreen), findsNothing);
+      expect(find.text('Eliminado: Frutas'), findsOneWidget);
 
-        await tester.tap(find.text('Deshacer'));
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        expect(home.calls, contains('restore fruit'), reason: 'the server has it back');
-        expect(find.text('De vuelta: Frutas'), findsOneWidget);
+      await tester.tap(find.text('Deshacer'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(home.calls, contains('restore fruit'), reason: 'the server has it back');
+      expect(find.text('De vuelta: Frutas'), findsOneWidget);
 
-        // And it is in its month: home's Movimientos lists it again.
-        await tester.tap(find.text('Movimientos'));
-        await tester.pumpAndSettle();
-        expect(find.text('Frutas'), findsOneWidget);
-        await tester.pump(const Duration(seconds: 11));
-      },
-    );
+      // And it is in its month: home's Movimientos lists it again.
+      await tester.tap(find.text('Movimientos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Frutas'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 11));
+    });
 
     testBudgets('a delete the server refuses puts the row back and says so', (tester) async {
       final home = budgetsMonth();

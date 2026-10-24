@@ -7,7 +7,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../add/add_sheet.dart';
 import '../capture/capture_sheet.dart';
@@ -16,6 +15,7 @@ import '../home/home_repository.dart';
 import '../home/lukitas_face.dart';
 import '../home/screen_error.dart';
 import '../home/home_widgets.dart' show QuietSpinner;
+import '../home/shell_navigation.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../theme/text_styles.dart';
@@ -76,13 +76,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
   String _staleNote(AppLocalizations l10n, HomeFailure failure) =>
       failure.offline ? l10n.homeOffline : l10n.homeRefreshFailed;
 
-  void _navigate(String to, String? month) {
-    final router = GoRouter.maybeOf(context);
-    if (router == null || to != 'home') return;
-    // Home opens on the month the period ends at.
-    router.go(month == null ? '/' : '/?month=$month');
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -128,7 +121,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
     if (failure != null) {
       return _frame(
         context,
-        month: end,
         ScreenError(
           message: _failureMessage(l10n, failure),
           retryLabel: l10n.retry,
@@ -160,7 +152,6 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
 
     return _frame(
       context,
-      month: end,
       RefreshIndicator(
         onRefresh: _controller.refresh,
         child: LayoutBuilder(
@@ -291,15 +282,14 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
     _ => l10n.insightsSpan12,
   };
 
-  /// The screen's frame: the background and the bottom bar, which marks Análisis. [month] is the
-  /// month Inicio opens on, when it is known.
-  Widget _frame(BuildContext context, Widget child, {String? month}) => AppShell(
+  /// The screen's frame: the background and the bottom bar, which marks Análisis.
+  Widget _frame(BuildContext context, Widget child) => AppShell(
     current: 'insights',
     addKey: const Key('home.add'),
     micKey: const Key('home.capture'),
     onAdd: () => unawaited(openAddSheet(context)),
     onMic: () => unawaited(openCapture(context, listen: true)),
-    onNavigate: (to) => _navigate(to, month),
+    onNavigate: (to) => navigateFromShell(context, ref, to, current: 'insights'),
     child: SafeArea(bottom: false, child: child),
   );
 }

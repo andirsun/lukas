@@ -22,6 +22,7 @@ import '../home/home_format.dart';
 import '../home/home_repository.dart';
 import '../home/home_widgets.dart';
 import '../home/screen_error.dart';
+import '../home/shell_navigation.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../settings/url_opener.dart';
@@ -230,23 +231,15 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
   }
 
   Widget _frame(BuildContext context, Widget child) => AppShell(
-    current: 'home',
+    // The web marks no tab on a category's page (its section is Categorías).
+    current: 'categories',
     addKey: const Key('home.add'),
     micKey: const Key('home.capture'),
     onAdd: () => unawaited(openAddSheet(context)),
     onMic: () => unawaited(openCapture(context, listen: true)),
-    onNavigate: (to) {
-      if (to == 'home') {
-        _back();
-      } else if (to == 'insights') {
-        // Análisis opens on the month the detail is on.
-        final month = _shownMonth;
-        unawaited(
-          GoRouter.maybeOf(context)
-              ?.push<void>(month == null ? '/insights' : '/insights?month=$month'),
-        );
-      }
-    },
+    // Análisis opens on the month the detail is on.
+    onNavigate: (to) =>
+        navigateFromShell(context, ref, to, current: 'categories', month: _shownMonth),
     child: SafeArea(bottom: false, child: child),
   );
 }
