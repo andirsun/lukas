@@ -1403,10 +1403,6 @@
   "@homeNoExpenseCategories": {
     "description": "Categorías tab: the account has no active spending category."
   },
-  "budgetsArchivedNote": "archivada",
-  "@budgetsArchivedNote": {
-    "description": "A short word after an archived category's name in the Categorías list."
-  },
   "manageBack": "Volver al inicio",
   "@manageBack": {
     "description": "Category detail: the back link, for screen readers."

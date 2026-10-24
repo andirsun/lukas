@@ -1027,7 +1027,6 @@
     "description": "The same, on a pending row."
   },
   "homeNoExpenseCategories": "You have no active spending categories.",
-  "budgetsArchivedNote": "archived",
   "manageBack": "Back to home",
   "manageBackShort": "Home",
   "categoryKindExpense": "Spending category",

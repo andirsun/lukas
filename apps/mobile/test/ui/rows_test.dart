@@ -38,11 +38,9 @@ CategoryRow _category({
   int? remaining = -1412,
   BudgetState state = BudgetState.over,
   String name = 'Supermercado',
-  String? note,
   VoidCallback? onOpen,
 }) => CategoryRow(
   name: name,
-  note: note,
   glyph: '🛒',
   tint: const Color(0xFF4A2140),
   budget: budget,
@@ -239,13 +237,6 @@ void main() {
         handle.dispose();
       },
     );
-
-    testWidgets('an archived category carries its note in its name', (t) async {
-      final handle = t.ensureSemantics();
-      await t.pumpWidget(uiApp(SizedBox(width: 360, child: _category(note: 'archivada'))));
-      expect(find.bySemanticsLabel(RegExp(r'^Supermercado archivada Te pasaste')), findsOneWidget);
-      handle.dispose();
-    });
 
     testWidgets('a 40-character name and a huge budget, at 130% on 360px: no overflow', (t) async {
       await t.pumpWidget(
