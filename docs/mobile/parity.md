@@ -20,6 +20,10 @@ dart run tool/parity/compose.dart --max 2       # side by side → build/parity;
 
 Each command takes an optional id filter, e.g. `parity:shots money` or `compose.dart money`.
 
+For a review of every pair at once, `dart run tool/parity/index.dart` (after `compose.dart`) writes
+`build/parity/index.html`: each pair's picture, its ink share and its known-difference note, worst
+first. It is git-ignored.
+
 Then open `apps/mobile/build/parity/<id>-<theme>.png`:
 
 - top left: the web;
