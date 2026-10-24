@@ -294,6 +294,8 @@ export interface HomeApiOptions {
   noRecurrences?: boolean;
   /** How long each report (insights) takes to answer, in ms. */
   reportDelayMs?: number;
+  /** How long listing the recurrences takes to answer, in ms. */
+  recurrencesDelayMs?: number;
   /** Budgets start this many months before this one (12 by default); earlier months have none. */
   budgetsSince?: number;
   /** The profile's language (the story's locale by default). */
@@ -359,6 +361,7 @@ function homeFetch({
   archivedId,
   noRecurrences = false,
   reportDelayMs = 0,
+  recurrencesDelayMs = 0,
   budgetsSince = 12,
   locale = "es",
   currencyLocked = false,
@@ -536,6 +539,7 @@ function homeFetch({
       return Response.json(withBudget(categories.find((c) => c.id === id) as FakeCategory));
     }
     if (path === "/api/v1/recurrences" && request.method === "GET") {
+      if (recurrencesDelayMs) await sleep(recurrencesDelayMs);
       return Response.json(recurrences);
     }
     if (path === "/api/v1/recurrences" && request.method === "POST") {

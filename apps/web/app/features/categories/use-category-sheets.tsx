@@ -115,6 +115,14 @@ export function useCategorySheets() {
       ? activeRecurrencesIn(recurrences.data, editing.id, todayIn(me.timezone))
       : 0;
 
+  // The question says how many recurring payments it stops, so it waits for them if pressed before
+  // they are here. If they cannot be read it asks anyway (the API still ends them), as the app does.
+  const askToArchive = async () => {
+    if (recurrences.data === undefined) await recurrences.refetch();
+    setFormOpen(false);
+    setConfirmOpen(true);
+  };
+
   const sheets: ReactNode = (
     <>
       <CategoryForm
@@ -127,14 +135,7 @@ export function useCategorySheets() {
         kindLocked={
           editing ? (hasTransactions.isPending ? "counting" : hasTransactions.data === true) : false
         }
-        onArchive={
-          editing && !editing.archived
-            ? () => {
-                setFormOpen(false);
-                setConfirmOpen(true);
-              }
-            : undefined
-        }
+        onArchive={editing && !editing.archived ? askToArchive : undefined}
       />
       <ConfirmSheet
         open={confirmOpen}

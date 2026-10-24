@@ -392,6 +392,36 @@ export const ArchiveCountsRecurrences: Story = {
   },
 };
 
+/**
+ * Pressed before the recurring payments have loaded, "Archivar categoría" waits for them: the
+ * question never shows without the count and then grows it.
+ */
+export const ArchiveBeforeRecurrencesLoad: Story = {
+  render: (args) => (
+    <HomeStage
+      onRequest={args.onRequest}
+      path="/app/categories/cat-transport"
+      recurrencesDelayMs={1500}
+    />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole("button", { name: "Editar categoría" }));
+    const edit = within(await screen.findByRole("dialog", { name: "Editar categoría" }));
+    // The list is still on its way: nothing is known about the recurring payments yet.
+    await userEvent.click(edit.getByRole("button", { name: "Archivar categoría" }));
+    const confirm = within(
+      await screen.findByRole("dialog", { name: "¿Archivar Transporte?" }, { timeout: 8000 }),
+    );
+    // The first moment the question exists, the count is already in it.
+    expect(
+      confirm.queryByText("También se detendrá 1 pago recurrente de esta categoría."),
+    ).toBeVisible();
+    await userEvent.click(confirm.getByRole("button", { name: "Cancelar" }));
+    await dialogGone();
+  },
+};
+
 /** A category with no recurring payment archives without that line. */
 export const ArchiveWithoutRecurrences: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories/cat-groceries" />,
