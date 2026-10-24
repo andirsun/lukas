@@ -543,6 +543,44 @@ void main() {
       expect(world.requests.any((l) => l.startsWith('DELETE')), isFalse);
     });
 
+    testWidgets(
+      'killed on the categories right after the import, the welcome resumes there, not at home',
+      (tester) async {
+        // The API leaves an account that only has imported movements un-stamped (it is still in its
+        // welcome), so the restart still gets "pending" and the categories and budgets are not lost.
+        final world = WelcomeWorld(categories: StartCategories.none);
+        final settings = FakeSettingsStore();
+        final auth = FakeAuthApi();
+        final env = await pumpWelcome(
+          tester,
+          world,
+          location: '/welcome/import',
+          settings: settings,
+          auth: auth,
+        );
+        await upload(tester, env);
+        await tap(tester, 'import.confirm');
+        await tap(tester, 'welcome.next');
+        expect(onStep('categories'), isTrue);
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        final again = await pumpWelcome(
+          tester,
+          world,
+          location: '/welcome/categories',
+          settings: settings,
+          auth: auth,
+        );
+        expect(again.pending, isTrue);
+        expect(again.location, '/welcome/categories');
+        expect(onStep('categories'), isTrue);
+        expect(find.byType(HomeScreen), findsNothing);
+        // And the rest of the welcome is still ahead of them.
+        await tap(tester, 'welcome.skip');
+        expect(onStep('budgets'), isTrue);
+      },
+    );
+
     testWidgets('import first: the categories start from what the file brought', (tester) async {
       final world = WelcomeWorld(categories: StartCategories.none);
       final env = await pumpWelcome(tester, world, location: '/welcome/import');
