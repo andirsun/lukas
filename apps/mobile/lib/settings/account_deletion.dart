@@ -1,8 +1,9 @@
 // Deleting the account: the web's DeleteAccount.tsx (`DELETE /v1/me`, sign out, and the landing) and
 // Review Focus 5 of Stage 3c. The web has a cookie and a query cache to forget; the phone keeps
 // more, and none of it may outlive the account: the session, the home cache, the widget's figures,
-// the notices (their jobs and any already posted), the voice models, the welcome's draft, the
-// answers to the passkey offer and the cards put away on home.
+// the notices (their jobs and any already posted), the voice models, the copies of an export made
+// for the share sheet, the welcome's draft, the answers to the passkey offer and the cards put
+// away on home.
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +12,7 @@ import '../api/passkey_offer.dart';
 import '../api/session.dart';
 import '../capture/models_download.dart';
 import '../feedback/stored_flag.dart';
+import '../files/files_channel.dart';
 import '../home/home_controller.dart';
 import '../home/home_repository.dart';
 import '../home/nudges.dart';
@@ -97,6 +99,8 @@ class AccountDeletion {
       }
     }
     await _step(_ref.read(modelStoreProvider).deleteModels);
+    // An export shared a moment ago is a copy of everything: it goes with the account.
+    await _step(_ref.read(filesChannelProvider).clearShared);
     // The home cache, the widget and the token.
     await _ref.read(sessionProvider.notifier).accountDeleted();
   }

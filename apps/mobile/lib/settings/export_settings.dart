@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/session.dart';
 import '../files/files_channel.dart';
 import '../home/home_repository.dart';
 import '../l10n/app_localizations.dart';
@@ -47,10 +48,12 @@ Future<void> runExport(BuildContext context, ExportFormat format) async {
   try {
     file = await container.read(accountRepositoryProvider).export(format);
   } on Object catch (error) {
-    toasts.say(
-      profileFailureMessage(l10n, error is HomeFailure ? error : const HomeFailure(0)),
-      error: true,
-    );
+    final failure = error is HomeFailure ? error : const HomeFailure(0);
+    // The server no longer knows the session: signed out, as every other call ends it.
+    if (failure.unauthorized) {
+      unawaited(container.read(sessionProvider.notifier).signOut(discardGuest: true));
+    }
+    toasts.say(profileFailureMessage(l10n, failure), error: true);
     return;
   } finally {
     busy.set(null);

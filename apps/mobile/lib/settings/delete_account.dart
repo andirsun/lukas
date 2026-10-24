@@ -193,7 +193,9 @@ class _DeleteFormState extends ConsumerState<_DeleteForm> {
               l10n.settingsAccountDeleteExportFirst,
               key: const Key('settings.delete.export'),
               tone: PressTone.secondary,
-              onPressed: exporting ? null : () => unawaited(runExport(context, ExportFormat.json)),
+              onPressed: exporting || _busy
+                  ? null
+                  : () => unawaited(runExport(context, ExportFormat.json)),
             ),
           ),
           Column(

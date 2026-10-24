@@ -94,7 +94,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       // The web's pages (apps/web/app/routes.ts), under `/app` there. There is no categories page:
       // categories are managed in home's Categorías tab and in the category's detail above, so the
-      // face menu's Categorías asks home for that tab (`homeViewRequestProvider`).
+      // face menu's Categorías asks home for that tab (`homeViewRequestProvider`), and so does the
+      // old `/categories` address: it lands on that tab, as the web's `/app/categories` does.
+      GoRoute(
+        path: '/categories',
+        redirect: (context, state) {
+          ref.read(homeViewRequestProvider.notifier).show(HomeView.budgets);
+          return '/';
+        },
+      ),
       GoRoute(path: '/recurring', builder: (context, state) => const RecurringScreen()),
       GoRoute(path: '/import', builder: (context, state) => const ImportScreen()),
       // `/welcome/:step?`, the onboarding (the web's, outside `/app`). One screen holds all its steps,

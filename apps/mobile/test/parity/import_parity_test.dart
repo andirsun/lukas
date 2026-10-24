@@ -153,6 +153,9 @@ class _StoryFiles implements FilesChannel {
 
   @override
   Future<bool> shareFile(String name, Uint8List bytes, String mime) => throw UnimplementedError();
+
+  @override
+  Future<void> clearShared() => throw UnimplementedError();
 }
 
 /// The page in the story's frame: Storybook's 16px of padding, the bar under it, no 🎤.

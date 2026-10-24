@@ -54,6 +54,10 @@ abstract interface class FilesChannel {
 
   /// Shows the share sheet for a copy of [bytes] named [name]. True once it is up.
   Future<bool> shareFile(String name, Uint8List bytes, String mime);
+
+  /// Deletes every copy made for the share sheet now (they are otherwise swept after ten minutes or
+  /// at the next launch): deleting the account clears them, as nothing of it may outlive it.
+  Future<void> clearShared();
 }
 
 /// [FilesChannel] over `lukitas/files`.
@@ -102,6 +106,9 @@ class MethodFilesChannel implements FilesChannel {
   @override
   Future<bool> shareFile(String name, Uint8List bytes, String mime) async =>
       await _call<bool>('share', {'name': name, 'bytes': bytes, 'mime': mime}) ?? false;
+
+  @override
+  Future<void> clearShared() => _call<void>('clearShared', const {});
 }
 
 /// The phone's files (replaced in tests).

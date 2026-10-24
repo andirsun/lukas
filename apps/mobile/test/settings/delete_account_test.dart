@@ -263,6 +263,25 @@ void main() {
     });
   });
 
+  testWidgets('a copy made for the share sheet does not outlive the account', (t) async {
+    final env = await pumpAccount(t);
+    await _openSheet(t);
+    await _type(t, 'ana@example.com');
+    await _confirm(t);
+    expect(env.files.sharedCleared, 1);
+    expect(env.app.stored, isNull);
+  });
+
+  testWidgets('and a delete that fails leaves them', (t) async {
+    final env = await pumpAccount(t);
+    env.accounts.deleteFailure = const HomeFailure(503);
+    await _openSheet(t);
+    await _type(t, 'ana@example.com');
+    await _confirm(t);
+    expect(env.files.sharedCleared, 0);
+    await t.pump(const Duration(seconds: 10));
+  });
+
   group('a delete that fails', () {
     Future<AccountEnv> failing(WidgetTester t, Object failure) async {
       final env = await pumpAccount(t);
@@ -449,6 +468,21 @@ void main() {
         expect(env.app.stored, isNotNull);
       },
     );
+
+    testWidgets('"Descarga tus datos antes" is off too: no export of an account being deleted', (
+      t,
+    ) async {
+      final env = await busy(t);
+      expect(
+        t.widget<PressButton>(find.byKey(const Key('settings.delete.export'))).onPressed,
+        isNull,
+      );
+      await t.tap(find.byKey(const Key('settings.delete.export')), warnIfMissed: false);
+      await t.pumpAndSettle();
+      expect(env.accounts.exports, isEmpty);
+      env.accounts.holdDelete!.complete();
+      await t.pumpAndSettle();
+    });
 
     testWidgets('at rest the sheet still closes by a tap outside and by back', (t) async {
       await pumpAccount(t);

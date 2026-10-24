@@ -29,6 +29,7 @@ import kotlin.concurrent.thread
  *    `too-large`. Other failures: `unreadable`, `unavailable` (no picker on the phone), `busy`.
  *  * `save({name, bytes, mime})` → true when saved, false when the picker was closed.
  *  * `share({name, bytes, mime})` → true once the share sheet is up.
+ *  * `clearShared()` → null once every copy made for the share sheet is deleted.
  *
  * Android has one result slot per request code, so one pick or save is under way at a time.
  */
@@ -67,6 +68,13 @@ class FilesChannel(
             "pick" -> pick(call, result)
             "save" -> save(call, result)
             "share" -> share(call, result)
+            // Deleting the account: the copies made for the share sheet go now.
+            "clearShared" -> {
+                thread(name = "files-clean") {
+                    clearShared()
+                    main.post { result.success(null) }
+                }
+            }
             // Debug builds only (src/debug): a test stands in for the person at the picker.
             else -> if (!FilesTestHook.handle(call, result)) result.notImplemented()
         }

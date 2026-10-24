@@ -177,6 +177,19 @@ void main() {
       await t.pump(const Duration(seconds: 10));
     });
 
+    testWidgets('a 401 is a session the server no longer knows: signed out, as everywhere else', (
+      t,
+    ) async {
+      final env = await pumpAccount(t);
+      env.accounts.exportFailure = const HomeFailure(401);
+      await _tapExport(t, 'json');
+      expect(env.app.stored, isNull);
+      expect(find.byKey(const Key('entry.guest')), findsOneWidget);
+      expect(find.text('Tu archivo está listo'), findsNothing);
+      expect(env.files.saved, isEmpty);
+      await t.pump(const Duration(seconds: 10));
+    });
+
     testWidgets('offline says so', (t) async {
       final env = await pumpAccount(t);
       env.accounts.exportFailure = const HomeFailure(0);

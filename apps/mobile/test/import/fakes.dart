@@ -233,6 +233,9 @@ class FakeFilesChannel implements FilesChannel {
   final saved = <(String, Uint8List, String)>[];
   final shared = <(String, Uint8List, String)>[];
 
+  /// How many times the copies made for the share sheet were cleared.
+  var sharedCleared = 0;
+
   @override
   Future<PickedFile?> pickFile({
     required List<String> mimeTypes,
@@ -263,6 +266,9 @@ class FakeFilesChannel implements FilesChannel {
     }
     return saveAnswer;
   }
+
+  @override
+  Future<void> clearShared() async => sharedCleared++;
 
   @override
   Future<bool> shareFile(String name, Uint8List bytes, String mime) async {

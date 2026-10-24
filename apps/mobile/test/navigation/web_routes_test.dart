@@ -131,12 +131,14 @@ void main() {
   });
 
   group('the routes', () {
-    testWidgets('there is no /categories page: it lands on home', (tester) async {
-      final env = await pumpSettingsApp(tester, homeRepo: _withMovements());
+    testWidgets('there is no /categories page: it lands on home\'s Categorías tab', (tester) async {
+      final env = await _pumpWithBudgets(tester);
+      expect(find.byType(CategoryRow), findsNothing, reason: 'Movimientos first');
       env.router.go('/categories');
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(_location(env), '/');
+      expect(find.byType(CategoryRow), findsWidgets, reason: 'the Categorías tab');
     });
 
     testWidgets('/categories/:id, /settings and /insights keep their places', (tester) async {
