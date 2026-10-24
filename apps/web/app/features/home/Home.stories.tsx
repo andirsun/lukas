@@ -869,6 +869,31 @@ export const NewCategorySheet: Story = {
   },
 };
 
+/**
+ * Already on home, wide: both lists are in view, so the sidebar's "Categorías" cannot switch to
+ * anything. It moves focus to the Categorías panel and scrolls it to the top instead.
+ */
+export const SidebarCategoriesFocusesPanel: Story = {
+  globals: { viewport: { value: "desktop", isRotated: false } },
+  render: (args) => <HomeStage onRequest={args.onRequest} data="october" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const panel = canvas.getByRole("tabpanel", { name: "Categorías" });
+    // A long month: the page scrolls, and the panel starts below the summary.
+    await expect(panel.getBoundingClientRect().top).toBeGreaterThan(200);
+    await expect(panel).not.toHaveFocus();
+    const nav = within(canvas.getByRole("navigation", { name: "Navegación principal" }));
+    await userEvent.click(nav.getByRole("link", { name: "Categorías" }));
+    await waitFor(() => expect(panel).toHaveFocus());
+    await waitFor(() => expect(panel.getBoundingClientRect().top).toBeLessThan(40), {
+      timeout: 5000,
+    });
+    // Both lists stay side by side, and the link is still the way back after scrolling away.
+    await expect(canvas.getByRole("tabpanel", { name: "Movimientos" })).toBeVisible();
+  },
+};
+
 /** Wide screens, by day: the sidebar and both lists, with the archived ones unfolded. */
 export const CategoriesDesktopDay: Story = {
   globals: { viewport: { value: "desktop", isRotated: false }, theme: "day" },

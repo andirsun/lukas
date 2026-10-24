@@ -7,7 +7,7 @@ import {
   todayIn,
 } from "@lukas/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useMemo, useState } from "react";
+import { type RefObject, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import { useTranslations } from "use-intl";
 import { useApi, useApiMode } from "../../api/ApiProvider.tsx";
@@ -155,10 +155,21 @@ function MonthView({
   // (its key) asks again, even for the same tab.
   const location = useLocation();
   const requested = requestedView(location.state);
-  useEffect(() => {
-    if (requested) setView(requested);
-  }, [location.key, requested, setView]);
   const wide = useWideScreen();
+  // Side by side, both lists are in view already, so switching to one shows nothing: the sidebar's
+  // link moves focus to the list it names and brings it to the top instead.
+  const wideRef = useRef(wide);
+  wideRef.current = wide;
+  const panels = useRef<Partial<Record<HomeView, HTMLElement | null>>>({});
+  useEffect(() => {
+    if (!requested) return;
+    setView(requested);
+    const panel = wideRef.current ? panels.current[requested] : null;
+    if (!panel) return;
+    panel.focus({ preventScroll: true });
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    panel.scrollIntoView({ block: "start", behavior: calm ? "auto" : "smooth" });
+  }, [location.key, requested, setView]);
   const pager = usePager({
     index: VIEWS.indexOf(view),
     count: VIEWS.length,
@@ -209,6 +220,7 @@ function MonthView({
             <Lists
               view={view}
               onView={setView}
+              panels={panels}
               pager={wide ? null : pager}
               summary={summary.data}
               categories={categories.data}
@@ -511,6 +523,8 @@ function NoCategories() {
 interface ListsProps {
   view: HomeView;
   onView(view: HomeView): void;
+  /** Each list's panel, for the sidebar's link to focus and scroll to on wide screens. */
+  panels: RefObject<Partial<Record<HomeView, HTMLElement | null>>>;
   /** Phones: the two lists are the pager's pages. Wide screens (null): side by side. */
   pager: Pager | null;
   summary: MonthSummary | undefined;
@@ -527,6 +541,7 @@ interface ListsProps {
 function Lists({
   view,
   onView,
+  panels,
   pager,
   summary,
   categories,
@@ -539,7 +554,15 @@ function Lists({
 }: ListsProps) {
   const t = useTranslations("home");
   const transactions = (
-    <section role="tabpanel" aria-label={t("view.transactions")} className="lk-panel flex">
+    <section
+      ref={(node) => {
+        panels.current.transactions = node;
+      }}
+      tabIndex={-1}
+      role="tabpanel"
+      aria-label={t("view.transactions")}
+      className="lk-panel flex scroll-mt-(--space-4)"
+    >
       <h2 className="lk-panel-title">{t("view.transactions")}</h2>
       <Transactions
         items={items}
@@ -552,7 +575,15 @@ function Lists({
     </section>
   );
   const budgets = (
-    <section role="tabpanel" aria-label={t("view.budgets")} className="lk-panel flex">
+    <section
+      ref={(node) => {
+        panels.current.budgets = node;
+      }}
+      tabIndex={-1}
+      role="tabpanel"
+      aria-label={t("view.budgets")}
+      className="lk-panel flex scroll-mt-(--space-4)"
+    >
       <h2 className="lk-panel-title">{t("view.budgets")}</h2>
       <CategoriesTab summary={summary} categories={categories} currency={currency} month={month} />
     </section>
