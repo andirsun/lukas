@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show OffsetLayer;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/theme/theme.dart';
 import 'package:lukitas/ui/amount_field.dart' show AmountDisplay;
 import 'package:lukitas/ui/lk_theme.dart';
 
 import '../home/fakes.dart';
+import '../support/screen_pixels.dart';
 import '../home/fixtures.dart';
 import 'budgets_test.dart' show openBudgetSheet, pumpBudgets;
 import 'fakes.dart';
@@ -107,16 +107,13 @@ void main() {
         await tester.pump();
         await tester.tap(find.byKey(const Key('keypad.0')));
         await tester.pump();
-        await tester.pump();
         expect(_amount(tester), '50 €');
         await tester.tap(find.byKey(const Key('keypad.backspace')));
-        await tester.pump();
         await tester.pump();
         expect(_amount(tester), '5 €');
         await tester.tap(find.byKey(const Key('keypad.decimal')));
         await tester.pump();
         await tester.tap(find.byKey(const Key('keypad.5')));
-        await tester.pump();
         await tester.pump();
         expect(_amount(tester), '5,5 €');
       });
@@ -130,31 +127,17 @@ void main() {
     final context = tester.element(find.byKey(const Key('keypad.0')));
     final edge = context.lkColors.keyEdge;
     final key = tester.getRect(find.byKey(const Key('keypad.0')));
-    // What the screen shows: the root layer, as pixels.
-    final root = tester.binding.renderViews.first;
-    final layer = root.debugLayer! as OffsetLayer;
-    final image = (await tester.runAsync(() => layer.toImage(Offset.zero & const Size(412, 915))))!;
-    final bytes = (await tester.runAsync(() => image.toByteData()))!;
-    Color at(double x, double y) {
-      final i = ((y.floor() * image.width) + x.floor()) * 4;
-      return Color.fromARGB(
-        bytes.getUint8(i + 3),
-        bytes.getUint8(i),
-        bytes.getUint8(i + 1),
-        bytes.getUint8(i + 2),
-      );
-    }
-
+    final pixels = await ScreenPixels.capture(tester);
     // The pixels under the last key are its solid edge (`0 3px 0`), the same as under the keys
     // above it, not the footer's line.
     final above = tester.getRect(find.byKey(const Key('keypad.7')));
     for (final dy in [0.5, 1.5, 2.5]) {
       expect(
-        at(key.center.dx, key.bottom + dy).toARGB32(),
-        at(above.center.dx, above.bottom + dy).toARGB32(),
+        pixels.at(key.center.dx, key.bottom + dy),
+        pixels.at(above.center.dx, above.bottom + dy),
         reason: '${dy.toStringAsFixed(1)}px under the last key',
       );
     }
-    expect(at(key.center.dx, key.bottom + 0.5).toARGB32(), edge.toARGB32());
+    expect(pixels.at(key.center.dx, key.bottom + 0.5), edge.toARGB32());
   });
 }

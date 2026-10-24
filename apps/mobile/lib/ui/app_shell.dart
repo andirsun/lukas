@@ -290,17 +290,28 @@ class AppShell extends StatelessWidget {
           extendBody: true,
           // Tight: a short screen is as tall as the page, as `min-h-dvh` makes it.
           body: SizedBox.expand(child: content),
-          bottomNavigationBar: Padding(
-            padding: EdgeInsets.only(bottom: safeBottom),
-            child: BottomBar(
-              current: current,
-              onAdd: onAdd,
-              onMic: onMic,
-              onNavigate: onNavigate,
-              showMic: shellFrame?.showMic ?? true,
-              addKey: addKey,
-              micKey: micKey,
-            ),
+          // The bar, and under it the system's inset (`pb-[env(safe-area-inset-bottom)]`) in the
+          // bar's own background: the list scrolls under the bar, and nothing may show through the
+          // strip the gesture bar leaves under it.
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              BottomBar(
+                current: current,
+                onAdd: onAdd,
+                onMic: onMic,
+                onNavigate: onNavigate,
+                showMic: shellFrame?.showMic ?? true,
+                addKey: addKey,
+                micKey: micKey,
+              ),
+              ColoredBox(
+                key: const Key('shell.bottomInset'),
+                color: context.lkColors.surfaceSunken,
+                child: SizedBox(height: safeBottom),
+              ),
+            ],
           ),
         ),
       ),

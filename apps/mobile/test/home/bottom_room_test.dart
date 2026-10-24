@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/theme/theme.dart';
+import 'package:lukitas/theme/tokens.g.dart' show LukitasTheme;
 import 'package:lukitas/ui/bottom_bar.dart';
 import 'package:lukitas/ui/category_row.dart';
 import 'package:lukitas/ui/transaction_row.dart';
 
 import '../budgets/budgets_test.dart' show pumpBudgets;
 import '../budgets/fakes.dart' show budgetsMonth;
+import '../support/screen_pixels.dart';
 import 'fakes.dart';
 import 'fixtures.dart';
 import 'home_harness.dart';
@@ -51,6 +54,31 @@ void main() {
       expect(last, lessThanOrEqualTo(_barTop(tester)), reason: 'the last row ends above the bar');
     },
   );
+
+  testWidgets('the list scrolls under the bar, and the strip under the bar shows none of it', (
+    tester,
+  ) async {
+    final repo = FakeHomeRepository(
+      budgetTotal: 100000000,
+      items: [
+        for (var i = 0; i < 12; i++) tx('t$i', '2026-10-${10 + i}', -100000 - i, name: 'Compra $i'),
+      ],
+    );
+    await pumpHome(tester, repo, size: const Size(412, 915));
+    _insetBottom(tester, 48);
+    await tester.pumpAndSettle();
+    final sunken = nightTheme.extension<LukitasTheme>()!.colors.surfaceSunken.toARGB32();
+    for (final to in [-200.0, -3000.0]) {
+      await tester.drag(find.byType(Scrollable).first, Offset(0, to));
+      await tester.pumpAndSettle();
+      final pixels = await ScreenPixels.capture(tester);
+      for (var y = 915.0 - 47; y < 915; y += 3) {
+        for (var x = 1.0; x < 412; x += 7) {
+          expect(pixels.at(x, y), sunken, reason: 'the inset strip at ($x, $y)');
+        }
+      }
+    }
+  });
 
   testWidgets('and so does the last Presupuestos row', (tester) async {
     final home = budgetsMonth();

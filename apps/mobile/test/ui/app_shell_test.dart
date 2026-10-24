@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/theme/theme.dart';
+import 'package:lukitas/theme/tokens.g.dart' show LukitasTheme;
 import 'package:lukitas/ui/app_shell.dart';
 import 'package:lukitas/ui/toast.dart';
 
 import '../support/fonts.dart';
+import '../support/screen_pixels.dart';
 
 /// The page background of the signed-in screens: on the web `.lk-screen` carries the radial
 /// gradient and is as tall as the page (and at least as the viewport: `min-h-dvh`), so the glow
@@ -147,4 +149,60 @@ void main() {
     await t.pumpAndSettle();
     expect(_screen.height - t.getRect(find.byType(ToastLayer)).bottom, 16);
   });
+
+  testWidgets(
+    'with gesture navigation the bar\'s background goes down through the inset: no content shows under it',
+    (t) async {
+      t.view
+        ..physicalSize = _screen
+        ..devicePixelRatio = 1
+        ..viewPadding = const FakeViewPadding(bottom: 48)
+        ..padding = const FakeViewPadding(bottom: 48);
+      addTearDown(t.view.reset);
+      // A list of bright rows, long enough to scroll under the bar.
+      await t.pumpWidget(
+        MaterialApp(
+          theme: nightTheme,
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AppShell(
+            current: 'home',
+            onAdd: () {},
+            onMic: () {},
+            onNavigate: (_) {},
+            child: ListView(
+              children: [
+                for (var i = 0; i < 40; i++)
+                  Container(
+                    height: 60,
+                    margin: const EdgeInsets.all(4),
+                    color: const Color(0xFFFF0000),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      final sunken = nightTheme.extension<LukitasTheme>()!.colors.surfaceSunken.toARGB32();
+      for (final scrolled in [0.0, 130.0, 777.0]) {
+        await t.drag(find.byType(ListView), Offset(0, -scrolled));
+        await t.pumpAndSettle();
+        final pixels = await ScreenPixels.capture(t);
+        final inset = _screen.height - 48;
+        // Every pixel of the strip under the bar, from its top to the screen's bottom edge.
+        for (var y = inset; y < _screen.height; y += 4) {
+          for (var x = 1.0; x < _screen.width; x += 13) {
+            expect(
+              pixels.at(x, y),
+              sunken,
+              reason:
+                  'the strip at ($x, $y) shows the bar\'s background, not the list (scrolled $scrolled)',
+            );
+          }
+        }
+      }
+    },
+  );
 }
