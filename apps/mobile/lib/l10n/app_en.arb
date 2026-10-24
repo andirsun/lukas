@@ -1861,5 +1861,6 @@
   "settingsFeedbackNoAppTitle": "We couldn't find an email app",
   "settingsFeedbackNoAppBody": "Write to us at {email}.",
   "settingsFeedbackCopy": "Copy address",
-  "settingsFeedbackCopied": "We copied {email}."
+  "settingsFeedbackCopied": "We copied {email}.",
+  "settingsAccountDeleteExpired": "Your session had expired, so your account was NOT deleted. Sign in again and try again."
 }

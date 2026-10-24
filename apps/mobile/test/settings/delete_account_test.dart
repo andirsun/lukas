@@ -319,12 +319,42 @@ void main() {
     });
 
     testWidgets(
-      'a session the server no longer knows (401) is a sign-out, nothing left to delete',
+      'a 401 on the first try is an expired session: signed out, the account NOT deleted, and it says so',
       (t) async {
         final env = await failing(t, const HomeFailure(401));
+        // Signed out, and nothing else of the phone was cleared as for a delete.
+        expect(env.app.stored, isNull);
+        expect(find.byKey(const Key('entry.guest')), findsOneWidget);
+        expect(find.text('¿Eliminar tu cuenta?'), findsNothing);
+        expect(env.app.models.installed, isTrue);
+        expect(env.app.settings.values.containsKey('onboarding.draft.user-1'), isTrue);
+        expect(jsonDecode(env.app.settings.values['passkey.offered']!), ['user-1', 'other']);
+        expect(env.accounts.deletes, 1);
+        // And the person is told plainly that the account is still there.
+        expect(
+          find.text(
+            'Tu sesión había vencido, así que tu cuenta NO se eliminó. Entra de nuevo y vuelve a intentarlo.',
+          ),
+          findsOneWidget,
+        );
+        await t.pump(const Duration(seconds: 10));
+      },
+    );
+
+    testWidgets(
+      'a 401 after an attempt that lost its answer means the account is gone: cleared as after a delete',
+      (t) async {
+        final env = await failing(t, const HomeFailure(0));
+        // The answer was lost; the retry finds the session gone, because the account is.
+        env.accounts.deleteFailure = const HomeFailure(401);
+        await _confirm(t);
+        expect(env.accounts.deletes, 2);
         expect(env.app.stored, isNull);
         expect(widgetSignedOut(env.widgets), isTrue);
+        expect(env.app.models.installed, isFalse);
+        expect(env.app.settings.values.containsKey('onboarding.draft.user-1'), isFalse);
         expect(find.byKey(const Key('entry.guest')), findsOneWidget);
+        expect(find.textContaining('NO se eliminó'), findsNothing);
       },
     );
   });

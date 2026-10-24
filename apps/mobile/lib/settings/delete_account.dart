@@ -18,6 +18,7 @@ import '../ui/css_text.dart';
 import '../ui/lk_theme.dart';
 import '../ui/press_button.dart';
 import '../ui/sheet.dart';
+import '../ui/toast.dart';
 import '../ui/web_text_field.dart';
 import 'account_deletion.dart';
 import 'account_repository.dart';
@@ -105,12 +106,18 @@ class _DeleteFormState extends ConsumerState<_DeleteForm> {
     if (!_ready || _busy) return;
     final l10n = AppLocalizations.of(context);
     final navigator = Navigator.of(context);
+    final toasts = ToastHost.of(context);
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
       await ref.read(accountDeletionProvider).delete();
+    } on AccountSessionExpired {
+      // Signed out, with the account still there: say so where the person is now (entry).
+      toasts.say(l10n.settingsAccountDeleteExpired, error: true);
+      if (mounted) navigator.pop(false);
+      return;
     } on Object catch (error) {
       if (!mounted) return;
       final failure = error is HomeFailure ? error : const HomeFailure(0, code: 'internal_error');

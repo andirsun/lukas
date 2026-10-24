@@ -3284,5 +3284,9 @@
         "type": "String"
       }
     }
+  },
+  "settingsAccountDeleteExpired": "Tu sesión había vencido, así que tu cuenta NO se eliminó. Entra de nuevo y vuelve a intentarlo.",
+  "@settingsAccountDeleteExpired": {
+    "description": "Settings: deleting failed because the session had expired; the account still exists and the phone signed out."
   }
 }
