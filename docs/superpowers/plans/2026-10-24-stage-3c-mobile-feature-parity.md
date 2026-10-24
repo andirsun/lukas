@@ -162,7 +162,7 @@ The founder asked (2026-10-24) for a place in the app to send feedback or ask fo
 - **App:** the same section in `lib/settings/`. The button opens the email app through the device channel's `openUrl`; allow `mailto:` there, still refusing other schemes.
 
 **Details:**
-- **Address:** `FEEDBACK_EMAIL`, the address the founder gives. It is a constant in one place per app.
+- **Address:** `FEEDBACK_EMAIL = lukitas@andersonlaverde.com` (the founder's choice, 2026-10-24). It is a constant in one place per app.
 - **Subject:** "Lukitas: comentarios" or "Lukitas: feedback" by language.
 - **Body:** only the app version and the language, and nothing the person didn't type: no email, no amounts, no token.
 - **No email app on the phone:** a message shows the address and lets the person copy it.
