@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/theme/theme.dart';
-import 'package:lukitas/theme/tokens.g.dart' show LukitasTheme;
 import 'package:lukitas/ui/app_shell.dart';
 import 'package:lukitas/ui/toast.dart';
 

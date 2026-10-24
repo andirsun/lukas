@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -93,6 +94,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   var _view = HomeView.transactions;
 
+  /// The page's scroll, and the box above the tabs' strip: where the strip comes to rest at the
+  /// top of the screen is the end of that box (and the 4px under it).
+  final _scroll = ScrollController();
+  final _aboveTabs = GlobalKey();
+
   /// Where the tabs' thumb is, in tabs: 0 Movimientos, 1 Presupuestos.
   late final AnimationController _thumb = AnimationController(
     vsync: this,
@@ -137,6 +143,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     WidgetsBinding.instance.removeObserver(this);
     _celebrateTimer?.cancel();
     _thumb.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -155,6 +162,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     } else {
       unawaited(_thumb.animateTo(target, curve: Curves.easeOut));
     }
+  }
+
+  /// The card's "Ir a Categorías" (the web's goes to its categories page; the app's categories
+  /// are the Presupuestos tab): shows that tab, and brings its strip up to the top of the screen,
+  /// so the categories are what is in view, not the card above them.
+  void _showBudgets() {
+    _selectView(HomeView.budgets);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = _aboveTabs.currentContext?.findRenderObject();
+      if (!mounted || box is! RenderBox || !box.attached || !_scroll.hasClients) return;
+      final top = RenderAbstractViewport.of(box).getOffsetToReveal(box, 0).offset;
+      final target = (top + box.size.height + 4).clamp(0.0, _scroll.position.maxScrollExtent);
+      if (MediaQuery.disableAnimationsOf(context)) {
+        _scroll.jumpTo(target);
+      } else {
+        unawaited(
+          _scroll.animateTo(target, duration: LukitasTokens.durationSheet, curve: Curves.easeOut),
+        );
+      }
+    });
   }
 
   // -- messages ------------------------------------------------------------------------------
@@ -359,6 +386,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           child: RefreshIndicator(
             onRefresh: _controller.refresh,
             child: CustomScrollView(
+              controller: _scroll,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 // What goes above the screen's content: nothing in the app.
@@ -369,6 +397,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   padding: EdgeInsets.fromLTRB(inset, LukitasTokens.space3, inset, 4),
                   sliver: SliverToBoxAdapter(
                     child: Column(
+                      key: _aboveTabs,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       spacing: LukitasTokens.space3,
                       children: [
@@ -492,7 +521,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         title: l10n.homeNudgeBudgetsTitle,
         lead: l10n.homeNudgeBudgetsLead,
         actionLabel: l10n.homeNudgeBudgetsAction,
-        onAction: () => _selectView(HomeView.budgets),
+        onAction: _showBudgets,
         onDismiss: () => unawaited(ref.read(nudgeDismissedProvider(key).notifier).dismiss()),
       ),
     );

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lukitas/theme/theme.dart';
 import 'package:lukitas/ui/amount_field.dart' show AmountDisplay;
 import 'package:lukitas/ui/lk_theme.dart';
 

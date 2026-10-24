@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/theme/theme.dart';
-import 'package:lukitas/theme/tokens.g.dart' show LukitasTheme;
 import 'package:lukitas/ui/bottom_bar.dart';
 import 'package:lukitas/ui/category_row.dart';
 import 'package:lukitas/ui/transaction_row.dart';
