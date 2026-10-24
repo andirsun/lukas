@@ -145,8 +145,11 @@ flutter test integration_test -d emulator-5554 \
 `apps/mobile/scripts/run-integration-tests.sh` runs every file below in turn on a running emulator (it refuses anything that is not `emulator-*`), installing the app first in the notification-permission state each file needs; CI's `mobile-emulator` job runs it. Start the dev stack on the real clock (no `E2E_NOW`), as CI does: the emulator's clock is real, and every test makes its own data from the device's today.
 
 They read sign-in codes and links from Mailpit, as the web's e2e suite does. The API allows 5 code
-requests per 10 minutes from one address, and every run from the emulator comes from the same one:
-running the suite more than twice in 10 minutes gets `too_many_requests`.
+requests per 10 minutes from one address, and the emulator is one address. So the script gives each
+file a made-up client address (`--dart-define=LUKITAS_CLIENT_IP`, as the web's e2e gives each browser
+its own `x-forwarded-for`): a debug build sends it as `x-forwarded-for`, and the dev stack counts it.
+A release build never sends it, and the API's limits are unchanged. Running one file by hand, pass the
+define too, or the whole suite shares the emulator's address.
 
 `integration_test/capture_test.dart` replaces the speech engine with a fixed transcript (spec
 section 6.4). The real engine's plumbing (model download, SHA-256 check, unzip, Vosk load, both
@@ -165,7 +168,7 @@ flutter test integration_test/voice_engine_test.dart -d emulator-5554 \
 
 `integration_test/import_test.dart` imports a Budge file through the real `lukitas/files` channel (`android/.../files/FilesChannel.kt`): the system's document picker cannot be driven from a test, so the debug build lets the test hand the next pick a file in the app's cache (`injectPick`, refused by a release build), and that file goes through the same bounded, off-the-main-thread read as a picked document. It checks a file over 5 MB (refused by the channel, nothing sent), a malformed one (the API's refusal), the sample (22 rows: the preview, nothing in the account until the confirm, then the transactions, the categories and the file's currency on the server), the same file again, and a 2,000-row file (imported whole, with the longest gap between frames kept short). The real picker (`ACTION_OPEN_DOCUMENT`) and the share sheet are not exercised by it.
 
-`integration_test/welcome_test.dart` signs in as a new email user (the code comes from Mailpit) and goes through the welcome: the currency (dollars, wherever the phone is), a restart of the app in the middle (the welcome is where it was left), "No, empiezo de cero", the categories, a budget, and home; then it checks the account on the server (`onboardingCompletedAt`, the currency, the suggested categories, the budget) and that a later start goes straight home. A second test takes "Entrar directo". It uses two code requests, so give it its own 10 minutes of the sign-in limit. An account with no `onboardingCompletedAt` is sent to the welcome after any email sign-in, so `entry_test.dart` waits for it there; a guest, and a guest that saves its progress with an email, land on home.
+`integration_test/welcome_test.dart` signs in as a new email user (the code comes from Mailpit) and goes through the welcome: the currency (dollars, wherever the phone is), a restart of the app in the middle (the welcome is where it was left), "No, empiezo de cero", the categories, a budget, and home; then it checks the account on the server (`onboardingCompletedAt`, the currency, the suggested categories, the budget) and that a later start goes straight home. A second test takes "Entrar directo". An account with no `onboardingCompletedAt` is sent to the welcome after any email sign-in, so `entry_test.dart` waits for it there; a guest, and a guest that saves its progress with an email, land on home.
 
 `integration_test/widget_test.dart` covers the home-screen widget (Task 15): it presses the
 widget's ＋, 🎤 and body the way the widget does (the very intent `launch/LaunchLinks.kt` builds, started

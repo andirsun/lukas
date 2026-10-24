@@ -1,7 +1,14 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 import 'device.dart';
 import 'gen/lukitas_api.dart';
+
+/// The client address a debug build tells the server it is (`--dart-define=LUKITAS_CLIENT_IP=...`),
+/// as `x-forwarded-for`. The emulator suite gives each test file its own, as the web's e2e gives each
+/// browser its own, so the API's per-address limit on sign-in codes counts each as a new client. Empty
+/// by default, and never sent by a release build.
+const _debugClientIp = String.fromEnvironment('LUKITAS_CLIENT_IP');
 
 /// The API at one server: `<server>/api`, with the session's bearer token when signed in and the
 /// phone's time zone and language ([DeviceHints]) on every request.
@@ -14,7 +21,16 @@ class ApiClient {
 
   /// A client for [server] (e.g. `https://app-lukas.andersonlaverde.com`). Any path on [server] is
   /// kept, so an API behind a sub-path works; a query or fragment is dropped.
-  static ApiClient forServer(Uri server, {String? token, DeviceHints? hints}) {
+  ///
+  /// [clientIp] is sent as `x-forwarded-for` only when [development] (debug builds: [kDebugMode]) is
+  /// true, so a release build never claims an address of its own. The server decides what it trusts.
+  static ApiClient forServer(
+    Uri server, {
+    String? token,
+    DeviceHints? hints,
+    String clientIp = _debugClientIp,
+    bool development = kDebugMode,
+  }) {
     final path = server.path.replaceFirst(RegExp(r'/+$'), '');
     final base = Uri(
       scheme: server.scheme,
@@ -29,7 +45,11 @@ class ApiClient {
           baseUrl: base.toString(),
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 20),
-          headers: {...?hints?.headers, if (token != null) 'Authorization': 'Bearer $token'},
+          headers: {
+            ...?hints?.headers,
+            if (token != null) 'Authorization': 'Bearer $token',
+            if (development && clientIp.isNotEmpty) 'x-forwarded-for': clientIp,
+          },
         ),
       ),
     );

@@ -22,6 +22,12 @@ import 'package:lukitas/api/session.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/main.dart' as app;
 
+/// CI's emulator draws with software rendering, and its longest gap was 866 ms with nothing wrong
+/// (the script passes `CI=true` from the runner's own environment). A phone or a local emulator keeps
+/// the tight limit: it is the one that notices the app doing work on the UI isolate.
+const _ci = bool.fromEnvironment('CI');
+const _longestFrameGap = Duration(milliseconds: _ci ? 1500 : 700);
+
 const _server = String.fromEnvironment('LUKITAS_SERVER', defaultValue: 'http://10.0.2.2:3000');
 const _files = MethodChannel('lukitas/files');
 
@@ -261,7 +267,7 @@ void main() {
       last = DateTime.now();
     }
     expect(find.byKey(const Key('import.confirm')), findsOneWidget);
-    expect(longest, lessThan(const Duration(milliseconds: 700)), reason: 'the UI froze');
+    expect(longest, lessThan(_longestFrameGap), reason: 'the UI froze');
     await _tap(tester, 'import.confirm');
     await _pumpUntil(tester, find.byKey(const Key('import.imported')));
     expect(await _countIn(token, '2026-08'), 2000);

@@ -106,11 +106,28 @@ Future<void> _pumpUntilGone(
   throw TestFailure('Timed out waiting for $finder to go');
 }
 
+/// Brings the widget well into view (a third of the way down), as a person scrolling to it would.
+/// `ensureVisible` leaves it at the edge, where the bottom bar or the top of a short phone can still
+/// cover the middle of it and the tap derives an offset that is off screen.
+/// The page can still move after the first scroll (what loads above it), so it looks again that the
+/// middle of the widget is on screen before the tap.
+Future<void> _reveal(WidgetTester tester, Finder finder) async {
+  final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+  for (var attempt = 0; attempt < 5; attempt++) {
+    final element = tester.element(finder.first);
+    if (Scrollable.maybeOf(element) != null) {
+      await Scrollable.ensureVisible(element, alignment: 0.3);
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+    final center = tester.getCenter(finder.first);
+    if (center.dy > 0 && center.dy < size.height) return;
+  }
+}
+
 Future<void> _tap(WidgetTester tester, String key) async {
   final finder = find.byKey(Key(key));
   await _pumpUntil(tester, finder);
-  await tester.ensureVisible(finder);
-  await tester.pump();
+  await _reveal(tester, finder);
   await tester.tap(finder);
   await tester.pump();
 }

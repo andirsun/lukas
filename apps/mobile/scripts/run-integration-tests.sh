@@ -11,9 +11,11 @@
 # the host at 10.0.2.2. voice_engine_test.dart is not here: it needs the voice models served by a
 # stand-in (setup.md) and skips itself without them.
 #
-# The API allows 5 code requests per 10 minutes from one address, and a run asks for a few: run this
-# more than twice in 10 minutes and the sign-in tests get too_many_requests. Runs every file even
-# when one fails, and exits 1 if any did.
+# The API allows 5 code requests per 10 minutes from one address, and the emulator is one address for
+# every file. So each run is a client of its own, as each browser is in the web's e2e suite
+# (apps/web/e2e/helpers.ts): it is given a made-up address (--dart-define=LUKITAS_CLIENT_IP), which a
+# debug build sends as x-forwarded-for and the dev stack counts. A release build never sends it, and
+# the API's limits are as they are. Runs every file even when one fails, and exits 1 if any did.
 set -uo pipefail
 
 MOBILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -57,7 +59,9 @@ run() { # run <granted|revoked> <label> <flutter test args...>
   echo
   echo "=== $label"
   prepare "$state"
-  if flutter test "$@" -d "$device" --dart-define=LUKITAS_SERVER="$server" --dart-define=MAILPIT_URL="$mailpit"; then
+  # A new address per run (the web's `clientIp`: 198.18.0.0/15, a range for benchmarking).
+  local client_ip="198.$((18 + RANDOM % 2)).$((RANDOM % 256)).$((1 + RANDOM % 254))"
+  if flutter test "$@" -d "$device" --dart-define=LUKITAS_SERVER="$server" --dart-define=MAILPIT_URL="$mailpit" --dart-define=LUKITAS_CLIENT_IP="$client_ip" --dart-define=CI="${CI:-false}"; then
     passed+=("$label")
   else
     failed+=("$label")

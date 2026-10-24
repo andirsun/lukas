@@ -66,4 +66,33 @@ void main() {
     expect(adapter.last!.uri.toString(), 'https://example.test/api/v1/me');
     expect(adapter.last!.headers.containsKey('Authorization'), isFalse);
   });
+
+  group('the client address (the emulator suite, debug builds only)', () {
+    Future<Map<String, dynamic>> headersOf({
+      required bool development,
+      String ip = '198.18.4.7',
+    }) async {
+      final client = ApiClient.forServer(
+        Uri.parse('https://example.test'),
+        clientIp: ip,
+        development: development,
+      );
+      final adapter = _RecordingAdapter();
+      client.dio.httpClientAdapter = adapter;
+      await client.dio.get<Object>('/v1/me');
+      return adapter.last!.headers;
+    }
+
+    test('a debug build sends it as x-forwarded-for', () async {
+      expect((await headersOf(development: true))['x-forwarded-for'], '198.18.4.7');
+    });
+
+    test('a release build ignores it', () async {
+      expect(await headersOf(development: false), isNot(contains('x-forwarded-for')));
+    });
+
+    test('a debug build without one sends none', () async {
+      expect(await headersOf(development: true, ip: ''), isNot(contains('x-forwarded-for')));
+    });
+  });
 }
