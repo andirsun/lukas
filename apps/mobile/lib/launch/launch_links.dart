@@ -79,13 +79,16 @@ class ChannelLaunchLinkSource implements LaunchLinkSource {
 final launchLinkSourceProvider = Provider<LaunchLinkSource>((ref) => ChannelLaunchLinkSource());
 
 /// Opens what a `lukitas://` link asks for, at a cold start too: it waits for the stored session to
-/// be read, then, signed in, goes to home (closing whatever sheet or screen was open) and opens
+/// be read, then, signed in (and past the welcome), goes to home (closing whatever sheet or screen was open) and opens
 /// the add sheet or quick capture listening there. Signed out it does nothing: the router already
 /// shows the entry screen. Nor does it while a sheet holds the person's input (an add or edit sheet,
 /// typed text or cards in capture): that is kept. A capture sheet already open is not replaced by a
 /// second one: 🎤 brings it to listening.
 class LaunchLinks {
   LaunchLinks(this._ref);
+
+  /// The most a link waits for the server's word on the welcome.
+  static const refreshWait = Duration(seconds: 3);
 
   final Ref _ref;
   StreamSubscription<String>? _subscription;
@@ -100,8 +103,20 @@ class LaunchLinks {
   Future<void> open(String link) async {
     final action = launchActionOf(link);
     if (action == null) return;
-    await _ref.read(sessionProvider.notifier).ready;
-    if (_ref.read(sessionProvider).status != SessionStatus.signedIn) return;
+    final controller = _ref.read(sessionProvider.notifier);
+    await controller.ready;
+    // Whether the account has the welcome to do is the server's to say (an install that predates it
+    // does not know yet): asked, for a moment at most, so a link never waits on a bad connection.
+    try {
+      await controller.refreshed.timeout(refreshWait);
+    } on Object {
+      // Offline or slow: what was kept stands.
+    }
+    final session = _ref.read(sessionProvider);
+    if (session.status != SessionStatus.signedIn) return;
+    // An account with the welcome to do is sent to it from everywhere, and its link is dropped, as
+    // the web's `requireOnboarded` drops the page it was going to: nothing opens over the welcome.
+    if (session.onboardingPending) return;
     // 🎤 with a capture sheet already open: that sheet is brought to listening, whatever it holds
     // (typed text and cards stay), and no second one is stacked over it.
     if (action == LaunchAction.capture && _ref.read(openCaptureSheetsProvider).listenFromLink()) {

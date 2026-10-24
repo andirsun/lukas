@@ -2,13 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/add/add_sheet.dart';
+import 'package:lukitas/capture/capture_sheet.dart';
 import 'package:lukitas/home/home_screen.dart';
+import 'package:lukitas/launch/launch_links.dart';
 import 'package:lukitas/ui/category_chip.dart';
 import 'package:lukitas/ui/press_button.dart';
 import 'package:lukitas/welcome/welcome_controller.dart';
 import 'package:lukitas/welcome/suggested_categories.dart';
 
 import '../entry/fakes.dart' show FakeAuthApi;
+import '../launch/launch_links_test.dart' show FakeLaunchLinks;
 import '../settings/fakes.dart';
 import 'fakes.dart';
 import 'harness.dart';
@@ -52,6 +56,54 @@ void main() {
       env.app.router.go('/welcome');
       await tester.pumpAndSettle();
       expect(env.location, '/');
+    });
+
+    testWidgets('an account with movements (the API stamps it) never reaches the welcome', (
+      tester,
+    ) async {
+      // What the API says of an account that predates the welcome but has data: stamped already.
+      final env = await pumpWelcome(
+        tester,
+        WelcomeWorld(hasTransactionsAlready: true),
+        pending: false,
+        location: '/welcome',
+      );
+      expect(env.location, '/');
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(env.world.requests, isEmpty, reason: 'nothing of its categories was touched');
+    });
+
+    testWidgets('a widget or notice link while the welcome is pending is dropped', (tester) async {
+      final links = FakeLaunchLinks();
+      final env = await pumpWelcome(
+        tester,
+        WelcomeWorld(categories: StartCategories.none),
+        extra: [launchLinkSourceProvider.overrideWithValue(links)],
+      );
+      expect(onStep('welcome'), isTrue);
+      for (final link in [
+        'lukitas://add',
+        'lukitas://capture',
+        'lukitas://due',
+        'lukitas://home',
+      ]) {
+        links.open(link);
+        await tester.pumpAndSettle();
+        expect(env.location, '/welcome', reason: link);
+        expect(onStep('welcome'), isTrue, reason: link);
+        expect(find.byType(AddSheet), findsNothing, reason: link);
+        expect(find.byType(CaptureSheet), findsNothing, reason: link);
+      }
+    });
+
+    testWidgets('and one the app was started with, too', (tester) async {
+      final env = await pumpWelcome(
+        tester,
+        WelcomeWorld(categories: StartCategories.none),
+        extra: [launchLinkSourceProvider.overrideWithValue(FakeLaunchLinks('lukitas://add'))],
+      );
+      expect(env.location, '/welcome');
+      expect(find.byType(AddSheet), findsNothing);
     });
 
     testWidgets('an address that is none of the steps is the first', (tester) async {

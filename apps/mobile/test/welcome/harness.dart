@@ -54,6 +54,7 @@ Future<WelcomeEnv> pumpWelcome(
   FakeAuthApi? auth,
   bool pending = true,
   bool guest = false,
+  List<Override> extra = const [],
 }) async {
   final fakeAuth = auth ?? FakeAuthApi();
   fakeAuth.pendingOnboarding['email-token-0'] = pending;
@@ -66,6 +67,7 @@ Future<WelcomeEnv> pumpWelcome(
     filesChannelProvider.overrideWithValue(files),
     welcomeDeviceProvider.overrideWithValue(device),
     clockProvider.overrideWithValue(() => now),
+    ...extra,
   ];
   final app = await pumpSettingsApp(
     tester,

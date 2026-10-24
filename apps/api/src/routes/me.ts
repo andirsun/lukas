@@ -84,6 +84,8 @@ const csvField = (value: string) =>
   /[",\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
 
 async function profile(deps: AppDeps, userId: string) {
+  // Every profile the API answers with is the same one, so each read stamps (see the function).
+  await stampOnboardedIfUsed(deps, userId);
   const [row] = await deps.db
     .select({
       id: user.id,
@@ -143,6 +145,30 @@ async function setCurrency(tx: Tx, currency: string) {
       "The currency cannot change once the account has transactions or recurrences",
     );
   }
+}
+
+/**
+ * An account with at least one transaction has been through whatever the welcome is for, so reading
+ * its profile stamps `onboardingCompletedAt` when it is still null. It covers the accounts made
+ * before the welcome reached the app (the app had none, and its accounts have data): neither client
+ * sends them to it, and its "Entrar directo" never touches their categories. Once: a stamped
+ * account is left as it is, and an empty one (the welcome's) is not stamped. Soft-deleted
+ * transactions count, as they do for the currency's lock.
+ */
+async function stampOnboardedIfUsed(deps: AppDeps, userId: string) {
+  await withUser(deps.db, userId, (tx) =>
+    tx
+      .update(user)
+      .set({ onboardingCompletedAt: sql`now()` })
+      .where(
+        and(
+          eq(user.id, userId),
+          isNull(user.onboardingCompletedAt),
+          // Row-level security limits `transactions` to this user's.
+          sql`exists (select 1 from transactions)`,
+        ),
+      ),
+  );
 }
 
 export function meRoutes(deps: AppDeps) {

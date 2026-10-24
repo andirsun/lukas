@@ -39,10 +39,56 @@ test("profile can be read and updated", async () => {
     email: "a@lukas.test",
     timezone: "America/Bogota",
     locale: "en",
-    onboardingCompletedAt: null,
+    // `a` has a movement (seeded above): reading the profile stamped the welcome as done.
+    onboardingCompletedAt: expect.any(String),
     currency: "EUR",
     isAnonymous: false,
   });
+});
+
+type Me = { onboardingCompletedAt: string | null };
+const readMe = async (headers: { authorization: string }) =>
+  (await (await t.request("GET", "/v1/me", { headers })).json()) as Me;
+
+test("an account that already has a movement is stamped as onboarded when its profile is read", async () => {
+  // An account that predates the welcome (the app's, made before it existed): it has data, and
+  // no `onboardingCompletedAt`. Reading it stamps it, so neither client sends it to the welcome.
+  const old = await t.signIn("old@lukas.test");
+  await seed(old.headers, "Casa");
+  const before = Date.now();
+  const me = await readMe(old.headers);
+  expect(me.onboardingCompletedAt).not.toBeNull();
+  expect(Date.parse(me.onboardingCompletedAt as string)).toBeGreaterThanOrEqual(before - 1000);
+  // Once: later reads keep the first time.
+  expect((await readMe(old.headers)).onboardingCompletedAt).toBe(me.onboardingCompletedAt);
+});
+
+test("an empty account is not stamped: it is the one the welcome is for", async () => {
+  const fresh = await t.signIn("fresh@lukas.test");
+  expect((await readMe(fresh.headers)).onboardingCompletedAt).toBeNull();
+  // Categories alone are not movements.
+  await t.request("POST", "/v1/categories", {
+    headers: fresh.headers,
+    body: { name: "Solo categoría", kind: "expense", icon: "cart", color: "orange" },
+  });
+  expect((await readMe(fresh.headers)).onboardingCompletedAt).toBeNull();
+});
+
+test("an account that is already stamped is left as it is", async () => {
+  const done = await t.signIn("done@lukas.test");
+  const patched = (await (
+    await t.request("PATCH", "/v1/me", {
+      headers: done.headers,
+      body: { onboardingCompleted: true },
+    })
+  ).json()) as Me;
+  await seed(done.headers, "Después");
+  expect((await readMe(done.headers)).onboardingCompletedAt).toBe(patched.onboardingCompletedAt);
+});
+
+test("a movement of another account does not stamp this one", async () => {
+  const other = await t.signIn("other@lukas.test");
+  expect((await readMe(other.headers)).onboardingCompletedAt).toBeNull();
 });
 
 test("the currency can be chosen while the account has no transactions", async () => {
