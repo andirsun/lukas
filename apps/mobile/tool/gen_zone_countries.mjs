@@ -43,7 +43,9 @@ const ids = new Set(rows.map((row) => row.id));
 const missing = [...supported].filter((id) => !ids.has(id));
 const extra = [...ids].filter((id) => !supported.has(id));
 if (rows.length !== PINNED.zones || missing.length || extra.length) {
-  console.error(`The zones are not the web's: missing ${missing}, extra ${extra}, ${rows.length} rows`);
+  console.error(
+    `The zones are not the web's: missing ${missing}, extra ${extra}, ${rows.length} rows`,
+  );
   process.exit(1);
 }
 
@@ -63,16 +65,21 @@ out.push("const zoneCountries = <String, String>{");
 for (const { id, country } of rows) out.push(`  ${quote(id)}: ${quote(country)},`);
 out.push("};");
 out.push("");
-out.push("/// IANA's current spelling of the zones ICU spells otherwise, to the web's: what a phone reports");
+out.push(
+  "/// IANA's current spelling of the zones ICU spells otherwise, to the web's: what a phone reports",
+);
 out.push("/// to what the web and the API store.");
 out.push("const icuSpellings = <String, String>{");
-for (const { zone, id } of rows.filter((row) => row.zone !== row.id).sort((a, b) => (a.zone < b.zone ? -1 : 1))) {
+for (const { zone, id } of rows
+  .filter((row) => row.zone !== row.id)
+  .sort((a, b) => (a.zone < b.zone ? -1 : 1))) {
   out.push(`  ${quote(zone)}: ${quote(id)},`);
 }
 out.push("};");
 out.push("");
 out.push("/// A country's name in Spanish and in English.");
 out.push("const countryNames = <String, (String, String)>{");
-for (const code of codes) out.push(`  ${quote(code)}: (${quote(es.of(code))}, ${quote(en.of(code))}),`);
+for (const code of codes)
+  out.push(`  ${quote(code)}: (${quote(es.of(code))}, ${quote(en.of(code))}),`);
 out.push("};");
 console.log(out.join("\n"));
