@@ -58,20 +58,30 @@
 - [ ] **Step 2:** Implement.
 - [ ] **Step 3:** Run `flutter test` and `compose --max 2`. Commit `feat(mobile): every web page has its place in the app`.
 
-### Task 2: Categories
+### Task 2: Categories live in the Categorías tab (web first, then app)
+
+The founder decided (2026-10-24) that categories are managed only from home's Categorías tab and the category detail, on the web and in the app. The separate categories page goes away.
 
 **Files:**
-- Create: `apps/mobile/lib/categories/`, porting `features/categories/CategoriesPage.tsx`, `CategoryForm.tsx` and `use-category-sheets.tsx`.
+- **Web:**
+  - Move management into `features/home/Home.tsx`'s Categorías tab and `features/categories/CategoryDetail.tsx`. Reuse `CategoryForm.tsx` and `use-category-sheets.tsx`.
+  - Remove `CategoriesPage.tsx` and the `/app/categories` route, along with its links. `/app/categories/:id` stays.
+  - Update the stories and e2e tests.
+- **App:** `apps/mobile/lib/budgets/` (the tab and detail), plus a `lib/categories/` form ported from `CategoryForm.tsx`.
 
 **Interfaces:**
 - **Consumes:** `GET/POST /v1/categories` and `PATCH /v1/categories/{id}`. Check the routes for archive and unarchive.
 
-- [ ] **Step 1:** Failing tests:
-  - parity pairs for `manage-categories--*` (list, form, archived);
-  - create, rename, icon and colour, archive and unarchive;
+**What the tab and detail hold:**
+- **Tab:** each category with its month's spend and budget bar, a Gastos | Ingresos switch (as in Análisis), a "Nueva categoría" button, and a folded "Archivadas" section at the end with unarchive.
+- **Detail:** the month's movements and the budget, plus rename, icon and colour, and archive.
+
+- [ ] **Step 1:** Web first. Write failing stories and e2e tests for the tab and detail, then implement them and remove the page. Run the web suites.
+- [ ] **Step 2:** App. Write failing tests:
+  - parity pairs against the new web stories;
+  - create, rename, icon and colour, archive and unarchive from the tab and detail;
   - Review Focus 1.
-- [ ] **Step 2:** Implement.
-- [ ] **Step 3:** Run the harness, `flutter test`, and an emulator test that creates a category. Commit `feat(mobile): categories, as on the web`.
+- [ ] **Step 3:** Implement. Run the harness, `flutter test`, and an emulator test that creates a category. Commit `feat: categories are managed from the Categorías tab, on the web and in the app`.
 
 ### Task 3: Recurring payments
 
@@ -142,6 +152,28 @@
   - guests see what the web shows a guest.
 - [ ] **Step 2:** Implement.
 - [ ] **Step 3:** Run the harness, `flutter test`, and emulator tests for export and for deleting a throwaway dev-stack account. Commit `feat(mobile): export and delete the account, as on the web`.
+
+### Task 7b: Feedback and ideas (web and app)
+
+The founder asked (2026-10-24) for a place in the app to send feedback or ask for a feature. For now this is an email to the founder.
+
+**Files:**
+- **Web:** a "Comentarios e ideas" section in Settings (`features/settings/`) with a button that opens a `mailto:` link, plus a story.
+- **App:** the same section in `lib/settings/`. The button opens the email app through the device channel's `openUrl`; allow `mailto:` there, still refusing other schemes.
+
+**Details:**
+- **Address:** `FEEDBACK_EMAIL`, the address the founder gives. It is a constant in one place per app.
+- **Subject:** "Lukitas: comentarios" or "Lukitas: feedback" by language.
+- **Body:** only the app version and the language, and nothing the person didn't type: no email, no amounts, no token.
+- **No email app on the phone:** a message shows the address and lets the person copy it.
+
+- [ ] **Step 1:** Failing tests:
+  - parity pair;
+  - the button builds the exact `mailto:` with an encoded subject and body;
+  - `openUrl` accepts `mailto` and still refuses `javascript:` and `intent:`;
+  - the no-email-app fallback.
+- [ ] **Step 2:** Implement on the web, then in the app.
+- [ ] **Step 3:** Run the suites. Commit `feat: a place to send comments and ideas, on the web and in the app`.
 
 ### Task 8: Sweep, APK and final review
 
