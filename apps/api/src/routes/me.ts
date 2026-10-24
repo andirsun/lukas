@@ -1,5 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { formatMinorAsDecimal, updateProfileSchema } from "@lukas/core";
+import { formatMinorAsDecimal } from "@lukas/core";
 import {
   accounts,
   categories,
@@ -11,21 +11,74 @@ import {
   withUser,
 } from "@lukas/db";
 import { and, asc, eq, isNull, sql } from "@lukas/db/orm";
+import {
+  type ClaimCodeResult,
+  consumeClaimCode,
+  dropClaimCodes,
+  isSignInAllowed,
+  issueClaimCode,
+  overEmailLimit,
+  sendClaimCode,
+} from "../auth.ts";
 import type { AppDeps } from "../deps.ts";
+import { isUniqueViolation } from "../http/db-errors.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { UpdateProfile } from "../http/schemas.ts";
 import { userToday } from "../services/time.ts";
 import { defaultAccount, toTransactionDto } from "../services/transactions.ts";
 
-const profileDto = z.object({
-  id: z.string(),
-  email: z.string(),
-  timezone: z.string(),
-  locale: z.string(),
-  onboardingCompletedAt: z.string().nullable(),
-  currency: z.string(),
-});
+const profileDto = z
+  .object({
+    id: z.string(),
+    email: z.string(),
+    timezone: z.string(),
+    locale: z.string(),
+    onboardingCompletedAt: z.string().nullable(),
+    currency: z.string(),
+    /** A guest: signed up on the app without an email (its `email` is a placeholder until claimed). */
+    isAnonymous: z.boolean(),
+  })
+  .openapi("Profile");
+
+/** An email as sign-in reads it: trimmed and lowercased. */
+const emailField = z.string().trim().toLowerCase().pipe(z.email().max(254));
+
+const claimSendBody = z.object({ email: emailField }).openapi("ClaimEmailSend");
+const claimVerifyBody = z
+  .object({ email: emailField, code: z.string().trim().min(1).max(32) })
+  .openapi("ClaimEmailVerify");
+
+const notAGuest = () => new ApiError(409, "not_a_guest", "This account already has an email");
+const emailTaken = () => new ApiError(409, "email_taken", "That email already has an account");
+
+/**
+ * A claim code that did not work, with sign-in's codes and statuses (Better Auth's emailOTP:
+ * INVALID_OTP 400, TOO_MANY_ATTEMPTS 403, OTP_EXPIRED 400), so the app shows the same messages.
+ */
+const CLAIM_CODE_PROBLEMS = {
+  wrong: () => new ApiError(400, "invalid_code", "The code is wrong"),
+  exhausted: () => new ApiError(403, "too_many_attempts", "Too many wrong tries with this code"),
+  expired: () => new ApiError(400, "invalid_or_expired_code", "The code expired"),
+  missing: () => new ApiError(400, "invalid_or_expired_code", "No such code, or already used"),
+} satisfies Record<Exclude<ClaimCodeResult, "ok">, () => ApiError>;
+
+/** The guest gate of the claim: only an anonymous user may claim an email. */
+async function requireGuest(deps: AppDeps, userId: string) {
+  const [row] = await deps.db
+    .select({ isAnonymous: user.isAnonymous })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (!row?.isAnonymous) throw notAGuest();
+}
+
+/** The allowlist gate, the same as sign-in's (and a guest's `.invalid` placeholder never passes). */
+function requireAllowed(deps: AppDeps, email: string) {
+  if (!isSignInAllowed(deps.config, email)) {
+    throw new ApiError(403, "sign_in_not_allowed", "Sign-in is not open to this address");
+  }
+}
 
 const csvField = (value: string) =>
   /[",\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
@@ -38,6 +91,7 @@ async function profile(deps: AppDeps, userId: string) {
       timezone: user.timezone,
       locale: user.locale,
       onboardingCompletedAt: user.onboardingCompletedAt,
+      isAnonymous: user.isAnonymous,
     })
     .from(user)
     .where(eq(user.id, userId));
@@ -98,6 +152,7 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/me",
+      operationId: "getMe",
       responses: { 200: jsonResponse(profileDto, "Profile") },
     }),
     async (c) => c.json(await profile(deps, c.get("userId")), 200),
@@ -107,7 +162,8 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "patch",
       path: "/v1/me",
-      request: { body: jsonBody(updateProfileSchema) },
+      operationId: "updateMe",
+      request: { body: jsonBody(UpdateProfile) },
       responses: { 200: jsonResponse(profileDto, "Updated profile"), ...problems(409, 422) },
     }),
     async (c) => {
@@ -131,10 +187,80 @@ export function meRoutes(deps: AppDeps) {
     },
   );
 
+  // Saving a guest's progress (spec §4.2): the guest's own user receives the email, so its id,
+  // sessions and every row stay; nothing is copied.
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/v1/me/claim-email/send",
+      operationId: "claimEmailSend",
+      request: { body: jsonBody(claimSendBody) },
+      responses: {
+        204: { description: "A code is on its way to the email" },
+        ...problems(403, 409, 422, 429),
+      },
+    }),
+    async (c) => {
+      const { email } = c.req.valid("json");
+      const sessionUser = c.get("user");
+      await requireGuest(deps, sessionUser.id);
+      requireAllowed(deps, email);
+      // The app then says to sign in with that email instead; the guest stays as it is.
+      const [owner] = await deps.db.select({ id: user.id }).from(user).where(eq(user.email, email));
+      if (owner) throw emailTaken();
+      if (await overEmailLimit(deps, email)) {
+        throw new ApiError(429, "too_many_requests", "Too many codes requested for this email");
+      }
+      const code = await issueClaimCode(deps, sessionUser.id, email);
+      await sendClaimCode(deps, { email, code, locale: sessionUser.locale });
+      return c.body(null, 204);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: "post",
+      path: "/v1/me/claim-email/verify",
+      operationId: "claimEmailVerify",
+      request: { body: jsonBody(claimVerifyBody) },
+      responses: {
+        200: jsonResponse(profileDto, "The profile, no longer a guest"),
+        ...problems(400, 403, 409, 422),
+      },
+    }),
+    async (c) => {
+      const { email, code } = c.req.valid("json");
+      const userId = c.get("userId");
+      await requireGuest(deps, userId);
+      requireAllowed(deps, email);
+      const result = await consumeClaimCode(deps, userId, email, code);
+      if (result !== "ok") throw CLAIM_CODE_PROBLEMS[result]();
+      let claimed: { id: string }[];
+      try {
+        // One statement in one transaction. A concurrent claim of the same email by another guest
+        // waits on the unique email index and then fails it: that one gets email_taken.
+        claimed = await withUser(deps.db, userId, (tx) =>
+          tx
+            .update(user)
+            .set({ email, emailVerified: true, isAnonymous: false })
+            .where(and(eq(user.id, userId), eq(user.isAnonymous, true)))
+            .returning({ id: user.id }),
+        );
+      } catch (error) {
+        if (isUniqueViolation(error)) throw emailTaken();
+        throw error;
+      }
+      if (claimed.length === 0) throw notAGuest();
+      await dropClaimCodes(deps, userId);
+      return c.json(await profile(deps, userId), 200);
+    },
+  );
+
   app.openapi(
     createRoute({
       method: "get",
       path: "/v1/me/export",
+      operationId: "exportMe",
       request: { query: z.object({ format: z.enum(["json", "csv"]).default("json") }) },
       responses: {
         200: {
@@ -202,6 +328,7 @@ export function meRoutes(deps: AppDeps) {
     createRoute({
       method: "delete",
       path: "/v1/me",
+      operationId: "deleteMe",
       responses: { 204: { description: "Account and all data permanently deleted" } },
     }),
     async (c) => {

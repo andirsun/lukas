@@ -1,0 +1,914 @@
+{
+  "storyId": "insights-insights--trend-gaps-scrolled",
+  "now": "2026-10-21T15:00:00.000Z",
+  "timezone": "Europe/Madrid",
+  "api": true,
+  "responses": {
+    "GET /v1/categories": {
+      "status": 200,
+      "body": [
+        {
+          "id": "cat-supermercado",
+          "name": "Supermercado",
+          "kind": "expense",
+          "icon": "🛒",
+          "color": "#ff9f1c",
+          "sortOrder": 0,
+          "archived": false,
+          "currentBudget": 18000
+        },
+        {
+          "id": "cat-restaurante",
+          "name": "Restaurante",
+          "kind": "expense",
+          "icon": "🍽️",
+          "color": "#ff5c7a",
+          "sortOrder": 1,
+          "archived": false,
+          "currentBudget": 30000
+        },
+        {
+          "id": "cat-ocio",
+          "name": "Ocio",
+          "kind": "expense",
+          "icon": "⭐",
+          "color": "#a66bff",
+          "sortOrder": 2,
+          "archived": false,
+          "currentBudget": 65000
+        },
+        {
+          "id": "cat-casa",
+          "name": "Casa",
+          "kind": "expense",
+          "icon": "🏠",
+          "color": "#3fa7ff",
+          "sortOrder": 3,
+          "archived": false,
+          "currentBudget": 135000
+        },
+        {
+          "id": "cat-transporte",
+          "name": "Transporte",
+          "kind": "expense",
+          "icon": "🚗",
+          "color": "#5ac8fa",
+          "sortOrder": 4,
+          "archived": false,
+          "currentBudget": 9000
+        },
+        {
+          "id": "cat-suscripciones",
+          "name": "suscripciones",
+          "kind": "expense",
+          "icon": "📱",
+          "color": "#ff8fd8",
+          "sortOrder": 5,
+          "archived": false,
+          "currentBudget": 3000
+        },
+        {
+          "id": "cat-vida",
+          "name": "Vida",
+          "kind": "expense",
+          "icon": "❤️",
+          "color": "#2fd388",
+          "sortOrder": 6,
+          "archived": false,
+          "currentBudget": 14000
+        },
+        {
+          "id": "cat-taxes",
+          "name": "Taxes",
+          "kind": "expense",
+          "icon": "🧾",
+          "color": "#8e87b8",
+          "sortOrder": 7,
+          "archived": false,
+          "currentBudget": 6000
+        },
+        {
+          "id": "cat-salario",
+          "name": "Salário",
+          "kind": "income",
+          "icon": "💰",
+          "color": "#2fd388",
+          "sortOrder": 20,
+          "archived": false,
+          "currentBudget": null
+        }
+      ]
+    },
+    "GET /v1/categories?includeArchived=true": {
+      "status": 200,
+      "body": [
+        {
+          "id": "cat-supermercado",
+          "name": "Supermercado",
+          "kind": "expense",
+          "icon": "🛒",
+          "color": "#ff9f1c",
+          "sortOrder": 0,
+          "archived": false,
+          "currentBudget": 18000
+        },
+        {
+          "id": "cat-restaurante",
+          "name": "Restaurante",
+          "kind": "expense",
+          "icon": "🍽️",
+          "color": "#ff5c7a",
+          "sortOrder": 1,
+          "archived": false,
+          "currentBudget": 30000
+        },
+        {
+          "id": "cat-ocio",
+          "name": "Ocio",
+          "kind": "expense",
+          "icon": "⭐",
+          "color": "#a66bff",
+          "sortOrder": 2,
+          "archived": false,
+          "currentBudget": 65000
+        },
+        {
+          "id": "cat-casa",
+          "name": "Casa",
+          "kind": "expense",
+          "icon": "🏠",
+          "color": "#3fa7ff",
+          "sortOrder": 3,
+          "archived": false,
+          "currentBudget": 135000
+        },
+        {
+          "id": "cat-transporte",
+          "name": "Transporte",
+          "kind": "expense",
+          "icon": "🚗",
+          "color": "#5ac8fa",
+          "sortOrder": 4,
+          "archived": false,
+          "currentBudget": 9000
+        },
+        {
+          "id": "cat-suscripciones",
+          "name": "suscripciones",
+          "kind": "expense",
+          "icon": "📱",
+          "color": "#ff8fd8",
+          "sortOrder": 5,
+          "archived": false,
+          "currentBudget": 3000
+        },
+        {
+          "id": "cat-vida",
+          "name": "Vida",
+          "kind": "expense",
+          "icon": "❤️",
+          "color": "#2fd388",
+          "sortOrder": 6,
+          "archived": false,
+          "currentBudget": 14000
+        },
+        {
+          "id": "cat-taxes",
+          "name": "Taxes",
+          "kind": "expense",
+          "icon": "🧾",
+          "color": "#8e87b8",
+          "sortOrder": 7,
+          "archived": false,
+          "currentBudget": 6000
+        },
+        {
+          "id": "cat-salario",
+          "name": "Salário",
+          "kind": "income",
+          "icon": "💰",
+          "color": "#2fd388",
+          "sortOrder": 20,
+          "archived": false,
+          "currentBudget": null
+        }
+      ]
+    },
+    "GET /v1/me": {
+      "status": 200,
+      "body": {
+        "id": "u-ana",
+        "email": "ana@example.com",
+        "timezone": "Europe/Madrid",
+        "locale": "es",
+        "onboardingCompletedAt": "2026-10-01T10:00:00.000Z",
+        "currency": "EUR",
+        "isAnonymous": false
+      }
+    },
+    "GET /v1/recurrences": {
+      "status": 200,
+      "body": [
+        {
+          "id": "rec-rent",
+          "name": "arriendo",
+          "amount": -120000,
+          "categoryId": "cat-casa",
+          "frequency": "monthly",
+          "dayOfMonth": 1,
+          "monthOfYear": null,
+          "startDate": "2025-10-01",
+          "endDate": null
+        },
+        {
+          "id": "rec-spotify",
+          "name": "suscripciones",
+          "amount": -3689,
+          "categoryId": "cat-suscripciones",
+          "frequency": "monthly",
+          "dayOfMonth": 2,
+          "monthOfYear": null,
+          "startDate": "2025-10-01",
+          "endDate": null
+        },
+        {
+          "id": "rec-salary",
+          "name": "Salário",
+          "amount": 620000,
+          "categoryId": "cat-salario",
+          "frequency": "monthly",
+          "dayOfMonth": 1,
+          "monthOfYear": null,
+          "startDate": "2025-10-01",
+          "endDate": null
+        }
+      ]
+    },
+    "GET /v1/reports/by-category?from=2026-05&kind=expense&to=2026-10": {
+      "status": 200,
+      "body": {
+        "total": 1342248,
+        "items": [
+          {
+            "categoryId": "cat-casa",
+            "name": "Casa",
+            "icon": "🏠",
+            "color": "#3fa7ff",
+            "total": 797868,
+            "share": 0.5944
+          },
+          {
+            "categoryId": "cat-ocio",
+            "name": "Ocio",
+            "icon": "⭐",
+            "color": "#a66bff",
+            "total": 157680,
+            "share": 0.1175
+          },
+          {
+            "categoryId": "cat-restaurante",
+            "name": "Restaurante",
+            "icon": "🍽️",
+            "color": "#ff5c7a",
+            "total": 152202,
+            "share": 0.1134
+          },
+          {
+            "categoryId": "cat-supermercado",
+            "name": "Supermercado",
+            "icon": "🛒",
+            "color": "#ff9f1c",
+            "total": 116472,
+            "share": 0.0868
+          },
+          {
+            "categoryId": "cat-vida",
+            "name": "Vida",
+            "icon": "❤️",
+            "color": "#2fd388",
+            "total": 58992,
+            "share": 0.044
+          },
+          {
+            "categoryId": "cat-taxes",
+            "name": "Taxes",
+            "icon": "🧾",
+            "color": "#8e87b8",
+            "total": 36900,
+            "share": 0.0275
+          },
+          {
+            "categoryId": "cat-suscripciones",
+            "name": "suscripciones",
+            "icon": "📱",
+            "color": "#ff8fd8",
+            "total": 22134,
+            "share": 0.0165
+          }
+        ]
+      }
+    },
+    "GET /v1/reports/by-category?from=2026-10&kind=expense&to=2026-10": {
+      "status": 200,
+      "body": {
+        "total": 223708,
+        "items": [
+          {
+            "categoryId": "cat-casa",
+            "name": "Casa",
+            "icon": "🏠",
+            "color": "#3fa7ff",
+            "total": 132978,
+            "share": 0.5944
+          },
+          {
+            "categoryId": "cat-ocio",
+            "name": "Ocio",
+            "icon": "⭐",
+            "color": "#a66bff",
+            "total": 26280,
+            "share": 0.1175
+          },
+          {
+            "categoryId": "cat-restaurante",
+            "name": "Restaurante",
+            "icon": "🍽️",
+            "color": "#ff5c7a",
+            "total": 25367,
+            "share": 0.1134
+          },
+          {
+            "categoryId": "cat-supermercado",
+            "name": "Supermercado",
+            "icon": "🛒",
+            "color": "#ff9f1c",
+            "total": 19412,
+            "share": 0.0868
+          },
+          {
+            "categoryId": "cat-vida",
+            "name": "Vida",
+            "icon": "❤️",
+            "color": "#2fd388",
+            "total": 9832,
+            "share": 0.044
+          },
+          {
+            "categoryId": "cat-taxes",
+            "name": "Taxes",
+            "icon": "🧾",
+            "color": "#8e87b8",
+            "total": 6150,
+            "share": 0.0275
+          },
+          {
+            "categoryId": "cat-suscripciones",
+            "name": "suscripciones",
+            "icon": "📱",
+            "color": "#ff8fd8",
+            "total": 3689,
+            "share": 0.0165
+          }
+        ]
+      }
+    },
+    "GET /v1/reports/cost-of-living?months=6": {
+      "status": 200,
+      "body": {
+        "months": 6,
+        "total": 223708,
+        "fixed": 136667,
+        "variable": 87041,
+        "categories": [
+          {
+            "categoryId": "cat-casa",
+            "average": 132978,
+            "type": "fixed"
+          },
+          {
+            "categoryId": "cat-ocio",
+            "average": 26280,
+            "type": "variable"
+          },
+          {
+            "categoryId": "cat-restaurante",
+            "average": 25367,
+            "type": "variable"
+          },
+          {
+            "categoryId": "cat-supermercado",
+            "average": 19412,
+            "type": "variable"
+          },
+          {
+            "categoryId": "cat-vida",
+            "average": 9832,
+            "type": "variable"
+          },
+          {
+            "categoryId": "cat-taxes",
+            "average": 6150,
+            "type": "variable"
+          },
+          {
+            "categoryId": "cat-suscripciones",
+            "average": 3689,
+            "type": "fixed"
+          }
+        ]
+      }
+    },
+    "GET /v1/reports/trend?from=2026-04&to=2026-09": {
+      "status": 200,
+      "body": {
+        "months": [
+          {
+            "month": "2026-04",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 0
+          },
+          {
+            "month": "2026-05",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 0
+          },
+          {
+            "month": "2026-06",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 0
+          },
+          {
+            "month": "2026-07",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 0
+          },
+          {
+            "month": "2026-08",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 280000
+          },
+          {
+            "month": "2026-09",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 280000
+          }
+        ]
+      }
+    },
+    "GET /v1/reports/trend?from=2026-05&to=2026-10": {
+      "status": 200,
+      "body": {
+        "months": [
+          {
+            "month": "2026-05",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 0
+          },
+          {
+            "month": "2026-06",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 0
+          },
+          {
+            "month": "2026-07",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 0
+          },
+          {
+            "month": "2026-08",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 280000
+          },
+          {
+            "month": "2026-09",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 280000
+          },
+          {
+            "month": "2026-10",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 280000
+          }
+        ]
+      }
+    },
+    "GET /v1/reports/trend?from=2026-10&to=2026-10": {
+      "status": 200,
+      "body": {
+        "months": [
+          {
+            "month": "2026-10",
+            "income": 620000,
+            "expenses": 223708,
+            "budget": 280000
+          }
+        ]
+      }
+    },
+    "GET /v1/summary?month=2026-10": {
+      "status": 200,
+      "body": {
+        "month": "2026-10",
+        "budgetTotal": 280000,
+        "spent": 223708,
+        "remaining": 56292,
+        "income": 620000,
+        "balance": 396292,
+        "categories": [
+          {
+            "categoryId": "cat-supermercado",
+            "budget": 18000,
+            "spent": 19412,
+            "remaining": -1412,
+            "ratio": 1.0784444444444445,
+            "state": "over"
+          },
+          {
+            "categoryId": "cat-restaurante",
+            "budget": 30000,
+            "spent": 25367,
+            "remaining": 4633,
+            "ratio": 0.8455666666666667,
+            "state": "near"
+          },
+          {
+            "categoryId": "cat-ocio",
+            "budget": 65000,
+            "spent": 26280,
+            "remaining": 38720,
+            "ratio": 0.4043076923076923,
+            "state": "ok"
+          },
+          {
+            "categoryId": "cat-casa",
+            "budget": 135000,
+            "spent": 132978,
+            "remaining": 2022,
+            "ratio": 0.9850222222222222,
+            "state": "near"
+          },
+          {
+            "categoryId": "cat-transporte",
+            "budget": 9000,
+            "spent": 0,
+            "remaining": 9000,
+            "ratio": 0,
+            "state": "ok"
+          },
+          {
+            "categoryId": "cat-suscripciones",
+            "budget": 3000,
+            "spent": 3689,
+            "remaining": -689,
+            "ratio": 1.2296666666666667,
+            "state": "over"
+          },
+          {
+            "categoryId": "cat-vida",
+            "budget": 14000,
+            "spent": 9832,
+            "remaining": 4168,
+            "ratio": 0.7022857142857143,
+            "state": "ok"
+          },
+          {
+            "categoryId": "cat-taxes",
+            "budget": 6000,
+            "spent": 6150,
+            "remaining": -150,
+            "ratio": 1.025,
+            "state": "over"
+          }
+        ]
+      }
+    },
+    "GET /v1/transactions/suggestions?q=": {
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "name": "continente",
+            "categoryId": "cat-groceries"
+          },
+          {
+            "name": "pingo doce",
+            "categoryId": "cat-groceries"
+          },
+          {
+            "name": "desayuno",
+            "categoryId": "cat-restaurant"
+          },
+          {
+            "name": "cine",
+            "categoryId": "cat-fun"
+          }
+        ]
+      }
+    },
+    "GET /v1/transactions?category=cat-fun&limit=50&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [],
+        "nextCursor": null
+      }
+    },
+    "GET /v1/transactions?limit=200&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "00000000-0000-4000-8000-000000000059",
+            "name": "luz",
+            "amount": -12978,
+            "currency": "EUR",
+            "date": "2026-10-03",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-casa",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-03T09:00:00.000Z",
+            "updatedAt": "2026-10-03T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000062",
+            "name": "taxes",
+            "amount": -6150,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-taxes",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000061",
+            "name": "vida",
+            "amount": -9832,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-vida",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000060",
+            "name": "suscripciones",
+            "amount": -3689,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "pending",
+            "note": null,
+            "categoryId": "cat-suscripciones",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000057",
+            "name": "ocio",
+            "amount": -26280,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-ocio",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000056",
+            "name": "restaurante",
+            "amount": -25367,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-restaurante",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000055",
+            "name": "supermercado",
+            "amount": -19412,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-supermercado",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000063",
+            "name": "Salário",
+            "amount": 620000,
+            "currency": "EUR",
+            "date": "2026-10-01",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-salario",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-01T09:00:00.000Z",
+            "updatedAt": "2026-10-01T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000058",
+            "name": "arriendo",
+            "amount": -120000,
+            "currency": "EUR",
+            "date": "2026-10-01",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-casa",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-01T09:00:00.000Z",
+            "updatedAt": "2026-10-01T09:00:00.000Z"
+          }
+        ],
+        "nextCursor": null
+      }
+    },
+    "GET /v1/transactions?limit=50&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "00000000-0000-4000-8000-000000000059",
+            "name": "luz",
+            "amount": -12978,
+            "currency": "EUR",
+            "date": "2026-10-03",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-casa",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-03T09:00:00.000Z",
+            "updatedAt": "2026-10-03T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000062",
+            "name": "taxes",
+            "amount": -6150,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-taxes",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000061",
+            "name": "vida",
+            "amount": -9832,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-vida",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000060",
+            "name": "suscripciones",
+            "amount": -3689,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "pending",
+            "note": null,
+            "categoryId": "cat-suscripciones",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000057",
+            "name": "ocio",
+            "amount": -26280,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-ocio",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000056",
+            "name": "restaurante",
+            "amount": -25367,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-restaurante",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000055",
+            "name": "supermercado",
+            "amount": -19412,
+            "currency": "EUR",
+            "date": "2026-10-02",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-supermercado",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-02T09:00:00.000Z",
+            "updatedAt": "2026-10-02T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000063",
+            "name": "Salário",
+            "amount": 620000,
+            "currency": "EUR",
+            "date": "2026-10-01",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-salario",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-01T09:00:00.000Z",
+            "updatedAt": "2026-10-01T09:00:00.000Z"
+          },
+          {
+            "id": "00000000-0000-4000-8000-000000000058",
+            "name": "arriendo",
+            "amount": -120000,
+            "currency": "EUR",
+            "date": "2026-10-01",
+            "status": "paid",
+            "note": null,
+            "categoryId": "cat-casa",
+            "recurrenceId": null,
+            "importId": null,
+            "source": "web",
+            "createdAt": "2026-10-01T09:00:00.000Z",
+            "updatedAt": "2026-10-01T09:00:00.000Z"
+          }
+        ],
+        "nextCursor": null
+      }
+    }
+  }
+}

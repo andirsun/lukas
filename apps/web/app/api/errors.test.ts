@@ -33,6 +33,21 @@ describe("problemMessage", () => {
     expect(problemMessage(closed, tEn)).not.toBe(en.errors.generic);
   });
 
+  it("explains that guest accounts are turned off, in both languages", () => {
+    const off = problem("guest_signup_disabled", 403);
+    expect(problemMessage(off, tEs)).toBe("Por ahora no se pueden crear cuentas de invitado.");
+    expect(problemMessage(off, tEn)).toBe("Guest accounts are turned off for now.");
+  });
+
+  it("explains a guest's email claim refusals, in both languages", () => {
+    const taken = problem("email_taken");
+    expect(problemMessage(taken, tEs)).toBe("Ese correo ya tiene una cuenta. Entra con él.");
+    expect(problemMessage(taken, tEn)).toBe("That email already has an account. Sign in with it.");
+    const notGuest = problem("not_a_guest");
+    expect(problemMessage(notGuest, tEs)).toBe("Tu cuenta ya tiene correo.");
+    expect(problemMessage(notGuest, tEn)).toBe("Your account already has an email.");
+  });
+
   it("falls back to errors.generic for unknown codes", () => {
     expect(problemMessage(problem("totally_new_code"), tEs)).toBe(es.errors.generic);
     expect(problemMessage(problem("totally_new_code"), tEn)).toBe(en.errors.generic);

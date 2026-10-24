@@ -153,6 +153,27 @@ taking an address off the list does **not** sign that person out or remove their
 their sessions and passkeys in the database if you ever need to revoke access. A list that names no
 valid email (for example `,`) stops the API from starting, instead of letting everyone in.
 
+### The Android app
+
+**`ANDROID_CERT_SHA256`** (in `.env`, empty by default) lets the Android app open magic links and
+use passkeys for this hostname. Put in it the SHA-256 fingerprint of the certificate the app is
+signed with, as `release.sh` prints it (`AB:CD:...`, 32 pairs); with more than one signing key
+(yours now, F-Droid's later) list them all, comma-separated. The web container writes
+`/.well-known/assetlinks.json` from it each time it starts, so after changing it run `./up.sh`
+(compose recreates `web` when its settings change), then `./smoke.sh`. Left empty, the file is `[]`: it links no app, but it is still
+there. A value that is not a fingerprint is skipped, with a warning in `docker compose logs web`.
+The API reads the same value to accept passkeys made in the app (Android sends the origin
+`android:apk-key-hash:<the certificate's SHA-256>`); there a value that is not a fingerprint stops
+the API from starting, so a typo shows up at once instead of as passkeys that never work.
+
+**`GUEST_SIGNUP`** (default `true`) lets the app create an account without an email (a guest),
+whatever `SIGN_IN_ALLOWLIST` says; the guest can save the account by claiming an allowlisted email
+later. Set `GUEST_SIGNUP=false` in `.env` and run `./up.sh` to stop new guests;
+existing ones keep working. Once a day the API deletes guests that have not used the app for 60
+days, with all their data. Accounts with an email are never deleted this way.
+
+Sessions last 60 days from their last use (extended at most once a day), so a guest stays signed in as long as it is used within 60 days.
+
 ### Keeping the Mac awake
 
 While the Mac sleeps, the tunnel is down and your phone shows a Cloudflare error (1033). To stay
@@ -330,6 +351,7 @@ Install `backup.sh` on the server with cron or a systemd timer (`install-backup.
 | `Caddyfile` | Static app, SPA fallback, cache rules, `/api` proxy, blocked paths, access log |
 | `cloudflared.yml` | Tunnel ingress for `app-lukas.andersonlaverde.com` |
 | `Dockerfile.web` | Caddy with the web build inside (the API image is `apps/api/Dockerfile.prod`) |
+| `web-entrypoint.sh` `assetlinks.json.template` | At start, write `/.well-known/assetlinks.json` from `ANDROID_CERT_SHA256` |
 | `.env.example` | Every setting, documented |
 | `up.sh` `update.sh` `smoke.sh` | Start, update, check |
 | `backup.sh` `restore.sh` | Verified backups; restore and drill |

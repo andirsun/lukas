@@ -107,7 +107,7 @@ const apiClient = () =>
  */
 export async function requestCode(
   email: string,
-  hints: { locale?: "es" | "en"; next?: string } = {},
+  hints: { locale?: "es" | "en"; next?: string; client?: "android" } = {},
 ): Promise<void> {
   const api = await apiClient();
   const response = await api.post("/api/auth/email-otp/send-verification-otp", {
@@ -115,6 +115,7 @@ export async function requestCode(
     headers: {
       ...(hints.locale ? { "x-lukas-locale": hints.locale } : {}),
       ...(hints.next ? { "x-lukas-next": hints.next } : {}),
+      ...(hints.client ? { "x-lukas-client": hints.client } : {}),
     },
   });
   expect(response.status(), await response.text()).toBe(200);

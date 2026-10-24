@@ -13,13 +13,13 @@ import {
 import { type ReactNode, useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { OCTOBER_2026 } from "../../../../../packages/core/test/fixtures/october-2026.ts";
+import { exposeStoryFetch } from "../../../.storybook/parity.ts";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import type { PasskeyOutcome } from "../../auth/passkey.ts";
 import { AppMessages } from "../../i18n/AppMessages.tsx";
 import type { Locale } from "../../i18n/format.ts";
 import { IntlProvider, useLocale } from "../../i18n/IntlProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
-import { CategoriesPage } from "../categories/CategoriesPage.tsx";
 import { CategoryDetail } from "../categories/CategoryDetail.tsx";
 import { Insights } from "../insights/Insights.tsx";
 import { RecurringPage } from "../recurring/RecurringPage.tsx";
@@ -286,6 +286,10 @@ export interface HomeApiOptions {
   createDelayMs?: number;
   /** Transporte is archived, with a taxi ride in it today (sample data only). */
   archivedCategory?: boolean;
+  /** Salario, the only income category, is archived (sample data only). */
+  archivedIncome?: boolean;
+  /** This category is archived, with its budget and its movements. */
+  archivedId?: string;
   /** No recurrences (the sample has Spotify, the salary and a yearly insurance). */
   noRecurrences?: boolean;
   /** How long each report (insights) takes to answer, in ms. */
@@ -351,6 +355,8 @@ function homeFetch({
   failCreate = false,
   createDelayMs = 0,
   archivedCategory = false,
+  archivedIncome = false,
+  archivedId,
   noRecurrences = false,
   reportDelayMs = 0,
   budgetsSince = 12,
@@ -379,6 +385,12 @@ function homeFetch({
       c.id === "cat-transport" ? { ...c, archived: true, currentBudget: null } : c,
     );
     transactions = [...transactions, transaction("taxi", "cat-transport", -1500, STORY_TODAY)];
+  }
+  if (archivedId) {
+    categories = categories.map((c) => (c.id === archivedId ? { ...c, archived: true } : c));
+  }
+  if (archivedIncome) {
+    categories = categories.map((c) => (c.id === "cat-salary" ? { ...c, archived: true } : c));
   }
   let budgets: FakeBudget[] = categories.flatMap((c) =>
     c.currentBudget === null
@@ -411,6 +423,7 @@ function homeFetch({
     locale: locale as string,
     onboardingCompletedAt: "2026-10-01T10:00:00.000Z",
     currency: currency as string,
+    isAnonymous: false,
   };
   const newestFirst = (a: TransactionDto, b: TransactionDto) =>
     a.date === b.date ? (a.id < b.id ? 1 : -1) : a.date < b.date ? 1 : -1;
@@ -466,6 +479,10 @@ function homeFetch({
       return Response.json(categories.filter((c) => all || !c.archived).map(withBudget));
     }
     if (path === "/api/v1/categories" && request.method === "POST") {
+      const asked = (body as { name?: string }).name?.toLowerCase();
+      if (categories.some((c) => c.name.toLowerCase() === asked)) {
+        return Response.json({ code: "category_name_taken" }, { status: 409 });
+      }
       const created = {
         ...(body as Omit<FakeCategory, "id" | "archived" | "currentBudget">),
         id: `cat-new-${categories.length}`,
@@ -754,7 +771,7 @@ export function HomeStage({
   const [passkeys] = useState(() => passkeysProp ?? storyPasskeys());
   const [fetchImpl] = useState(() => {
     clearHomeStorage(STORY_USER_ID);
-    return homeFetch({ locale: storyLocale, ...api });
+    return exposeStoryFetch(homeFetch({ locale: storyLocale, ...api }));
   });
   const [reloads, setReloads] = useState(0);
   const shell = (screen: ReactNode) => <AppShell>{screen}</AppShell>;
@@ -773,7 +790,6 @@ export function HomeStage({
             <ToastProvider>
               <Routes>
                 <Route path="/app" element={shell(<Home signOut={signOut} />)} />
-                <Route path="/app/categories" element={shell(<CategoriesPage />)} />
                 <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
                 <Route path="/app/recurring" element={shell(<RecurringPage />)} />
                 <Route path="/app/insights" element={shell(<Insights />)} />

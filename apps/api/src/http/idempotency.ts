@@ -15,11 +15,23 @@ const IN_PROGRESS = 0;
  * stored 2xx response; the same key with a different body is rejected. The key is reserved before
  * the handler runs, so concurrent retries get 409 instead of running twice. Failed requests
  * release their key. Keys live for 24 hours.
+ *
+ * With `required`, a request without a key is refused (400 `idempotency_key_required`) instead of
+ * running unprotected: for calls whose retry would save everything twice.
  */
-export function idempotent(db: Db) {
+export function idempotent(db: Db, { required = false }: { required?: boolean } = {}) {
   return createMiddleware<AppEnv>(async (c, next) => {
     const key = c.req.header("idempotency-key");
-    if (!key) return next();
+    if (!key) {
+      if (required) {
+        throw new ApiError(
+          400,
+          "idempotency_key_required",
+          "Send an Idempotency-Key header with this request",
+        );
+      }
+      return next();
+    }
     const userId = c.get("userId");
     const requestHash = createHash("sha256")
       .update(await c.req.raw.clone().text())

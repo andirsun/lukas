@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { type ReactNode, useId } from "react";
 import { useTranslations } from "use-intl";
 import { formatMoney } from "../i18n/format.ts";
 import { useLocale } from "../i18n/IntlProvider.tsx";
@@ -25,6 +25,13 @@ export interface CategoryRowProps {
   currency: string;
   /** Opens the category detail. */
   onOpen(): void;
+  /**
+   * A plain line instead of the budget's status, bar and figures: an income category ("Ingreso")
+   * or an archived one ("Archivada"). The budget figures are then ignored.
+   */
+  line?: string | undefined;
+  /** A button of its own at the row's end (an archived category's "Restaurar"). */
+  control?: ReactNode;
 }
 
 /**
@@ -43,18 +50,24 @@ export function CategoryRow({
   state,
   currency,
   onOpen,
+  line,
+  control,
 }: CategoryRowProps) {
   const t = useTranslations("category_row");
   const { locale } = useLocale();
   const id = useId();
   const money = (cents: number) => formatMoney(cents, currency, locale);
 
-  const hasBudget = budget !== null;
-  const status = !hasBudget
-    ? t("no_budget")
-    : state === "over"
-      ? t("over", { amount: money(Math.abs(remaining ?? budget - spent)) })
-      : t("remaining", { amount: money(remaining ?? budget - spent) });
+  const budgeted = line === undefined ? budget : null;
+  const hasBudget = budgeted !== null;
+  const status =
+    line !== undefined
+      ? line
+      : budgeted === null
+        ? t("no_budget")
+        : state === "over"
+          ? t("over", { amount: money(Math.abs(remaining ?? budgeted - spent)) })
+          : t("remaining", { amount: money(remaining ?? budgeted - spent) });
 
   return (
     <div className="lk-rowcard lk-row">
@@ -78,7 +91,7 @@ export function CategoryRow({
             {note && " "}
             {note && <span className="font-bold text-ink-muted">· {note}</span>}
           </span>
-          {hasBudget && <span className="lk-num">{money(budget)}</span>}
+          {budgeted !== null && <span className="lk-num">{money(budgeted)}</span>}
         </div>
         <div className="lk-status flex flex-wrap gap-x-(--space-2)">
           <span
@@ -91,18 +104,21 @@ export function CategoryRow({
           >
             {status}
           </span>
-          {!hasBudget && spent !== 0 && <span>{t("spent", { amount: money(spent) })}</span>}
+          {!hasBudget && line === undefined && spent !== 0 && (
+            <span>{t("spent", { amount: money(spent) })}</span>
+          )}
         </div>
-        {hasBudget && (
+        {budgeted !== null && (
           <BudgetBar
             spent={spent}
-            budget={budget}
+            budget={budgeted}
             state={state}
             size="sm"
             label={t("meter", { name, status })}
           />
         )}
       </div>
+      {control && <span className="lk-row-control">{control}</span>}
     </div>
   );
 }

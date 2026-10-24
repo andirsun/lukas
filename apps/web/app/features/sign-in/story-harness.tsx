@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { fn } from "storybook/test";
+import { exposeStoryFetch } from "../../../.storybook/parity.ts";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import type { PasskeyOutcome } from "../../auth/passkey.ts";
 import { ToastProvider } from "../../ui/Toast.tsx";
@@ -105,6 +106,8 @@ export interface SignInStageProps {
   profileUser?: AuthUser;
   onPatchMe?: (body: unknown) => void;
   resendDelayMs?: number;
+  /** The browser's user agent, for the screens that differ on Android; the real one by default. */
+  userAgent?: string;
 }
 
 /**
@@ -118,8 +121,9 @@ export function SignInStage({
   profileUser = NEW_USER,
   onPatchMe = () => {},
   resendDelayMs,
+  userAgent,
 }: SignInStageProps) {
-  const [fetchImpl] = useState(() => profileFetch(profileUser, onPatchMe));
+  const [fetchImpl] = useState(() => exposeStoryFetch(profileFetch(profileUser, onPatchMe)));
   const [fallbackOffer] = useState(() => fakeOffer());
   return (
     <MemoryRouter initialEntries={[initialEntry]}>
@@ -132,7 +136,10 @@ export function SignInStage({
                 <SignIn auth={auth} {...(resendDelayMs !== undefined ? { resendDelayMs } : {})} />
               }
             />
-            <Route path="/auth/verify" element={<Verify auth={auth} />} />
+            <Route
+              path="/auth/verify"
+              element={<Verify auth={auth} {...(userAgent !== undefined ? { userAgent } : {})} />}
+            />
             <Route
               path="/passkey-offer"
               element={<PasskeyOffer offer={offer ?? fallbackOffer} userId={profileUser.id} />}

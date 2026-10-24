@@ -88,6 +88,31 @@ export const PressAndFocus: Story = {
   },
 };
 
+/**
+ * A 40-character name stays on one line and is cut off with an ellipsis; the chip does not grow
+ * and the muted note under another one is cut the same way.
+ */
+export const LongName: Story = {
+  render: () => (
+    <div className="lk-chips max-w-[320px]">
+      <CategoryChip
+        glyph="🛒"
+        label="Supermercado, farmacia y cosas del hogar"
+        selected
+        onSelect={() => {}}
+      />
+      <CategoryChip glyph="⭐" label="Ocio" note="archivada" selected={false} onSelect={() => {}} />
+      <CategoryChip glyph="🚗" label="Transporte" selected={false} onSelect={() => {}} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const chip = canvas.getByRole("button", { name: /Supermercado, farmacia/ });
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    await expectTarget(chip);
+  },
+};
+
 export const Day: Story = {
   globals: { theme: "day" },
   play: async ({ canvasElement }) => {

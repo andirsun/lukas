@@ -126,7 +126,7 @@ Each stage gets its own spec → plan → implementation.
 
 1. **Core & accounts** (detailed in this document, §4–§10).
 2. **Web v1:** onboarding, home, transactions, budget, analysis, import, "Connect your assistant".
-3. **Mobile + widget:** guest mode first (see Guest mode below), onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget **with a microphone button** that opens voice quick capture (founder decision, 2026-10-21; see Quick capture below).
+3. **Mobile + widget** (spec: `docs/superpowers/specs/2026-10-22-stage-3-mobile-design.md`; free software only, no Google Play Services in any build, F-Droid as the eventual target): guest mode first (see Guest mode below), onboarding, quick add, remaining figure, feedback module (haptics, sound, animation), Android widget **with a microphone button** that opens voice quick capture (founder decision, 2026-10-21; see Quick capture below).
 4. **MCP:** remote server with OAuth; tools to read, create and edit transactions, generate reports and adjust budgets.
 5. **Advanced gamification:** streaks, achievements, rewards.
 6. **Automatic capture:** bank alerts and wallet payments become transactions without typing. It comes after Stage 4; its order relative to Stage 5 will be decided later. See Automatic capture below.
@@ -174,7 +174,7 @@ People can start without an email: no login wall after installing the app or on 
   - The screen explains honestly that without an email (or, later, a phone number via WhatsApp), losing the passkey means losing the account, and that sync, AI and MCP need an email.
   - "Guarda tu progreso" then offers adding one.
   - The email (or future phone) stays the recoverable identity.
-  - Installs with a sign-in allowlist (the founder's personal install) keep email-only sign-up.
+  - Installs with a sign-in allowlist (the founder's personal install) allow guest sign-up too (founder decision 2026-10-22, Stage 3 spec §4): the allowlist governs who can add an email. A `GUEST_SIGNUP` flag turns guests off.
 - **Works without an email:** categories, budgets, transactions, recurring payments, the widget and microphone quick capture (no AI), Budge import, and export.
 - **Requires an email:**
   - **Sync to a second device:** web and phone, or a new phone. The other device needs a way to sign in.

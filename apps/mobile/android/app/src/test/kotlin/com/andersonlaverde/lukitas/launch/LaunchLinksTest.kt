@@ -1,0 +1,186 @@
+package com.andersonlaverde.lukitas.launch
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.test.core.app.ApplicationProvider
+import com.andersonlaverde.lukitas.MainActivity
+import com.andersonlaverde.lukitas.widget.ServerSetting
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+@RunWith(RobolectricTestRunner::class)
+class LaunchLinksTest {
+    private val context: Context = ApplicationProvider.getApplicationContext()
+
+    @Test
+    fun `the widget's buttons and the tile start this app on their link`() {
+        val add = LaunchLinks.intent(context, LaunchLinks.ADD)
+        assertEquals(Intent.ACTION_VIEW, add.action)
+        assertEquals("lukitas://add", add.dataString)
+        // The app's own, not-exported entry for its links: no other app can start it.
+        assertEquals("com.andersonlaverde.lukitas.LaunchLinkAlias", add.component?.className)
+        assertEquals("lukitas://capture", LaunchLinks.intent(context, LaunchLinks.CAPTURE).dataString)
+    }
+
+    private fun viaAlias(link: String) =
+        Intent(Intent.ACTION_VIEW, Uri.parse(link)).setClassName(context, "com.andersonlaverde.lukitas.LaunchLinkAlias")
+
+    @Test
+    fun `only lukitas add, capture and due links are taken, and only through the app's own entry`() {
+        assertEquals("lukitas://add", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.ADD)))
+        assertEquals("lukitas://capture", LaunchLinks.linkOf(viaAlias("lukitas://capture")))
+        // The "Hoy vence…" notice opens home through the same entry.
+        assertEquals("lukitas://due", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.DUE)))
+        // And the guest warning opens "Guarda tu progreso".
+        assertEquals("lukitas://progress", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.PROGRESS)))
+        assertNull(LaunchLinks.linkOf(viaAlias("lukitas://settings")))
+        assertNull(LaunchLinks.linkOf(viaAlias("https://app-lukas.andersonlaverde.com/auth/verify")))
+        assertNull(LaunchLinks.linkOf(Intent(Intent.ACTION_MAIN)))
+        assertNull(LaunchLinks.linkOf(null))
+    }
+
+    @Test
+    fun `another app starting the exported launcher activity with the link does not open capture`() {
+        val explicit = Intent(Intent.ACTION_VIEW, Uri.parse("lukitas://capture"))
+            .setClass(context, MainActivity::class.java)
+        assertNull(LaunchLinks.linkOf(explicit))
+        assertNull(LaunchLinks.linkOf(Intent(Intent.ACTION_VIEW, Uri.parse("lukitas://capture"))))
+    }
+
+    @Test
+    fun `reopened from recents, the old link is not acted on again`() {
+        val again = LaunchLinks.intent(context, LaunchLinks.CAPTURE)
+            .addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
+        assertNull(LaunchLinks.linkOf(again))
+    }
+
+    // --- Web links (the magic link) --------------------------------------------------------------
+
+    private fun view(link: String) = Intent(Intent.ACTION_VIEW, Uri.parse(link)).setClass(context, MainActivity::class.java)
+
+    private val verify = "https://app-lukas.andersonlaverde.com/auth/verify?email=ana%40correo.com&code=123456"
+
+    @Test
+    fun `a web link to the configured server's host goes on to the app`() {
+        assertFalse(LaunchLinks.isForeignWebLink(view(verify), "app-lukas.andersonlaverde.com"))
+        // Hosts are not case-sensitive.
+        assertFalse(LaunchLinks.isForeignWebLink(view(verify), "App-Lukas.AndersonLaverde.com"))
+        // The dev stack, from the emulator.
+        assertFalse(LaunchLinks.isForeignWebLink(view("http://10.0.2.2:3000/auth/verify?code=1"), "10.0.2.2"))
+    }
+
+    @Test
+    fun `a web link to any other host is dropped, so no app can sign the person into its account`() {
+        assertTrue(LaunchLinks.isForeignWebLink(view("https://evil.example/auth/verify?email=x%40y.z&code=1"), "app-lukas.andersonlaverde.com"))
+        assertTrue(LaunchLinks.isForeignWebLink(view(verify), "lukitas.example.org"))
+        // A server setting that cannot be read is no host at all: nothing goes on.
+        assertTrue(LaunchLinks.isForeignWebLink(view(verify), null))
+        assertTrue(LaunchLinks.isForeignWebLink(view("https:///auth/verify"), "app-lukas.andersonlaverde.com"))
+    }
+
+    @Test
+    fun `what is not a web link is left to the other rules`() {
+        assertFalse(LaunchLinks.isForeignWebLink(LaunchLinks.intent(context, LaunchLinks.ADD), null))
+        assertFalse(LaunchLinks.isForeignWebLink(Intent(Intent.ACTION_MAIN), null))
+        assertFalse(LaunchLinks.isForeignWebLink(null, null))
+    }
+
+    @Test
+    fun `the configured server is the one chosen in Settings, else the build's default`() {
+        val default = "https://app-lukas.andersonlaverde.com"
+        assertEquals("app-lukas.andersonlaverde.com", LaunchLinks.serverHost(ServerSetting.Default, default))
+        assertEquals("lukitas.example.org", LaunchLinks.serverHost(ServerSetting.Chosen("https://lukitas.example.org/"), default))
+        assertNull(LaunchLinks.serverHost(ServerSetting.Unreadable, default))
+    }
+
+    // --- What Flutter's router may read ------------------------------------------------------------
+
+    /** The intent Glance gives a tap on the widget itself, as the emulator's ActivityManager logged it. */
+    private val glanceTap = Intent()
+        .setClass(context, MainActivity::class.java)
+        .setData(Uri.parse("glance-action:/CALLBACK?appWidgetId=5&viewId=2131296449&viewSize=110.09524.dp%20x%2040.0.dp&extraData=0"))
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+    @Test
+    fun `the widget's body tap is a link home, through the app's own entry`() {
+        assertEquals("lukitas://home", LaunchLinks.intent(context, LaunchLinks.HOME).dataString)
+        assertEquals("lukitas://home", LaunchLinks.linkOf(LaunchLinks.intent(context, LaunchLinks.HOME)))
+    }
+
+    @Test
+    fun `the router never reads the data Glance puts on a widget tap, with or without an action`() {
+        // Read as a route it was "Page Not Found: no routes for location: glance-action:/CALLBACK?...".
+        assertFalse(LaunchLinks.routerMayRead(glanceTap, "app-lukas.andersonlaverde.com"))
+        assertFalse(LaunchLinks.routerMayRead(Intent(glanceTap).setAction(Intent.ACTION_VIEW), "app-lukas.andersonlaverde.com"))
+    }
+
+    @Test
+    fun `the router reads only the magic link of the configured server`() {
+        val host = "app-lukas.andersonlaverde.com"
+        assertTrue(LaunchLinks.routerMayRead(view(verify), host))
+        assertFalse(LaunchLinks.routerMayRead(view(verify), "lukitas.example.org"))
+        assertFalse(LaunchLinks.routerMayRead(view(verify), null))
+        // Data on an intent that is not a view of a link is nobody's route.
+        assertFalse(LaunchLinks.routerMayRead(Intent(Intent.ACTION_MAIN, Uri.parse(verify)), host))
+        assertFalse(LaunchLinks.routerMayRead(Intent(Intent.ACTION_SEND, Uri.parse(verify)), host))
+        assertFalse(LaunchLinks.routerMayRead(LaunchLinks.intent(context, LaunchLinks.ADD), host))
+        // No data at all is not a route either, and null is not an intent.
+        assertFalse(LaunchLinks.routerMayRead(Intent(Intent.ACTION_MAIN), host))
+        assertFalse(LaunchLinks.routerMayRead(null, host))
+    }
+
+    // --- The page's "Abrir en Lukitas" (apps/web/app/features/sign-in/open-in-app.ts) ----------------
+
+    /** What the web page's button links to, character for character (open-in-app.test.ts). */
+    private val intentLink =
+        "intent://app-lukas.andersonlaverde.com/auth/verify" +
+            "?email=ana%40example.com&code=424242&lang=es&next=%2Fapp%2Finsights&from=app" +
+            "#Intent;scheme=https;package=com.andersonlaverde.lukitas;" +
+            "S.browser_fallback_url=https%3A%2F%2Fapp-lukas.andersonlaverde.com%2Fauth%2Fverify" +
+            "%3Femail%3Dana%2540example.com%26code%3D424242%26lang%3Des%26next%3D%252Fapp%252Finsights;end"
+
+    /** The intent Chrome starts for [intentLink]: it parses it, and may start only a browsable view. */
+    private fun fromBrowser(): Intent =
+        Intent.parseUri(intentLink, Intent.URI_INTENT_SCHEME).apply {
+            addCategory(Intent.CATEGORY_BROWSABLE)
+            component = null
+            selector = null
+        }
+
+    @Test
+    fun `the page's intent link starts this app on the same https magic link`() {
+        val intent = fromBrowser()
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals("com.andersonlaverde.lukitas", intent.`package`)
+        assertEquals(
+            "https://app-lukas.andersonlaverde.com/auth/verify" +
+                "?email=ana%40example.com&code=424242&lang=es&next=%2Fapp%2Finsights&from=app",
+            intent.dataString,
+        )
+        assertEquals(
+            "https://app-lukas.andersonlaverde.com/auth/verify?email=ana%40example.com&code=424242&lang=es&next=%2Fapp%2Finsights",
+            intent.getStringExtra("browser_fallback_url"),
+        )
+    }
+
+    @Test
+    fun `MainActivity keeps that intent's link for the router, and takes no lukitas link from it`() {
+        val intent = fromBrowser()
+        assertTrue(LaunchLinks.routerMayRead(intent, "app-lukas.andersonlaverde.com"))
+        assertNull(LaunchLinks.linkOf(intent))
+        // On another server the same link is dropped, as any web link is.
+        assertFalse(LaunchLinks.routerMayRead(intent, "lukitas.example.org"))
+    }
+
+    @Test
+    fun `Android resolves that intent to MainActivity through the manifest's App Link filter`() {
+        val resolved = context.packageManager.resolveActivity(fromBrowser(), 0)
+        assertEquals(MainActivity::class.java.name, resolved?.activityInfo?.name)
+    }
+}

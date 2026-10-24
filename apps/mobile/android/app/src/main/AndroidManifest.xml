@@ -1,0 +1,151 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- The API at <server>/api. Release builds need it too (scripts/check-permissions.sh). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Quick capture's microphone (voice/VoiceChannel.kt), asked at the first 🎤. The speech engine
+         (Vosk) runs on the phone: the audio never leaves it. scripts/check-permissions.sh expects it. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- The haptics (haptics/HapticsChannel.kt). A normal permission, granted at install: nothing is
+         asked of the person. scripts/check-permissions.sh expects it. -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- androidx.credentials brings androidx.biometric, whose manifest asks for these. They serve a
+         credential provider's own biometric prompt; this app only asks the platform's Credential
+         Manager, and the person's passkey provider checks the fingerprint in its own process. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove"/>
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove"/>
+    <!-- The widget's refresh job (widget/RefreshWorker.kt) runs on WorkManager, which asks for
+         these two. Normal permissions, granted at install: nothing is asked of the person.
+         ACCESS_NETWORK_STATE lets the job wait for a network; RECEIVE_BOOT_COMPLETED lets
+         WorkManager schedule it again after the phone restarts. scripts/check-permissions.sh
+         expects exactly these. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- The two local notices (notices/, spec section 7.2). Android 13+ asks the person at runtime:
+         only from the app, once, with a sentence on why (lib/notices); a refusal means the notices
+         are not posted. scripts/check-permissions.sh expects it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- WorkManager's manifest also asks for these two, for work this app never does: long work in
+         a foreground service, and alarms below Android 6 (the app needs Android 8). Removed on
+         purpose; whoever needs one deletes its line and allows it in scripts/check-permissions.sh. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" tools:node="remove"/>
+    <!-- No backup: the session token is encrypted with a Keystore key, which never leaves this phone, so it cannot be restored on another device. -->
+    <application
+        android:allowBackup="false"
+        android:label="Lukitas"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- The magic link in the sign-in email opens the app (Android App Links, spec section
+                 4.5): verified against /.well-known/assetlinks.json on the host, which lists this
+                 package and its signing certificates. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"/>
+                <data android:host="app-lukas.andersonlaverde.com"/>
+                <data android:path="/auth/verify"/>
+            </intent-filter>
+            <!-- Flutter hands an opened link to the router (go_router reads /auth/verify?...). -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="true"/>
+        </activity>
+        <!-- The widget's ＋ (lukitas://add) and 🎤 and the Quick Settings tile
+             (lukitas://capture), spec section 7.1, and the "Hoy vence…" notice (lukitas://due),
+             7.2, open MainActivity through this alias, which is
+             not exported: only the app itself (its widget's, tile's and notice's PendingIntents) can start
+             it, so no other app and no web page can open the microphone sheet. MainActivity hands
+             the link to Dart (launch/LaunchLinks.kt). -->
+        <activity-alias
+            android:name=".LaunchLinkAlias"
+            android:exported="false"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="lukitas" android:host="add"/>
+                <data android:scheme="lukitas" android:host="capture"/>
+                <!-- The "Hoy vence…" notice (notices/NoticePoster.kt): home, with the payments in view. -->
+                <data android:scheme="lukitas" android:host="due"/>
+                <!-- The guest warning (notices/NoticePoster.kt): "Guarda tu progreso". -->
+                <data android:scheme="lukitas" android:host="progress"/>
+                <!-- A tap on the widget itself: home. -->
+                <data android:scheme="lukitas" android:host="home"/>
+            </intent-filter>
+        </activity-alias>
+        <!-- The home-screen widget, small (2×1) and medium (4×2), drawn with Jetpack Glance
+             (widget/). The app and the refresh job ask them to redraw. -->
+        <receiver
+            android:name=".widget.LukitasSmallWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/lukitas_small_widget"/>
+        </receiver>
+        <receiver
+            android:name=".widget.LukitasMediumWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/lukitas_medium_widget"/>
+        </receiver>
+        <!-- The Quick Settings tile: quick capture, listening (tile/CaptureTileService.kt). Only the
+             system's Quick Settings may bind it. -->
+        <service
+            android:name=".tile.CaptureTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_widget_mic"
+            android:label="@string/tile_capture"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE"/>
+            </intent-filter>
+        </service>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Whether a passkey provider is installed (passkeys/PasskeyChannel.kt). -->
+        <intent>
+            <action android:name="android.service.credentials.CredentialProviderService"/>
+        </intent>
+    </queries>
+</manifest>

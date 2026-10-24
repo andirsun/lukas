@@ -41,6 +41,7 @@ test("profile can be read and updated", async () => {
     locale: "en",
     onboardingCompletedAt: null,
     currency: "EUR",
+    isAnonymous: false,
   });
 });
 

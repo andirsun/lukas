@@ -1,0 +1,26 @@
+Lukitas is your budget, and you'll actually enjoy looking after it: log an expense in seconds and see where every buck goes.
+
+<b>What you can do</b>
+<ul>
+<li>Log an expense with the number pad: amount, category, done.</li>
+<li>Say it or type it as one sentence, like "spent 12 on lunch and 3 on coffee". Lukitas splits it into entries and you review them before saving; you can remove them or undo.</li>
+<li>See what you have spent this month and your entries, grouped by day.</li>
+<li>A home-screen widget with ＋ and 🎤, and a Quick Settings tile, to log without hunting for the app.</li>
+<li>In Spanish and English, night or day, with soft sounds and vibration you can turn off.</li>
+</ul>
+
+<b>No email, no passwords</b>
+Try it without an email, as a guest, and add your email later without losing what you logged. With an email you sign in with a 6-digit code or a link, and if you like with a passkey (your fingerprint or phone lock; it needs Android 14 or newer). Without an email, if you lose your phone or delete the app you lose your data, and an account with no email is deleted after 60 days without opening Lukitas: the app warns you at 45.
+
+<b>Privacy</b>
+No ads, no analytics, no automatic crash reports, no Google Play Services or Firebase. Dictation runs on your phone, offline, with the free Vosk voice models (Apache-2.0): what you say never leaves it. The model downloads once (about 40 MB) and you can delete it in Settings. The app asks only for the permissions it uses: internet, microphone (for dictation), vibration, notices, and what the widget needs to refresh (knowing whether there is a network, and rescheduling after the phone restarts).
+
+There are just two notices, both local and both optional: "Due today…" at 9:00 with the day's recurring payments, and a warning if 45 days pass without opening the app and your account has no email.
+
+<b>It needs a Lukitas server</b>
+The app keeps your data on a Lukitas server. By default it uses the author's (app-lukas.andersonlaverde.com), which for now is a personal install and may limit who can add an email. You can point it at your own in Settings: the server is free software too.
+
+<b>What stays on the web</b>
+Categories, recurring payments, reports, import and downloading your data are on the web; the app links you there.
+
+Free software under the AGPL-3.0. The code is at https://github.com/andirsun/lukas

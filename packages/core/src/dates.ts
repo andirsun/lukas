@@ -68,7 +68,13 @@ export function todayIn(timeZone: string, now: Date = new Date()): IsoDate {
   }).format(now);
 }
 
+/**
+ * Whether `tz` is a named IANA time zone the runtime knows (`America/Bogota`, `UTC`, legacy
+ * aliases such as `Asia/Calcutta`, in any case). Offsets like `+05:00` are refused: Intl accepts
+ * them, but they are not zones (no daylight saving rules) and profiles store names only.
+ */
 export function isValidTimeZone(tz: string): boolean {
+  if (tz.length > 64 || !/^[A-Za-z][A-Za-z0-9_+-]*(?:\/[A-Za-z0-9_+-]+)*$/.test(tz)) return false;
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: tz });
     return true;

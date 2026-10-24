@@ -89,9 +89,9 @@ test.describe("the tab pager", () => {
     expect(thumbDuring).toBeGreaterThan(thumbBefore + 20);
     await finger.up();
 
-    // Past half the width at rest: it settles on Presupuestos, remembered on the device.
-    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
-    const budgets = page.getByRole("tabpanel", { name: "Presupuestos" });
+    // Past half the width at rest: it settles on Categorías, remembered on the device.
+    await expect(tab(page, "Categorías")).toHaveAttribute("aria-selected", "true");
+    const budgets = page.getByRole("tabpanel", { name: "Categorías" });
     await expect.poll(async () => Math.round((await budgets.boundingBox())?.x ?? -1)).toBe(16);
     expect(await page.evaluate(() => localStorage.getItem("lukas.home.view"))).toBe("budgets");
   });
@@ -105,9 +105,9 @@ test.describe("the tab pager", () => {
     await expect(tab(page, "Movimientos")).toHaveAttribute("aria-selected", "true");
     // Fast and short (80 px, under a quarter of the width): a flick.
     await swipe(page, hero, { dx: -80, steps: 2, stepMs: 0 });
-    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
-    // The whole Presupuestos page swipes back (its rows do not swipe).
-    const row = page.getByRole("tabpanel", { name: "Presupuestos" }).locator(".lk-rowcard").first();
+    await expect(tab(page, "Categorías")).toHaveAttribute("aria-selected", "true");
+    // The whole Categorías page swipes back (its rows do not swipe).
+    const row = page.getByRole("tabpanel", { name: "Categorías" }).locator(".lk-rowcard").first();
     await swipe(page, await edgeOf(row, "left"), { dx: 200, steps: 12 });
     await expect(tab(page, "Movimientos")).toHaveAttribute("aria-selected", "true");
   });
@@ -128,9 +128,9 @@ test.describe("the tab pager", () => {
 
   test("a tap on the other tab still slides", async ({ page }) => {
     await openDemo(page);
-    await tap(page, tab(page, "Presupuestos"));
-    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
-    const budgets = page.getByRole("tabpanel", { name: "Presupuestos" });
+    await tap(page, tab(page, "Categorías"));
+    await expect(tab(page, "Categorías")).toHaveAttribute("aria-selected", "true");
+    const budgets = page.getByRole("tabpanel", { name: "Categorías" });
     await expect.poll(async () => Math.round((await budgets.boundingBox())?.x ?? -1)).toBe(16);
   });
 });
@@ -154,13 +154,13 @@ const faceX = (row: Locator) =>
 const tapAt = async (page: Page, at: { x: number; y: number }) => (await touchDown(page, at)).up();
 
 test.describe("a touch that interrupts a spring", () => {
-  test("a double tap on Presupuestos settles on Presupuestos", async ({ page }) => {
+  test("a double tap on Categorías settles on Categorías", async ({ page }) => {
     await openDemo(page);
-    const at = await centerOf(tab(page, "Presupuestos"));
+    const at = await centerOf(tab(page, "Categorías"));
     await tapAt(page, at);
     await page.waitForTimeout(60);
     await tapAt(page, at);
-    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
+    await expect(tab(page, "Categorías")).toHaveAttribute("aria-selected", "true");
     const step = await pageStep(page);
     await expect.poll(() => trackX(page)).toBeCloseTo(-step, 0);
     await page.waitForTimeout(300);
@@ -171,12 +171,12 @@ test.describe("a touch that interrupts a spring", () => {
     page,
   }) => {
     await openDemo(page);
-    const tabAt = await centerOf(tab(page, "Presupuestos"));
+    const tabAt = await centerOf(tab(page, "Categorías"));
     const cardAt = await centerOf(page.locator(".lk-hero"));
     await tapAt(page, tabAt);
     await page.waitForTimeout(60);
     await tapAt(page, cardAt);
-    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
+    await expect(tab(page, "Categorías")).toHaveAttribute("aria-selected", "true");
     const step = await pageStep(page);
     await expect.poll(() => trackX(page)).toBeCloseTo(-step, 0);
     await page.waitForTimeout(300);
@@ -221,7 +221,7 @@ test.describe("deep in a long list", () => {
     expect(box.y).toBeGreaterThanOrEqual((banner?.y ?? 0) + (banner?.height ?? 0) - 1);
     expect(box.y).toBeLessThan(200);
     await swipe(page, { x: box.x + box.width - 30, y: box.y + box.height / 2 }, { dx: -230 });
-    await expect(tab(page, "Presupuestos")).toHaveAttribute("aria-selected", "true");
+    await expect(tab(page, "Categorías")).toHaveAttribute("aria-selected", "true");
   });
 });
 
@@ -280,10 +280,10 @@ test.describe("row swipes", () => {
 test.describe("a category's detail", () => {
   test("its rows swipe too: left deletes, Deshacer brings it back", async ({ page }) => {
     await openDemo(page);
-    await tap(page, tab(page, "Presupuestos"));
+    await tap(page, tab(page, "Categorías"));
     await tap(
       page,
-      page.getByRole("tabpanel", { name: "Presupuestos" }).getByText("Mercado").first(),
+      page.getByRole("tabpanel", { name: "Categorías" }).getByText("Mercado").first(),
     );
     await expect(page).toHaveURL(/\/demo\/categories\/[0-9a-f-]+/);
     const row = page.locator("[data-swipe-row]:not(:has(.lk-badge))").first();

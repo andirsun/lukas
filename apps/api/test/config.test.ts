@@ -157,3 +157,21 @@ describe("E2E_NOW", () => {
     ).toThrow(/E2E_NOW/);
   });
 });
+
+describe("GUEST_SIGNUP", () => {
+  const prod = { ...base, CLIENT_IP_HEADER: "fly-client-ip" };
+
+  test("is on by default, and when left blank in .env", () => {
+    expect(loadConfig(prod).GUEST_SIGNUP).toBe(true);
+    expect(loadConfig({ ...prod, GUEST_SIGNUP: "" }).GUEST_SIGNUP).toBe(true);
+  });
+
+  test("false turns it off; true keeps it on", () => {
+    expect(loadConfig({ ...prod, GUEST_SIGNUP: "false" }).GUEST_SIGNUP).toBe(false);
+    expect(loadConfig({ ...prod, GUEST_SIGNUP: "true" }).GUEST_SIGNUP).toBe(true);
+  });
+
+  test("only accepts true or false, so a typo doesn't silently open or close it", () => {
+    expect(() => loadConfig({ ...prod, GUEST_SIGNUP: "no" })).toThrow(/GUEST_SIGNUP/);
+  });
+});

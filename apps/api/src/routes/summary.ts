@@ -1,10 +1,11 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import { firstDay, lastDay, monthSchema, monthSummary, monthSummaryDto } from "@lukas/core";
+import { firstDay, lastDay, monthSchema, monthSummary } from "@lukas/core";
 import { categories, categoryBudgets, transactions, withUser } from "@lukas/db";
 import { and, asc, gte, isNull, lte } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { jsonResponse, problems } from "../http/openapi.ts";
 import { router } from "../http/router.ts";
+import { Summary } from "../http/schemas.ts";
 import { materializeRecurrences } from "../services/materialize.ts";
 import { currentMonth } from "../services/time.ts";
 
@@ -15,8 +16,9 @@ export function summaryRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/summary",
+      operationId: "getSummary",
       request: { query: z.object({ month: monthSchema.optional() }) },
-      responses: { 200: jsonResponse(monthSummaryDto, "Month summary"), ...problems(422) },
+      responses: { 200: jsonResponse(Summary, "Month summary"), ...problems(422) },
     }),
     async (c) => {
       const user = c.get("user");

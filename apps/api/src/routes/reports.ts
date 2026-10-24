@@ -64,6 +64,7 @@ export function reportRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/reports/by-category",
+      operationId: "getCategoryReport",
       request: {
         query: rangeFields
           .extend({
@@ -74,19 +75,21 @@ export function reportRoutes(deps: AppDeps) {
       },
       responses: {
         200: jsonResponse(
-          z.object({
-            total: z.number().int(),
-            items: z.array(
-              z.object({
-                categoryId: z.uuid(),
-                name: z.string(),
-                icon: z.string(),
-                color: z.string(),
-                total: z.number().int(),
-                share: z.number(),
-              }),
-            ),
-          }),
+          z
+            .object({
+              total: z.number().int(),
+              items: z.array(
+                z.object({
+                  categoryId: z.uuid(),
+                  name: z.string(),
+                  icon: z.string(),
+                  color: z.string(),
+                  total: z.number().int(),
+                  share: z.number(),
+                }),
+              ),
+            })
+            .openapi("CategoryReport"),
           "Totals per category; expense totals are positive amounts spent",
         ),
         ...problems(422),
@@ -140,19 +143,22 @@ export function reportRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/reports/trend",
+      operationId: "getTrendReport",
       request: { query: rangeQuery },
       responses: {
         200: jsonResponse(
-          z.object({
-            months: z.array(
-              z.object({
-                month: z.string(),
-                income: z.number().int(),
-                expenses: z.number().int(),
-                budget: z.number().int(),
-              }),
-            ),
-          }),
+          z
+            .object({
+              months: z.array(
+                z.object({
+                  month: z.string(),
+                  income: z.number().int(),
+                  expenses: z.number().int(),
+                  budget: z.number().int(),
+                }),
+              ),
+            })
+            .openapi("TrendReport"),
           "Income, expenses and budget per month",
         ),
         ...problems(422),
@@ -206,24 +212,27 @@ export function reportRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/reports/cost-of-living",
+      operationId: "getCostOfLivingReport",
       request: {
         query: z.object({ months: z.coerce.number().int().min(1).max(24).default(6) }),
       },
       responses: {
         200: jsonResponse(
-          z.object({
-            months: z.number().int(),
-            total: z.number().int(),
-            fixed: z.number().int(),
-            variable: z.number().int(),
-            categories: z.array(
-              z.object({
-                categoryId: z.uuid(),
-                average: z.number().int(),
-                type: z.enum(["fixed", "variable"]),
-              }),
-            ),
-          }),
+          z
+            .object({
+              months: z.number().int(),
+              total: z.number().int(),
+              fixed: z.number().int(),
+              variable: z.number().int(),
+              categories: z.array(
+                z.object({
+                  categoryId: z.uuid(),
+                  average: z.number().int(),
+                  type: z.enum(["fixed", "variable"]),
+                }),
+              ),
+            })
+            .openapi("CostOfLivingReport"),
           "Average monthly expenses over the last complete months, split into fixed and variable",
         ),
         ...problems(422),

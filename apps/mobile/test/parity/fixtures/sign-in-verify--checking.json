@@ -1,0 +1,38 @@
+{
+  "storyId": "sign-in-verify--checking",
+  "now": "2026-10-21T15:00:00.000Z",
+  "timezone": "Europe/Madrid",
+  "api": true,
+  "responses": {
+    "GET /v1/categories": {
+      "status": 404,
+      "body": null
+    },
+    "GET /v1/me": {
+      "status": 200,
+      "body": {
+        "id": "u-new",
+        "email": "ana@example.com",
+        "timezone": "Europe/Lisbon",
+        "locale": "es",
+        "onboardingCompletedAt": null
+      }
+    },
+    "GET /v1/recurrences": {
+      "status": 404,
+      "body": null
+    },
+    "GET /v1/summary?month=2026-10": {
+      "status": 404,
+      "body": null
+    },
+    "GET /v1/transactions?category=cat-fun&limit=50&month=2026-10": {
+      "status": 404,
+      "body": null
+    },
+    "GET /v1/transactions?limit=50&month=2026-10": {
+      "status": 404,
+      "body": null
+    }
+  }
+}

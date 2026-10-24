@@ -14,6 +14,7 @@ export const TEST_CONFIG = {
   PORT: 3000,
   NODE_ENV: "test" as const,
   CLIENT_IP_HEADER: "x-forwarded-for",
+  GUEST_SIGNUP: true,
   TRUSTED_PROXIES: ["10.0.0.0/8"],
 };
 

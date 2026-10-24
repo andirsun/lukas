@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import { BudgetBar } from "./BudgetBar.tsx";
+import { Money } from "./Money.tsx";
 
 const meta = {
   title: "UI/BudgetBar",
@@ -79,6 +80,26 @@ export const Small: Story = {
     const meter = within(canvasElement).getByRole("meter");
     await expect(meter).toHaveClass("lk-bar-sm");
     await expect(meter.getBoundingClientRect().height).toBe(7);
+  },
+};
+
+/** A budget of $1.500.000.000 (pesos, stored in hundredths): the figure fits and the bar fills 80 %. */
+export const HugeBudget: Story = {
+  args: {
+    spent: 120_000_000_000,
+    budget: 150_000_000_000,
+    state: "near",
+    label: "Vivienda · Quedan $300.000.000",
+  },
+  render: (args) => (
+    <div className="flex flex-col gap-(--space-2)">
+      <Money cents={args.budget ?? 0} currency="COP" className="lk-amount" />
+      <BudgetBar {...args} />
+    </div>
+  ),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement).toHaveTextContent("$1.500.000.000");
+    await expect(fill(canvasElement).style.width).toBe("80%");
   },
 };
 

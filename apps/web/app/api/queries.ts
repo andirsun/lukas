@@ -167,10 +167,11 @@ export function useSuggestions(q: string) {
   });
 }
 
-export function useRecurrences() {
+export function useRecurrences({ enabled = true }: { enabled?: boolean } = {}) {
   const api = useApi();
   return useQuery({
     queryKey: queryKeys.recurrences(),
+    enabled,
     queryFn: async ({ signal }) => dataOf(await api.GET("/v1/recurrences", { signal })),
   });
 }

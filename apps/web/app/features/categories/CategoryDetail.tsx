@@ -29,12 +29,13 @@ import { useTransactionSheet } from "../add-transaction/TransactionSheetProvider
 import { useAppPath } from "../home/app-path.ts";
 import { Day, type MorePages, ShowMore } from "../home/Home.tsx";
 import { groupByDay } from "../home/home-model.ts";
+import { SHOW_CATEGORIES } from "../home/home-storage.ts";
 import { BudgetSheet } from "./BudgetSheet.tsx";
 import { useCategorySheets } from "./use-category-sheets.tsx";
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
-/** Where the detail was opened from: the categories page passes `{ from: "categories" }`. */
+/** Where the detail was opened from: home's Categorías tab passes `{ from: "categories" }`. */
 export interface DetailState {
   from?: "categories";
 }
@@ -51,22 +52,28 @@ export function ManageFrame({ children, busy = false }: { children: ReactNode; b
   );
 }
 
-/** Back to where the detail came from: the categories page, or home. */
+/** Back to where the detail came from: home's Categorías tab, or home as it was. */
 function useBack() {
   const t = useTranslations("manage");
   const state = useLocation().state as DetailState | null;
   const appPath = useAppPath();
   return state?.from === "categories"
-    ? { to: appPath("/categories"), label: t("back_categories"), short: t("back_categories_short") }
+    ? {
+        to: appPath(),
+        state: SHOW_CATEGORIES,
+        label: t("back_categories"),
+        short: t("back_categories_short"),
+      }
     : { to: appPath(), label: t("back"), short: t("back_short") };
 }
 
 /**
  * A category's detail (`/app/categories/:id`, spec §2.7): the month on screen (`?month=`, home's
- * month when opened from a budget row; never past the current one), the budget in force that
+ * month when opened from a category's row; never past the current one), the budget in force that
  * month with an edit that applies from it on, and its transactions that month (each opens the edit
  * sheet). "Editar" changes the name, emoji and tint, and archives it after asking; an archived one
- * says so and can be restored.
+ * says so and can be restored. Along with home's Categorías tab, this is where categories are
+ * managed.
  */
 export function CategoryDetail() {
   const me = useMe().data;
@@ -127,7 +134,7 @@ function NotFound() {
     <main className="lk-hero flex flex-col gap-(--space-2)">
       <h1 className="m-0 font-display text-[22px] font-bold text-ink">{t("not_found_title")}</h1>
       <p className="m-0 text-[14px] font-bold text-ink-muted">{t("not_found_lead")}</p>
-      <PressLink to={appPath("/categories")} className="self-start">
+      <PressLink to={appPath()} state={SHOW_CATEGORIES} className="self-start">
         {t("to_categories")}
       </PressLink>
     </main>

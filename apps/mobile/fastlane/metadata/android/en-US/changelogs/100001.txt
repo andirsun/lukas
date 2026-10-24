@@ -1,0 +1,7 @@
+First release.
+- Log expenses with the number pad, or say a sentence: "spent 12 on lunch and 3 on coffee".
+- Dictation on your phone, offline (a voice model of about 40 MB, downloaded once).
+- What you have spent this month, and your entries by day.
+- Home-screen widget and Quick Settings tile.
+- Try it without an email and add one later.
+- In Spanish and English, night or day.

@@ -1,14 +1,5 @@
 import { createRoute, z } from "@hono/zod-openapi";
-import {
-  type CategoryDto,
-  categoryDto,
-  createCategorySchema,
-  effectiveBudget,
-  firstDay,
-  type Month,
-  setBudgetSchema,
-  updateCategorySchema,
-} from "@lukas/core";
+import { type CategoryDto, effectiveBudget, firstDay, type Month } from "@lukas/core";
 import { categories, categoryBudgets, type Tx, transactions, withUser } from "@lukas/db";
 import { asc, eq, isNull } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
@@ -16,6 +7,7 @@ import { isUniqueViolation } from "../http/db-errors.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { Category, CreateCategory, SetBudget, UpdateCategory } from "../http/schemas.ts";
 import { stopCategoryRecurrences } from "../services/recurrence-stop.ts";
 import { currentMonth, userToday } from "../services/time.ts";
 import { defaultAccount } from "../services/transactions.ts";
@@ -69,8 +61,9 @@ export function categoryRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/categories",
+      operationId: "listCategories",
       request: { query: z.object({ includeArchived: z.enum(["true", "false"]).optional() }) },
-      responses: { 200: jsonResponse(z.array(categoryDto), "Categories") },
+      responses: { 200: jsonResponse(z.array(Category), "Categories") },
     }),
     async (c) => {
       const includeArchived = c.req.valid("query").includeArchived === "true";
@@ -92,8 +85,9 @@ export function categoryRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/categories",
-      request: { body: jsonBody(createCategorySchema) },
-      responses: { 201: jsonResponse(categoryDto, "Created"), ...problems(409, 422) },
+      operationId: "createCategory",
+      request: { body: jsonBody(CreateCategory) },
+      responses: { 201: jsonResponse(Category, "Created"), ...problems(409, 422) },
     }),
     async (c) => {
       const input = c.req.valid("json");
@@ -113,8 +107,9 @@ export function categoryRoutes(deps: AppDeps) {
     createRoute({
       method: "patch",
       path: "/v1/categories/{id}",
-      request: { params: idParam, body: jsonBody(updateCategorySchema) },
-      responses: { 200: jsonResponse(categoryDto, "Updated"), ...problems(404, 409, 422) },
+      operationId: "updateCategory",
+      request: { params: idParam, body: jsonBody(UpdateCategory) },
+      responses: { 200: jsonResponse(Category, "Updated"), ...problems(404, 409, 422) },
     }),
     async (c) => {
       const { id } = c.req.valid("param");
@@ -170,8 +165,9 @@ export function categoryRoutes(deps: AppDeps) {
     createRoute({
       method: "put",
       path: "/v1/categories/{id}/budget",
-      request: { params: idParam, body: jsonBody(setBudgetSchema) },
-      responses: { 200: jsonResponse(categoryDto, "Budget set"), ...problems(404, 422) },
+      operationId: "setCategoryBudget",
+      request: { params: idParam, body: jsonBody(SetBudget) },
+      responses: { 200: jsonResponse(Category, "Budget set"), ...problems(404, 422) },
     }),
     async (c) => {
       const { id } = c.req.valid("param");

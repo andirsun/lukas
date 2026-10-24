@@ -160,6 +160,49 @@ test("opening the magic link spends nothing until Continue", async ({ page, brow
   expect((await sessionUser(page))?.email).toBe(email);
 });
 
+test("a link from a sign-in started in the Android app offers the app, and spends nothing", async ({
+  browser,
+}) => {
+  const email = freshEmail("applink");
+  await requestCode(email, { locale: "es", client: "android" });
+  const mail = await readSignInMail(email);
+  expect(new URL(mail.link).searchParams.get("from")).toBe("app");
+
+  // A mail app's own browser on an Android phone.
+  const phone = await browser.newContext({
+    userAgent:
+      "Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36",
+    extraHTTPHeaders: { "x-forwarded-for": clientIp() },
+  });
+  try {
+    const page = await phone.newPage();
+    await page.goto(mail.link);
+    const open = page.getByRole("link", { name: "Abrir en Lukitas" });
+    await expect(open).toBeVisible();
+    const href = (await open.getAttribute("href")) ?? "";
+    const link = new URL(mail.link);
+    expect(href.startsWith(`intent://${link.host}/auth/verify${link.search}#Intent;`)).toBe(true);
+    expect(href).toContain("scheme=https;package=com.andersonlaverde.lukitas;");
+    await expect(page.getByRole("button", { name: "Continuar" })).toHaveCount(0);
+    await page.waitForTimeout(500);
+    expect(await sessionUser(page)).toBeNull();
+
+    // "Seguir en la web" spends the code on the web, as the plain page does.
+    await page.getByRole("button", { name: "Seguir en la web" }).click();
+    await skipPasskeyOffer(page);
+    await expect(page).toHaveURL(/\/welcome$/);
+    expect((await sessionUser(page))?.email).toBe(email);
+  } finally {
+    await phone.close();
+  }
+
+  // The same link from the web (no marker) and a desktop browser are the plain page.
+  const webEmail = freshEmail("weblink");
+  await requestCode(webEmail, { locale: "es" });
+  const webMail = await readSignInMail(webEmail);
+  expect(new URL(webMail.link).searchParams.has("from")).toBe(false);
+});
+
 /** A software authenticator in the page's browser: creates and uses passkeys without a person. */
 async function addVirtualAuthenticator(page: Page) {
   const cdp = await page.context().newCDPSession(page);

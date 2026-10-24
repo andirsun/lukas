@@ -1,8 +1,8 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import { clientIp, onboardWithSample, pinClock, signUpNewUser } from "./helpers.ts";
 
 /**
- * Category detail, categories and recurring (spec §2.7) against the dev stack: a new user who
+ * Category detail, home's Categorías tab and recurring (spec §2.7) against the dev stack: a new user who
  * imported the sample Budge file (invented data, in EUR, September and October 2026) sets Ocio's
  * budget from its detail and sees home follow, and adds a monthly payment on the 23rd that shows
  * up as pending this month.
@@ -23,7 +23,20 @@ interface Summary {
 interface Category {
   id: string;
   name: string;
+  icon: string;
+  color: string;
+  archived: boolean;
 }
+
+/** A radio of the category sheet (emoji or tint): its input is hidden, so the label is pressed. */
+const pick = (sheet: Locator, name: string) =>
+  sheet
+    .locator("label")
+    .filter({ has: sheet.page().getByRole("radio", { name }) })
+    .click();
+
+const categoriesOf = async (page: Page) =>
+  (await (await page.request.get("/api/v1/categories?includeArchived=true")).json()) as Category[];
 
 /** Euros as the Spanish UI writes them (Playwright's text matching treats NBSP as a space). */
 const eur = (cents: number) =>
@@ -33,10 +46,10 @@ const eur = (cents: number) =>
 
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 1024;
 
-/** Presupuestos is the second tab on phones; on wide screens both lists show side by side. */
+/** Categorías is the second tab on phones; on wide screens both lists show side by side. */
 async function showBudgets(page: Page) {
-  if (isPhone(page)) await page.getByRole("tab", { name: "Presupuestos" }).click();
-  return page.getByRole("tabpanel", { name: "Presupuestos" });
+  if (isPhone(page)) await page.getByRole("tab", { name: "Categorías" }).click();
+  return page.getByRole("tabpanel", { name: "Categorías" });
 }
 
 /** Recurrentes lives in the avatar menu on phones and in the sidebar on wide screens. */
@@ -95,7 +108,8 @@ test("Ocio's budget, set from its detail this month, moves home's bars", async (
   ).json()) as Summary;
   expect(september.categories.find((c) => c.categoryId === ocio.id)?.budget ?? null).toBeNull();
 
-  await page.getByRole("link", { name: "Volver al inicio" }).click();
+  // Back to the tab it was opened from.
+  await page.getByRole("link", { name: "Volver a Categorías" }).click();
   await expect(page).toHaveURL(/\/app$/);
   const hero = page.getByRole("region", { name: "Te quedan este mes" });
   await expect(hero).toContainText(eur(after.remaining));
@@ -104,6 +118,115 @@ test("Ocio's budget, set from its detail this month, moves home's bars", async (
   );
   const row = (await showBudgets(page)).getByRole("button", { name: /^Ocio/ });
   await expect(row).toHaveAccessibleName(`Ocio Quedan ${eur(8000)}`);
+});
+
+test("categories are managed from the Categorías tab and the detail: create, restyle, archive, restore", async ({
+  page,
+}) => {
+  await page.goto("/app");
+  const panel = await showBudgets(page);
+  await panel.getByRole("button", { name: "Nueva categoría" }).click();
+  const create = page.getByRole("dialog", { name: "Nueva categoría" });
+  await create.getByRole("textbox", { name: "Nombre" }).fill("Mascotas");
+  await pick(create, "🐶");
+  await create.getByRole("button", { name: "Guardar categoría" }).click();
+  await expect(create).toBeHidden();
+  const row = panel.getByRole("button", { name: /^Mascotas Sin presupuesto/ });
+  await expect(row).toBeVisible();
+  const made = (await categoriesOf(page)).find((c) => c.name === "Mascotas");
+  expect(made).toMatchObject({ icon: "🐶", archived: false });
+
+  // Its detail: rename, icon and colour.
+  await row.click();
+  await expect(page).toHaveURL(new RegExp(`/app/categories/${made?.id}\\?month=2026-10$`));
+  await page.getByRole("button", { name: "Editar categoría" }).click();
+  const edit = page.getByRole("dialog", { name: "Editar categoría" });
+  await edit.getByRole("textbox", { name: "Nombre" }).fill("Mascotas y más");
+  await pick(edit, "🎁");
+  await pick(edit, "Azul");
+  await edit.getByRole("button", { name: "Guardar categoría" }).click();
+  await expect(edit).toBeHidden();
+  await expect(page.getByRole("heading", { level: 1, name: "Mascotas y más" })).toBeVisible();
+  expect((await categoriesOf(page)).find((c) => c.id === made?.id)).toMatchObject({
+    name: "Mascotas y más",
+    icon: "🎁",
+    color: "#3fa7ff",
+  });
+
+  // Archive it, after asking.
+  await page.getByRole("button", { name: "Editar categoría" }).click();
+  await page
+    .getByRole("dialog", { name: "Editar categoría" })
+    .getByRole("button", { name: "Archivar categoría" })
+    .click();
+  const ask = page.getByRole("dialog", { name: "¿Archivar Mascotas y más?" });
+  await expect(ask).not.toContainText("También se detendr");
+  await ask.getByRole("button", { name: "Sí, archivar" }).click();
+  await expect(page.getByText(/Esta categoría está archivada/)).toBeVisible();
+  expect((await categoriesOf(page)).find((c) => c.id === made?.id)?.archived).toBe(true);
+
+  // In the tab it moved to "Archivadas", folded; "Restaurar" brings it back.
+  await page.getByRole("link", { name: "Volver a Categorías" }).click();
+  const tab = await showBudgets(page);
+  await expect(tab.getByRole("button", { name: /^Mascotas y más/ })).toHaveCount(0);
+  await tab.getByRole("button", { name: "Archivadas (1)" }).click();
+  await tab.getByRole("button", { name: "Restaurar Mascotas y más" }).click();
+  await expect(tab.getByRole("button", { name: /^Mascotas y más Sin presupuesto/ })).toBeVisible();
+  await expect(tab.getByRole("button", { name: /^Archivadas/ })).toHaveCount(0);
+  expect((await categoriesOf(page)).find((c) => c.id === made?.id)?.archived).toBe(false);
+});
+
+test("archiving a category stops its recurring payment, and home follows", async ({ page }) => {
+  const ocio = (await categoriesOf(page)).find((c) => c.name === "Ocio");
+  if (!ocio) throw new Error("The sample has Ocio");
+  const rule = await page.request.post("/api/v1/recurrences", {
+    data: {
+      name: "Gimnasio",
+      amount: -2500,
+      categoryId: ocio.id,
+      frequency: "monthly",
+      dayOfMonth: 23,
+      startDate: "2026-10-01",
+    },
+  });
+  expect(rule.ok()).toBe(true);
+
+  await page.goto("/app");
+  const panel = await showBudgets(page);
+  await panel.getByRole("button", { name: /^Ocio/ }).click();
+  await page.getByRole("button", { name: "Editar categoría" }).click();
+  await page
+    .getByRole("dialog", { name: "Editar categoría" })
+    .getByRole("button", { name: "Archivar categoría" })
+    .click();
+  const ask = page.getByRole("dialog", { name: "¿Archivar Ocio?" });
+  await expect(ask).toContainText("También se detendrá 1 pago recurrente de esta categoría.");
+  await ask.getByRole("button", { name: "Sí, archivar" }).click();
+  await expect(page.getByText(/Esta categoría está archivada/)).toBeVisible();
+
+  // The rule ended today and its pending payment from the 23rd is gone.
+  const rules = (await (await page.request.get("/api/v1/recurrences")).json()) as {
+    name: string;
+    endDate: string | null;
+  }[];
+  expect(rules.find((r) => r.name === "Gimnasio")?.endDate).toBe("2026-10-21");
+  const october = (await (
+    await page.request.get("/api/v1/transactions?month=2026-10&limit=200")
+  ).json()) as { items: { name: string; status: string }[] };
+  expect(october.items.some((t) => t.name === "Gimnasio" && t.status === "pending")).toBe(false);
+
+  // Home's figures are the API's, and Ocio is no longer among the tab's rows.
+  const summary = (await (
+    await page.request.get("/api/v1/summary?month=2026-10")
+  ).json()) as Summary;
+  await page.getByRole("link", { name: "Volver a Categorías" }).click();
+  await expect(page.getByRole("region", { name: "Te quedan este mes" })).toContainText(
+    eur(summary.remaining),
+  );
+  const tab = await showBudgets(page);
+  await expect(tab.getByRole("button", { name: /^Ocio/ })).toHaveCount(0);
+  await tab.getByRole("button", { name: "Archivadas (1)" }).click();
+  await expect(tab.getByRole("button", { name: "Restaurar Ocio" })).toBeVisible();
 });
 
 test("a monthly payment on the 23rd shows as pending in this month's Movimientos", async ({

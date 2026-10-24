@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { useTranslations } from "use-intl";
 import { safeNext } from "../../auth/next.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
@@ -16,6 +16,7 @@ import {
   verifyErrorKey,
 } from "./auth.ts";
 import { CODE_LENGTH } from "./CodeInput.tsx";
+import { appIntentUrl, opensInApp } from "./open-in-app.ts";
 import type { SignInState } from "./SignIn.tsx";
 import { FieldError, ScreenTitle, SignInScreen } from "./SignInScreen.tsx";
 import { useFinishSignIn } from "./use-finish-sign-in.ts";
@@ -37,6 +38,8 @@ interface MagicLink {
   code: string;
   lang: "es" | "en";
   next: string | null;
+  /** Sign-in started in the Android app and opened in an Android browser: offer the app first. */
+  appUrl: string | null;
 }
 
 /**
@@ -48,13 +51,26 @@ interface MagicLink {
  * So a mail scanner that opens (or even runs) the link leaves the code for its owner, and a link
  * someone else sent can't sign this browser into their account unnoticed. The code leaves the
  * address bar as soon as it is read, and the route sends no referrer.
+ *
+ * A sign-in started in the Android app marks its link `from=app`. Opened in an Android browser (a
+ * mail app's own browser never asks Android for the app), the page then offers "Abrir en Lukitas",
+ * an `intent://` link to this same address, or "Seguir en la web". Still nothing is spent until
+ * the person picks the web.
  */
-export function Verify({ auth }: { auth: SignInAuth }) {
+export function Verify({
+  auth,
+  userAgent = typeof navigator === "undefined" ? "" : navigator.userAgent,
+}: {
+  auth: SignInAuth;
+  /** The browser's user agent; a story passes one. */
+  userAgent?: string;
+}) {
   const t = useTranslations("verify");
   const tRoot = useTranslations();
   const navigate = useNavigate();
   const finish = useFinishSignIn(auth);
   const [params] = useSearchParams();
+  const { search } = useLocation();
   const { locale, setLocale } = useLocale();
   const [link] = useState<MagicLink>(() => ({
     email: (params.get("email") ?? "").trim().toLowerCase(),
@@ -64,6 +80,7 @@ export function Verify({ auth }: { auth: SignInAuth }) {
       typeof navigator === "undefined" ? undefined : navigator.language,
     ),
     next: params.get("next"),
+    appUrl: opensInApp(search, userAgent) ? appIntentUrl(window.location.origin, search) : null,
   }));
   const usable = EMAIL.test(link.email) && CODE.test(link.code);
 
@@ -127,6 +144,45 @@ export function Verify({ auth }: { auth: SignInAuth }) {
 
   if (status.kind !== "failed") {
     const checking = status.kind === "checking";
+    const notMe = (
+      <Link
+        to={{ pathname: "/sign-in", search: `?lang=${link.lang}` }}
+        className={cx(
+          "lk-btn lk-btn-ghost inline-flex min-h-11 min-w-11 items-center justify-center",
+          checking && "pointer-events-none opacity-50",
+        )}
+        aria-disabled={checking || undefined}
+      >
+        {t("not_me")}
+      </Link>
+    );
+    if (link.appUrl) {
+      return (
+        <SignInScreen>
+          <ScreenTitle>
+            {t.rich("confirm_title", {
+              email: link.email,
+              strong: (chunks) => <span className="wrap-anywhere">{chunks}</span>,
+            })}
+          </ScreenTitle>
+          <p className="text-center text-ink-muted">{t("app_lead")}</p>
+          <a
+            href={link.appUrl}
+            className={cx(
+              "lk-btn lk-btn-primary inline-flex min-h-11 min-w-11 w-full items-center justify-center gap-(--space-2)",
+              checking && "pointer-events-none opacity-50",
+            )}
+            aria-disabled={checking || undefined}
+          >
+            {t("open_app")}
+          </a>
+          <PressButton variant="secondary" className="w-full" disabled={checking} onClick={signIn}>
+            {checking ? tRoot("sign_in.verifying") : t("stay_on_web")}
+          </PressButton>
+          {notMe}
+        </SignInScreen>
+      );
+    }
     return (
       <SignInScreen>
         <ScreenTitle>
@@ -139,16 +195,7 @@ export function Verify({ auth }: { auth: SignInAuth }) {
         <PressButton className="w-full" disabled={checking} onClick={signIn}>
           {checking ? tRoot("sign_in.verifying") : t("continue")}
         </PressButton>
-        <Link
-          to={{ pathname: "/sign-in", search: `?lang=${link.lang}` }}
-          className={cx(
-            "lk-btn lk-btn-ghost inline-flex min-h-11 min-w-11 items-center justify-center",
-            checking && "pointer-events-none opacity-50",
-          )}
-          aria-disabled={checking || undefined}
-        >
-          {t("not_me")}
-        </Link>
+        {notMe}
       </SignInScreen>
     );
   }

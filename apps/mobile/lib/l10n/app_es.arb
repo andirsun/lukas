@@ -1,0 +1,2233 @@
+{
+  "@@locale": "es",
+  "appName": "Lukitas",
+  "@appName": {
+    "description": "The app's name, in the launcher, the task switcher and the app bar."
+  },
+  "savedMovements": "{count, plural, =1{Guardaste 1 movimiento en {category}} other{Guardaste {count} movimientos en {category}}}",
+  "@savedMovements": {
+    "description": "Confirmation after saving movements into one category.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "category": {
+        "type": "String",
+        "example": "Mercado"
+      }
+    }
+  },
+  "entryLead": "Anota en qué se te va la plata. Sin contraseñas.",
+  "@entryLead": {
+    "description": "The first screen's line under the name."
+  },
+  "lukitasWaves": "Lukitas te saluda",
+  "@lukitasWaves": {
+    "description": "Screen-reader label of the waving Lukitas."
+  },
+  "entryGuest": "Probar sin correo",
+  "@entryGuest": {
+    "description": "First run: start as a guest, with no email."
+  },
+  "entryGuestHint": "Puedes agregar tu correo después.",
+  "@entryGuestHint": {
+    "description": "Under the guest choice."
+  },
+  "entryGuestBusy": "Preparando tu cuenta…",
+  "@entryGuestBusy": {
+    "description": "While the guest account is created."
+  },
+  "entryEmail": "Entrar con mi correo",
+  "@entryEmail": {
+    "description": "First run: sign in with an email code or magic link."
+  },
+  "entryPasskey": "Entrar con huella",
+  "@entryPasskey": {
+    "description": "First run: sign in with a passkey. Shown only when the phone supports passkeys."
+  },
+  "entryPasskeyBusy": "Esperando tu huella…",
+  "@entryPasskeyBusy": {
+    "description": "While the phone's passkey prompt is open."
+  },
+  "emailPasskey": "Usar passkey",
+  "@emailPasskey": {
+    "description": "Email screen: sign in with a passkey stored on the phone (made on the web too). Shown only when the phone supports passkeys."
+  },
+  "emailPasskeyBusy": "Esperando tu passkey…",
+  "@emailPasskeyBusy": {
+    "description": "Email screen: while the phone's passkey prompt is open."
+  },
+  "signInTitle": "Entra a Lukitas",
+  "@signInTitle": {
+    "description": "Email screen title."
+  },
+  "signInLead": "Sin contraseñas: te mandamos un código a tu correo.",
+  "@signInLead": {
+    "description": "Email screen lead."
+  },
+  "emailLabel": "Tu correo",
+  "@emailLabel": {
+    "description": "Email field label."
+  },
+  "emailPlaceholder": "ana@correo.com",
+  "@emailPlaceholder": {
+    "description": "Email field placeholder."
+  },
+  "sendCode": "Enviar código",
+  "@sendCode": {
+    "description": "Button that emails a sign-in code."
+  },
+  "sending": "Enviando…",
+  "@sending": {
+    "description": "While the code is being sent."
+  },
+  "codeTitle": "Revisa tu correo",
+  "@codeTitle": {
+    "description": "Code step title."
+  },
+  "codeLead": "Te mandamos un código de 6 dígitos a {email}. Escríbelo aquí o toca el enlace del correo.",
+  "@codeLead": {
+    "description": "Code step lead, signing in.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "claimCodeLead": "Te mandamos un código de 6 dígitos a {email}. Escríbelo aquí para guardar tu progreso.",
+  "@claimCodeLead": {
+    "description": "Code step lead, when a guest saves their progress.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "codeLabel": "Código de 6 dígitos",
+  "@codeLabel": {
+    "description": "Code field label."
+  },
+  "submitCode": "Entrar",
+  "@submitCode": {
+    "description": "Button that signs in with the code."
+  },
+  "submitClaim": "Guardar",
+  "@submitClaim": {
+    "description": "Button that saves a guest's progress with the code."
+  },
+  "verifying": "Entrando…",
+  "@verifying": {
+    "description": "While the code is checked."
+  },
+  "resend": "Reenviar código",
+  "@resend": {
+    "description": "Button that emails a new code."
+  },
+  "resent": "Te mandamos un código nuevo.",
+  "@resent": {
+    "description": "After a new code is sent."
+  },
+  "changeEmail": "Usar otro correo",
+  "@changeEmail": {
+    "description": "Back to the email field from the code step."
+  },
+  "guestSaveTitle": "¿Guardamos lo que ya anotaste?",
+  "@guestSaveTitle": {
+    "description": "Asked when a guest enters an email: claim it or sign in as another account."
+  },
+  "guestSaveBody": "Estás usando Lukitas sin correo. Podemos guardar tu progreso en {email}: sigues con los mismos movimientos.",
+  "@guestSaveBody": {
+    "description": "Body of the guest's choice.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "guestSaveAction": "Guardar mi progreso",
+  "@guestSaveAction": {
+    "description": "The guest claims the email: same account, every movement kept."
+  },
+  "guestOtherAccount": "Entrar con otra cuenta",
+  "@guestOtherAccount": {
+    "description": "The guest signs in as another user instead (after a warning)."
+  },
+  "guestLeaveTitle": "¿Dejar tu cuenta de invitado?",
+  "@guestLeaveTitle": {
+    "description": "Warning before a guest's session is replaced."
+  },
+  "guestLeaveBody": "Si entras con {email}, lo que anotaste como invitado se queda en esa cuenta sin correo y no podrás volver a verlo.",
+  "@guestLeaveBody": {
+    "description": "Body of the warning before a guest's session is replaced.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "guestPasskeyBody": "Si entras con un passkey, lo que anotaste como invitado se queda en esa cuenta sin correo y no podrás volver a verlo. Antes puedes guardar tu progreso con un correo.",
+  "@guestPasskeyBody": {
+    "description": "Body of the warning before a guest signs in with a passkey (the passkey's email is not known)."
+  },
+  "guestLeaveConfirm": "Entrar de todos modos",
+  "@guestLeaveConfirm": {
+    "description": "Confirms replacing the guest's session."
+  },
+  "cancel": "Cancelar",
+  "@cancel": {
+    "description": "Closes a question without doing anything."
+  },
+  "emailTakenSignIn": "Entrar con ese correo",
+  "@emailTakenSignIn": {
+    "description": "After email_taken: sign in with that email instead (after a warning)."
+  },
+  "verifyFailedTitle": "No pudimos hacerte entrar",
+  "@verifyFailedTitle": {
+    "description": "A magic link that did not sign in."
+  },
+  "sendNewCode": "Enviar un código nuevo",
+  "@sendNewCode": {
+    "description": "From a failed magic link to the email screen."
+  },
+  "errorGeneric": "Algo salió mal. Inténtalo de nuevo en un momento.",
+  "@errorGeneric": {
+    "description": "Error: anything else."
+  },
+  "errorNetwork": "Sin conexión. Revisa tu internet e inténtalo de nuevo.",
+  "@errorNetwork": {
+    "description": "Error: no response."
+  },
+  "errorInternal": "Tuvimos un problema de nuestro lado. Inténtalo de nuevo en un momento.",
+  "@errorInternal": {
+    "description": "Error: the server failed."
+  },
+  "errorInvalidEmail": "Escribe un correo válido, como ana@correo.com.",
+  "@errorInvalidEmail": {
+    "description": "Error: not an email."
+  },
+  "errorInvalidCode": "Ese código no es correcto. Revísalo e inténtalo otra vez.",
+  "@errorInvalidCode": {
+    "description": "Error: wrong code."
+  },
+  "errorInvalidOrExpiredCode": "Este código ya no sirve: venció o ya se usó. Pide uno nuevo.",
+  "@errorInvalidOrExpiredCode": {
+    "description": "Error: expired or used code."
+  },
+  "errorTooManyAttempts": "Demasiados intentos con este código. Pide uno nuevo.",
+  "@errorTooManyAttempts": {
+    "description": "Error: too many wrong tries."
+  },
+  "errorTooManyRequests": "Pediste muchos códigos seguidos. Espera unos minutos e inténtalo otra vez.",
+  "@errorTooManyRequests": {
+    "description": "Error: too many codes asked for."
+  },
+  "errorSignInNotAllowed": "Lukitas todavía no está abierto al público. Si quieres probarlo, escríbele a quien te invitó.",
+  "@errorSignInNotAllowed": {
+    "description": "Error: the email is not on this install's allowlist."
+  },
+  "errorGuestSignupDisabled": "Por ahora no se pueden crear cuentas de invitado.",
+  "@errorGuestSignupDisabled": {
+    "description": "Error: guest sign-up is off on this server."
+  },
+  "errorEmailTaken": "Ese correo ya tiene una cuenta. Entra con él.",
+  "@errorEmailTaken": {
+    "description": "Error: a guest tried to claim an email that already has an account."
+  },
+  "errorPasskeyFailed": "No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.",
+  "@errorPasskeyFailed": {
+    "description": "Error: the passkey sign-in failed."
+  },
+  "errorTooManySignInAttempts": "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez.",
+  "@errorTooManySignInAttempts": {
+    "description": "Error: sign-in rate limit."
+  },
+  "retry": "Reintentar",
+  "@retry": {
+    "description": "Tries the same thing again."
+  },
+  "homeRemainingLabel": "Te quedan este mes",
+  "@homeRemainingLabel": {
+    "description": "Home: label of the big amount when budgets exist and there is money left."
+  },
+  "homeOverLabel": "Te pasaste este mes",
+  "@homeOverLabel": {
+    "description": "Home: label of the big amount when the month is over its total budget."
+  },
+  "homeSpentLabel": "Gastado este mes",
+  "@homeSpentLabel": {
+    "description": "Home: label of the big amount when there are no budgets: what was spent."
+  },
+  "homeSpent": "Gastado {amount}",
+  "@homeSpent": {
+    "description": "Home: what was spent this month, under the big amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOfBudget": "de {amount}",
+  "@homeOfBudget": {
+    "description": "Home: the total budget, next to what was spent.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSpentMeter": "Gastado {spent} de {budget}",
+  "@homeSpentMeter": {
+    "description": "Home: screen-reader description of the budget bar.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNoBudgetMeta": "Sin presupuestos todavía",
+  "@homeNoBudgetMeta": {
+    "description": "Home: under the big amount when no category has a budget."
+  },
+  "homeMovements": "Movimientos",
+  "@homeMovements": {
+    "description": "Home: the sticky heading of the movements list."
+  },
+  "homeAccount": "Tu cuenta",
+  "@homeAccount": {
+    "description": "Screen-reader name of the face button at the top of home, which opens the account menu."
+  },
+  "homeViewLabel": "Vista",
+  "@homeViewLabel": {
+    "description": "Screen-reader name of the Movimientos | Categorías tab list on home."
+  },
+  "homeBudgetsTab": "Categorías",
+  "@homeBudgetsTab": {
+    "description": "Home: the second tab, one row per spending category."
+  },
+  "homeNudgesLabel": "Para empezar",
+  "@homeNudgesLabel": {
+    "description": "Screen-reader name of the cards that help an account without budgets get started."
+  },
+  "homeNudgeBudgetsTitle": "Ponle presupuesto a tus categorías",
+  "@homeNudgeBudgetsTitle": {
+    "description": "Home: title of the card for an account without budgets."
+  },
+  "homeNudgeBudgetsLead": "Así Lukitas te avisa antes de que te pases. Toca una categoría y ponle un monto.",
+  "@homeNudgeBudgetsLead": {
+    "description": "Home: the card's explanation."
+  },
+  "homeNudgeBudgetsAction": "Ir a Categorías",
+  "@homeNudgeBudgetsAction": {
+    "description": "Home: the card's button, which opens the budgets tab."
+  },
+  "homeNudgeDismiss": "Ahora no: {title}",
+  "@homeNudgeDismiss": {
+    "description": "Screen-reader name of a card's \"Ahora no\" button. {title} is the card's title.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "notNow": "Ahora no",
+  "@notNow": {
+    "description": "A button that puts a suggestion away for good."
+  },
+  "homeDayToday": "Hoy · {day}",
+  "@homeDayToday": {
+    "description": "Home: a day's heading for today. {day} is like 'mié 21'.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeDayYesterday": "Ayer · {day}",
+  "@homeDayYesterday": {
+    "description": "Home: a day's heading for yesterday.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeDayUpcoming": "{day} · próximo",
+  "@homeDayUpcoming": {
+    "description": "Home: a day's heading for a day still to come.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeEmptyTransactions": "Aún no hay movimientos en {month}. Toca ＋ y anota el primero.",
+  "@homeEmptyTransactions": {
+    "description": "Home: the month has no movements yet. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMoreTransactions": "Ver más movimientos",
+  "@homeMoreTransactions": {
+    "description": "Home: loads the next page of the movements list."
+  },
+  "homeLoading": "Cargando…",
+  "@homeLoading": {
+    "description": "Home: while the first figures load."
+  },
+  "homeOffline": "Sin conexión. Te mostramos lo último que cargó.",
+  "@homeOffline": {
+    "description": "Home: the last refresh failed; what is on screen is from the last time it loaded."
+  },
+  "pending": "Pendiente",
+  "@pending": {
+    "description": "A scheduled transaction that is not paid yet."
+  },
+  "paid": "Pagado",
+  "@paid": {
+    "description": "A transaction that is paid."
+  },
+  "pendingPayLabel": "Pendiente, marcar como pagado",
+  "@pendingPayLabel": {
+    "description": "Screen-reader label of the Pendiente badge, which marks the transaction paid."
+  },
+  "monthPickerLabel": "Mes",
+  "@monthPickerLabel": {
+    "description": "Screen-reader name of the group that holds the month picker's arrows and the month's name."
+  },
+  "monthPickerPrevious": "Mes anterior",
+  "@monthPickerPrevious": {
+    "description": "Screen-reader name of the month picker's ‹ button."
+  },
+  "monthPickerNext": "Mes siguiente",
+  "@monthPickerNext": {
+    "description": "Screen-reader name of the month picker's › button."
+  },
+  "undo": "Deshacer",
+  "@undo": {
+    "description": "Brings back what was just deleted."
+  },
+  "swipeDelete": "Borrar",
+  "@swipeDelete": {
+    "description": "Row swipe left: delete."
+  },
+  "swipeEdit": "Editar",
+  "@swipeEdit": {
+    "description": "Row swipe right: edit."
+  },
+  "swipePaid": "Pagado",
+  "@swipePaid": {
+    "description": "Row swipe right on a pending row: mark it paid."
+  },
+  "transactionDeleted": "Eliminado: {name}",
+  "@transactionDeleted": {
+    "description": "Toast after deleting a transaction (it has Deshacer).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionRestored": "De vuelta: {name}",
+  "@transactionRestored": {
+    "description": "Toast after bringing a deleted transaction back.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionPaid": "Pagado: {name} · {amount}",
+  "@transactionPaid": {
+    "description": "Toast after marking a transaction paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukitasMood": "Lukitas",
+  "@lukitasMood": {
+    "description": "Screen-reader label of Lukitas beside his line on home."
+  },
+  "lukasFirstOfDay1": "¡«{name}» es tu primer apunte del día! Así se empieza.",
+  "@lukasFirstOfDay1": {
+    "description": "Lukitas' line on home, variant 1: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasFirstOfDay2": "«{name}» quedó anotado. ¡Buen comienzo de día!",
+  "@lukasFirstOfDay2": {
+    "description": "Lukitas' line on home, variant 2: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasFirstOfDay3": "Primer movimiento de hoy: «{name}». Llevar la cuenta es media victoria.",
+  "@lukasFirstOfDay3": {
+    "description": "Lukitas' line on home, variant 3: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOnTrack1": "Vas muy bien: te quedan {remaining} para {daysLeft} {daysLeft, plural, one{día} other{días}}.",
+  "@lukasOnTrack1": {
+    "description": "Lukitas' line on home, variant 1: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasOnTrack2": "Todo en orden. Quedan {remaining} y {daysLeft} {daysLeft, plural, one{día} other{días}} de mes.",
+  "@lukasOnTrack2": {
+    "description": "Lukitas' line on home, variant 2: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasOnTrack3": "Buen ritmo: {remaining} libres, {daysLeft} {daysLeft, plural, one{día} other{días}} por delante.",
+  "@lukasOnTrack3": {
+    "description": "Lukitas' line on home, variant 3: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasNearLimit1": "Cuidado, a {category} solo le quedan {remaining}.",
+  "@lukasNearLimit1": {
+    "description": "Lukitas' line on home, variant 1: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasNearLimit2": "{category} está casi al límite: {remaining} y se acaba.",
+  "@lukasNearLimit2": {
+    "description": "Lukitas' line on home, variant 2: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasNearLimit3": "Despacito con {category}: te quedan {remaining}.",
+  "@lukasNearLimit3": {
+    "description": "Lukitas' line on home, variant 3: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget1": "En {category} vas {over} por encima. Nada grave: ya lo sabes.",
+  "@lukasOverBudget1": {
+    "description": "Lukitas' line on home, variant 1: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget2": "{category} pasó su presupuesto por {over}. Verlo ya es un paso.",
+  "@lukasOverBudget2": {
+    "description": "Lukitas' line on home, variant 2: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget3": "Nos pasamos {over} en {category}. Sin drama: aquí lo tienes a la vista.",
+  "@lukasOverBudget3": {
+    "description": "Lukitas' line on home, variant 3: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived1": "¡Entró dinero! «{name}»: {amount} más en tu cuenta.",
+  "@lukasIncomeReceived1": {
+    "description": "Lukitas' line on home, variant 1: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived2": "Ingreso anotado: «{name}», {amount}. ¡Buena noticia!",
+  "@lukasIncomeReceived2": {
+    "description": "Lukitas' line on home, variant 2: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived3": "Llegaron {amount} de «{name}». ¡Bien!",
+  "@lukasIncomeReceived3": {
+    "description": "Lukitas' line on home, variant 3: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid1": "Pagaste «{name}»: {amount}. ¡Qué alivio!",
+  "@lukasPendingPaid1": {
+    "description": "Lukitas' line on home, variant 1: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid2": "Listo, «{name}» pagado: {amount}. Una cosa menos en la cabeza.",
+  "@lukasPendingPaid2": {
+    "description": "Lukitas' line on home, variant 2: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid3": "Pagaste «{name}»: {amount}. Vas cumpliendo.",
+  "@lukasPendingPaid3": {
+    "description": "Lukitas' line on home, variant 3: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay1": "¡Último día del mes! Te sobran {remaining}.",
+  "@lukasMonthLastDay1": {
+    "description": "Lukitas' line on home, variant 1: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay2": "Hoy cierra el mes con {remaining} a tu favor. ¡Casi lo logras!",
+  "@lukasMonthLastDay2": {
+    "description": "Lukitas' line on home, variant 2: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay3": "Última curva del mes: {remaining} de margen.",
+  "@lukasMonthLastDay3": {
+    "description": "Lukitas' line on home, variant 3: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen1": "¡Mes cerrado en verde! Te sobraron {remaining}.",
+  "@lukasMonthClosedGreen1": {
+    "description": "Lukitas' line on home, variant 1: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen2": "Cerraste con {remaining} de sobra. ¡Eso merece celebrarse!",
+  "@lukasMonthClosedGreen2": {
+    "description": "Lukitas' line on home, variant 2: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen3": "Mes completado en positivo: {remaining} a tu favor. ¡Bien hecho!",
+  "@lukasMonthClosedGreen3": {
+    "description": "Lukitas' line on home, variant 3: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasEmpty": "¡Hola! Anota tu primer gasto con el ＋ y yo llevo la cuenta.",
+  "@lukasEmpty": {
+    "description": "Lukitas' line on an empty month without budgets."
+  },
+  "lukasNoBudget": "Este mes llevas {spent} en gastos. Cada apunte cuenta.",
+  "@lukasNoBudget": {
+    "description": "Lukitas' line when there are no budgets: what was spent.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverTotal": "Este mes vas {over} por encima de tus presupuestos. Aquí lo tienes todo a la vista.",
+  "@lukasOverTotal": {
+    "description": "Lukitas' line when the month is over its total budget.",
+    "placeholders": {
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOfflineMonth": "Sin conexión · mostrando {month}",
+  "@homeOfflineMonth": {
+    "description": "Home: offline, showing the last good figures of an earlier month. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRefreshFailed": "No pudimos actualizar. Te mostramos lo último que cargó.",
+  "@homeRefreshFailed": {
+    "description": "Home: a refresh failed with the network up (a server error); what is on screen is from the last time it loaded."
+  },
+  "homeRefreshFailedMonth": "No pudimos actualizar · mostrando {month}",
+  "@homeRefreshFailedMonth": {
+    "description": "Home: a refresh failed with the network up, and the figures on screen are of an earlier month.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRemainingLabelPast": "Te quedaron en {month}",
+  "@homeRemainingLabelPast": {
+    "description": "Home: label of the big amount for an earlier month with budgets and money left.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOverLabelPast": "Te pasaste en {month}",
+  "@homeOverLabelPast": {
+    "description": "Home: label of the big amount for an earlier month over its total budget.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSpentLabelPast": "Gastado en {month}",
+  "@homeSpentLabelPast": {
+    "description": "Home: label of the big amount for an earlier month without budgets.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOtherMonth": "Estos son tus números de {month}. Cuando vuelva la conexión te muestro los más recientes.",
+  "@lukasOtherMonth": {
+    "description": "Lukitas' line when home shows figures of an earlier month (a cache opened offline).",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "addFabLabel": "Agregar gasto",
+  "@addFabLabel": {
+    "description": "Home: label of the ＋ button that opens the add sheet."
+  },
+  "addTitleExpense": "Nuevo gasto",
+  "@addTitleExpense": {
+    "description": "Add sheet: title when adding an expense."
+  },
+  "addTitleIncome": "Nuevo ingreso",
+  "@addTitleIncome": {
+    "description": "Add sheet: title when adding an income."
+  },
+  "addTitleEdit": "Editar movimiento",
+  "@addTitleEdit": {
+    "description": "Add sheet: title when editing a movement."
+  },
+  "addClose": "Cerrar",
+  "@addClose": {
+    "description": "Add sheet: closes it without saving."
+  },
+  "addKindLabel": "Tipo de movimiento",
+  "@addKindLabel": {
+    "description": "Add sheet: names the expense/income switch."
+  },
+  "addKindExpense": "Gasto",
+  "@addKindExpense": {
+    "description": "Add sheet: the expense choice."
+  },
+  "addKindIncome": "Ingreso",
+  "@addKindIncome": {
+    "description": "Add sheet: the income choice."
+  },
+  "addCategoryLabel": "Categoría",
+  "@addCategoryLabel": {
+    "description": "Add sheet: names the category chips (screen readers)."
+  },
+  "addMoreCategories": "Más",
+  "@addMoreCategories": {
+    "description": "Add sheet: shows every category."
+  },
+  "addFewerCategories": "Menos",
+  "@addFewerCategories": {
+    "description": "Add sheet: folds the categories back."
+  },
+  "addNoCategoriesExpense": "Aún no tienes categorías de gasto.",
+  "@addNoCategoriesExpense": {
+    "description": "Add sheet: no expense categories to pick."
+  },
+  "addNoCategoriesIncome": "Aún no tienes categorías de ingreso.",
+  "@addNoCategoriesIncome": {
+    "description": "Add sheet: no income categories to pick."
+  },
+  "addArchived": "archivada",
+  "@addArchived": {
+    "description": "Add sheet: marks an archived category on a movement that is still in it."
+  },
+  "addMoreOptions": "Más opciones",
+  "@addMoreOptions": {
+    "description": "Add sheet: opens the date, pending and note."
+  },
+  "addDateLabel": "Fecha",
+  "@addDateLabel": {
+    "description": "Add sheet: the date field."
+  },
+  "addToday": "Hoy",
+  "@addToday": {
+    "description": "Add sheet: the date when it is today."
+  },
+  "addPendingLabel": "Pendiente (aún no lo pagas)",
+  "@addPendingLabel": {
+    "description": "Add sheet: marks a movement as scheduled and unpaid."
+  },
+  "addNoteLabel": "Nota (opcional)",
+  "@addNoteLabel": {
+    "description": "Add sheet: the note field."
+  },
+  "addSave": "Guardar",
+  "@addSave": {
+    "description": "Add sheet: saves a new movement."
+  },
+  "addSaveChanges": "Guardar cambios",
+  "@addSaveChanges": {
+    "description": "Add sheet: saves an edited movement."
+  },
+  "addDelete": "Eliminar",
+  "@addDelete": {
+    "description": "Edit sheet: deletes the movement (the web's transaction.delete)."
+  },
+  "addSaving": "Guardando…",
+  "@addSaving": {
+    "description": "Add sheet: while the save is under way."
+  },
+  "addSavedExpense": "Gasto en {category}: {amount}",
+  "@addSavedExpense": {
+    "description": "Toast after saving an expense (it has Deshacer).",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addSavedIncome": "Ingreso de {category}: {amount}",
+  "@addSavedIncome": {
+    "description": "Toast after saving an income (it has Deshacer).",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addUpdated": "Cambios guardados: {name}",
+  "@addUpdated": {
+    "description": "Toast after editing a movement.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addUndone": "Quitado: {name}",
+  "@addUndone": {
+    "description": "Toast after Deshacer on a saved movement.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addNameIt": "Ponerle nombre",
+  "@addNameIt": {
+    "description": "Toast action after saving without a name: opens the movement on its name."
+  },
+  "addErrorInvalid": "Hay datos que no son válidos. Revísalos e inténtalo otra vez.",
+  "@addErrorInvalid": {
+    "description": "Add sheet: the server refused the data."
+  },
+  "addErrorCategory": "Elige una de tus categorías activas.",
+  "@addErrorCategory": {
+    "description": "Add sheet: the category is gone or archived."
+  },
+  "addErrorBusy": "Seguimos procesando tu solicitud anterior. Espera un momento.",
+  "@addErrorBusy": {
+    "description": "Add sheet: the first try of this save is still running on the server."
+  },
+  "addErrorNotFound": "No encontramos ese movimiento.",
+  "@addErrorNotFound": {
+    "description": "Add sheet: the edited movement no longer exists."
+  },
+  "keypadLabel": "Teclado numérico",
+  "@keypadLabel": {
+    "description": "Add sheet: names the keypad (screen readers)."
+  },
+  "keypadDecimal": "Coma decimal",
+  "@keypadDecimal": {
+    "description": "Add sheet: the decimal key (screen readers)."
+  },
+  "keypadBackspace": "Borrar dígito",
+  "@keypadBackspace": {
+    "description": "Add sheet: the backspace key (screen readers)."
+  },
+  "nameFieldLabel": "Nombre (opcional)",
+  "@nameFieldLabel": {
+    "description": "Add sheet: the name field."
+  },
+  "nameFieldSuggestions": "Nombres recientes",
+  "@nameFieldSuggestions": {
+    "description": "Add sheet: names the shortcuts under the name (screen readers)."
+  },
+  "captureFabLabel": "Decir o escribir un gasto",
+  "@captureFabLabel": {
+    "description": "Home: the 🎤 button that opens quick capture."
+  },
+  "captureTitle": "Dilo o escríbelo",
+  "@captureTitle": {
+    "description": "Quick capture: the sheet's title."
+  },
+  "captureListeningPrompt": "¿En qué gastaste?",
+  "@captureListeningPrompt": {
+    "description": "Quick capture: shown while listening."
+  },
+  "captureListeningNote": "Te escucho aquí mismo: lo que dices no sale de tu teléfono.",
+  "@captureListeningNote": {
+    "description": "Quick capture: under the prompt while listening, for the first use only (until the first saved capture); the engine runs on the phone, with no network."
+  },
+  "captureStop": "Listo",
+  "@captureStop": {
+    "description": "Quick capture: stops listening."
+  },
+  "captureTypeInstead": "Escribir",
+  "@captureTypeInstead": {
+    "description": "Quick capture: switches from listening to the typing field."
+  },
+  "captureListen": "Hablar",
+  "@captureListen": {
+    "description": "Quick capture: switches from the typing field to listening."
+  },
+  "captureFieldLabel": "Escribe lo que gastaste",
+  "@captureFieldLabel": {
+    "description": "Quick capture: the typing field's label."
+  },
+  "captureFieldHint": "gasté 15 mil en almuerzo y 3 lukas en uber",
+  "@captureFieldHint": {
+    "description": "Quick capture: example sentence in the empty typing field."
+  },
+  "captureRead": "Leer",
+  "@captureRead": {
+    "description": "Quick capture: reads the typed sentence into the preview."
+  },
+  "captureChangeSentence": "Cambiar frase",
+  "@captureChangeSentence": {
+    "description": "Quick capture: goes back from the preview to the sentence, to change it."
+  },
+  "captureMicDenied": "Sin permiso para el micrófono no puedo escucharte, así que escríbelo aquí.",
+  "@captureMicDenied": {
+    "description": "Quick capture: the one sentence over the typing field when the microphone permission is denied."
+  },
+  "captureNoEngine": "Este teléfono no puede escuchar con Lukitas, así que escríbelo aquí.",
+  "@captureNoEngine": {
+    "description": "Quick capture: the one sentence over the typing field when the phone cannot run the speech engine."
+  },
+  "captureListenFailed": "No pude escucharte. Escríbelo aquí.",
+  "@captureListenFailed": {
+    "description": "Quick capture: the microphone or the engine failed."
+  },
+  "captureNothingHeard": "No te escuché. Escríbelo aquí o vuelve a intentarlo.",
+  "@captureNothingHeard": {
+    "description": "Quick capture: listening ended with nothing heard."
+  },
+  "captureNothingRead": "No encontré movimientos. Prueba con un monto, como «15 mil en almuerzo».",
+  "@captureNothingRead": {
+    "description": "Quick capture: the sentence had no movement and nothing unread."
+  },
+  "captureOfferTitle": "Para escucharte, Lukitas necesita su voz en español",
+  "@captureOfferTitle": {
+    "description": "Quick capture: the opt-in to download the voice model of the app's language."
+  },
+  "captureOfferBody": "Se descarga una sola vez ({megabytes} MB) y queda en tu teléfono: escucha sin internet y lo que dices nunca sale de él. Sin ella, puedes escribir.",
+  "@captureOfferBody": {
+    "description": "Quick capture: the opt-in's explanation, with the download size.",
+    "placeholders": {
+      "megabytes": {
+        "type": "int"
+      }
+    }
+  },
+  "captureOfferDownload": "Descargar {megabytes} MB",
+  "@captureOfferDownload": {
+    "description": "Quick capture: accepts the voice download.",
+    "placeholders": {
+      "megabytes": {
+        "type": "int"
+      }
+    }
+  },
+  "captureOfferDecline": "Ahora no, escribo",
+  "@captureOfferDecline": {
+    "description": "Quick capture: declines the voice download; the typing field shows."
+  },
+  "captureDownloading": "Descargando la voz… {percent} %",
+  "@captureDownloading": {
+    "description": "Quick capture: download progress.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "captureDownloadCancel": "Cancelar",
+  "@captureDownloadCancel": {
+    "description": "Quick capture: stops the download (it resumes next time)."
+  },
+  "captureDownloadFailed": "No se pudo descargar la voz. Revisa tu internet e inténtalo de nuevo; seguirá donde quedó.",
+  "@captureDownloadFailed": {
+    "description": "Quick capture: the download failed."
+  },
+  "captureDownloadCorrupt": "La voz llegó dañada y la borramos. Inténtalo de nuevo.",
+  "@captureDownloadCorrupt": {
+    "description": "Quick capture: the download's SHA-256 did not match."
+  },
+  "captureUnread": "No entendí: «{fragment}»",
+  "@captureUnread": {
+    "description": "Quick capture: a fragment the parser could not read.",
+    "placeholders": {
+      "fragment": {
+        "type": "String"
+      }
+    }
+  },
+  "captureComplete": "Completar",
+  "@captureComplete": {
+    "description": "Quick capture: turns an unread fragment into a card to complete by hand."
+  },
+  "capturePickCategory": "Elige categoría",
+  "@capturePickCategory": {
+    "description": "Quick capture: a card that has no category yet."
+  },
+  "captureNeedsAmount": "Falta el monto",
+  "@captureNeedsAmount": {
+    "description": "Quick capture: a card that has no amount yet."
+  },
+  "captureAmountLabel": "Monto",
+  "@captureAmountLabel": {
+    "description": "Quick capture: the amount field of a card."
+  },
+  "captureNameLabel": "Nombre",
+  "@captureNameLabel": {
+    "description": "Quick capture: the name field of a card."
+  },
+  "captureRemove": "Quitar",
+  "@captureRemove": {
+    "description": "Quick capture: removes a card (screen readers)."
+  },
+  "captureYesterday": "Ayer",
+  "@captureYesterday": {
+    "description": "Quick capture: the date chip for yesterday."
+  },
+  "captureSave": "GUARDAR {count}",
+  "@captureSave": {
+    "description": "Quick capture: saves every card at once.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "captureSaved": "¡Listo! {count, plural, =1{1 movimiento} other{{count} movimientos}} por {amount}",
+  "@captureSaved": {
+    "description": "Quick capture: the celebration after saving a batch (it has one Deshacer for all).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "captureUndone": "Quitados: {count, plural, =1{1 movimiento} other{{count} movimientos}}",
+  "@captureUndone": {
+    "description": "Quick capture: after Deshacer on a batch.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "capturePreparing": "Preparando el micrófono…",
+  "@capturePreparing": {
+    "description": "Quick capture: while the microphone starts when the speech model is not loaded yet; with the model already loaded (after a first capture) it does not show at all, the prompt does from the tap."
+  },
+  "captureDownloadNoSpace": "No hay espacio en el teléfono: la voz necesita unos {megabytes} MB libres.",
+  "@captureDownloadNoSpace": {
+    "description": "Quick capture: too little free space for the voice download (zip plus unzipped model).",
+    "placeholders": {
+      "megabytes": {
+        "type": "int"
+      }
+    }
+  },
+  "progressTitle": "Guarda tu progreso",
+  "@progressTitle": {
+    "description": "Guarda tu progreso (guests only): the screen's title, the home chip and the Settings card."
+  },
+  "progressLead": "Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos.",
+  "@progressLead": {
+    "description": "The honest copy for guests (Task 14 brief), shown on Guarda tu progreso."
+  },
+  "progressEmailBody": "Agrega tu correo y tus movimientos se quedan tal cual, en la misma cuenta. Te mandamos un código para confirmarlo.",
+  "progressSave": "Guardar con mi correo",
+  "progressPasskeyTitle": "O agrega una huella",
+  "progressPasskeyBody": "Una huella en este teléfono te deja entrar sin correo, pero si pierdes el teléfono o la huella, pierdes la cuenta. Para usar Lukitas en otro dispositivo o con asistentes de IA necesitas un correo.",
+  "@progressPasskeyBody": {
+    "description": "Spec 4.3: a guest's passkey, and what only an email gives."
+  },
+  "progressPasskeyAdd": "Agregar una huella",
+  "progressPasskeyAdding": "Esperando tu huella…",
+  "progressPasskeyAdded": "Listo: ya puedes entrar con tu huella.",
+  "progressPasskeyFailed": "No pudimos guardar tu huella. Inténtalo otra vez.",
+  "settingsTitle": "Ajustes",
+  "settingsOpenLabel": "Ajustes",
+  "@settingsOpenLabel": {
+    "description": "Home: the gear that opens Settings."
+  },
+  "settingsAccount": "Cuenta",
+  "settingsGuestAccount": "Estás usando Lukitas sin correo.",
+  "settingsPreferences": "Preferencias",
+  "settingsTheme": "Tema",
+  "settingsThemeSystem": "Automático",
+  "settingsThemeDay": "Día",
+  "settingsThemeNight": "Noche",
+  "settingsThemeHint": "Automático sigue el modo de tu teléfono.",
+  "settingsLanguage": "Idioma",
+  "settingsLanguageAuto": "Automático",
+  "settingsLanguageEs": "Español",
+  "@settingsLanguageEs": {
+    "description": "The language's own name: the same in both catalogs."
+  },
+  "settingsLanguageEn": "English",
+  "@settingsLanguageEn": {
+    "description": "The language's own name: the same in both catalogs."
+  },
+  "settingsLanguageHint": "Automático usa el idioma de tu teléfono.",
+  "settingsSound": "Sonidos",
+  "settingsSoundHint": "Suenan al anotar y al celebrar. La vibración sigue igual.",
+  "settingsVibration": "Vibración",
+  "settingsVibrationHint": "Un toque suave al anotar, deslizar y deshacer.",
+  "settingsNotices": "Avisos",
+  "settingsDueNotice": "Hoy vence…",
+  "settingsDueNoticeHint": "A las 9:00, un aviso con los pagos recurrentes que vencen hoy.",
+  "settingsGuestNotice": "Aviso si no tienes correo",
+  "settingsGuestNoticeHint": "Si pasan 45 días sin abrir Lukitas y no tienes correo, te avisamos que tus datos se borrarán.",
+  "noticeAskTitle": "¿Quieres recibir avisos?",
+  "noticeAskDue": "Así Lukitas puede avisarte a las 9:00 los días en que vence un pago recurrente.",
+  "noticeAskGuest": "Así Lukitas puede avisarte si pasan 45 días sin abrirlo y tu cuenta no tiene correo, antes de que se borren tus datos.",
+  "noticeAskLater": "Ahora no",
+  "noticeAskAllow": "Permitir avisos",
+  "settingsWidget": "Widget",
+  "settingsHideAmount": "Ocultar el monto en el widget",
+  "settingsHideAmountHint": "Muestra •••• en vez de lo que te queda.",
+  "settingsVoice": "Voz",
+  "settingsDeleteVoice": "Borrar los modelos de voz",
+  "settingsDeleteVoiceHint": "Libera espacio en el teléfono. La próxima vez que dictes, te pedimos descargarlos otra vez.",
+  "settingsDeleteVoiceTitle": "¿Borrar los modelos de voz?",
+  "settingsDeleteVoiceBody": "No podrás dictar hasta descargarlos de nuevo. Lo que ya anotaste no cambia.",
+  "settingsDeleteVoiceConfirm": "Sí, borrar",
+  "settingsDeleteVoiceDone": "Listo: borramos los modelos de voz.",
+  "settingsDeleteVoiceFailed": "No pudimos borrar los modelos de voz. Inténtalo otra vez.",
+  "settingsServer": "Servidor",
+  "settingsServerTitle": "Cambiar de servidor",
+  "settingsServerLead": "Otro servidor es otra cuenta: al cambiar, cierras sesión aquí.",
+  "settingsServerField": "Dirección del servidor",
+  "settingsServerInvalid": "Escribe una dirección que empiece por https://, como https://lukitas.ejemplo.com.",
+  "settingsServerUseDefault": "Usar el de Lukitas",
+  "settingsServerChange": "Cambiar",
+  "settingsServerChanged": "Listo: ahora usas {server}.",
+  "@settingsServerChanged": {
+    "placeholders": {
+      "server": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAbout": "Acerca de",
+  "settingsWeb": "Más en la web",
+  "settingsWebHint": "La página de Lukitas y lo que viene.",
+  "settingsWebFailed": "No pudimos abrir el navegador.",
+  "settingsSignedInAs": "Entraste como {email}",
+  "@settingsSignedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPhone": "En este teléfono",
+  "settingsSoundHintVibrationOff": "Suenan al anotar y al celebrar. La vibración sigue igual.",
+  "settingsWebOpen": "Ver la página de Lukitas",
+  "settingsAboutOpen": "Licencias y más",
+  "aboutBack": "Volver a Ajustes",
+  "aboutBackShort": "Ajustes",
+  "settingsSignOut": "Cerrar sesión",
+  "guestSignOutTitle": "¿Cerrar sesión sin guardar tu progreso?",
+  "guestSignOutBody": "Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos. Si cierras sesión ahora, no podrás volver a esta cuenta.",
+  "@guestSignOutBody": {
+    "description": "Includes the honest copy of the Task 14 brief, word for word."
+  },
+  "guestSignOutConfirm": "Cerrar sesión de todos modos",
+  "guestServerTitle": "¿Cambiar de servidor sin guardar tu progreso?",
+  "guestServerBody": "Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos. Cambiar de servidor cierra tu sesión, y no podrás volver a esta cuenta.",
+  "@guestServerBody": {
+    "description": "Includes the honest copy of the Task 14 brief, word for word."
+  },
+  "guestServerConfirm": "Cambiar de todos modos",
+  "aboutTitle": "Acerca de Lukitas",
+  "aboutLead": "Lukitas es software libre, bajo la licencia AGPL-3.0. Puedes leer y revisar su código.",
+  "aboutVoice": "Dictar funciona en tu teléfono, con los modelos de voz Vosk (Apache-2.0). Tu voz no sale de él.",
+  "aboutLicenses": "Licencias",
+  "aboutLicensesHint": "De cada pieza de software que usa Lukitas, los modelos de voz y los sonidos.",
+  "licenseNoticeModel": "El modelo de voz en {language} de la captura rápida, de Alpha Cephei Inc., bajo la licencia Apache 2.0 (https://alphacephei.com/vosk/models). No viene en la app: se descarga al teléfono si aceptas, y reconoce la voz sin salir de él.",
+  "@licenseNoticeModel": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeVosk": "El motor de voz Vosk (https://github.com/alphacep/vosk-api), de Alpha Cephei Inc., bajo la licencia Apache 2.0. Su biblioteca nativa, libvosk.so, lleva dentro Kaldi (https://github.com/kaldi-asr/kaldi) y OpenFST (https://www.openfst.org), también bajo la licencia Apache 2.0, y OpenBLAS y CLAPACK, que aparecen aparte con sus propias licencias.",
+  "licenseNoticeOpenBlas": "OpenBLAS (https://github.com/OpenMathLib/OpenBLAS), las rutinas de álgebra lineal que van dentro de la biblioteca nativa de Vosk, bajo la licencia BSD de 3 cláusulas.",
+  "licenseNoticeClapack": "CLAPACK (https://www.netlib.org/clapack), la versión en C de LAPACK que va dentro de la biblioteca nativa de Vosk, bajo una licencia BSD. Trae libf2c, cuyo aviso va después de la licencia.",
+  "licenseNoticeLibffi": "libffi (https://github.com/libffi/libffi), que va dentro de la biblioteca nativa de JNA, bajo la licencia MIT.",
+  "licenseNoticeJna": "Java Native Access (https://github.com/java-native-access/jna), por donde Vosk llega a su biblioteca nativa. Tiene doble licencia: Apache 2.0 o LGPL 2.1. Lukitas la usa bajo la licencia Apache 2.0.",
+  "licenseNoticeLibraries": "Bibliotecas de Android con las que se construye la app. Cada una declara su licencia en su propio POM; esta es la del grupo: {license}. Ninguna es Google Play Services ni Firebase.",
+  "@licenseNoticeLibraries": {
+    "placeholders": {
+      "license": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeBsd": "Una biblioteca de Android con licencia BSD de 3 cláusulas, con el texto que se publica junto a ella. Va dentro de AndroidX Glance, que se usa para el widget.",
+  "licenseNoticeFont": "{font} ({source}), la tipografía que Lukitas usa para {role}, igual que la web. Va incluida en la app, nunca se descarga, bajo la SIL Open Font License 1.1, cuyo texto sigue tal como lo trae la tipografía.",
+  "@licenseNoticeFont": {
+    "placeholders": {
+      "font": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeFontRoleDisplay": "los títulos y las cifras",
+  "licenseNoticeFontRoleText": "el resto del texto",
+  "licenseNoticeSounds": "Los sonidos de Lukitas al anotar, pagar, deshacer o acercarte a un límite son obra original hecha para Lukitas: unos pocos tonos simples, sin muestras de terceros. Se publican con la licencia de la propia app, la GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
+  "licenseNoticeApp": "Lukitas es software libre, bajo la GNU Affero General Public License 3.0. Su código está en https://github.com/andirsun/lukas.",
+  "aboutLegalese": "Software libre, AGPL-3.0",
+  "close": "Cerrar",
+  "@close": {
+    "description": "A sheet's header button: closes the sheet."
+  },
+  "navLabel": "Navegación principal",
+  "@navLabel": {
+    "description": "Screen-reader name of the bottom bar."
+  },
+  "navHome": "Inicio",
+  "@navHome": {
+    "description": "Bottom bar: the home tab."
+  },
+  "navInsights": "Análisis",
+  "@navInsights": {
+    "description": "Bottom bar: the insights tab."
+  },
+  "navAdd": "Agregar",
+  "@navAdd": {
+    "description": "Bottom bar: the raised + button that opens the add sheet (screen readers)."
+  },
+  "categoryRowRemaining": "Quedan {amount}",
+  "@categoryRowRemaining": {
+    "description": "A category row: what is left of its budget.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowOver": "Te pasaste {amount}",
+  "@categoryRowOver": {
+    "description": "A category row: how far over its budget it is.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowNoBudget": "Sin presupuesto",
+  "@categoryRowNoBudget": {
+    "description": "A category row without a budget."
+  },
+  "categoryRowSpent": "Gastado {amount}",
+  "@categoryRowSpent": {
+    "description": "A category row without a budget: what was spent.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowMeter": "{name}: {status}",
+  "@categoryRowMeter": {
+    "description": "A category row's budget bar, for screen readers: the category and its status.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "swipeHint": "Tócalo para editarlo o borrarlo.",
+  "@swipeHint": {
+    "description": "What a transaction row's swipes do, for screen readers (they take over swipes)."
+  },
+  "swipeHintPending": "Tócalo para editarlo o borrarlo; Pendiente lo marca pagado.",
+  "@swipeHintPending": {
+    "description": "The same, on a pending row."
+  },
+  "homeNoExpenseCategories": "No tienes categorías de gasto activas.",
+  "@homeNoExpenseCategories": {
+    "description": "Categorías tab: the account has no active spending category."
+  },
+  "budgetsArchivedNote": "archivada",
+  "@budgetsArchivedNote": {
+    "description": "A short word after an archived category's name in the Categorías list."
+  },
+  "manageBack": "Volver al inicio",
+  "@manageBack": {
+    "description": "Category detail: the back link, for screen readers."
+  },
+  "manageBackShort": "Inicio",
+  "@manageBackShort": {
+    "description": "Category detail: the back link's visible text."
+  },
+  "categoryKindExpense": "Categoría de gasto",
+  "@categoryKindExpense": {
+    "description": "Category detail: under the name of a spending category."
+  },
+  "categoryKindIncome": "Categoría de ingreso",
+  "@categoryKindIncome": {
+    "description": "Category detail: under the name of an income category."
+  },
+  "categoryArchivedLine": "Archivada",
+  "@categoryArchivedLine": {
+    "description": "Category detail: added to the kind line of an archived category."
+  },
+  "categoryArchivedNote": "Esta categoría está archivada: no aparece al anotar ni en tus presupuestos. Sus movimientos se quedan.",
+  "@categoryArchivedNote": {
+    "description": "Category detail: what an archived category means."
+  },
+  "categoryBudgetTitle": "Presupuesto",
+  "@categoryBudgetTitle": {
+    "description": "Category detail: the budget card's heading."
+  },
+  "categorySetBudget": "Poner presupuesto",
+  "@categorySetBudget": {
+    "description": "Category detail: opens the budget sheet on a category without a budget."
+  },
+  "categoryChangeBudget": "Cambiar presupuesto",
+  "@categoryChangeBudget": {
+    "description": "Category detail: opens the budget sheet on a category with a budget."
+  },
+  "categoryNoBudget": "Sin presupuesto en {month}. Ponle uno y te aviso antes de que te pases.",
+  "@categoryNoBudget": {
+    "description": "Category detail: no budget that month. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "categorySpentOf": "Gastado {spent} de {budget}",
+  "@categorySpentOf": {
+    "description": "Category detail: spent of the budget. Both are amounts.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "categorySpent": "Gastado en {month}: {amount}",
+  "@categorySpent": {
+    "description": "Category detail: spent that month, without a budget.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryReceived": "Recibido en {month}: {amount}",
+  "@categoryReceived": {
+    "description": "Category detail: what came in to an income category that month.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryTransactionsTitle": "Movimientos de {month}",
+  "@categoryTransactionsTitle": {
+    "description": "Category detail: the heading of the month's movements.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryEmpty": "No hay movimientos de {name} en {month}.",
+  "@categoryEmpty": {
+    "description": "Category detail: no movements in the month.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryAddExpense": "Agregar gasto",
+  "@categoryAddExpense": {
+    "description": "Category detail: adds a spending movement to this category."
+  },
+  "categoryAddIncome": "Agregar ingreso",
+  "@categoryAddIncome": {
+    "description": "Category detail: adds an income movement to this category."
+  },
+  "categoryNotFoundTitle": "No encontramos esta categoría",
+  "@categoryNotFoundTitle": {
+    "description": "Category detail: the category is not there."
+  },
+  "categoryNotFoundLead": "Puede que ya no exista. Vuelve a tus categorías y elige otra.",
+  "@categoryNotFoundLead": {
+    "description": "Category detail: why it may not be there."
+  },
+  "budgetSheetTitle": "Presupuesto de {name}",
+  "@budgetSheetTitle": {
+    "description": "Budget sheet: its title. {name} is the category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetSheetFromMonth": "Desde {month} en adelante. Los meses anteriores quedan como estaban.",
+  "@budgetSheetFromMonth": {
+    "description": "Budget sheet: from which month the budget applies.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetSheetNegative": "Un presupuesto no puede ser negativo.",
+  "@budgetSheetNegative": {
+    "description": "Budget sheet: a minus was typed or pasted."
+  },
+  "budgetSheetZero": "Escribe un monto mayor que cero.",
+  "@budgetSheetZero": {
+    "description": "Budget sheet: Guardar with nothing typed."
+  },
+  "budgetSheetSave": "Guardar presupuesto",
+  "@budgetSheetSave": {
+    "description": "Budget sheet: the save button."
+  },
+  "budgetSheetSaved": "Presupuesto de {name}: {amount}",
+  "@budgetSheetSaved": {
+    "description": "Budget sheet: the toast after saving. {amount} may carry the lukas hint.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetErrorNotFound": "No encontramos lo que buscas.",
+  "@budgetErrorNotFound": {
+    "description": "Budget sheet: the server does not know the category."
+  },
+  "budgetErrorNotExpense": "Solo las categorías de gasto pueden tener presupuesto.",
+  "@budgetErrorNotExpense": {
+    "description": "Budget sheet: only spending categories have a budget."
+  },
+  "insightsTitle": "Análisis",
+  "@insightsTitle": {
+    "description": "Análisis: the screen's title."
+  },
+  "insightsPeriodLabel": "Periodo",
+  "@insightsPeriodLabel": {
+    "description": "Análisis: names the 1 mes / 3 meses / 6 meses / 1 año control (screen readers)."
+  },
+  "insightsSpan1": "1 mes",
+  "@insightsSpan1": {
+    "description": "Análisis: the 1-month option of the period control."
+  },
+  "insightsSpan3": "3 meses",
+  "@insightsSpan3": {
+    "description": "Análisis: the 3-month option of the period control."
+  },
+  "insightsSpan6": "6 meses",
+  "@insightsSpan6": {
+    "description": "Análisis: the 6-month option of the period control."
+  },
+  "insightsSpan12": "1 año",
+  "@insightsSpan12": {
+    "description": "Análisis: the 12-month option of the period control."
+  },
+  "insightsPeriodOne": "en {month}",
+  "@insightsPeriodOne": {
+    "description": "Análisis: one month in a sentence (\"en octubre\"). {month} is the month mid-sentence.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsPeriodRange": "de {from} a {to}",
+  "@insightsPeriodRange": {
+    "description": "Análisis: a run of months in a sentence (\"de agosto a octubre\").",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsLukasTop": "{name} fue lo que más lukas se llevó {period}: {amount}.",
+  "@insightsLukasTop": {
+    "description": "Análisis: Lukitas says which category took the biggest bite. {period} is insightsPeriodOne or insightsPeriodRange.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsLukasEmpty": "No veo gastos {period}. Cuando los anotes, aquí te muestro en qué se van tus lukas.",
+  "@insightsLukasEmpty": {
+    "description": "Análisis: Lukitas when the period has no spending.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutTitle": "Por categoría",
+  "@insightsDonutTitle": {
+    "description": "Por categoría: the card's title."
+  },
+  "insightsDonutKindLabel": "Qué mostrar",
+  "@insightsDonutKindLabel": {
+    "description": "Por categoría: names the Gastos / Ingresos control."
+  },
+  "insightsDonutExpense": "Gastos",
+  "@insightsDonutExpense": {
+    "description": "Por categoría: the spending option."
+  },
+  "insightsDonutIncome": "Ingresos",
+  "@insightsDonutIncome": {
+    "description": "Por categoría: the income option."
+  },
+  "insightsDonutStatusLabel": "Estado",
+  "@insightsDonutStatusLabel": {
+    "description": "Por categoría: names the Todos / Pagados / Pendientes control."
+  },
+  "insightsDonutAll": "Todos",
+  "@insightsDonutAll": {
+    "description": "Por categoría: every status."
+  },
+  "insightsDonutPaid": "Pagados",
+  "@insightsDonutPaid": {
+    "description": "Por categoría: paid ones."
+  },
+  "insightsDonutPending": "Pendientes",
+  "@insightsDonutPending": {
+    "description": "Por categoría: pending ones."
+  },
+  "insightsDonutCenterExpense": "Gastado",
+  "@insightsDonutCenterExpense": {
+    "description": "Por categoría: the label above the total in the donut's hole, for spending."
+  },
+  "insightsDonutCenterIncome": "Recibido",
+  "@insightsDonutCenterIncome": {
+    "description": "Por categoría: the same, for income."
+  },
+  "insightsDonutCaption": "{what} por categoría {period}",
+  "@insightsDonutCaption": {
+    "description": "Por categoría: what the chart shows, for screen readers. {what} is insightsDonutWhat..., {period} the period in a sentence.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutWhatExpenseAll": "Gastos",
+  "@insightsDonutWhatExpenseAll": {
+    "description": "Por categoría: what the figures are (expense, all), at the start of a sentence."
+  },
+  "insightsDonutWhatExpensePaid": "Gastos pagados",
+  "@insightsDonutWhatExpensePaid": {
+    "description": "Por categoría: what the figures are (expense, paid), at the start of a sentence."
+  },
+  "insightsDonutWhatExpensePending": "Gastos pendientes",
+  "@insightsDonutWhatExpensePending": {
+    "description": "Por categoría: what the figures are (expense, pending), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomeAll": "Ingresos",
+  "@insightsDonutWhatIncomeAll": {
+    "description": "Por categoría: what the figures are (income, all), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomePaid": "Ingresos recibidos",
+  "@insightsDonutWhatIncomePaid": {
+    "description": "Por categoría: what the figures are (income, paid), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomePending": "Ingresos pendientes",
+  "@insightsDonutWhatIncomePending": {
+    "description": "Por categoría: what the figures are (income, pending), at the start of a sentence."
+  },
+  "insightsDonutEmpty": "No hay {what} {period}.",
+  "@insightsDonutEmpty": {
+    "description": "Por categoría: nothing to show. {what} is lower case.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutTotal": "Total",
+  "@insightsDonutTotal": {
+    "description": "Por categoría: the total, in the chart's description for screen readers."
+  },
+  "insightsTrendTitle": "Mes a mes",
+  "@insightsTrendTitle": {
+    "description": "Mes a mes: the card's title."
+  },
+  "insightsTrendIncome": "Ingresos",
+  "@insightsTrendIncome": {
+    "description": "Mes a mes: income (legend)."
+  },
+  "insightsTrendExpenses": "Gastos",
+  "@insightsTrendExpenses": {
+    "description": "Mes a mes: spending (legend)."
+  },
+  "insightsTrendBudget": "Presupuesto",
+  "@insightsTrendBudget": {
+    "description": "Mes a mes: the budget (legend)."
+  },
+  "insightsTrendCaption": "Ingresos, gastos y presupuesto por mes, {period}",
+  "@insightsTrendCaption": {
+    "description": "Mes a mes: what the chart shows, for screen readers.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsTrendEmpty": "Aún no hay movimientos {period}.",
+  "@insightsTrendEmpty": {
+    "description": "Mes a mes: nothing logged in the period.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsTrendNoBudget": "Sin presupuesto",
+  "@insightsTrendNoBudget": {
+    "description": "Mes a mes: a month without a budget."
+  },
+  "insightsTrendPrevious": "Ver el mes anterior en el gráfico",
+  "@insightsTrendPrevious": {
+    "description": "Mes a mes: the arrow that selects the previous month (screen readers)."
+  },
+  "insightsTrendNext": "Ver el mes siguiente en el gráfico",
+  "@insightsTrendNext": {
+    "description": "Mes a mes: the arrow that selects the next month (screen readers)."
+  },
+  "insightsLivingTitle": "¿Cuánto me cuesta vivir?",
+  "@insightsLivingTitle": {
+    "description": "¿Cuánto me cuesta vivir?: the card's title."
+  },
+  "insightsLivingPerMonth": "al mes",
+  "@insightsLivingPerMonth": {
+    "description": "¿Cuánto me cuesta vivir?: after the monthly average (\"al mes\")."
+  },
+  "insightsLivingFixed": "Fijos",
+  "@insightsLivingFixed": {
+    "description": "¿Cuánto me cuesta vivir?: fixed costs."
+  },
+  "insightsLivingFixedHint": "Categorías con un pago recurrente",
+  "@insightsLivingFixedHint": {
+    "description": "¿Cuánto me cuesta vivir?: what fixed means."
+  },
+  "insightsLivingVariable": "Variables",
+  "@insightsLivingVariable": {
+    "description": "¿Cuánto me cuesta vivir?: variable costs."
+  },
+  "insightsLivingVariableHint": "Lo que cambia de un mes a otro",
+  "@insightsLivingVariableHint": {
+    "description": "¿Cuánto me cuesta vivir?: what variable means."
+  },
+  "insightsLivingCaption": "Promedio mensual por categoría",
+  "@insightsLivingCaption": {
+    "description": "¿Cuánto me cuesta vivir?: the list, for screen readers."
+  },
+  "insightsLivingTypeFixed": "Fijo",
+  "@insightsLivingTypeFixed": {
+    "description": "¿Cuánto me cuesta vivir?: a category row's type, fixed."
+  },
+  "insightsLivingTypeVariable": "Variable",
+  "@insightsLivingTypeVariable": {
+    "description": "¿Cuánto me cuesta vivir?: a category row's type, variable."
+  },
+  "insightsLivingEmpty": "Necesito al menos un mes completo con gastos para calcularlo. Cuando cierre tu primer mes con movimientos, aquí lo verás.",
+  "@insightsLivingEmpty": {
+    "description": "¿Cuánto me cuesta vivir?: not enough history."
+  },
+  "insightsLivingArchived": "archivada",
+  "@insightsLivingArchived": {
+    "description": "¿Cuánto me cuesta vivir?: the note after an archived category's name."
+  },
+  "insightsLivingTotal": "Total",
+  "@insightsLivingTotal": {
+    "description": "¿Cuánto me cuesta vivir?: the total, for screen readers."
+  },
+  "insightsLivingLead": "Lo que gastas en un mes normal: el promedio de {count, plural, one{tu último mes completo} other{tus últimos {count} meses completos}}.",
+  "@insightsLivingLead": {
+    "description": "¿Cuánto me cuesta vivir?: what the average is of. {count} is how many complete months.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "themeSwitchToDay": "Cambiar a modo día",
+  "@themeSwitchToDay": {
+    "description": "The day/night switch on the entry screens, at night: what a press does."
+  },
+  "themeSwitchToNight": "Cambiar a modo noche",
+  "@themeSwitchToNight": {
+    "description": "The day/night switch on the entry screens, by day: what a press does."
+  },
+  "mascotHappy": "Lukitas, contento",
+  "@mascotHappy": {
+    "description": "Lukitas on the entry screens, happy."
+  },
+  "mascotWorried": "Lukitas, preocupado",
+  "@mascotWorried": {
+    "description": "Lukitas on the entry screens, worried (a failure)."
+  },
+  "signInOrEmail": "o con tu correo",
+  "@signInOrEmail": {
+    "description": "Entry: the line between the passkey button and the email field."
+  },
+  "signInFirstTime": "¿Primera vez? Entra con tu correo; después podrás usar tu huella.",
+  "@signInFirstTime": {
+    "description": "Entry: under the email form, for a newcomer."
+  },
+  "verifyConfirmTitle": "Continuar como {email}",
+  "@verifyConfirmTitle": {
+    "description": "The magic link: whose account is being entered.",
+    "placeholders": {
+      "email": {
+        "type": "String",
+        "example": "ana@correo.com"
+      }
+    }
+  },
+  "verifyConfirmLead": "Toca Continuar para entrar a Lukitas con este correo.",
+  "@verifyConfirmLead": {
+    "description": "The magic link: under the title."
+  },
+  "verifyNotMe": "No soy yo",
+  "@verifyNotMe": {
+    "description": "The magic link: leave without signing in."
+  },
+  "passkeyOfferTitle": "¿Entrar con tu huella la próxima vez?",
+  "@passkeyOfferTitle": {
+    "description": "Passkey offer: title."
+  },
+  "passkeyOfferLead": "Así entras sin esperar el código.",
+  "@passkeyOfferLead": {
+    "description": "Passkey offer: under the title."
+  },
+  "passkeyOfferKey": "Una passkey es una llave guardada en este teléfono, en Google, Samsung Pass, iCloud o Proton Pass.",
+  "@passkeyOfferKey": {
+    "description": "Passkey offer: first point."
+  },
+  "passkeyOfferUnlock": "Tu huella o tu cara solo la desbloquean. Lukitas nunca las recibe.",
+  "@passkeyOfferUnlock": {
+    "description": "Passkey offer: second point."
+  },
+  "passkeyOfferSync": "Se sincroniza con tus otros dispositivos que usan la misma cuenta.",
+  "@passkeyOfferSync": {
+    "description": "Passkey offer: third point."
+  },
+  "passkeyOfferBackup": "Tu correo sigue funcionando como respaldo.",
+  "@passkeyOfferBackup": {
+    "description": "Passkey offer: fourth point."
+  },
+  "passkeyOfferAdd": "Crear mi huella",
+  "@passkeyOfferAdd": {
+    "description": "Passkey offer: creates the passkey."
+  },
+  "passkeyOfferAdding": "Esperando tu huella…",
+  "@passkeyOfferAdding": {
+    "description": "Passkey offer: while the phone asks for the fingerprint."
+  },
+  "passkeyOfferNotNow": "Ahora no",
+  "@passkeyOfferNotNow": {
+    "description": "Passkey offer: goes on without a passkey."
+  },
+  "passkeyOfferFailed": "No pudimos guardar tu huella. Inténtalo otra vez o sigue sin ella.",
+  "@passkeyOfferFailed": {
+    "description": "Passkey offer: the passkey could not be saved."
+  },
+  "resendIn": "Reenviar en {seconds} s",
+  "@resendIn": {
+    "description": "The code step: \"resend\" while it waits, with the seconds left.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "passkeyOfferAdded": "Listo: la próxima vez entras con tu huella.",
+  "@passkeyOfferAdded": {
+    "description": "Passkey offer: the confirmation, shown after the passkey was made."
+  },
+  "homeMenuRecurring": "Recurrentes",
+  "@homeMenuRecurring": {
+    "description": "Home menu: the link to the recurring payments."
+  },
+  "homeMenuCategories": "Categorías",
+  "@homeMenuCategories": {
+    "description": "Home menu: the link that opens home's Categorías tab."
+  },
+  "homeNudgeImportTitle": "Trae tu historial",
+  "@homeNudgeImportTitle": {
+    "description": "Home: title of the card for an account with no movements."
+  },
+  "homeNudgeImportLead": "Importa lo que llevas en Budge y empieza con tus números de verdad.",
+  "@homeNudgeImportLead": {
+    "description": "Home: the import card's explanation."
+  },
+  "homeNudgeImportAction": "Traer mi historial",
+  "@homeNudgeImportAction": {
+    "description": "Home: the import card's button, which opens the import."
+  },
+  "recurringTitle": "Recurrentes",
+  "@recurringTitle": {
+    "description": "Recurring payments: the page's title."
+  },
+  "recurringAdd": "Nuevo recurrente",
+  "@recurringAdd": {
+    "description": "Recurring payments: the button that adds one."
+  },
+  "importPageTitle": "Trae tu historial",
+  "@importPageTitle": {
+    "description": "Import: the page's title."
+  },
+  "importPageLead": "Trae tus movimientos de otra app.",
+  "@importPageLead": {
+    "description": "Import: the line under the title."
+  },
+  "settingsDataTitle": "Tus datos",
+  "@settingsDataTitle": {
+    "description": "Settings: the card for importing and exporting."
+  },
+  "settingsImportTitle": "Trae tu historial",
+  "@settingsImportTitle": {
+    "description": "Settings: the import setting's name."
+  },
+  "settingsImportLead": "Importa lo que llevas en Budge.",
+  "@settingsImportLead": {
+    "description": "Settings: what the import does."
+  },
+  "settingsImportAction": "Importar desde Budge",
+  "@settingsImportAction": {
+    "description": "Settings: the button that opens the import."
+  },
+  "settingsRoadmapOpen": "Ver lo que viene",
+  "@settingsRoadmapOpen": {
+    "description": "Settings: the link that opens the roadmap page in the browser."
+  },
+  "categoriesKindLabel": "Tipo",
+  "@categoriesKindLabel": {
+    "description": "Names the Gastos | Ingresos switch of the Categorías tab for screen readers."
+  },
+  "categoriesExpenses": "Gastos",
+  "@categoriesExpenses": {
+    "description": "Categorías tab: the switch's spending side."
+  },
+  "categoriesIncome": "Ingresos",
+  "@categoriesIncome": {
+    "description": "Categorías tab: the switch's income side."
+  },
+  "categoriesAdd": "Nueva categoría",
+  "@categoriesAdd": {
+    "description": "Categorías tab: opens the new category sheet."
+  },
+  "categoriesNoneOfKind": "Aún no tienes categorías de este tipo.",
+  "@categoriesNoneOfKind": {
+    "description": "Categorías tab: no category of the chosen kind."
+  },
+  "categoriesIncomeLine": "Ingreso",
+  "@categoriesIncomeLine": {
+    "description": "Categorías tab: the line under an income category's name."
+  },
+  "categoriesArchivedFold": "Archivadas ({count})",
+  "@categoriesArchivedFold": {
+    "description": "Categorías tab: the fold that holds the archived categories.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoriesArchivedTitle": "Archivadas",
+  "@categoriesArchivedTitle": {
+    "description": "Categorías tab: names the archived categories' list."
+  },
+  "categoriesRestore": "Restaurar",
+  "@categoriesRestore": {
+    "description": "An archived category's button that brings it back."
+  },
+  "categoriesRestoreNamed": "Restaurar {name}",
+  "@categoriesRestoreNamed": {
+    "description": "The same button's name for screen readers.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoriesCreated": "Listo: creaste {name}.",
+  "@categoriesCreated": {
+    "description": "Toast after creating a category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoriesSaved": "Guardaste los cambios de {name}.",
+  "@categoriesSaved": {
+    "description": "Toast after saving a category's changes.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoriesRestored": "{name} está de vuelta.",
+  "@categoriesRestored": {
+    "description": "Toast after restoring an archived category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoriesArchivedToast": "Archivaste {name}. Sus movimientos se quedan.",
+  "@categoriesArchivedToast": {
+    "description": "Toast after archiving a category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryEditLabel": "Editar categoría",
+  "@categoryEditLabel": {
+    "description": "Category detail: the edit button's name for screen readers."
+  },
+  "categoryEditShort": "Editar",
+  "@categoryEditShort": {
+    "description": "Category detail: the edit button's visible text."
+  },
+  "categoryToCategories": "Ver mis categorías",
+  "@categoryToCategories": {
+    "description": "Category detail not found: the link back to the Categorías tab."
+  },
+  "manageBackCategories": "Volver a Categorías",
+  "@manageBackCategories": {
+    "description": "Category detail opened from the Categorías tab: the back link, for screen readers."
+  },
+  "manageBackCategoriesShort": "Categorías",
+  "@manageBackCategoriesShort": {
+    "description": "Category detail opened from the Categorías tab: the back link's visible text."
+  },
+  "archiveSheetTitle": "¿Archivar {name}?",
+  "@archiveSheetTitle": {
+    "description": "The question before archiving a category.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveSheetBody": "Ya no aparece al anotar ni en tus presupuestos. Sus movimientos se quedan, y puedes restaurarla cuando quieras desde Categorías.",
+  "@archiveSheetBody": {
+    "description": "What archiving a category means."
+  },
+  "archiveSheetConfirm": "Sí, archivar",
+  "@archiveSheetConfirm": {
+    "description": "The archive question's action."
+  },
+  "archiveSheetStopsRecurring": "{count, plural, =1{También se detendrá {count} pago recurrente de esta categoría.} other{También se detendrán {count} pagos recurrentes de esta categoría.}}",
+  "@archiveSheetStopsRecurring": {
+    "description": "The archive question's note: how many recurring payments archiving stops.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "categoryFormAddTitle": "Nueva categoría",
+  "@categoryFormAddTitle": {
+    "description": "The new category sheet's title."
+  },
+  "categoryFormEditTitle": "Editar categoría",
+  "@categoryFormEditTitle": {
+    "description": "The edit category sheet's title."
+  },
+  "categoryFormNameLabel": "Nombre",
+  "@categoryFormNameLabel": {
+    "description": "Category sheet: the name field."
+  },
+  "categoryFormNamePlaceholder": "Mascotas",
+  "@categoryFormNamePlaceholder": {
+    "description": "Category sheet: the name field's example."
+  },
+  "categoryFormNameRequired": "Escribe un nombre para la categoría.",
+  "@categoryFormNameRequired": {
+    "description": "Category sheet: saving with no name."
+  },
+  "categoryFormGlyphLabel": "Ícono",
+  "@categoryFormGlyphLabel": {
+    "description": "Category sheet: the emoji group."
+  },
+  "categoryFormTintLabel": "Color",
+  "@categoryFormTintLabel": {
+    "description": "Category sheet: the colour group."
+  },
+  "categoryFormKindLabel": "Tipo",
+  "@categoryFormKindLabel": {
+    "description": "Category sheet: the spending or income group."
+  },
+  "categoryFormKindExpense": "Gasto",
+  "@categoryFormKindExpense": {
+    "description": "Category sheet: the spending choice."
+  },
+  "categoryFormKindIncome": "Ingreso",
+  "@categoryFormKindIncome": {
+    "description": "Category sheet: the income choice."
+  },
+  "categoryFormSave": "Guardar categoría",
+  "@categoryFormSave": {
+    "description": "Category sheet: the save button."
+  },
+  "categoryFormArchive": "Archivar categoría",
+  "@categoryFormArchive": {
+    "description": "Category sheet: asks to archive the category."
+  },
+  "categoryFormKindLocked": "Con movimientos, su tipo no se puede cambiar aquí.",
+  "@categoryFormKindLocked": {
+    "description": "Category sheet: why the kind cannot change."
+  },
+  "categoryTintOrange": "Naranja",
+  "@categoryTintOrange": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintRed": "Rojo",
+  "@categoryTintRed": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintPurple": "Morado",
+  "@categoryTintPurple": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintIndigo": "Índigo",
+  "@categoryTintIndigo": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintBlue": "Azul",
+  "@categoryTintBlue": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintPink": "Rosado",
+  "@categoryTintPink": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintAmber": "Ámbar",
+  "@categoryTintAmber": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintGreen": "Verde",
+  "@categoryTintGreen": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintTeal": "Turquesa",
+  "@categoryTintTeal": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintGray": "Gris",
+  "@categoryTintGray": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintYellow": "Amarillo",
+  "@categoryTintYellow": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryTintSky": "Celeste",
+  "@categoryTintSky": {
+    "description": "Category sheet: the name of a colour, for screen readers."
+  },
+  "categoryErrorNameTaken": "Ya tienes una categoría con ese nombre.",
+  "@categoryErrorNameTaken": {
+    "description": "Category sheet: a name that another category has."
+  },
+  "categoryErrorHasTransactions": "Esta categoría ya tiene movimientos, así que su tipo no puede cambiar.",
+  "@categoryErrorHasTransactions": {
+    "description": "Category sheet: changing the kind of a category with transactions."
+  }
+}

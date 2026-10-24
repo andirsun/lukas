@@ -1,0 +1,296 @@
+// On an Android emulator against the dev stack (`docker compose up -d` at the repo root: API,
+// Postgres, Mailpit), as docs/mobile/setup.md describes:
+//
+//   flutter test integration_test -d emulator-5554 \
+//     --dart-define=LUKITAS_SERVER=http://10.0.2.2:3000 \
+//     --dart-define=MAILPIT_URL=http://10.0.2.2:8025
+//
+// The emulator reaches the Mac at 10.0.2.2. Buttons are found by key: the emulator's language
+// decides the copy (the widget tests check the Spanish and English words).
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:lukitas/api/session.dart';
+import 'package:lukitas/home/home_screen.dart';
+import 'package:lukitas/main.dart' as app;
+
+const _server = String.fromEnvironment('LUKITAS_SERVER', defaultValue: 'http://10.0.2.2:3000');
+const _mailpit = String.fromEnvironment('MAILPIT_URL', defaultValue: 'http://10.0.2.2:8025');
+
+/// The host App Links are declared for in the manifest: a link there is dropped while the app talks
+/// to another server (the dev stack), since only the configured server's links are taken.
+const _appLinkHost = 'app-lukas.andersonlaverde.com';
+
+final _http = Dio(BaseOptions(validateStatus: (_) => true));
+
+/// A new address per call, so each test is a new user with its own email throttle.
+String _freshEmail(String label) =>
+    '$label-${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}@lukas.test';
+
+/// Pumps until [finder] finds something (network calls run in real time here).
+Future<void> _pumpUntil(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 30),
+}) async {
+  final end = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(end)) {
+    await tester.pump(const Duration(milliseconds: 200));
+    if (finder.evaluate().isNotEmpty) return;
+  }
+  throw TestFailure('Timed out waiting for $finder');
+}
+
+Future<void> _tap(WidgetTester tester, String key) async {
+  await _pumpUntil(tester, find.byKey(Key(key)));
+  // On a short phone the button may be below the fold: bring it up, as a person would.
+  await tester.ensureVisible(find.byKey(Key(key)));
+  await tester.pump();
+  await tester.tap(find.byKey(Key(key)));
+  await tester.pump();
+}
+
+/// The newest email to [email] in Mailpit, waiting for it: its subject and plain text.
+Future<({String subject, String text})> _mailTo(String email) async {
+  final end = DateTime.now().add(const Duration(seconds: 30));
+  while (DateTime.now().isBefore(end)) {
+    final list = await _http.get<Map<String, dynamic>>('$_mailpit/api/v1/messages?limit=100');
+    final messages = (list.data?['messages'] as List<dynamic>? ?? const [])
+        .cast<Map<String, dynamic>>()
+        .where(
+          (m) => (m['To'] as List<dynamic>).any(
+            (to) => (to as Map<String, dynamic>)['Address'].toString().toLowerCase() == email,
+          ),
+        );
+    if (messages.isNotEmpty) {
+      final message = messages.first;
+      final detail = await _http.get<Map<String, dynamic>>(
+        '$_mailpit/api/v1/message/${message['ID']}',
+      );
+      return (subject: message['Subject'] as String, text: detail.data?['Text'] as String? ?? '');
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+  throw TestFailure('No email to $email in Mailpit');
+}
+
+String _codeFrom(String subject) => RegExp(r'(\d{6})$').firstMatch(subject)!.group(1)!;
+
+/// `GET /v1/me` with the token the app stored.
+Future<Map<String, dynamic>> _me() async {
+  final stored = await SessionStore().read();
+  expect(stored, isNotNull, reason: 'the app stored a session');
+  final res = await _http.get<Map<String, dynamic>>(
+    '$_server/api/v1/me',
+    options: Options(headers: {'Authorization': 'Bearer ${stored!.token}'}),
+  );
+  expect(res.statusCode, 200);
+  return res.data!;
+}
+
+Future<void> _startApp(WidgetTester tester) async {
+  await SessionStore().clear();
+  await tester.pumpWidget(await app.bootstrap());
+  await _pumpUntil(tester, find.byKey(const Key('entry.withEmail')));
+}
+
+Future<void> _sendCodeTo(WidgetTester tester, String email) async {
+  await _tap(tester, 'entry.withEmail');
+  await _pumpUntil(tester, find.byKey(const Key('entry.email')));
+  await tester.enterText(find.byKey(const Key('entry.email')), email);
+  await _tap(tester, 'entry.send');
+}
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('Probar sin correo creates a guest and lands on home', (tester) async {
+    await _startApp(tester);
+
+    await _tap(tester, 'entry.guest');
+    await _pumpUntil(tester, find.byType(HomeScreen));
+
+    expect((await SessionStore().read())?.guest, isTrue);
+    final me = await _me();
+    expect(me['isAnonymous'], isTrue);
+    // The guest's profile starts from the phone's time zone (x-lukas-timezone).
+    // The server stores the canonical name, so an emulator's "Etc/UTC" comes back as "UTC".
+    final zone = await const MethodChannel('lukitas/device').invokeMethod<String>('timeZone');
+    const utcAliases = {
+      'Etc/UTC',
+      'Etc/UCT',
+      'Etc/Universal',
+      'Etc/Zulu',
+      'UCT',
+      'Universal',
+      'Zulu',
+    };
+    expect(me['timezone'], utcAliases.contains(zone) ? 'UTC' : zone);
+  });
+
+  testWidgets('the email code signs in', (tester) async {
+    final email = _freshEmail('mobile-code');
+    await _startApp(tester);
+
+    await _sendCodeTo(tester, email);
+    await _pumpUntil(tester, find.byKey(const Key('entry.code')));
+    final mail = await _mailTo(email);
+    await tester.enterText(find.byKey(const Key('entry.code')), _codeFrom(mail.subject));
+    await _tap(tester, 'entry.submitCode');
+    await _pumpUntil(tester, find.byType(HomeScreen));
+
+    final me = await _me();
+    expect(me['email'], email);
+    expect(me['isAnonymous'], isFalse);
+  });
+
+  testWidgets('opening the magic link in the app signs in', (tester) async {
+    final email = _freshEmail('mobile-link');
+    await _startApp(tester);
+    await _sendCodeTo(tester, email);
+    await _pumpUntil(tester, find.byKey(const Key('entry.code')));
+
+    // The dev stack writes links to its web origin; the app takes only links for the server it
+    // talks to, so the same query is opened on the dev server's host (debug builds declare it,
+    // src/debug/AndroidManifest.xml), as Android delivers it: an ACTION_VIEW intent.
+    final mail = await _mailTo(email);
+    final link = Uri.parse(
+      RegExp(r'https?://\S+/auth/verify\?\S+').firstMatch(mail.text)!.group(0)!,
+    );
+    // First on a host that is not the server the app talks to (the install's own App Link host,
+    // while the app talks to the dev stack): another app could send that. It only opens the app,
+    // and the code is still unused.
+    final foreign = Uri(
+      scheme: 'https',
+      host: _appLinkHost,
+      path: '/auth/verify',
+      query: link.query,
+    );
+    await const MethodChannel('lukitas/test').invokeMethod<void>('openLink', foreign.toString());
+    for (var i = 0; i < 30; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(HomeScreen), findsNothing);
+    expect(await SessionStore().read(), isNull);
+
+    final server = Uri.parse(_server);
+    final appLink = Uri(
+      scheme: server.scheme,
+      host: server.host,
+      port: server.port,
+      path: '/auth/verify',
+      query: link.query,
+    );
+    await const MethodChannel('lukitas/test').invokeMethod<void>('openLink', appLink.toString());
+    await _pumpUntil(tester, find.byType(HomeScreen));
+
+    final me = await _me();
+    expect(me['email'], email);
+  });
+
+  testWidgets('a sign-in started in the app marks its link from=app, and the web page\'s '
+      'intent:// form of it opens the app and signs in', (tester) async {
+    final email = _freshEmail('mobile-intent');
+    await _startApp(tester);
+    await _sendCodeTo(tester, email);
+    await _pumpUntil(tester, find.byKey(const Key('entry.code')));
+
+    final mail = await _mailTo(email);
+    final link = Uri.parse(
+      RegExp(r'https?://\S+/auth/verify\?\S+').firstMatch(mail.text)!.group(0)!,
+    );
+    // The app sent x-lukas-client: android, so the API wrote from=app.
+    expect(link.queryParameters['from'], 'app');
+
+    // What apps/web/app/features/sign-in/open-in-app.ts builds for this page (the dev stack is
+    // plain http, so scheme=http here; the product's is https): the same path and query, the app's
+    // package, and the page without from=app as the fallback.
+    final server = Uri.parse(_server);
+    final query = link.query;
+    final fallback = Uri(
+      scheme: server.scheme,
+      host: server.host,
+      port: server.port,
+      path: '/auth/verify',
+      query: link.queryParameters.entries
+          .where((e) => e.key != 'from')
+          .map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}')
+          .join('&'),
+    );
+    final intentUri =
+        'intent://${server.host}:${server.port}/auth/verify?$query'
+        '#Intent;scheme=${server.scheme};package=com.andersonlaverde.lukitas;'
+        'S.browser_fallback_url=${Uri.encodeComponent(fallback.toString())};end';
+    await const MethodChannel('lukitas/test').invokeMethod<void>('openIntentUri', intentUri);
+    await _pumpUntil(tester, find.byType(HomeScreen));
+
+    final me = await _me();
+    expect(me['email'], email);
+  });
+
+  testWidgets(
+    'a guest sees Guarda tu progreso; claiming an allowlisted email keeps every movement',
+    (tester) async {
+      final email = _freshEmail('mobile-claim');
+      await _startApp(tester);
+      await _tap(tester, 'entry.guest');
+      await _pumpUntil(tester, find.byType(HomeScreen));
+      final guest = await _me();
+      final guestToken = (await SessionStore().read())!.token;
+      final auth = Options(headers: {'Authorization': 'Bearer $guestToken'});
+
+      // A movement the guest noted before saving their progress.
+      final name = 'Antes del correo ${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}';
+      final category = await _http.post<Map<String, dynamic>>(
+        '$_server/api/v1/categories',
+        data: {'name': name, 'kind': 'expense', 'icon': '🛒', 'color': '#2fd388'},
+        options: auth,
+      );
+      expect(category.statusCode, 201, reason: '${category.data}');
+      final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
+      final movement = await _http.post<Map<String, dynamic>>(
+        '$_server/api/v1/transactions',
+        data: {'name': name, 'amount': -1500000, 'categoryId': category.data!['id'], 'date': today},
+        options: auth.copyWith(headers: {...auth.headers!, 'Idempotency-Key': 'claim-$name'}),
+      );
+      expect(movement.statusCode, 201, reason: '${movement.data}');
+
+      // Home offers "Guarda tu progreso" to a guest; it asks for the email and sends the code.
+      await _tap(tester, 'home.account');
+      await _tap(tester, 'home.saveProgress');
+      await _pumpUntil(tester, find.byKey(const Key('progress.email')));
+      await tester.enterText(find.byKey(const Key('progress.email')), email);
+      await _tap(tester, 'progress.save');
+      await _pumpUntil(tester, find.byKey(const Key('entry.code')));
+
+      final mail = await _mailTo(email);
+      await tester.enterText(find.byKey(const Key('entry.code')), _codeFrom(mail.subject));
+      await _tap(tester, 'entry.submitCode');
+      await _pumpUntil(tester, find.byType(HomeScreen));
+
+      // The same user and the same token: no longer a guest, with the email, and the movement kept.
+      final stored = await SessionStore().read();
+      expect(stored?.token, guestToken);
+      expect(stored?.guest, isFalse);
+      final me = await _me();
+      expect(me['id'], guest['id']);
+      expect(me['email'], email);
+      expect(me['isAnonymous'], isFalse);
+      final kept = await _http.get<Map<String, dynamic>>(
+        '$_server/api/v1/transactions',
+        options: auth,
+      );
+      expect(kept.statusCode, 200);
+      expect(
+        (kept.data!['items'] as List<dynamic>).where((t) => (t as Map)['name'] == name),
+        hasLength(1),
+      );
+      // And home no longer offers it (not in the face button's menu either).
+      await _tap(tester, 'home.account');
+      await _pumpUntil(tester, find.byKey(const Key('home.settings')));
+      expect(find.byKey(const Key('home.saveProgress')), findsNothing);
+    },
+  );
+}
