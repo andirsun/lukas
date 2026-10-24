@@ -148,12 +148,15 @@ async function setCurrency(tx: Tx, currency: string) {
 }
 
 /**
- * An account with at least one transaction has been through whatever the welcome is for, so reading
- * its profile stamps `onboardingCompletedAt` when it is still null. It covers the accounts made
- * before the welcome reached the app (the app had none, and its accounts have data): neither client
- * sends them to it, and its "Entrar directo" never touches their categories. Once: a stamped
- * account is left as it is, and an empty one (the welcome's) is not stamped. Soft-deleted
- * transactions count, as they do for the currency's lock.
+ * An account with at least one transaction that did not come from an import has been through
+ * whatever the welcome is for, so reading its profile stamps `onboardingCompletedAt` when it is
+ * still null. It covers the accounts made before the welcome reached the app (the app had none, and
+ * its accounts have data): neither client sends them to it, and its "Entrar directo" never touches
+ * their categories. Once: a stamped account is left as it is, and an empty one (the welcome's) is
+ * not stamped. Imports do not count: the welcome's import step comes before its categories and
+ * budgets, so an account with only imported rows is still in its welcome (before imports reached
+ * the app, those accounts had manual or captured rows). Soft-deleted transactions count, as they
+ * do for the currency's lock.
  */
 async function stampOnboardedIfUsed(deps: AppDeps, userId: string) {
   await withUser(deps.db, userId, (tx) =>
@@ -165,7 +168,7 @@ async function stampOnboardedIfUsed(deps: AppDeps, userId: string) {
           eq(user.id, userId),
           isNull(user.onboardingCompletedAt),
           // Row-level security limits `transactions` to this user's.
-          sql`exists (select 1 from transactions)`,
+          sql`exists (select 1 from transactions where import_id is null)`,
         ),
       ),
   );
