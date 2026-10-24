@@ -20,6 +20,7 @@ import { AppMessages } from "../../i18n/AppMessages.tsx";
 import type { Locale } from "../../i18n/format.ts";
 import { IntlProvider, useLocale } from "../../i18n/IntlProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
+import { CategoriesRedirect } from "../categories/CategoriesRedirect.tsx";
 import { CategoryDetail } from "../categories/CategoryDetail.tsx";
 import { Insights } from "../insights/Insights.tsx";
 import { RecurringPage } from "../recurring/RecurringPage.tsx";
@@ -286,6 +287,8 @@ export interface HomeApiOptions {
   createDelayMs?: number;
   /** Transporte is archived, with a taxi ride in it today (sample data only). */
   archivedCategory?: boolean;
+  /** Transporte is archived and has no movement this month: it waits in "Archivadas" (sample data only). */
+  archivedUnused?: boolean;
   /** Salario, the only income category, is archived (sample data only). */
   archivedIncome?: boolean;
   /** This category is archived, with its budget and its movements. */
@@ -357,6 +360,7 @@ function homeFetch({
   failCreate = false,
   createDelayMs = 0,
   archivedCategory = false,
+  archivedUnused = false,
   archivedIncome = false,
   archivedId,
   noRecurrences = false,
@@ -388,6 +392,11 @@ function homeFetch({
       c.id === "cat-transport" ? { ...c, archived: true, currentBudget: null } : c,
     );
     transactions = [...transactions, transaction("taxi", "cat-transport", -1500, STORY_TODAY)];
+  }
+  if (archivedUnused) {
+    categories = categories.map((c) =>
+      c.id === "cat-transport" ? { ...c, archived: true, currentBudget: null } : c,
+    );
   }
   if (archivedId) {
     categories = categories.map((c) => (c.id === archivedId ? { ...c, archived: true } : c));
@@ -794,6 +803,7 @@ export function HomeStage({
             <ToastProvider>
               <Routes>
                 <Route path="/app" element={shell(<Home signOut={signOut} />)} />
+                <Route path="/app/categories" element={<CategoriesRedirect />} />
                 <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
                 <Route path="/app/recurring" element={shell(<RecurringPage />)} />
                 <Route path="/app/insights" element={shell(<Insights />)} />

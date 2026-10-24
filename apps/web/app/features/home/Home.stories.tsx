@@ -769,7 +769,7 @@ export const CategoriesIncome: Story = {
  * brings it back among the others.
  */
 export const CategoriesArchived: Story = {
-  render: (args) => <HomeStage onRequest={args.onRequest} archivedCategory />,
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedUnused />,
   play: async ({ canvasElement, args }) => {
     const panel = await categoriesPanel(within(canvasElement));
     const fold = await panel.findByRole("button", { name: "Archivadas (1)" });
@@ -811,6 +811,43 @@ export const CategoriesArchivedOpen: Story = {
         name: "Salario Archivada",
       }),
     ).toBeVisible();
+  },
+};
+
+/**
+ * A category archived this month that still has spending in the month on screen stays among the
+ * month's rows, with its "archivada" note, so the rows add up to what home says was spent. It does
+ * not wait in "Archivadas".
+ */
+export const CategoriesArchivedWithSpending: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedCategory />,
+  play: async ({ canvasElement }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    const row = await panel.findByRole("button", {
+      name: "Transporte · archivada Sin presupuesto",
+    });
+    await expect(row).toBeVisible();
+    // Its spending is on the row, as the old budget list showed it.
+    await expect(row.closest(".lk-row")).toHaveTextContent(`Gastado ${eur("15,00")}`);
+    // Nothing else is archived: no fold.
+    await expect(panel.queryByRole("button", { name: /^Archivadas/ })).toBeNull();
+  },
+};
+
+/**
+ * The old `/app/categories` address (bookmarks, history, older links) is not a 404: it opens home
+ * on its Categorías tab.
+ */
+export const OldCategoriesAddress: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    await expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(canvas.getByRole("tabpanel", { name: "Categorías" })).toBeVisible();
   },
 };
 
@@ -897,7 +934,7 @@ export const SidebarCategoriesFocusesPanel: Story = {
 /** Wide screens, by day: the sidebar and both lists, with the archived ones unfolded. */
 export const CategoriesDesktopDay: Story = {
   globals: { viewport: { value: "desktop", isRotated: false }, theme: "day" },
-  render: (args) => <HomeStage onRequest={args.onRequest} archivedCategory />,
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedUnused />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await hero(canvas);
@@ -921,13 +958,12 @@ export const ArchivedCategory: Story = {
     await hero(canvas);
     await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
     const budgets = within(canvas.getByRole("tabpanel", { name: "Categorías" }));
-    // Archived, it leaves the budget rows and waits in "Archivadas", folded.
+    // Archived with spending this month, it stays among the month's rows, noted "archivada".
     await budgets.findByRole("button", { name: /^Restaurante/ });
-    await expect(budgets.queryByRole("button", { name: /^Transporte/ })).toBeNull();
-    await userEvent.click(budgets.getByRole("button", { name: "Archivadas (1)" }));
     await expect(await budgets.findByRole("button", { name: /^Transporte/ })).toHaveAccessibleName(
-      "Transporte Archivada",
+      "Transporte · archivada Sin presupuesto",
     );
+    await expect(budgets.queryByRole("button", { name: /^Archivadas/ })).toBeNull();
 
     await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));
     const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));

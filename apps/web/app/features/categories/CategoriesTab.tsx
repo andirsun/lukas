@@ -8,6 +8,7 @@ import { PressButton } from "../../ui/PressButton.tsx";
 import { SegmentedControl } from "../../ui/SegmentedControl.tsx";
 import { useAppPath } from "../home/app-path.ts";
 import type { DetailState } from "./CategoryDetail.tsx";
+import { categoryLists } from "./category-lists.ts";
 import { useCategorySheets } from "./use-category-sheets.tsx";
 
 export interface CategoriesTabProps {
@@ -26,12 +27,15 @@ const NO_LINE = { budget: null, spent: 0, remaining: null, state: "ok" } as cons
  * Home's Categorías tab: where categories are managed (founder decision 2026-10-24; there is no
  * separate page). A Gastos | Ingresos switch; one row per category of that kind, opening its
  * detail (a spending category with its month's budget bar, an income one with "Ingreso"); "Nueva
- * categoría"; and the archived ones of that kind folded at the end, each with "Restaurar". Renaming,
+ * categoría"; and the archived ones of that kind folded at the end, each with "Restaurar". An
+ * archived spending category that has spending in the month on screen is one of the rows instead,
+ * noted "archivada" (`categoryLists`). Renaming,
  * the icon and colour, and archiving are in the detail.
  */
 export function CategoriesTab({ summary, categories, currency, month }: CategoriesTabProps) {
   const t = useTranslations("categories");
   const tHome = useTranslations("home");
+  const tTransaction = useTranslations("transaction");
   const navigate = useNavigate();
   const appPath = useAppPath();
   const sheets = useCategorySheets();
@@ -40,11 +44,7 @@ export function CategoriesTab({ summary, categories, currency, month }: Categori
   if (!summary || !categories) return <div className="min-h-[120px]" aria-busy="true" />;
 
   const lines = new Map(summary.categories.map((line) => [line.categoryId, line]));
-  const ofKind = categories
-    .filter((c) => c.kind === kind)
-    .sort((a, b) => a.sortOrder - b.sortOrder);
-  const active = ofKind.filter((c) => !c.archived);
-  const archived = ofKind.filter((c) => c.archived);
+  const { rows, archived } = categoryLists(categories, lines, kind);
   // Its detail, in the month on screen, and back to this tab from it.
   const open = (category: CategoryDto) => {
     const state: DetailState = { from: "categories" };
@@ -70,12 +70,12 @@ export function CategoriesTab({ summary, categories, currency, month }: Categori
           {t("add")}
         </PressButton>
       </div>
-      {active.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="m-0 text-[14px] font-bold text-ink-muted">
           {kind === "expense" ? tHome("no_expense_categories") : t("none_of_kind")}
         </p>
       ) : (
-        active.map((category) => {
+        rows.map((category) => {
           const look = categoryLook(category);
           const line = lines.get(category.id) ?? NO_LINE;
           return (
@@ -90,6 +90,8 @@ export function CategoriesTab({ summary, categories, currency, month }: Categori
               state={line.state}
               currency={currency}
               {...(kind === "income" ? { line: t("income_line") } : {})}
+              // Archived this month, with spending in it: kept among the rows, noted.
+              {...(category.archived ? { note: tTransaction("archived") } : {})}
               onOpen={() => open(category)}
             />
           );
