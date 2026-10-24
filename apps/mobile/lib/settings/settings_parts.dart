@@ -243,10 +243,9 @@ class _Option extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: LukitasTokens.space2),
                   child: Center(
-                    child: Text(
+                    child: _WholeWords(
                       label,
-                      key: labelKey,
-                      textAlign: TextAlign.center,
+                      textKey: labelKey,
                       style: LkText.bodySm.copyWith(color: selected ? colors.ink : colors.inkMuted),
                     ),
                   ),
@@ -366,6 +365,64 @@ class LkSwitch extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// A label centred in its box the way the web's flex label is: it wraps between words, never inside
+/// one. A word wider than the room (the phone's font at 130 % makes "Automático" so) is not broken
+/// at a letter: like the web's, the column keeps its width and the word spills evenly into the
+/// padding on both sides.
+class _WholeWords extends StatelessWidget {
+  const _WholeWords(this.label, {required this.textKey, required this.style});
+
+  final String label;
+
+  /// The label's own [Text] carries it (tests find the label by it).
+  final Key? textKey;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    final merged = DefaultTextStyle.of(context).style.merge(style);
+    final text = Text(label, key: textKey, style: style, textAlign: TextAlign.center);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        var longest = 0.0;
+        for (final word in label.split(' ')) {
+          final painter = TextPainter(
+            text: TextSpan(text: word, style: merged),
+            textDirection: direction,
+            textScaler: scaler,
+          )..layout();
+          if (painter.width > longest) longest = painter.width;
+          painter.dispose();
+        }
+        if (longest <= constraints.maxWidth) return text;
+        // As tall as the label is when it has the room of its longest word.
+        final width = longest.ceilToDouble();
+        final painter = TextPainter(
+          text: TextSpan(text: label, style: merged),
+          textAlign: TextAlign.center,
+          textDirection: direction,
+          textScaler: scaler,
+        )..layout(maxWidth: width);
+        final height = painter.height;
+        painter.dispose();
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: height,
+          child: OverflowBox(
+            minWidth: width,
+            maxWidth: width,
+            minHeight: height,
+            maxHeight: height,
+            child: text,
+          ),
+        );
+      },
     );
   }
 }

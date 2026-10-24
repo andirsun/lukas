@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
@@ -55,9 +56,14 @@ Future<void> _golden(
   String theme, {
   required bool guest,
   Size size = _page,
+  double textScale = 1,
   Future<void> Function(WidgetTester t)? act,
 }) async {
   await t.runAsync(loadParityFonts);
+  if (textScale != 1) {
+    t.platformDispatcher.textScaleFactorTestValue = textScale;
+    addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+  }
   t.view
     ..physicalSize = size * parityPixelRatio
     ..devicePixelRatio = parityPixelRatio;
@@ -102,6 +108,33 @@ void main() {
 
     testWidgets('Settings, with an email ($theme)', (t) async {
       await _golden(t, 'settings_email', theme, guest: false);
+    });
+
+    // The phone's font at 130 %: the three-way rows (language, theme) keep "Automático" whole.
+    testWidgets('Settings\' three-way rows at text scale 1.3 ($theme)', (t) async {
+      await _golden(
+        t,
+        'settings_three_way_scale_1_3',
+        theme,
+        guest: false,
+        size: parityViewSize,
+        textScale: 1.3,
+      );
+      for (final key in ['settings.language.auto', 'settings.theme.system']) {
+        final word = find.byKey(Key(key));
+        expect(word, findsOneWidget);
+        // One line: like the web's (a word is never broken at a letter, and the grid column does
+        // not grow), "Automático" is wider than the room its padding leaves and spills into it.
+        final paragraph = t.renderObject<RenderParagraph>(word);
+        expect(
+          paragraph
+              .getBoxesForSelection(const TextSelection(baseOffset: 0, extentOffset: 10))
+              .length,
+          1,
+          reason: key,
+        );
+        expect(paragraph.size.height, lessThan(30), reason: key);
+      }
     });
 
     testWidgets('the server\'s sheet ($theme)', (t) async {
