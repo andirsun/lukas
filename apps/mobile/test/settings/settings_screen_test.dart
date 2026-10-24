@@ -84,7 +84,12 @@ void main() {
         tester.getSemantics(find.byKey(const Key('settings.sound'))).hint,
         contains('Vibration stays on.'),
       );
-      await tester.tap(find.byKey(const Key('settings.vibration')));
+      await _tap(tester, 'settings.vibration');
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('settings.sound')),
+        -200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
       expect(
         tester.getSemantics(find.byKey(const Key('settings.sound'))).hint,
@@ -254,8 +259,7 @@ void main() {
       expect(env.container.read(vibrationEnabledProvider), isTrue);
       expect(env.flags['setting.sound']?.value, isFalse);
 
-      await tester.tap(find.byKey(const Key('settings.vibration')));
-      await tester.pumpAndSettle();
+      await _tap(tester, 'settings.vibration');
       expect(env.container.read(vibrationEnabledProvider), isFalse);
       expect(env.flags['setting.vibration']?.value, isFalse);
     });

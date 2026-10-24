@@ -121,6 +121,28 @@ class FakeAuthApi implements AuthApi {
     return passkeysOnAccount;
   }
 
+  /// The passkeys the server lists for the account (Settings), oldest first; `passkeyCount` counts
+  /// these when there are any.
+  final passkeyItems = <PasskeyItem>[];
+
+  /// While set, `listPasskeys` waits for it.
+  Completer<void>? holdListPasskeys;
+
+  @override
+  Future<List<PasskeyItem>> listPasskeys(String token) async {
+    calls.add('listPasskeys $token');
+    _fail('listPasskeys');
+    await holdListPasskeys?.future;
+    return [...passkeyItems];
+  }
+
+  @override
+  Future<void> deletePasskey(String token, String id) async {
+    calls.add('deletePasskey $id');
+    _fail('deletePasskey');
+    passkeyItems.removeWhere((item) => item.id == id);
+  }
+
   @override
   Future<void> claimSend(String token, String email) async {
     calls.add('claimSend $token $email');
@@ -168,7 +190,18 @@ class FakeAuthApi implements AuthApi {
   ) async {
     calls.add('passkeyRegister $token $responseJson');
     _fail('passkeyRegister');
+    // The server has the new one: the next listing shows it.
+    passkeyItems.add(
+      PasskeyItem(
+        id: 'pk-${passkeyItems.length + 1}',
+        createdAt: registeredAt ?? DateTime.utc(2026, 10, 21, 10),
+        synced: true,
+      ),
+    );
   }
+
+  /// When a passkey registered through [passkeyRegister] counts as made.
+  DateTime? registeredAt;
 
   @override
   Future<void> signOut(String token) async {
@@ -197,6 +230,9 @@ class FakePasskeys implements Passkeys {
   /// Thrown by the next `get` or `create` instead of answering (then cleared).
   Object? failure;
 
+  /// While set, `create` waits for it (the person has the prompt open).
+  Completer<void>? holdCreate;
+
   @override
   Future<bool> supported() async => isSupported;
 
@@ -222,6 +258,7 @@ class FakePasskeys implements Passkeys {
   @override
   Future<String> create(String optionsJson) async {
     calls.add('create $optionsJson');
+    await holdCreate?.future;
     final error = failure;
     failure = null;
     if (error != null) throw error;

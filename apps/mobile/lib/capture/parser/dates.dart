@@ -1,6 +1,6 @@
 // Dates: today in the profile's time zone, and the date words of a sentence (spec 5.2,
 // packages/core/quick-capture/README.md, "Dates").
-import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 var _tzReady = false;

@@ -277,6 +277,67 @@ void main() {
     });
   });
 
+  group('listPasskeys and deletePasskey, the web\'s livePasskeys', () {
+    test(
+      'lists the passkeys oldest first: name or none, when it was made and whether it syncs',
+      () async {
+        adapter.replies['GET /api/auth/passkey/list-user-passkeys'] = const _Reply(200, [
+          {
+            'id': 'b',
+            'name': 'Pixel',
+            'createdAt': '2026-10-05T10:00:00.000Z',
+            'backedUp': false,
+            'publicKey': 'x',
+          },
+          {'id': 'a', 'name': null, 'createdAt': '2026-10-02T09:00:00.000Z', 'backedUp': true},
+        ]);
+        final items = await api.listPasskeys('tok');
+        expect(last().headers['Authorization'], 'Bearer tok');
+        expect(items.map((p) => p.id), ['a', 'b']);
+        expect(items[0].name, isNull);
+        expect(items[0].synced, isTrue);
+        expect(items[0].createdAt, DateTime.utc(2026, 10, 2, 9));
+        expect(items[1].name, 'Pixel');
+        expect(items[1].synced, isFalse);
+      },
+    );
+
+    test('an answer that is not a list cannot be read: passkeys_unavailable', () async {
+      adapter.replies['GET /api/auth/passkey/list-user-passkeys'] = const _Reply(200, {'x': 1});
+      await expectLater(
+        api.listPasskeys('tok'),
+        throwsA(isA<AuthFailure>().having((f) => f.code, 'code', 'passkeys_unavailable')),
+      );
+    });
+
+    test('a refusal is an AuthFailure with its status', () async {
+      adapter.replies['GET /api/auth/passkey/list-user-passkeys'] = const _Reply(401, {
+        'code': 'UNAUTHORIZED',
+      });
+      await expectLater(
+        api.listPasskeys('tok'),
+        throwsA(isA<AuthFailure>().having((f) => f.status, 'status', 401)),
+      );
+    });
+
+    test('deletes one by its id with a POST, as Better Auth\'s deletePasskey', () async {
+      adapter.replies['POST /api/auth/passkey/delete-passkey'] = const _Reply(200, {
+        'status': true,
+      });
+      await api.deletePasskey('tok', 'pk-1');
+      expect(last().uri.path, '/api/auth/passkey/delete-passkey');
+      expect(last().headers['Authorization'], 'Bearer tok');
+      expect(adapter.bodies.last, {'id': 'pk-1'});
+    });
+
+    test('a refused delete throws', () async {
+      adapter.replies['POST /api/auth/passkey/delete-passkey'] = const _Reply(404, {
+        'code': 'PASSKEY_NOT_FOUND',
+      });
+      await expectLater(api.deletePasskey('tok', 'pk-1'), throwsA(isA<AuthFailure>()));
+    });
+  });
+
   test('the claim sends the email, then the email and code, as the guest', () async {
     adapter.replies['POST /api/v1/me/claim-email/send'] = const _Reply(204, null);
     adapter.replies['POST /api/v1/me/claim-email/verify'] = const _Reply(200, {

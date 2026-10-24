@@ -35,7 +35,7 @@ import 'harness.dart' show DeletableModelStore;
 /// `flutter test --update-goldens test/settings/settings_golden_test.dart`.
 
 /// The whole page, taller than a phone, so one picture shows every card.
-const _page = Size(412, 2500);
+const _page = Size(412, 3400);
 
 List<Override> _overrides({required bool guest}) {
   final token = guest ? 'guest-token-0' : 'email-token-0';

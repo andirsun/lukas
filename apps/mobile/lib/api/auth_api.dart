@@ -37,6 +37,22 @@ class AccountStanding {
 
 /// A passkey ceremony's options from the server, and the challenge cookie that must go back with
 /// the phone's answer (Better Auth keeps the challenge behind a signed cookie).
+/// One of the person's passkeys, as Settings lists it (the web's `PasskeyItem`).
+class PasskeyItem {
+  const PasskeyItem({required this.id, this.name, required this.createdAt, this.synced = false});
+
+  final String id;
+
+  /// The name it was given, if any.
+  final String? name;
+
+  /// When it was created (UTC).
+  final DateTime createdAt;
+
+  /// Saved in a synced password manager (Google, Proton Pass...), not only on one device.
+  final bool synced;
+}
+
 class PasskeyChallenge {
   const PasskeyChallenge({required this.optionsJson, required this.cookie});
 
@@ -82,6 +98,14 @@ abstract interface class AuthApi {
 
   /// Gives the guest behind [token] the email: same user, same token, every row kept.
   Future<void> claimVerify(String token, String email, String code);
+
+  /// The passkeys of the account behind [token], oldest first (Better Auth's
+  /// `GET /passkey/list-user-passkeys`, as the web's `livePasskeys.list`). Throws an [AuthFailure]
+  /// when they cannot be read, an answer that is not a list included (code `passkeys_unavailable`).
+  Future<List<PasskeyItem>> listPasskeys(String token);
+
+  /// Deletes the passkey [id] of the account behind [token] (`POST /passkey/delete-passkey`).
+  Future<void> deletePasskey(String token, String id);
 
   Future<PasskeyChallenge> passkeySignInOptions();
 
@@ -224,6 +248,39 @@ class HttpAuthApi implements AuthApi {
     );
     final data = response.data;
     return data is List ? data.length : null;
+  });
+
+  @override
+  Future<List<PasskeyItem>> listPasskeys(String token) => _settle(() async {
+    final response = await dio.get<Object?>(
+      '/auth/passkey/list-user-passkeys',
+      options: Options(headers: _bearer(token)),
+    );
+    final data = response.data;
+    if (data is! List) throw const AuthFailure(code: 'passkeys_unavailable', status: 502);
+    final items = [
+      for (final entry in data)
+        if (entry is Map && entry['id'] is String)
+          PasskeyItem(
+            id: entry['id']! as String,
+            name: entry['name'] is String && (entry['name']! as String).isNotEmpty
+                ? entry['name']! as String
+                : null,
+            createdAt: DateTime.tryParse('${entry['createdAt']}')?.toUtc() ?? DateTime.utc(1970),
+            synced: entry['backedUp'] == true,
+          ),
+    ];
+    // Oldest first, as the web sorts them; the order of equal times is the server's.
+    return items..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+  });
+
+  @override
+  Future<void> deletePasskey(String token, String id) => _settle(() async {
+    await dio.post<Object?>(
+      '/auth/passkey/delete-passkey',
+      data: {'id': id},
+      options: Options(headers: _bearer(token)),
+    );
   });
 
   @override

@@ -351,24 +351,35 @@ when the app's picture changes. The web shots are regenerated only when the web 
     passkeys, the account has none (`GET /api/auth/passkey/list-user-passkeys`) and it has not answered on this phone.
     The answer is kept per account on the phone (`passkey.offered`, as the web keeps `lukas.passkey.offered` in
     `localStorage`). Its pairs are the stories' `Offer`, `OfferDayEnglish`, `WaitingForTheFingerprint` and `Failed`.
-- **Settings (`settings-app-sections*`).** The web's Settings has five cards; the app has Preferencias as the web draws
-  it, and the other four (time zone and currency, the passkeys' list, import and export, deleting the account) stay on
-  the web behind one card, "Más en la web", with a link in the web's link style (`PressLink`, secondary).
-  - **Stories added for the pairs.** `manage-settings--app-sections`, `--app-sections-day-english` and
-    `--app-sections-sound-off` leave only Preferencias on the page (their `play` hides the other sections), with the
-    header, the title, who is signed in and the bottom bar. The app's `SettingsScreen(webSectionsOnly: true)` draws the same:
-    no "Automático" language (the web has two languages; the app's third follows the phone) and none of the app's own
-    cards.
-  - **The app's own cards** (the guest's "Guarda tu progreso", "En este teléfono": vibration, the two notices and the
-    widget; the voice models, the server, "Más en la web", About, signing out) are drawn with the web's parts
-    (`SettingsSection`, `SettingSwitch`, `PressButton`), and have goldens of their own in `test/settings/goldens` to
-    review by eye, with the sheets the guest's dialogs and the server's address became.
-  - **Copy.** The theme's third choice is the web's "Automático"; the sound hint is the web's, and when the vibration is
-    off the English one says "Vibration stays off." where the web's says "stays on".
-  - **Weights.** The web loads Nunito from 600 up, so a `font-normal` text (the switch's hint) is drawn at 600 by Chrome;
-    the app does the same (`SettingSwitch`).
-  - **Paragraphs** are broken as Blink breaks them (`CssParagraph`): a line that is exactly as wide as its column breaks
-    in a different place when its words are measured whole, as Flutter does.
+- **Settings (`settings-*`).** The web's Settings has five cards; the app draws four as the web does (Preferencias, "Hora y
+  moneda", the passkeys and "Tus datos", whose import link opens the app's own page) and keeps the export and the delete card for
+  Task 7 of Stage 3c. The app's `SettingsScreen(webSectionsOnly: true)` draws what the stories leave on the page: no "Automático"
+  language (the web has two languages; the app's third follows the phone) and none of the app's own cards.
+  - **Stories.** `manage-settings--app-sections`, `--app-sections-day-english` and `--app-sections-sound-off` are the page from
+    the top. The stories that look at a card further down scroll the page to it (`--app-sections-currency-open`, its options 16px
+    under the top; `--app-sections-passkeys` and `--app-sections-data`, which the page's end stops at); the sheets are
+    `--time-zone-sheet-open` (a country searched), `--time-zone-sheet-current` ("Actual"), `--time-zone-no-match` and
+    `--passkey-remove-sheet-open`. Their `play` hides what the app does not have yet (`onlyWhatTheAppHas`: the delete card and the
+    export's buttons): Task 7 takes those lines out.
+  - **Scrolling.** The app's test scrolls as the story did, to a whole pixel (Chrome scrolls to whole pixels); a page that ends
+    on a half pixel is rounded up by Chrome (0.5px more scroll), which the test gives the frame (`_page(roundedUp: true)`). The
+    story that clicks a button below the fold scrolls the browser to centre it: the test centres it too.
+  - **Passkeys** are the story's in-memory list (the web's `storyPasskeys`), not an API answer: the test hands the app the same
+    list (`SettingsPasskeys`). "Este navegador no permite crear huellas" is "Este teléfono…" in the app, so that story has no pair.
+  - **The search field** is `type="search"`: Chrome draws its blue clear button while there is text, which the app does not.
+  - **Lines in a taller box.** A 13px or 15px line in a CSS line box (19.5 and 22.5px) is `CssLines`, with its baseline where Blink
+    puts it (`CssBlinkLines`); the card titles (`SettingsSection`) carry the same shift, which they lacked (a pixel too low).
+  - **The app's own cards** (the guest's "Guarda tu progreso", "En este teléfono": vibration, the two notices and the widget; the
+    voice models, the server, "Más en la web", About, signing out) are drawn with the web's parts and have goldens of their own in
+    `test/settings/goldens` to review by eye, with the sheets the guest's dialogs and the server's address became.
+  - **Copy.** The theme's third choice is the web's "Automático"; the sound hint is the web's, and when the vibration is off the
+    English one says "Vibration stays off." where the web's says "stays on".
+  - **Weights.** The web loads Nunito from 600 up, so a `font-normal` text (the switch's hint) is drawn at 600 by Chrome; the app
+    does the same (`SettingSwitch`).
+  - **Paragraphs** are broken as Blink breaks them (`CssParagraph`): a line that is exactly as wide as its column breaks in a
+    different place when its words are measured whole, as Flutter does.
+  - **Day pairs** sit at 1.8–1.9% of ink: the text is placed to the pixel, and what is left is how Chrome and Flutter draw the same
+    glyphs.
 - **The confirm sheet (`confirm-sheet-open*`).** `ui-confirmsheet--*` were added (the web had no story of it). A `flex-1`
   button is its own padding and border and an equal share of what is left, so "Cancelar" (8px a side) is narrower than
   the action (24px and a 2px border): `flexOneRow`. The guest's questions (`ChoiceSheet`: sign out, change server, the

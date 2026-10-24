@@ -1364,7 +1364,7 @@
     "theme": "night",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1373,7 +1373,7 @@
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1382,7 +1382,7 @@
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1391,7 +1391,7 @@
     "theme": "night",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
   },
   {
@@ -1400,8 +1400,92 @@
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
     "knownDifferences": [
-      "The page is Preferencias only: the story hides the web's other four sections (time and currency, passkeys, data, deleting the account, which stay on the web) and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly), as well as the language's 'Automático'. This pair does not prove those; test/settings/goldens has the app's own cards to review by eye"
+      "The story leaves out what the app does not have yet (the export's buttons and the delete card, Task 7 of Stage 3c), and the app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
     ]
+  },
+  {
+    "id": "settings-currency-open",
+    "storyId": "manage-settings--app-sections-currency-open",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-currency-open",
+    "storyId": "manage-settings--app-sections-currency-open",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-passkeys",
+    "storyId": "manage-settings--app-sections-passkeys",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-passkeys",
+    "storyId": "manage-settings--app-sections-passkeys",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-data",
+    "storyId": "manage-settings--app-sections-data",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-data",
+    "storyId": "manage-settings--app-sections-data",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-time-zone-sheet",
+    "storyId": "manage-settings--time-zone-sheet-open",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-time-zone-sheet",
+    "storyId": "manage-settings--time-zone-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-time-zone-current",
+    "storyId": "manage-settings--time-zone-sheet-current",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-time-zone-current",
+    "storyId": "manage-settings--time-zone-sheet-current",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-time-zone-no-match",
+    "storyId": "manage-settings--time-zone-no-match",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-time-zone-no-match",
+    "storyId": "manage-settings--time-zone-no-match",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-passkey-remove-sheet",
+    "storyId": "manage-settings--passkey-remove-sheet-open",
+    "theme": "night",
+    "appTest": "test/parity/settings_parity_test.dart"
+  },
+  {
+    "id": "settings-passkey-remove-sheet",
+    "storyId": "manage-settings--passkey-remove-sheet-open",
+    "theme": "day",
+    "appTest": "test/parity/settings_parity_test.dart"
   },
   {
     "id": "confirm-sheet-open",

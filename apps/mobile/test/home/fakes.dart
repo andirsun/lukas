@@ -32,8 +32,9 @@ class FakeHomeRepository implements HomeRepository {
     this.items.sort(_newestFirst);
   }
 
-  final String currency;
-  final String timezone;
+  /// The profile's currency and time zone: Settings changes them (the server's PATCH).
+  String currency;
+  String timezone;
   final String userId;
 
   /// The profile's email ("Entraste como…" in Settings).

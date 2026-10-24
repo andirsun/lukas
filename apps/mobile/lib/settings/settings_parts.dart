@@ -47,7 +47,14 @@ class SettingsSection extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: LukitasTokens.space1,
               children: [
-                Semantics(header: true, child: CssParagraph(title, style: titleStyle)),
+                // Blink puts the baseline of a title in its line box a pixel higher than Flutter does.
+                Semantics(
+                  header: true,
+                  child: BlinkLine(
+                    style: titleStyle,
+                    child: CssParagraph(title, style: titleStyle),
+                  ),
+                ),
                 if (lead != null) CssParagraph(lead, style: leadStyle),
               ],
             ),
@@ -425,4 +432,20 @@ class _WholeWords extends StatelessWidget {
       },
     );
   }
+}
+
+/// A line of text as tall as CSS makes it ([CssLines]) with its baseline where Blink puts it
+/// ([BlinkLine]): for the lines of a row (a name, "Creada el…", a region) whose line box is taller
+/// than the text.
+class CssBlinkLines extends StatelessWidget {
+  const CssBlinkLines({super.key, required this.style, required this.child});
+
+  final TextStyle style;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => CssLines(
+    style: style,
+    child: BlinkLine(style: style, child: child),
+  );
 }

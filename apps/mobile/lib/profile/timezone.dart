@@ -1,6 +1,10 @@
 // The time zone a new profile gets: the web's apps/web/app/features/onboarding/timezone.ts. Settings
 // reuses [supportedTimeZones].
-import 'package:timezone/data/latest.dart' as tzdata;
+//
+// The database is `latest_all`, not `latest`: `latest` leaves out the zones that are links in the tz
+// database (Europe/Amsterdam is Brussels', Asia/Kuala_Lumpur is Singapore's...), and the clock
+// would read UTC for a person who picked one of them, which the web's list offers.
+import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 /// What a new profile's time zone is until it is set (the API's default).

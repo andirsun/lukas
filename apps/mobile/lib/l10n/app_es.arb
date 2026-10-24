@@ -1990,6 +1990,206 @@
   "@settingsRoadmapOpen": {
     "description": "Settings: the link that opens the roadmap page in the browser."
   },
+  "settingsTimeAndMoney": "Hora y moneda",
+  "@settingsTimeAndMoney": {
+    "description": "Settings: the card for the time zone and the currency."
+  },
+  "settingsTimezoneLabel": "Zona horaria",
+  "@settingsTimezoneLabel": {
+    "description": "Settings: the time zone setting's name."
+  },
+  "settingsTimezoneHint": "Con ella sabemos cuándo empieza tu día y tu mes.",
+  "@settingsTimezoneHint": {
+    "description": "Settings: what the time zone is for."
+  },
+  "settingsTimezoneChange": "Cambiar",
+  "@settingsTimezoneChange": {
+    "description": "Settings: the button that opens the time zone sheet."
+  },
+  "settingsTimezoneChangeLabel": "Cambiar zona horaria",
+  "@settingsTimezoneChangeLabel": {
+    "description": "Settings: the time zone button's name for screen readers."
+  },
+  "settingsTimezoneSheetTitle": "Elige tu zona horaria",
+  "@settingsTimezoneSheetTitle": {
+    "description": "Settings: the time zone sheet's title."
+  },
+  "settingsTimezoneSearch": "Busca tu ciudad o país",
+  "@settingsTimezoneSearch": {
+    "description": "Settings: the time zone search field's label."
+  },
+  "settingsTimezonePlaceholder": "Bogotá, Colombia, Madrid…",
+  "@settingsTimezonePlaceholder": {
+    "description": "Settings: the time zone search field's placeholder."
+  },
+  "settingsTimezoneUseDevice": "Usar la de este dispositivo: {city}",
+  "@settingsTimezoneUseDevice": {
+    "description": "Settings: picks the phone's own time zone.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTimezoneCurrent": "Actual",
+  "@settingsTimezoneCurrent": {
+    "description": "Settings: marks the zone in use."
+  },
+  "settingsTimezoneNoResults": "No encontramos «{query}». Prueba con la ciudad grande más cercana.",
+  "@settingsTimezoneNoResults": {
+    "description": "Settings: the search found no zone.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsTimezoneMore": "Hay {count} más: sigue escribiendo para encontrar la tuya.",
+  "@settingsTimezoneMore": {
+    "description": "Settings: more zones match than the list shows.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsTimezoneSaved": "Listo: ahora usamos la hora de {city}.",
+  "@settingsTimezoneSaved": {
+    "description": "Settings: the new time zone was saved.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCurrencyLabel": "Moneda",
+  "@settingsCurrencyLabel": {
+    "description": "Settings: the currency setting's name."
+  },
+  "settingsCurrencyHint": "Puedes cambiarla hasta tu primer movimiento.",
+  "@settingsCurrencyHint": {
+    "description": "Settings: until when the currency can change."
+  },
+  "settingsCurrencyLocked": "Tu moneda es {currency}. Ya tienes movimientos o recurrentes, así que se queda así.",
+  "@settingsCurrencyLocked": {
+    "description": "Settings: the currency can no longer change.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCurrencySaved": "Listo: tu moneda ahora es {currency}.",
+  "@settingsCurrencySaved": {
+    "description": "Settings: the new currency was saved.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPasskeysTitle": "Entrar con tu huella",
+  "@settingsPasskeysTitle": {
+    "description": "Settings: the passkeys card's title."
+  },
+  "settingsPasskeysLead": "Una passkey es una llave guardada en tu teléfono o en tu gestor de contraseñas. Tu huella o tu cara solo la desbloquean, y tu correo sigue funcionando.",
+  "@settingsPasskeysLead": {
+    "description": "Settings: what a passkey is."
+  },
+  "settingsPasskeysEmpty": "Aún no tienes ninguna: entras con el código de tu correo.",
+  "@settingsPasskeysEmpty": {
+    "description": "Settings: no passkeys yet."
+  },
+  "settingsPasskeysUnsupported": "Este teléfono no permite crear huellas. Sigue entrando con tu correo.",
+  "@settingsPasskeysUnsupported": {
+    "description": "Settings: the phone cannot make a passkey (Android older than 14, or no passkey manager)."
+  },
+  "settingsPasskeysListFailed": "No pudimos cargar tus huellas. Inténtalo de nuevo en un momento.",
+  "@settingsPasskeysListFailed": {
+    "description": "Settings: the list could not be read."
+  },
+  "settingsPasskeysDefaultName": "Huella",
+  "@settingsPasskeysDefaultName": {
+    "description": "Settings: the name of a passkey that has none."
+  },
+  "settingsPasskeysCreated": "Creada el {date}",
+  "@settingsPasskeysCreated": {
+    "description": "Settings: when a passkey was made.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPasskeysSynced": "Sincronizada",
+  "@settingsPasskeysSynced": {
+    "description": "Settings: the passkey syncs through a password manager."
+  },
+  "settingsPasskeysAdd": "Agregar una huella",
+  "@settingsPasskeysAdd": {
+    "description": "Settings: the button that adds a passkey."
+  },
+  "settingsPasskeysAdding": "Esperando tu huella…",
+  "@settingsPasskeysAdding": {
+    "description": "Settings: the phone's prompt is open."
+  },
+  "settingsPasskeysGuest": "Primero guarda tu progreso con un correo; después podrás agregar una huella.",
+  "@settingsPasskeysGuest": {
+    "description": "Settings: a guest cannot add a passkey from here."
+  },
+  "settingsPasskeysAdded": "Listo: ya puedes entrar con tu huella.",
+  "@settingsPasskeysAdded": {
+    "description": "Settings: a passkey was added."
+  },
+  "settingsPasskeysAddFailed": "No pudimos guardar tu huella. Inténtalo otra vez.",
+  "@settingsPasskeysAddFailed": {
+    "description": "Settings: adding a passkey failed."
+  },
+  "settingsPasskeysRemove": "Eliminar",
+  "@settingsPasskeysRemove": {
+    "description": "Settings: the button that deletes a passkey."
+  },
+  "settingsPasskeysRemoveLabel": "Eliminar la huella creada el {date}",
+  "@settingsPasskeysRemoveLabel": {
+    "description": "Settings: a passkey's delete button for screen readers.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPasskeysRemoveNamedLabel": "Eliminar {name}, creada el {date}",
+  "@settingsPasskeysRemoveNamedLabel": {
+    "description": "Settings: a named passkey's delete button for screen readers.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPasskeysRemoveTitle": "¿Eliminar esta huella?",
+  "@settingsPasskeysRemoveTitle": {
+    "description": "Settings: the question before deleting a passkey."
+  },
+  "settingsPasskeysRemoveBody": "Ya no podrás entrar con ella. Tu correo sigue funcionando.",
+  "@settingsPasskeysRemoveBody": {
+    "description": "Settings: what deleting a passkey means."
+  },
+  "settingsPasskeysRemoveConfirm": "Sí, eliminar",
+  "@settingsPasskeysRemoveConfirm": {
+    "description": "Settings: confirms deleting a passkey."
+  },
+  "settingsPasskeysRemoved": "Eliminamos la huella.",
+  "@settingsPasskeysRemoved": {
+    "description": "Settings: the passkey was deleted."
+  },
+  "settingsPasskeysRemoveFailed": "No pudimos eliminar la huella. Inténtalo otra vez.",
+  "@settingsPasskeysRemoveFailed": {
+    "description": "Settings: deleting a passkey failed."
+  },
   "categoriesKindLabel": "Tipo",
   "@categoriesKindLabel": {
     "description": "Names the Gastos | Ingresos switch of the Categorías tab for screen readers."

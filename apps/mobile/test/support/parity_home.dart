@@ -27,7 +27,7 @@ T readBuilt<T>(Serializer<T> serializer, Object? json) =>
 /// movement the story's `play` function paid (the fixture was saved afterwards): it starts pending
 /// here, so the app does what the story did.
 class FixtureHomeRepository implements HomeRepository {
-  FixtureHomeRepository(this.fixture, {this.pending}) {
+  FixtureHomeRepository(this.fixture, {this.pending, this.fromFixture = false}) {
     for (final item
         in (fixtureJson(fixture, '/v1/transactions?limit=50&month=2026-10')! as Map)['items']
             as List) {
@@ -40,6 +40,10 @@ class FixtureHomeRepository implements HomeRepository {
 
   final ParityFixture fixture;
   final String? pending;
+
+  /// Whether [hasTransactions] is what the story's API answered (`GET /v1/transactions?limit=1`),
+  /// as Settings' currency needs it; otherwise the demo's: yes.
+  final bool fromFixture;
   final items = <Transaction>[];
 
   @override
@@ -75,7 +79,11 @@ class FixtureHomeRepository implements HomeRepository {
 
   /// The story is the demo's, which has no import and a history: the card is not offered.
   @override
-  Future<bool> hasTransactions() async => true;
+  Future<bool> hasTransactions() async {
+    if (!fromFixture) return true;
+    final page = fixtureJson(fixture, '/v1/transactions?limit=1')! as Map;
+    return (page['items']! as List).isNotEmpty;
+  }
 
   @override
   Future<void> delete(String id) async => throw UnimplementedError();

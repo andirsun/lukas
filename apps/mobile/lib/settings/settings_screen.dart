@@ -1,10 +1,10 @@
 // The web's Settings (apps/web/app/features/settings/Settings.tsx): the page's header, its title and
-// who is signed in, and a card per kind of setting, drawn with the web's parts (`parts.tsx`).
+// who is signed in, and a card per kind of setting, drawn with the web's parts (`parts.tsx`):
+// Preferencias, "Hora y moneda", the passkeys and "Tus datos" (the import links to its page).
 //
-// What the web has and the app does not, stays on the web: time zone and currency, the passkeys'
-// list, the export, and deleting the account (until their ports land). The import has its page in
-// the app ("Tus datos" links to it). One card ("Más en la web") links to the web's public pages:
-// the landing and the roadmap. What only the app has (vibration, the two local notices, the widget, the voice
+// What the web has and the app does not yet, stays on the web: the export and deleting the account
+// (until their ports land). One card ("Más en la web") links to the web's public pages: the landing
+// and the roadmap. What only the app has (vibration, the two local notices, the widget, the voice
 // models, the server, About, signing out) is drawn in the same style: a card per kind, a muted
 // line on what it is, and the web's switches and buttons.
 import 'dart:async';
@@ -14,12 +14,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../add/add_sheet.dart';
+import '../api/device.dart';
 import '../api/server_url.dart';
 import '../api/session.dart';
 import '../capture/capture_sheet.dart';
 import '../capture/models_download.dart';
 import '../feedback/feedback.dart';
-import '../home/home_repository.dart';
 import '../home/shell_navigation.dart';
 import '../l10n/app_localizations.dart';
 import '../progress/guest_warning.dart';
@@ -34,8 +34,11 @@ import '../ui/press_link.dart';
 import '../ui/sheet.dart';
 import '../ui/toast.dart';
 import '../ui/web_text_field.dart';
+import 'passkeys_section.dart';
 import 'preferences.dart';
+import 'profile_settings.dart';
 import 'settings_parts.dart';
+import 'time_money_section.dart';
 import 'url_opener.dart';
 
 /// Whether a voice model is downloaded (so there is something to delete).
@@ -49,24 +52,22 @@ final voiceModelsInstalledProvider = FutureProvider.autoDispose<bool>((ref) asyn
 
 /// The account's email, for "Entraste como…" (null while it is not known: offline, or not loaded).
 final settingsEmailProvider = FutureProvider.autoDispose<String?>((ref) async {
-  try {
-    final email = (await ref.watch(homeRepositoryProvider).profile()).email;
-    return email.isEmpty ? null : email;
-  } on Object {
-    return null;
-  }
+  final email = (await ref.watch(settingsProfileProvider.future))?.email;
+  return email == null || email.isEmpty ? null : email;
 });
 
-/// Settings (spec section 6.1.6): language, theme, sound, vibration, the two local notices, hiding
-/// the amount in the widget, the voice models, the server, About, "Más en la web" and sign out.
+/// Settings (spec section 6.1.6): language, theme, sound, time zone and currency, the passkeys, the
+/// import, vibration, the two local notices, hiding the amount in the widget, the voice models, the
+/// server, About, "Más en la web" and sign out.
 /// A guest also finds "Guarda tu progreso" at the top, and is warned before anything that would
 /// leave their account behind (signing out, changing server).
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key, this.webSectionsOnly = false});
 
   /// Draws only what the web's Settings page also has, as the web draws it: Preferencias with its
-  /// language and theme choices and the sound switch. For the parity pictures of the page, which a
-  /// story of the web's can only match that far (the app's own cards have none).
+  /// language and theme choices and the sound switch, "Hora y moneda", the passkeys and "Tus datos".
+  /// For the parity pictures of the page, which a story of the web's can only match that far (the
+  /// app's own cards have none).
   final bool webSectionsOnly;
 
   @override
@@ -199,6 +200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final vibration = ref.watch(vibrationEnabledProvider);
     final voiceInstalled = ref.watch(voiceModelsInstalledProvider).value ?? false;
     final webOnly = widget.webSectionsOnly;
+    final profile = ref.watch(settingsProfileProvider).value;
     final signedInAs = _signedInAs(l10n, guest: guest && !webOnly);
     final titleStyle = LkText.pageTitle.copyWith(color: colors.ink);
     final signedInStyle = LkText.bodySm.copyWith(color: colors.inkMuted);
@@ -290,28 +292,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ],
         ),
-        if (!webOnly) ...[
-          // The web's "Tus datos" (Settings.tsx): the import links to its page; the export joins it.
-          SettingsSection(
-            title: l10n.settingsDataTitle,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: LukitasTokens.space2,
-                children: [
-                  SettingLabel(label: l10n.settingsImportTitle, hint: l10n.settingsImportLead),
-                  _SelfStart(
-                    child: PressLink.text(
-                      l10n.settingsImportAction,
-                      key: const Key('settings.import'),
-                      tone: PressTone.secondary,
-                      onPressed: () => unawaited(context.push<void>('/import')),
-                    ),
+        if (profile != null) TimeAndMoneySection(profile: profile),
+        PasskeysSection(
+          timeZone: profile?.timezone ?? ref.watch(deviceHintsProvider).timezone,
+          guest: guest && !webOnly,
+        ),
+        // The web's "Tus datos" (Settings.tsx): the import links to its page; the export joins it.
+        SettingsSection(
+          key: const Key('settings.card.data'),
+          title: l10n.settingsDataTitle,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: LukitasTokens.space2,
+              children: [
+                SettingLabel(label: l10n.settingsImportTitle, hint: l10n.settingsImportLead),
+                _SelfStart(
+                  child: PressLink.text(
+                    l10n.settingsImportAction,
+                    key: const Key('settings.import'),
+                    tone: PressTone.secondary,
+                    onPressed: () => unawaited(context.push<void>('/import')),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        if (!webOnly) ...[
           SettingsSection(
             title: l10n.settingsPhone,
             children: [

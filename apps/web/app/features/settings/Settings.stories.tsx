@@ -290,7 +290,7 @@ export const TimeZoneNoMatch: Story = {
   render: (args) => stage(args),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await title(canvas);
+    await onlyWhatTheAppHas(canvas);
     await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
     const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
     await userEvent.type(sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" }), "zzzz");
@@ -491,17 +491,35 @@ export const English: Story = {
 };
 
 /**
- * The phone app has the page's header, who is signed in and Preferencias (language, theme, sounds)
- * as the web draws them; the rest of the web's sections (time and money, passkeys, data, deleting
- * the account) stay on the web, behind the app's "Más en la web". These stories leave only what
- * the app also has on the page, for the mobile parity pairs (docs/mobile/parity.md).
+ * The phone app has the page's header, who is signed in, Preferencias (language, theme, sounds),
+ * "Hora y moneda", the passkeys and "Tus datos" (its import link) as the web draws them. What it
+ * does not have yet, the export and deleting the account (Task 7 of Stage 3c), is left out of the
+ * picture by these stories, for the mobile parity pairs (docs/mobile/parity.md).
  */
 async function onlyWhatTheAppHas(canvas: Canvas, heading = "Ajustes") {
   await title(canvas, heading);
   for (const section of canvas.getAllByRole("region")) {
     const name = within(section).getByRole("heading", { level: 2 }).textContent;
-    if (name !== "Preferencias" && name !== "Preferences") section.style.display = "none";
+    if (name === "Eliminar tu cuenta" || name === "Delete your account") {
+      section.style.display = "none";
+    }
+    if (name === "Tus datos" || name === "Your data") {
+      // The card's blocks: the heading, the import, then the export's two buttons.
+      section.children[2]?.remove();
+    }
   }
+}
+
+/**
+ * Where the page stops so a card below the fold fills the phone's viewport: the card starts this
+ * many px under the top of it, or as near as the page's end lets it (the same rule as Insights'
+ * scrolled stories). The app's test scrolls to the same place.
+ */
+const SCROLL_GAP = 16;
+
+async function scrollTo(card: HTMLElement) {
+  window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - SCROLL_GAP);
+  await waitFor(() => expect(window.scrollY).toBeGreaterThan(0));
 }
 
 /** The page as the phone app has it: Preferencias, with the other sections out of the picture. */
@@ -538,5 +556,106 @@ export const AppSectionsSoundOff: Story = {
     const sound = canvas.getByRole("switch", { name: "Sonidos" });
     await userEvent.click(sound);
     await expect(sound).not.toBeChecked();
+  },
+};
+
+/** The currency still open (an empty account), its options scrolled to the top of the picture. */
+export const AppSectionsCurrencyOpen: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas);
+    const time = await region(canvas, "Hora y moneda");
+    await time.findByRole("radio", { name: /Euro/ });
+    await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+    // The currency's own options, not the whole card, fill the top of the picture.
+    await scrollTo(time.getByRole("radio", { name: /Euro/ }).closest("fieldset") as HTMLElement);
+  },
+};
+
+/** The passkeys listed (one named, one synced), scrolled into view. */
+export const AppSectionsPasskeys: Story = {
+  render: (args) =>
+    stage(args, {
+      data: "empty",
+      noRecurrences: true,
+      passkeys: storyPasskeys({
+        initial: [
+          { id: "pk-1", name: null, createdAt: "2026-10-02T09:00:00.000Z", synced: true },
+          { id: "pk-2", name: "Pixel 9", createdAt: "2026-10-05T10:00:00.000Z", synced: false },
+        ],
+      }),
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas);
+    const keys = await region(canvas, "Entrar con tu huella");
+    await keys.findByText("Creada el 2 oct 2026");
+    await scrollTo(canvas.getByRole("region", { name: "Entrar con tu huella" }));
+  },
+};
+
+/** "Tus datos" at the foot of the page, scrolled into view. */
+export const AppSectionsData: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas);
+    // The passkeys' list has loaded: the page is as tall as it will be.
+    await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+    await scrollTo(canvas.getByRole("region", { name: "Tus datos" }));
+  },
+};
+
+/** The time zone sheet, open, after searching a country. */
+export const TimeZoneSheetOpen: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas);
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
+    await userEvent.type(
+      sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" }),
+      "colombia",
+    );
+    await expect(await sheet.findByRole("button", { name: /^Bogota/ })).toBeVisible();
+  },
+};
+
+/** The zone in use among the results: it says "Actual". */
+export const TimeZoneSheetCurrent: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas);
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
+    await userEvent.type(
+      sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" }),
+      "madrid",
+    );
+    await expect(await sheet.findByText("Actual")).toBeVisible();
+  },
+};
+
+/** The question before deleting a passkey, open. */
+export const PasskeyRemoveSheetOpen: Story = {
+  render: (args) =>
+    stage(args, {
+      passkeys: storyPasskeys({
+        initial: [{ id: "pk-1", name: null, createdAt: "2026-10-02T09:00:00.000Z", synced: true }],
+      }),
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await onlyWhatTheAppHas(canvas);
+    const keys = await region(canvas, "Entrar con tu huella");
+    await userEvent.click(
+      await keys.findByRole("button", { name: "Eliminar la huella creada el 2 oct 2026" }),
+    );
+    await expect(
+      await screen.findByRole("dialog", { name: "¿Eliminar esta huella?" }),
+    ).toBeVisible();
   },
 };

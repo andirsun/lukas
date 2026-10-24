@@ -278,7 +278,9 @@ void main() {
       await _scrollTo(tester, find.byKey(const Key('settings.web')));
       expect(find.bySemanticsLabel('Más en la web'), findsWidgets);
       expect(find.bySemanticsLabel('La página de Lukitas y lo que viene.'), findsOneWidget);
-      expect(find.bySemanticsLabel(RegExp('Hora y moneda|recurrentes')), findsNothing);
+      // The card names no page of the app (time and money, the passkeys and the import are cards of the
+      // page itself now).
+      expect(find.bySemanticsLabel(RegExp('recurrentes')), findsNothing);
       await tester.tap(find.byKey(const Key('settings.web')));
       await tester.pumpAndSettle();
       await _scrollTo(tester, find.byKey(const Key('settings.roadmap')));
