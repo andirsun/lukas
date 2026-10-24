@@ -183,13 +183,13 @@ void main() {
       expect(find.byKey(const Key('categories.fold')), findsNothing);
     });
 
-    testBudgets('an archived category leaves the list for Archivadas, folded, spending or not', (
+    testBudgets('an archived category with no spending this month waits in Archivadas, folded', (
       tester,
     ) async {
-      await pumpCategories(tester, home: monthWithArchived(spending: true));
+      await pumpCategories(tester, home: monthWithArchived());
       await openBudgetsTab(tester);
 
-      expect(find.text('Gimnasio'), findsNothing, reason: 'not among the budgets, though it spent');
+      expect(find.text('Gimnasio'), findsNothing, reason: 'not among the rows');
       expect(find.text('ARCHIVADAS (1)'), findsOneWidget);
       expect(row('Archivadas'), findsNothing, reason: 'folded');
 
@@ -201,6 +201,20 @@ void main() {
       await tester.tap(find.byKey(const Key('categories.fold')));
       await tester.pumpAndSettle();
       expect(find.text('Gimnasio'), findsNothing, reason: 'folded again');
+    });
+
+    testBudgets('one with spending this month is among the rows, noted, and not in Archivadas', (
+      tester,
+    ) async {
+      await pumpCategories(tester, home: monthWithArchived(spending: true));
+      await openBudgetsTab(tester);
+
+      expect(row('Gimnasio archivada Sin presupuesto'), findsOneWidget);
+      expect(find.byKey(const Key('categories.fold')), findsNothing);
+      // It opens its detail, which offers Restaurar.
+      await tester.tap(find.byKey(const ValueKey('cat-old')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('detail.restore')), findsOneWidget);
     });
 
     testBudgets('the fold counts the archived ones of the kind on screen', (tester) async {

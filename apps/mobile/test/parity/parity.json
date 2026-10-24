@@ -921,6 +921,18 @@
     "appTest": "test/parity/categories_parity_test.dart"
   },
   {
+    "id": "categories-archived-with-spending",
+    "storyId": "home-home--categories-archived-with-spending",
+    "theme": "night",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
+    "id": "categories-archived-with-spending",
+    "storyId": "home-home--categories-archived-with-spending",
+    "theme": "day",
+    "appTest": "test/parity/categories_parity_test.dart"
+  },
+  {
     "id": "category-new-sheet",
     "storyId": "home-home--new-category-sheet",
     "theme": "night",

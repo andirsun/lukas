@@ -162,7 +162,7 @@ void main() {
       expect(find.descendant(of: market, matching: find.byType(BudgetBar)), findsNothing);
     });
 
-    testBudgets('an archived category with spending is in Archivadas, not among the budgets', (
+    testBudgets('an archived category with spending this month stays among the rows, noted', (
       tester,
     ) async {
       final home = budgetsMonth();
@@ -170,8 +170,15 @@ void main() {
       home.items.add(tx('gym', '2026-10-03', -4000000, name: 'Mensualidad', categoryId: 'cat-old'));
       await pumpBudgets(tester, home: home);
       await openBudgetsTab(tester);
-      expect(find.text('Gimnasio'), findsNothing);
-      expect(find.text('ARCHIVADAS (1)'), findsOneWidget);
+      // Like the web's: the rows add up to what the month spent, in the categories' own order.
+      final order = [
+        for (final row in tester.widgetList<CategoryRow>(find.byType(CategoryRow))) row.name,
+      ];
+      expect(order, ['Hogar', 'Gimnasio', 'Supermercado']);
+      expect(_row(r'Gimnasio archivada Sin presupuesto'), findsOneWidget);
+      expect(find.textContaining('· archivada'), findsOneWidget);
+      expect(find.textContaining(r'$40.000'), findsWidgets, reason: 'what it spent is on its row');
+      expect(find.byKey(const Key('categories.fold')), findsNothing, reason: 'not folded as well');
     });
 
     testBudgets('with no spending categories it says so, as the web does', (tester) async {

@@ -21,6 +21,7 @@ class CategoryRow extends StatelessWidget {
   const CategoryRow({
     super.key,
     required this.name,
+    this.note,
     required this.glyph,
     required this.tint,
     required this.budget,
@@ -34,6 +35,9 @@ class CategoryRow extends StatelessWidget {
   });
 
   final String name;
+
+  /// A short muted word after the name, e.g. "archivada". Part of the row's name.
+  final String? note;
 
   /// The emoji shown in the tile.
   final String glyph;
@@ -77,6 +81,7 @@ class CategoryRow extends StatelessWidget {
 
     final line = this.line;
     final budget = line == null ? this.budget : null;
+    final note = this.note;
     final status =
         line ??
         (budget == null
@@ -93,9 +98,11 @@ class CategoryRow extends StatelessWidget {
           };
     final titleStyle = LkText.label.copyWith(leadingDistribution: TextLeadingDistribution.even);
     const statusStyle = LkText.caption;
+    final label = note == null ? name : '$name $note';
+
     return Pressable(
       onPressed: onOpen,
-      label: '$name $status',
+      label: '$label $status',
       keepChildSemantics: true,
       builder: (context, state) {
         final pressed = state.pressed;
@@ -148,8 +155,20 @@ class CategoryRow extends StatelessWidget {
                                   style: titleStyle,
                                   child: Text.rich(
                                     TextSpan(
-                                      text: name,
                                       style: titleStyle.copyWith(color: colors.ink),
+                                      children: [
+                                        TextSpan(text: name),
+                                        if (note != null) ...[
+                                          const TextSpan(text: ' '),
+                                          TextSpan(
+                                            text: '· $note',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: colors.inkMuted,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,

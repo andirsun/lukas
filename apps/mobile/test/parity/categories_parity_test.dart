@@ -19,7 +19,8 @@ import '../support/parity_home.dart';
 
 /// Managing categories against the stories that show it, each as Storybook shows it after its
 /// `play` function: the Categorías tab's Ingresos and its unfolded Archivadas, the new category
-/// sheet (`home-home--categories-income`, `--categories-archived-open`, `--new-category-sheet`,
+/// sheet (`home-home--categories-income`, `--categories-archived-open`, `--categories-archived-with-spending`,
+/// `--new-category-sheet`,
 /// apps/web/app/features/home/Home.stories.tsx) and a category's detail with the edit sheet, the
 /// archive question and an archived one's note (`manage-categories--edit-category-sheet`,
 /// `--archive-sheet-open`, `--archived-detail`, apps/web/app/features/categories/Categories.stories.tsx).
@@ -159,6 +160,21 @@ void main() {
           await t.tap(find.byKey(const Key('categories.fold')));
           await t.pumpAndSettle();
           _focus(t, find.byKey(const Key('categories.fold')));
+          await _keyboardMode(t);
+        },
+      );
+    });
+
+    testWidgets('categories parity: an archived one with spending this month ($theme)', (t) async {
+      final fixture = ParityFixtures.load('home-home--categories-archived-with-spending');
+      await parityGolden(
+        t,
+        'categories-archived-with-spending',
+        _home(),
+        theme: theme,
+        overrides: _overrides(fixture),
+        act: (t) async {
+          await _openCategoriesTab(t);
           await _keyboardMode(t);
         },
       );

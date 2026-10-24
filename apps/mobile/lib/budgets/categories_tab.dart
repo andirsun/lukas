@@ -34,8 +34,9 @@ BudgetState budgetStateOf(SummaryCategoriesInnerStateEnum state) => switch (stat
 /// own order, each opening its detail ([onOpen] gets its id): a spending category with its month's
 /// budget bar (the figures are [summary]'s: never recomputed here), an income one with "Ingreso";
 /// "Nueva categoría"; and the archived ones of that kind folded at the end ([showArchived],
-/// [onToggleArchived]), each with "Restaurar". Renaming, the emoji and colour, and archiving are in
-/// the detail.
+/// [onToggleArchived]), each with "Restaurar". An archived spending category that has spending in
+/// the month on screen is one of the rows instead, noted "archivada". Renaming, the emoji and
+/// colour, and archiving are in the detail.
 class CategoriesTab extends ConsumerWidget {
   const CategoriesTab({
     super.key,
@@ -91,13 +92,18 @@ class CategoriesTab extends ConsumerWidget {
       final byOrder = a.$2.sortOrder.compareTo(b.$2.sortOrder);
       return byOrder != 0 ? byOrder : a.$1.compareTo(b.$1);
     });
+    // An archived spending category with a line in the summary has spending in the month on screen
+    // (the API keeps it only then): it stays among the rows, noted, as the web lists it; the rest
+    // wait in the fold.
+    bool spentThisMonth(Category category) =>
+        kind == CategoryKindEnum.expense && category.archived && lines.containsKey(category.id);
     final active = [
       for (final (_, category) in ofKind)
-        if (!category.archived) category,
+        if (!category.archived || spentThisMonth(category)) category,
     ];
     final archived = [
       for (final (_, category) in ofKind)
-        if (category.archived) category,
+        if (category.archived && !spentThisMonth(category)) category,
     ];
     final income = kind == CategoryKindEnum.income;
 
@@ -198,6 +204,7 @@ class CategoriesTab extends ConsumerWidget {
       state: line == null ? BudgetState.ok : budgetStateOf(line.state),
       currency: currency,
       line: income ? l10n.categoriesIncomeLine : null,
+      note: category.archived ? l10n.budgetsArchivedNote : null,
       onOpen: () => onOpen(category.id),
     );
   }
