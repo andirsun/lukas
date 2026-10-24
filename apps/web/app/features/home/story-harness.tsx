@@ -20,7 +20,6 @@ import { AppMessages } from "../../i18n/AppMessages.tsx";
 import type { Locale } from "../../i18n/format.ts";
 import { IntlProvider, useLocale } from "../../i18n/IntlProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
-import { CategoriesPage } from "../categories/CategoriesPage.tsx";
 import { CategoryDetail } from "../categories/CategoryDetail.tsx";
 import { Insights } from "../insights/Insights.tsx";
 import { RecurringPage } from "../recurring/RecurringPage.tsx";
@@ -468,6 +467,10 @@ function homeFetch({
       return Response.json(categories.filter((c) => all || !c.archived).map(withBudget));
     }
     if (path === "/api/v1/categories" && request.method === "POST") {
+      const asked = (body as { name?: string }).name?.toLowerCase();
+      if (categories.some((c) => c.name.toLowerCase() === asked)) {
+        return Response.json({ code: "category_name_taken" }, { status: 409 });
+      }
       const created = {
         ...(body as Omit<FakeCategory, "id" | "archived" | "currentBudget">),
         id: `cat-new-${categories.length}`,
@@ -775,7 +778,6 @@ export function HomeStage({
             <ToastProvider>
               <Routes>
                 <Route path="/app" element={shell(<Home signOut={signOut} />)} />
-                <Route path="/app/categories" element={shell(<CategoriesPage />)} />
                 <Route path="/app/categories/:id" element={shell(<CategoryDetail />)} />
                 <Route path="/app/recurring" element={shell(<RecurringPage />)} />
                 <Route path="/app/insights" element={shell(<Insights />)} />

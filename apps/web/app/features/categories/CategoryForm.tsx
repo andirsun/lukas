@@ -38,11 +38,11 @@ export interface CategoryFormProps {
   /** Turns a failure into the text to show. */
   errorText(problem: unknown): string;
   /**
-   * The categories page: the kind is fixed (it has transactions, or they are being counted), with
+   * Home's Categorías tab and the detail: the kind is fixed (it has transactions, or they are being counted), with
    * the line saying why when `true`. Onboarding derives this from `removal` instead.
    */
   kindLocked?: boolean | "counting" | undefined;
-  /** The categories page: "Archivar categoría", which asks for confirmation elsewhere. */
+  /** A category's detail: "Archivar categoría", which asks for confirmation elsewhere. */
   onArchive?: (() => void) | undefined;
 }
 
@@ -59,7 +59,7 @@ const OPTION =
 
 /**
  * A category's sheet: "＋ Agregar categoría", or editing one (from onboarding's categories step,
- * the categories page or a category's detail). Name,
+ * or a category's detail; "Nueva categoría" on home's Categorías tab). Name,
  * spending or income, an emoji and a tint, each a native radio group (the tints named for screen
  * readers). Editing adds "Eliminar categoría" when it has no transactions; with transactions it says
  * how many, offers "Archivar" instead, and its kind can't change here. Mount it with a `key` per

@@ -146,18 +146,22 @@ test.describe("signed in, with the sample imported", () => {
     await expectAccessible(page, "/app, the add sheet");
   });
 
-  test("categories and a category", async ({ page }) => {
-    await page.goto("/app/categories");
-    await expect(h1(page, "Categorías")).toBeVisible();
-    await expect(page.getByRole("link", { name: /^Supermercado/ }).first()).toBeVisible();
-    await expectAccessible(page, "/app/categories");
+  test("the new-category sheet, and a category with its edit sheet", async ({ page }) => {
+    await page.goto("/app");
+    if (isPhone(page)) await page.getByRole("tab", { name: "Categorías" }).click();
+    const panel = page.getByRole("tabpanel", { name: "Categorías" });
+    await panel.getByRole("button", { name: "Nueva categoría" }).click();
+    await expect(page.getByRole("dialog", { name: "Nueva categoría" })).toBeVisible();
+    await expectAccessible(page, "/app, Nueva categoría");
+    await page.getByRole("dialog").getByRole("button", { name: "Cerrar" }).click();
+    await expect(page.getByRole("dialog")).toBeHidden();
 
-    await page
-      .getByRole("link", { name: /^Supermercado/ })
-      .first()
-      .click();
+    await panel.getByRole("button", { name: /^Supermercado/ }).click();
     await expect(h1(page, "Supermercado")).toBeVisible();
     await expectAccessible(page, "/app/categories/:id");
+    await page.getByRole("button", { name: "Editar categoría" }).click();
+    await expect(page.getByRole("dialog", { name: "Editar categoría" })).toBeVisible();
+    await expectAccessible(page, "/app/categories/:id, Editar categoría");
   });
 
   test("recurring, insights, settings and import", async ({ page }) => {

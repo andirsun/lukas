@@ -31,7 +31,6 @@ export default [
             index("routes/app._index.tsx"),
             // The import on its own, after onboarding (home's "Trae tu historial").
             route("import", "routes/app.import.tsx"),
-            route("categories", "routes/app.categories.tsx"),
             route("categories/:id", "routes/app.categories.$id.tsx"),
             route("recurring", "routes/app.recurring.tsx"),
             route("insights", "routes/app.insights.tsx"),
@@ -43,7 +42,6 @@ export default [
         // import: settings turns it off in the demo.
         route("demo", "routes/demo.tsx", [
           index("routes/app._index.tsx", { id: "demo-home" }),
-          route("categories", "routes/app.categories.tsx", { id: "demo-categories" }),
           route("categories/:id", "routes/app.categories.$id.tsx", { id: "demo-category" }),
           route("recurring", "routes/app.recurring.tsx", { id: "demo-recurring" }),
           route("insights", "routes/app.insights.tsx", { id: "demo-insights" }),

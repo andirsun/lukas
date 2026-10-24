@@ -4,7 +4,6 @@ import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { exposeStoryFetch } from "../../.storybook/parity.ts";
 import { ApiProvider } from "../api/ApiProvider.tsx";
-import { CategoriesPage } from "../features/categories/CategoriesPage.tsx";
 import { CategoryDetail } from "../features/categories/CategoryDetail.tsx";
 import { AppShell } from "../features/home/AppShell.tsx";
 import { Home } from "../features/home/Home.tsx";
@@ -59,7 +58,6 @@ function DemoStage({ path }: { path: string }) {
                   }
                 >
                   <Route index element={<Home />} />
-                  <Route path="categories" element={<CategoriesPage />} />
                   <Route path="categories/:id" element={<CategoryDetail />} />
                   <Route path="recurring" element={<RecurringPage />} />
                   <Route path="insights" element={<Insights />} />

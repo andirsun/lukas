@@ -17,7 +17,8 @@ const LINKS = [
   { key: "home", to: "" },
   { key: "insights", to: "/insights" },
   { key: "recurring", to: "/recurring" },
-  { key: "categories", to: "/categories" },
+  // Categories are managed in home's Categorías tab: the link opens home on it.
+  { key: "categories", to: "", state: { view: "budgets" } },
   { key: "settings", to: "/settings" },
 ] as const;
 
@@ -33,20 +34,21 @@ export function Sidebar({ current, onAdd, soon = [], base = "/app" }: SidebarPro
       className="flex w-56 flex-none flex-col gap-(--space-2) border-stroke border-r-2 bg-surface-sunken p-(--space-4)"
     >
       <span className="lk-logo px-(--space-3) pb-(--space-4)">{t("app.name")}</span>
-      {LINKS.map(({ key, to }) =>
-        soon.includes(key) ? (
-          <span key={key} className="lk-side-link is-soon">
-            {t(`nav.${key}`)}
+      {LINKS.map((link) =>
+        soon.includes(link.key) ? (
+          <span key={link.key} className="lk-side-link is-soon">
+            {t(`nav.${link.key}`)}
             <span className="lk-soon ml-auto">{t("nav.soon")}</span>
           </span>
         ) : (
           <Link
-            key={key}
-            to={`${base}${to}`}
+            key={link.key}
+            to={`${base}${link.to}`}
+            state={"state" in link ? link.state : undefined}
             className="lk-side-link"
-            aria-current={current === key ? "page" : undefined}
+            aria-current={current === link.key ? "page" : undefined}
           >
-            {t(`nav.${key}`)}
+            {t(`nav.${link.key}`)}
           </Link>
         ),
       )}
