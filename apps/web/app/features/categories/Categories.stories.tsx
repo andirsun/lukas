@@ -21,6 +21,11 @@ const meta = {
     viewport: {
       options: {
         phone: { name: "Phone", styles: { width: "390px", height: "844px" }, type: "mobile" },
+        shortPhone: {
+          name: "Short phone",
+          styles: { width: "360px", height: "640px" },
+          type: "mobile",
+        },
         desktop: { name: "Desktop", styles: { width: "1280px", height: "800px" }, type: "desktop" },
       },
     },
@@ -153,6 +158,74 @@ export const BudgetSheetOpen: Story = {
     const sheet = within(await screen.findByRole("dialog", { name: "Presupuesto de Ocio" }));
     await expect(sheet.getByTestId("budget-amount")).toHaveTextContent(eur("650"));
   },
+};
+
+/** The solid edge under a key (`.lk-key`'s `box-shadow: 0 3px 0`). */
+const KEY_EDGE = 3;
+
+/**
+ * Opens the budget sheet and checks its keypad against the stuck footer: every key, the last row's
+ * "," 0 ⌫ included, ends (with its 3px solid edge) above "Guardar presupuesto"'s footer, which
+ * never covers or clips it. The sheet
+ * scrolls as a whole, so on a phone too short for it the keypad must still be whole once it is
+ * scrolled to its end, and on one that fits it must be whole without scrolling.
+ */
+const keypadFits = (args: Spies, { scrolls }: { scrolls: boolean }): NonNullable<Story["play"]> => {
+  void args;
+  return async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const budget = await budgetRegion(canvas);
+    await waitFor(() => expect(budget).toHaveTextContent(`Quedan ${eur("383,67")}`));
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar presupuesto" }));
+    const dialog = await screen.findByRole("dialog", { name: "Presupuesto de Ocio" });
+    await expect(within(dialog).getByTestId("budget-amount")).toHaveTextContent(eur("650"));
+    // The sheet has slid in (it opens from below the screen).
+    await waitFor(
+      () => expect(dialog.getBoundingClientRect().bottom).toBeLessThanOrEqual(innerHeight + 1),
+      { timeout: 8000 },
+    );
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const footer = dialog.querySelector(".lk-sheet-footer");
+    if (!footer) throw new Error("the budget sheet has no stuck footer");
+    const save = within(dialog).getByRole("button", { name: "Guardar presupuesto" });
+    const keys = [...dialog.querySelectorAll<HTMLElement>(".lk-key")];
+    await expect(keys).toHaveLength(12);
+    const fits = (where: string) => {
+      const footerTop = footer.getBoundingClientRect().top;
+      const sheetTop = dialog.getBoundingClientRect().top;
+      for (const key of keys) {
+        const box = key.getBoundingClientRect();
+        const name = `${key.textContent || "⌫"} (${where})`;
+        // Whole, with its solid edge, above the footer.
+        expect(box.bottom + KEY_EDGE, `${name} ends above Guardar's footer`).toBeLessThanOrEqual(
+          footerTop,
+        );
+        expect(box.top, `${name} is below the sheet's top`).toBeGreaterThanOrEqual(sheetTop);
+      }
+      const saveBox = save.getBoundingClientRect();
+      expect(saveBox.bottom, "Guardar is in view").toBeLessThanOrEqual(innerHeight);
+    };
+    if (!scrolls) {
+      await expect(dialog.scrollHeight).toBeLessThanOrEqual(dialog.clientHeight);
+      fits("as it opens");
+    }
+    dialog.scrollTop = dialog.scrollHeight;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    fits("scrolled to its end");
+  };
+};
+
+/** The budget sheet on a 390 × 844 phone: the keypad is whole above "Guardar presupuesto". */
+export const BudgetSheetKeypadFits: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories/cat-fun" />,
+  play: keypadFits({ onRequest: fn() }, { scrolls: false }),
+};
+
+/** The same on a short phone, 360 × 640: whole once scrolled to the end, and in view. */
+export const BudgetSheetKeypadFitsShortPhone: Story = {
+  globals: { viewport: { value: "shortPhone", isRotated: false } },
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories/cat-fun" />,
+  play: keypadFits({ onRequest: fn() }, { scrolls: false }),
 };
 
 /** A minus typed on the keyboard is refused in words, and the amount stays (for the app's pictures). */

@@ -876,19 +876,13 @@
     "id": "budget-sheet",
     "storyId": "manage-categories--budget-sheet-open",
     "theme": "night",
-    "appTest": "test/parity/budgets_parity_test.dart",
-    "knownDifferences": [
-      "The last row of keys has its solid edge here: the web's sticky footer sits flush on the keypad and hides it, so the keys look cut (the founder's phone shows it); the app draws the edge over the footer's line"
-    ]
+    "appTest": "test/parity/budgets_parity_test.dart"
   },
   {
     "id": "budget-sheet",
     "storyId": "manage-categories--budget-sheet-open",
     "theme": "day",
-    "appTest": "test/parity/budgets_parity_test.dart",
-    "knownDifferences": [
-      "The last row of keys has its solid edge here: the web's sticky footer sits flush on the keypad and hides it, so the keys look cut (the founder's phone shows it); the app draws the edge over the footer's line"
-    ]
+    "appTest": "test/parity/budgets_parity_test.dart"
   },
   {
     "id": "budget-sheet-negative",

@@ -104,15 +104,22 @@ class LkSheetScope extends InheritedWidget {
 /// Phones up to 844 px tall (`@media (max-height: 859.98px)`) get the tighter footer and keys.
 const compactFooterBelow = 860.0;
 
-/// How far a stuck footer's bottom edge sits above the sheet's: the sheet's padding the web's
-/// `.lk-sheet-footer` leaves uncovered (calibrated against the budget sheet's picture).
-const _stuckBottomGap = 16.0;
+/// How far a stuck footer's bottom edge sits above the sheet's bottom, under the footer's own
+/// padding: the sheet's padding (`space-4`) less the form's gap that the web's toast slot adds under
+/// the footer (calibrated against the budget sheet's picture). Not more with a system inset: the
+/// footer's own padding already clears it.
+const _stuckBottomGap = LukitasTokens.space4 - LukitasTokens.space2;
+
+/// The gap the web's form (`gap-(--space-2)`) leaves between its last row and the stuck footer.
+const _formGap = LukitasTokens.space2;
 
 /// What the scrolling part of a sheet with a stuck footer is clipped to: its own box, and 3px more
-/// below. The web's footer (`position: sticky`, `z-index: 1`) covers the end of the form, where the
-/// last row of the keypad ends flush against it, and hides that row's solid edge: the keys look cut.
-/// Here the edge is drawn over the footer's line, 3px being the edge's height (`.lk-key`'s
-/// `box-shadow: 0 3px 0`); the keys' boxes themselves are still wholly above the footer.
+/// below. The web's footer (`position: sticky`, `z-index: 1`) used to be pushed up by the sheet's
+/// padding, so it sat flush on the keypad's last row and hid that row's solid edge: the keys looked
+/// cut (the web's CSS is fixed now, and leaves the form's 8px gap, [_formGap]). Here the edge is
+/// still drawn over the footer's line should the content ever end flush against it, 3px being the
+/// edge's height (`.lk-key`'s `box-shadow: 0 3px 0`); the keys' boxes themselves are wholly above
+/// the footer.
 class _KeyEdgeClip extends CustomClipper<Rect> {
   const _KeyEdgeClip();
 
@@ -431,8 +438,8 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
           side,
           10,
           side,
-          // With a stuck footer nothing follows the content: the footer is stuck over its end.
-          stuck == null ? bottom : 0,
+          // With a stuck footer the form's gap is all that follows the content, then the footer.
+          stuck == null ? bottom : _formGap,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
