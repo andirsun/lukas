@@ -21,7 +21,7 @@ export function opensInApp(search: string, userAgent: string): boolean {
   return new URLSearchParams(search).get("from") === "app" && isAndroidBrowser(userAgent);
 }
 
-/** This page with the same query but `from=app`, to land on when the app does not open. */
+/** This page with the same query but without `from`, to land on when the app does not open. */
 export function webLinkUrl(origin: string, search: string): string {
   const query = new URLSearchParams(search);
   query.delete("from");
