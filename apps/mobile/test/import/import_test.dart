@@ -420,6 +420,35 @@ void main() {
       expect(env.container.read(importFlowProvider).phase, isA<ImportIdle>());
     });
 
+    testWidgets(
+      'leaving the page while a confirm is on its way: home, the profile and the widget still follow',
+      (tester) async {
+        final env = await pumpImport(tester, currency: 'COP');
+        await pickFile(tester);
+        env.server.holdConfirm = Completer<void>();
+        await tester.tap(find.byKey(const Key('import.confirm')));
+        await tester.pump();
+        expect(env.container.read(importFlowProvider).locked, isTrue);
+
+        // Away from the page (the bottom bar's Inicio) before the server answers.
+        final snapshots = env.app.snapshots.length;
+        await tester.tap(find.text('Inicio'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('import.page')), findsNothing);
+
+        env.server.holdConfirm!.complete();
+        await tester.pumpAndSettle();
+        // The rows are in, the account took the file's currency, and the app knows both.
+        expect(env.home.live, 'EUR');
+        final data = env.container.read(homeProvider).data!;
+        expect(data.currency, 'EUR');
+        expect(data.items.map((t) => t.name), containsAll(['Café', 'Cine']));
+        expect(env.app.snapshots.length, greaterThan(snapshots));
+        // And the flow is let go once it is done.
+        expect(env.container.exists(importFlowProvider), isFalse);
+      },
+    );
+
     testWidgets('leaving with a preview open confirms nothing', (tester) async {
       final env = await pumpImport(tester);
       await pickFile(tester);

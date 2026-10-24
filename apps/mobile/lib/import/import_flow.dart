@@ -174,6 +174,18 @@ class ImportFlow extends Notifier<ImportFlowState> {
     final current = state.phase;
     if (current is! ImportPreview || current.confirming || current.discarding) return;
     _phase(current.copyWith(confirming: true, error: () => null));
+    // The rows go in on the server whether or not the page is still there: the flow lives until
+    // what the import changed has reached home, the profile and the widget (the web captures its
+    // query client for the same reason). Leaving the page mid-confirm must not lose that.
+    final link = ref.keepAlive();
+    try {
+      await _confirm(current, locale);
+    } finally {
+      link.close();
+    }
+  }
+
+  Future<void> _confirm(ImportPreview current, String locale) async {
     final FileImport result;
     try {
       final switching = current.currencyNote?.kind == CurrencyNoteKind.switching;

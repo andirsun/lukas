@@ -123,7 +123,7 @@ class MainActivity : FlutterActivity() {
         notices = NoticesChannel(this, messenger)
 
         // Files in and out (lib/files): the document picker and the share sheet, no storage permission.
-        files = FilesChannel(this, messenger, debuggable = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0)
+        files = FilesChannel(this, messenger)
 
         // The phone's IANA time zone (lib/api/device.dart): Dart only knows its abbreviation. And
         // the browser, for "Más en la web".

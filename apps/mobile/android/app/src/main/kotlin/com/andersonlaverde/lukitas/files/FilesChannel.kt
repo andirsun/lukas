@@ -35,7 +35,6 @@ import kotlin.concurrent.thread
 class FilesChannel(
     private val activity: Activity,
     messenger: BinaryMessenger,
-    private val debuggable: Boolean = false,
 ) : MethodChannel.MethodCallHandler {
 
     private val methods = MethodChannel(messenger, "lukitas/files")
@@ -47,15 +46,20 @@ class FilesChannel(
     private var pick: PendingPick? = null
     private var save: PendingSave? = null
 
-    /** Debug builds only: a document the next `pick` returns without showing the picker (tests). */
-    private var injected: Uri? = null
-
     init {
         methods.setMethodCallHandler(this)
+        // Copies left by an earlier run (a share whose app was killed before the next one).
+        thread(name = "files-clean") { clearShared() }
     }
 
     fun dispose() {
         methods.setMethodCallHandler(null)
+        clearShared()
+    }
+
+    /** Deletes every copy made for the share sheet. */
+    private fun clearShared() {
+        File(activity.cacheDir, SHARED).listFiles()?.forEach { it.delete() }
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -63,17 +67,8 @@ class FilesChannel(
             "pick" -> pick(call, result)
             "save" -> save(call, result)
             "share" -> share(call, result)
-            "injectPick" -> {
-                // Only a debuggable build lets a test stand in for the person at the picker. The
-                // file then goes through the same reading as any picked document.
-                if (!debuggable) {
-                    result.notImplemented()
-                    return
-                }
-                injected = Uri.fromFile(File(call.arguments as String))
-                result.success(null)
-            }
-            else -> result.notImplemented()
+            // Debug builds only (src/debug): a test stands in for the person at the picker.
+            else -> if (!FilesTestHook.handle(call, result)) result.notImplemented()
         }
     }
 
@@ -84,11 +79,10 @@ class FilesChannel(
         }
         val limit = FileTransfer.limitOf(call.argument<Any>("maxBytes"))
         val pending = PendingPick(result, limit)
-        val stand = injected
+        val stand = FilesTestHook.take()
         if (stand != null) {
-            injected = null
             pick = pending
-            read(stand)
+            read(stand, limit)
             return
         }
         val types = FileTransfer.mimeTypesOf(call.argument<Any>("mimeTypes"))
@@ -150,6 +144,11 @@ class FilesChannel(
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     try {
                         activity.startActivity(Intent.createChooser(send, null))
+                        // The receiving app reads the copy in its own time; it is not needed after.
+                        thread(name = "files-clean", isDaemon = true) {
+                            Thread.sleep(SHARED_LIFE_MS)
+                            clearShared()
+                        }
                         result.success(true)
                     } catch (e: ActivityNotFoundException) {
                         result.error("unavailable", "Nothing on this phone can take the file", null)
@@ -181,7 +180,7 @@ class FilesChannel(
                 if (resultCode != Activity.RESULT_OK || uri == null) {
                     finishPick { it.success(null) }
                 } else {
-                    read(uri)
+                    read(uri, pick?.limit ?: return true)
                 }
                 return true
             }
@@ -200,15 +199,17 @@ class FilesChannel(
         return false
     }
 
+    /** Answers the pick on the main thread, where [pick] is kept: it is let go only then. */
     private fun finishPick(deliver: (MethodChannel.Result) -> Unit) {
-        val pending = pick ?: return
-        pick = null
-        main.post { deliver(pending.result) }
+        main.post {
+            val pending = pick ?: return@post
+            pick = null
+            deliver(pending.result)
+        }
     }
 
     /** Reads the picked document off the main thread, within the limit. */
-    private fun read(uri: Uri) {
-        val limit = pick?.limit ?: return
+    private fun read(uri: Uri, limit: Int) {
         thread(name = "files-read") {
             try {
                 val size = sizeOf(uri)
@@ -275,5 +276,8 @@ class FilesChannel(
         const val PICK = 0x4c46
         const val SAVE = 0x4c47
         const val SHARED = "shared"
+
+        /** How long a copy made for the share sheet stays: ample for any receiver to take it. */
+        const val SHARED_LIFE_MS = 10 * 60 * 1000L
     }
 }
