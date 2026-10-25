@@ -40,9 +40,9 @@ export function activeRecurrencesIn(
 }
 
 /**
- * The sheets that change categories, for the categories page and a category's detail: "Nueva
- * categoría", editing one (name, kind, emoji, tint) and archiving it, which asks first in its own
- * sheet. Restoring needs no question. Each change ends in a toast; a refusal (a name already
+ * The sheets that change categories, for home's Categorías tab ("Nueva categoría", restoring an
+ * archived one) and a category's detail (editing one: name, kind, emoji, tint; and archiving it,
+ * which asks first in its own sheet). Restoring needs no question. Each change ends in a toast; a refusal (a name already
  * taken, say) stays in the edit sheet, and a failed archive or restore is an error toast.
  */
 export function useCategorySheets() {
@@ -52,11 +52,12 @@ export function useCategorySheets() {
   const create = useCreateCategory();
   const update = useUpdateCategory();
   const me = useMe().data;
-  const recurrences = useRecurrences();
   const [target, setTarget] = useState<Target | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const editing = target?.kind === "edit" ? target.category : null;
+  // Only an edit can archive: the recurrences are fetched once one is opened, not with the screen.
+  const recurrences = useRecurrences({ enabled: editing !== null });
   const hasTransactions = useHasTransactions(formOpen && editing ? editing.id : null);
 
   const errorText = (problem: unknown) =>
@@ -114,6 +115,14 @@ export function useCategorySheets() {
       ? activeRecurrencesIn(recurrences.data, editing.id, todayIn(me.timezone))
       : 0;
 
+  // The question says how many recurring payments it stops, so it waits for them if pressed before
+  // they are here. If they cannot be read it asks anyway (the API still ends them), as the app does.
+  const askToArchive = async () => {
+    if (recurrences.data === undefined) await recurrences.refetch();
+    setFormOpen(false);
+    setConfirmOpen(true);
+  };
+
   const sheets: ReactNode = (
     <>
       <CategoryForm
@@ -126,14 +135,7 @@ export function useCategorySheets() {
         kindLocked={
           editing ? (hasTransactions.isPending ? "counting" : hasTransactions.data === true) : false
         }
-        onArchive={
-          editing && !editing.archived
-            ? () => {
-                setFormOpen(false);
-                setConfirmOpen(true);
-              }
-            : undefined
-        }
+        onArchive={editing && !editing.archived ? askToArchive : undefined}
       />
       <ConfirmSheet
         open={confirmOpen}

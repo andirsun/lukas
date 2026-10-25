@@ -33,7 +33,7 @@ export const Home: Story = {
       ["Inicio", "/app"],
       ["Análisis", "/app/insights"],
       ["Recurrentes", "/app/recurring"],
-      ["Categorías", "/app/categories"],
+      ["Categorías", "/app"],
       ["Ajustes", "/app/settings"],
     ]);
     await expect(links[0]).toHaveAttribute("aria-current", "page");

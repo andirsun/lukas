@@ -104,15 +104,20 @@ export const Budgets: Story = {
     await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
     await expect(region).toHaveTextContent(`Gastado ${eur("718,87")}`);
     await expect(region).toHaveTextContent(`de ${eur("1220,00")}`);
-    // Movimientos comes first and is the default; Presupuestos is one tap away.
+    // Movimientos comes first and is the default; Categorías is one tap away.
     const tabs = canvas.getAllByRole("tab");
-    await expect(tabs.map((tab) => tab.textContent)).toEqual(["Movimientos", "Presupuestos"]);
+    await expect(tabs.map((tab) => tab.textContent)).toEqual(["Movimientos", "Categorías"]);
     await expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
-    const panel = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    // The tabs sit on the page's own background: no darker band of their own around them
+    // (founder decision 2026-10-24).
+    const strip = canvasElement.querySelector(".lk-tabs-sticky");
+    await expect(strip).not.toBeNull();
+    await expect(getComputedStyle(strip as Element).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Categorías" }));
     // Status in words, never color alone.
     await expect(
       panel.getByRole("button", { name: endsInEuros("Supermercado Te pasaste", "14,12") }),
@@ -120,6 +125,16 @@ export const Budgets: Story = {
     await expect(
       panel.getByRole("button", { name: endsInEuros("Restaurante Quedan", "41,58") }),
     ).toBeVisible();
+    // Categories are managed here: Gastos | Ingresos, "Nueva categoría", and no archived ones yet.
+    const kinds = panel.getAllByRole("tab");
+    await expect(kinds.map((tab) => tab.textContent)).toEqual(["Gastos", "Ingresos"]);
+    await expect(panel.getByRole("tab", { name: "Gastos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expectTarget(panel.getByRole("button", { name: "Nueva categoría" }));
+    await expect(panel.queryByRole("button", { name: /^Archivadas/ })).toBeNull();
+    await expect(panel.queryByRole("button", { name: /^Salario/ })).toBeNull();
     // Lukitas talks about the month (the worst category first).
     await expect(canvas.getByText(/Supermercado/, { selector: ".lk-bubble" })).toBeVisible();
     await expectTarget(canvas.getByRole("button", { name: "Agregar" }));
@@ -161,10 +176,10 @@ export const ViewRememberedAndSwiped: Story = {
     const canvas = within(canvasElement);
     await hero(canvas);
     const card = canvas.getByRole("region", { name: "Te quedan este mes" });
-    // The pages follow the finger: dragged left (from the summary card), Presupuestos comes in.
+    // The pages follow the finger: dragged left (from the summary card), Categorías comes in.
     await fingerDrag(card, { dx: -260, steps: 16 });
     await waitFor(() =>
-      expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+      expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
         "aria-selected",
         "true",
       ),
@@ -172,18 +187,18 @@ export const ViewRememberedAndSwiped: Story = {
     // The choice wins over the default after a reload.
     await userEvent.click(canvas.getByRole("button", { name: "Recargar (stand-in)" }));
     await hero(canvas);
-    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+    await expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
     // A mostly vertical drag is a scroll, not a swipe.
-    const list = canvas.getByRole("tabpanel", { name: "Presupuestos" });
+    const list = canvas.getByRole("tabpanel", { name: "Categorías" });
     await fingerDrag(list, { dx: -60, dy: 240, steps: 12 });
-    await expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+    await expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
       "aria-selected",
       "true",
     );
-    // Dragged right, anywhere on Presupuestos (its rows do not swipe): back to Movimientos.
+    // Dragged right, anywhere on Categorías (its rows do not swipe): back to Movimientos.
     await fingerDrag(list, { dx: 260, steps: 16 });
     await waitFor(() =>
       expect(canvas.getByRole("tab", { name: "Movimientos" })).toHaveAttribute(
@@ -343,6 +358,41 @@ export const NameItLater: Story = {
   },
 };
 
+/**
+ * A name that starts with the category's: the field shows the category name only as the
+ * placeholder until it is first edited, so typing "Supermercado Éxito" never empties it at the
+ * 12th character and the whole name is saved.
+ */
+export const NameItWithTheCategoryName: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "12");
+    await pickCategory(sheet, "Supermercado");
+
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    const toast = await toastSaying("Gasto en Supermercado");
+    await userEvent.click(await toast.findByRole("button", { name: "Ponerle nombre" }));
+    const edit = within(await screen.findByRole("dialog", { name: "Editar movimiento" }));
+    const name = edit.getByRole("textbox", { name: "Nombre (opcional)" });
+    await waitFor(() => expect(name).toHaveFocus());
+    await expect(name).toHaveValue("");
+    await userEvent.type(name, "Supermercado Éxito");
+    await expect(name).toHaveValue("Supermercado Éxito");
+    await userEvent.click(edit.getByRole("button", { name: "Guardar cambios" }));
+    await dialogGone();
+    await waitFor(() =>
+      expect(calls(args.onRequest).map(([line]) => line)).toContainEqual(
+        expect.stringMatching(
+          /^PATCH \/api\/v1\/transactions\/\S+ \{"name":"Supermercado Éxito"\}$/,
+        ),
+      ),
+    );
+  },
+};
+
 /** An income: the toggle, the income categories, and its own words in the toast. */
 export const AddIncome: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} />,
@@ -365,8 +415,34 @@ export const AddIncome: Story = {
   },
 };
 
-/** "Más opciones": another date and pending, kept in what is sent. */
+/**
+ * "Más opciones": opened, it shows the date (today) and pending, with the note under them. The
+ * story rests with the sheet open on them (the mobile parity picture of it); `MoreOptionsSent`
+ * saves.
+ */
 export const MoreOptions: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "39,9");
+    await pickCategory(sheet, "Supermercado");
+
+    const more = sheet.getByRole("button", { name: /^Más opciones/ });
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(more);
+    await expect(more).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(sheet.getByRole("checkbox", { name: "Pendiente (aún no lo pagas)" }));
+    await expect(sheet.getByLabelText("Fecha")).toHaveValue(
+      new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Madrid" }).format(new Date()),
+    );
+    await expect(sheet.getByRole("textbox", { name: "Nota (opcional)" })).toBeVisible();
+  },
+};
+
+/** "Más opciones": another date and pending, kept in what is sent. */
+export const MoreOptionsSent: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} />,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
@@ -424,6 +500,9 @@ export const EditAndDelete: Story = {
     const toast = await toastSaying("Eliminado: cine");
     await waitFor(() => expect(panel.queryByRole("button", { name: /^cine/ })).toBeNull());
     await userEvent.click(toast.getByRole("button", { name: "Deshacer" }));
+    // The "De vuelta" toast replaces the first: wait until it has finished fading in, or axe
+    // reads its text mid-fade (1.14:1) when the story ends.
+    await toastSaying("De vuelta: cine");
     // It slides back in (unfolding from nothing), then it is fully there.
     const back = await panel.findByRole("button", { name: /^cine/ });
     await waitFor(() => expect(back).toBeVisible());
@@ -452,9 +531,13 @@ export const EmptyMonth: Story = {
       "href",
       "/app/import",
     );
-    await expect(canvas.getByRole("link", { name: "Ir a Categorías" })).toHaveAttribute(
-      "href",
-      "/app/categories",
+    // The budgets card opens the Categorías tab, where the categories are managed.
+    const toCategories = canvas.getByRole("link", { name: "Ir a Categorías" });
+    await expect(toCategories).toHaveAttribute("href", "/app");
+    await userEvent.click(toCategories);
+    await expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
+      "aria-selected",
+      "true",
     );
     await userEvent.click(canvas.getByRole("button", { name: "Ahora no: Trae tu historial" }));
     await waitFor(() => expect(canvas.queryByText("Trae tu historial")).toBeNull());
@@ -462,7 +545,11 @@ export const EmptyMonth: Story = {
     const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));
     await expect(panel.getByText(/Aún no hay movimientos/)).toBeVisible();
     await userEvent.click(panel.getByRole("button", { name: "Agregar gasto" }));
-    await expect(await screen.findByRole("dialog", { name: "Nuevo gasto" })).toBeVisible();
+    const sheet = await screen.findByRole("dialog", { name: "Nuevo gasto" });
+    await expect(sheet).toBeVisible();
+    // Closed again: the story rests on the empty month itself (the mobile parity picture of it).
+    await userEvent.click(within(sheet).getByRole("button", { name: "Cerrar" }));
+    await dialogGone();
   },
 };
 
@@ -480,7 +567,7 @@ export const NoCategories: Story = {
     );
     // The tabs come back once the new categories are read again: wait for them, not a moment.
     await userEvent.click(
-      await canvas.findByRole("tab", { name: "Presupuestos" }, { timeout: 5000 }),
+      await canvas.findByRole("tab", { name: "Categorías" }, { timeout: 5000 }),
     );
     await expect(await canvas.findByRole("button", { name: /^Supermercado/ })).toBeVisible();
   },
@@ -577,11 +664,19 @@ export const AvatarMenu: Story = {
     await userEvent.keyboard("{Escape}");
     await expect(avatar).toHaveAttribute("aria-expanded", "false");
     await expect(avatar).toHaveFocus();
-    // From the menu to the categories page.
+    // From the menu to the Categorías tab (categories have no page of their own).
     await userEvent.click(avatar);
+    await expect(menu.getByRole("link", { name: "Categorías" })).toHaveAttribute("href", "/app");
     await userEvent.click(menu.getByRole("link", { name: "Categorías" }));
+    await expect(avatar).toHaveAttribute("aria-expanded", "false");
+    await expect(await canvas.findByRole("tab", { name: "Categorías" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
     await expect(
-      await canvas.findByRole("heading", { level: 1, name: "Categorías" }),
+      await within(canvas.getByRole("tabpanel", { name: "Categorías" })).findByRole("button", {
+        name: "Nueva categoría",
+      }),
     ).toBeVisible();
   },
 };
@@ -592,17 +687,21 @@ export const BudgetRowOpensDetail: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await hero(canvas);
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
-    const panel = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
+    const panel = within(canvas.getByRole("tabpanel", { name: "Categorías" }));
     await userEvent.click(await panel.findByRole("button", { name: /^Ocio/ }));
     await expect(await canvas.findByRole("heading", { level: 1, name: "Ocio" })).toBeVisible();
     await expect(screen.queryByRole("dialog")).toBeNull();
     await expect(await canvas.findByRole("region", { name: "Presupuesto" })).toHaveTextContent(
       /Quedan/,
     );
-    // And back home.
-    await userEvent.click(canvas.getByRole("link", { name: "Volver al inicio" }));
+    // And back to the tab it came from.
+    await userEvent.click(canvas.getByRole("link", { name: "Volver a Categorías" }));
     await hero(canvas);
+    await expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
   },
 };
 
@@ -614,7 +713,7 @@ export const Desktop: Story = {
     const canvas = within(canvasElement);
     await hero(canvas);
     await expect(canvas.queryByRole("tab", { name: "Movimientos" })).toBeNull();
-    const budgets = canvas.getByRole("tabpanel", { name: "Presupuestos" });
+    const budgets = canvas.getByRole("tabpanel", { name: "Categorías" });
     const transactions = canvas.getByRole("tabpanel", { name: "Movimientos" });
     await expect(budgets).toBeVisible();
     await expect(transactions).toBeVisible();
@@ -624,10 +723,8 @@ export const Desktop: Story = {
     );
     const nav = within(canvas.getByRole("navigation", { name: "Navegación principal" }));
     await expect(nav.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
-    await expect(nav.getByRole("link", { name: "Categorías" })).toHaveAttribute(
-      "href",
-      "/app/categories",
-    );
+    // Categories are managed in home's Categorías list, beside Movimientos.
+    await expect(nav.getByRole("link", { name: "Categorías" })).toHaveAttribute("href", "/app");
     await expect(nav.getByRole("link", { name: "Recurrentes" })).toHaveAttribute(
       "href",
       "/app/recurring",
@@ -646,6 +743,210 @@ export const Desktop: Story = {
   },
 };
 
+/** Opens the Categorías tab and returns its panel. */
+async function categoriesPanel(canvas: Canvas) {
+  await hero(canvas);
+  await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
+  return within(canvas.getByRole("tabpanel", { name: "Categorías" }));
+}
+
+/** Ingresos: the income categories, each with "Ingreso" and no bar; the spending ones are gone. */
+export const CategoriesIncome: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    await userEvent.click(panel.getByRole("tab", { name: "Ingresos" }));
+    await expect(panel.getByRole("tab", { name: "Ingresos" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(await panel.findByRole("button", { name: "Salario Ingreso" })).toBeVisible();
+    await expect(panel.queryByRole("button", { name: /^Supermercado/ })).toBeNull();
+    await expect(panel.queryByRole("meter")).toBeNull();
+    await expectTarget(panel.getByRole("button", { name: "Nueva categoría" }));
+  },
+};
+
+/**
+ * Archivadas: folded at the end of its kind's list, with "Restaurar" on each; restoring one
+ * brings it back among the others.
+ */
+export const CategoriesArchived: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedUnused />,
+  play: async ({ canvasElement, args }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    const fold = await panel.findByRole("button", { name: "Archivadas (1)" });
+    await expect(fold).toHaveAttribute("aria-expanded", "false");
+    await expectTarget(fold);
+    await expect(panel.queryByRole("region", { name: "Archivadas" })).toBeNull();
+    await userEvent.click(fold);
+    await expect(fold).toHaveAttribute("aria-expanded", "true");
+    const archived = within(panel.getByRole("region", { name: "Archivadas" }));
+    await expect(archived.getByRole("button", { name: "Transporte Archivada" })).toBeVisible();
+    await expectTarget(archived.getByRole("button", { name: "Restaurar Transporte" }));
+    await userEvent.click(archived.getByRole("button", { name: "Restaurar Transporte" }));
+    await waitFor(() =>
+      expect(calls(args.onRequest).map(([line]) => line)).toContainEqual(
+        'PATCH /api/v1/categories/cat-transport {"archived":false}',
+      ),
+    );
+    await expect(
+      await panel.findByRole("button", { name: /^Transporte Sin presupuesto/ }),
+    ).toBeVisible();
+    await waitFor(() => expect(panel.queryByRole("button", { name: /^Archivadas/ })).toBeNull());
+    await toastSaying("Transporte está de vuelta.");
+  },
+};
+
+/**
+ * Ingresos with every income category archived: nothing active to list, and the archived one
+ * unfolded, as they rest (the mobile parity picture of the fold).
+ */
+export const CategoriesArchivedOpen: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedIncome />,
+  play: async ({ canvasElement }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    await userEvent.click(panel.getByRole("tab", { name: "Ingresos" }));
+    await expect(await panel.findByText("Aún no tienes categorías de este tipo.")).toBeVisible();
+    await userEvent.click(await panel.findByRole("button", { name: "Archivadas (1)" }));
+    await expect(
+      within(await panel.findByRole("region", { name: "Archivadas" })).getByRole("button", {
+        name: "Salario Archivada",
+      }),
+    ).toBeVisible();
+  },
+};
+
+/**
+ * A category archived this month that still has spending in the month on screen stays among the
+ * month's rows, with its "archivada" note, so the rows add up to what home says was spent. It does
+ * not wait in "Archivadas".
+ */
+export const CategoriesArchivedWithSpending: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedCategory />,
+  play: async ({ canvasElement }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    const row = await panel.findByRole("button", {
+      name: "Transporte · archivada Sin presupuesto",
+    });
+    await expect(row).toBeVisible();
+    // Its spending is on the row, as the old budget list showed it.
+    await expect(row.closest(".lk-row")).toHaveTextContent(`Gastado ${eur("15,00")}`);
+    // Nothing else is archived: no fold.
+    await expect(panel.queryByRole("button", { name: /^Archivadas/ })).toBeNull();
+  },
+};
+
+/**
+ * The old `/app/categories` address (bookmarks, history, older links) is not a 404: it opens home
+ * on its Categorías tab.
+ */
+export const OldCategoriesAddress: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} path="/app/categories" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    await expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(canvas.getByRole("tabpanel", { name: "Categorías" })).toBeVisible();
+  },
+};
+
+/** "Nueva categoría": name, kind, emoji and tint; it joins the list. */
+export const CreateCategory: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    await userEvent.click(panel.getByRole("button", { name: "Nueva categoría" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Nueva categoría" }));
+    // Nothing to type yet: a name is asked for.
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
+    await expect(await sheet.findByRole("alert")).toHaveTextContent(
+      "Escribe un nombre para la categoría.",
+    );
+    await userEvent.type(sheet.getByRole("textbox", { name: "Nombre" }), "Mascotas");
+    await userEvent.click(sheet.getByRole("radio", { name: "🐶" }));
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
+    await dialogGone();
+    await waitFor(() =>
+      expect(calls(args.onRequest).map(([line]) => line)).toContainEqual(
+        expect.stringMatching(/^POST \/api\/v1\/categories .*"name":"Mascotas"/),
+      ),
+    );
+    await expect(
+      await panel.findByRole("button", { name: /^Mascotas Sin presupuesto/ }),
+    ).toBeVisible();
+    await toastSaying("Listo: creaste Mascotas.");
+  },
+};
+
+/** A name already in use is refused in the sheet, which stays open. */
+export const CreateCategoryNameTaken: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    await userEvent.click(panel.getByRole("button", { name: "Nueva categoría" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Nueva categoría" }));
+    await userEvent.type(sheet.getByRole("textbox", { name: "Nombre" }), "Ocio");
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar categoría" }));
+    await expect(await sheet.findByRole("alert")).toBeVisible();
+    await expect(screen.getByRole("dialog", { name: "Nueva categoría" })).toBeVisible();
+  },
+};
+
+/** The new-category sheet, as it opens (the mobile parity picture of it). */
+export const NewCategorySheet: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement }) => {
+    const panel = await categoriesPanel(within(canvasElement));
+    await userEvent.click(panel.getByRole("button", { name: "Nueva categoría" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Nueva categoría" }));
+    await expect(sheet.getByRole("textbox", { name: "Nombre" })).toHaveValue("");
+    await expect(sheet.getByRole("radio", { name: "Gasto" })).toBeChecked();
+    await expect(sheet.queryByRole("button", { name: "Archivar categoría" })).toBeNull();
+  },
+};
+
+/**
+ * Already on home, wide: both lists are in view, so the sidebar's "Categorías" cannot switch to
+ * anything. It moves focus to the Categorías panel and scrolls it to the top instead.
+ */
+export const SidebarCategoriesFocusesPanel: Story = {
+  globals: { viewport: { value: "desktop", isRotated: false } },
+  render: (args) => <HomeStage onRequest={args.onRequest} data="october" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const panel = canvas.getByRole("tabpanel", { name: "Categorías" });
+    // A long month: the page scrolls, and the panel starts below the summary.
+    await expect(panel.getBoundingClientRect().top).toBeGreaterThan(200);
+    await expect(panel).not.toHaveFocus();
+    const nav = within(canvas.getByRole("navigation", { name: "Navegación principal" }));
+    await userEvent.click(nav.getByRole("link", { name: "Categorías" }));
+    await waitFor(() => expect(panel).toHaveFocus());
+    await waitFor(() => expect(panel.getBoundingClientRect().top).toBeLessThan(40), {
+      timeout: 5000,
+    });
+    // Both lists stay side by side, and the link is still the way back after scrolling away.
+    await expect(canvas.getByRole("tabpanel", { name: "Movimientos" })).toBeVisible();
+  },
+};
+
+/** Wide screens, by day: the sidebar and both lists, with the archived ones unfolded. */
+export const CategoriesDesktopDay: Story = {
+  globals: { viewport: { value: "desktop", isRotated: false }, theme: "day" },
+  render: (args) => <HomeStage onRequest={args.onRequest} archivedUnused />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const panel = within(canvas.getByRole("tabpanel", { name: "Categorías" }));
+    await userEvent.click(await panel.findByRole("button", { name: "Archivadas (1)" }));
+    await expect(await panel.findByRole("region", { name: "Archivadas" })).toBeVisible();
+  },
+};
+
 // -- Fix round 1 -----------------------------------------------------------------------------------
 
 /**
@@ -658,11 +959,14 @@ export const ArchivedCategory: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     await hero(canvas);
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
-    const budgets = within(canvas.getByRole("tabpanel", { name: "Presupuestos" }));
+    await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
+    const budgets = within(canvas.getByRole("tabpanel", { name: "Categorías" }));
+    // Archived with spending this month, it stays among the month's rows, noted "archivada".
+    await budgets.findByRole("button", { name: /^Restaurante/ });
     await expect(await budgets.findByRole("button", { name: /^Transporte/ })).toHaveAccessibleName(
       "Transporte · archivada Sin presupuesto",
     );
+    await expect(budgets.queryByRole("button", { name: /^Archivadas/ })).toBeNull();
 
     await userEvent.click(canvas.getByRole("tab", { name: "Movimientos" }));
     const panel = within(canvas.getByRole("tabpanel", { name: "Movimientos" }));
@@ -693,6 +997,17 @@ export const ArchivedCategory: Story = {
         name: /Transporte/,
       }),
     ).toBeNull();
+    // Opening the sheet fades the toast out: let it finish before the a11y run, or a half-faded
+    // toast fails its contrast check on a slow machine.
+    await waitFor(
+      () =>
+        expect(
+          [...document.querySelectorAll<HTMLElement>(".lk-toast")].every(
+            (toast) => getComputedStyle(toast).opacity === "1",
+          ),
+        ).toBe(true),
+      { timeout: 5000 },
+    );
   },
 };
 

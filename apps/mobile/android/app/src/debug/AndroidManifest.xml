@@ -1,0 +1,23 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Debug builds only: the dev stack is plain HTTP (http://10.0.2.2:3000 from the emulator). -->
+    <application android:usesCleartextTraffic="true">
+        <!-- Debug builds only: the magic link on the dev server's host (http://10.0.2.2 from the
+             emulator), which the integration tests open. MainActivity takes a web link only for
+             the server the app talks to (launch/LaunchLinks.kt, isForeignWebLink). -->
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="http"/>
+                <data android:host="10.0.2.2"/>
+                <data android:path="/auth/verify"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

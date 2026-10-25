@@ -1,0 +1,8 @@
+# build_runner runs only for the generated API client (scripts/gen-api.sh): built_value writes the
+# *.g.dart parts of lib/api/gen.
+targets:
+  $default:
+    builders:
+      built_value_generator|built_value:
+        generate_for:
+          - lib/api/gen/**

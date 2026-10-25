@@ -1,0 +1,1866 @@
+{
+  "@@locale": "en",
+  "appName": "Lukitas",
+  "savedMovements": "{count, plural, =1{You saved 1 movement in {category}} other{You saved {count} movements in {category}}}",
+  "entryLead": "Keep track of where your money goes. No passwords.",
+  "lukitasWaves": "Lukitas waves hello",
+  "entryGuest": "Try it without an email",
+  "entryGuestHint": "You can add your email later.",
+  "entryGuestBusy": "Setting up your account…",
+  "entryEmail": "Sign in with my email",
+  "entryPasskey": "Sign in with fingerprint",
+  "entryPasskeyBusy": "Waiting for your fingerprint…",
+  "emailPasskey": "Use a passkey",
+  "emailPasskeyBusy": "Waiting for your passkey…",
+  "signInTitle": "Sign in to Lukitas",
+  "signInLead": "No passwords: we'll email you a code.",
+  "emailLabel": "Your email",
+  "emailPlaceholder": "ana@example.com",
+  "sendCode": "Send code",
+  "sending": "Sending…",
+  "codeTitle": "Check your email",
+  "codeLead": "We sent a 6-digit code to {email}. Type it here or tap the link in the email.",
+  "claimCodeLead": "We sent a 6-digit code to {email}. Type it here to save your progress.",
+  "codeLabel": "6-digit code",
+  "submitCode": "Sign in",
+  "submitClaim": "Save",
+  "verifying": "Signing in…",
+  "resend": "Resend code",
+  "resent": "We sent you a new code.",
+  "changeEmail": "Use another email",
+  "guestSaveTitle": "Shall we save what you've noted?",
+  "guestSaveBody": "You're using Lukitas without an email. We can save your progress to {email}: you keep the same movements.",
+  "guestSaveAction": "Save my progress",
+  "guestOtherAccount": "Sign in to another account",
+  "guestLeaveTitle": "Leave your guest account?",
+  "guestLeaveBody": "If you sign in as {email}, what you noted as a guest stays in that account without an email, and you won't be able to see it again.",
+  "guestPasskeyBody": "If you sign in with a passkey, what you noted as a guest stays in that account with no email and you won't be able to see it again. You can save your progress with an email first.",
+  "guestLeaveConfirm": "Sign in anyway",
+  "cancel": "Cancel",
+  "emailTakenSignIn": "Sign in with that email",
+  "verifyFailedTitle": "We couldn't sign you in",
+  "sendNewCode": "Send a new code",
+  "errorGeneric": "Something went wrong. Please try again in a moment.",
+  "errorNetwork": "No connection. Check your internet and try again.",
+  "errorInternal": "We hit a problem on our side. Please try again in a moment.",
+  "errorInvalidEmail": "Enter a valid email, like ana@example.com.",
+  "errorInvalidCode": "That code isn't right. Check it and try again.",
+  "errorInvalidOrExpiredCode": "This code no longer works: it expired or was already used. Ask for a new one.",
+  "errorTooManyAttempts": "Too many tries with this code. Ask for a new one.",
+  "errorTooManyRequests": "You asked for a lot of codes in a row. Wait a few minutes and try again.",
+  "errorSignInNotAllowed": "Lukitas isn't open to the public yet. If you'd like to try it, message the person who invited you.",
+  "errorGuestSignupDisabled": "Guest accounts are turned off for now.",
+  "errorEmailTaken": "That email already has an account. Sign in with it.",
+  "errorPasskeyFailed": "We couldn't sign you in with your fingerprint. Try again or use your email.",
+  "errorTooManySignInAttempts": "Too many tries in a row. Wait a few seconds and try again.",
+  "retry": "Try again",
+  "homeRemainingLabel": "Left this month",
+  "@homeRemainingLabel": {
+    "description": "Home: label of the big amount when budgets exist and there is money left."
+  },
+  "homeOverLabel": "Over this month",
+  "@homeOverLabel": {
+    "description": "Home: label of the big amount when the month is over its total budget."
+  },
+  "homeSpentLabel": "Spent this month",
+  "@homeSpentLabel": {
+    "description": "Home: label of the big amount when there are no budgets: what was spent."
+  },
+  "homeSpent": "Spent {amount}",
+  "@homeSpent": {
+    "description": "Home: what was spent this month, under the big amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOfBudget": "of {amount}",
+  "@homeOfBudget": {
+    "description": "Home: the total budget, next to what was spent.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSpentMeter": "Spent {spent} of {budget}",
+  "@homeSpentMeter": {
+    "description": "Home: screen-reader description of the budget bar.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "homeNoBudgetMeta": "No budgets yet",
+  "@homeNoBudgetMeta": {
+    "description": "Home: under the big amount when no category has a budget."
+  },
+  "homeMovements": "Transactions",
+  "@homeMovements": {
+    "description": "Home: the sticky heading of the movements list."
+  },
+  "homeAccount": "Your account",
+  "@homeAccount": {
+    "description": "Screen-reader name of the face button at the top of home, which opens the account menu."
+  },
+  "homeViewLabel": "View",
+  "@homeViewLabel": {
+    "description": "Screen-reader name of the Movimientos | Categorías tab list on home."
+  },
+  "homeBudgetsTab": "Categories",
+  "@homeBudgetsTab": {
+    "description": "Home: the second tab, one row per spending category."
+  },
+  "homeNudgesLabel": "To get started",
+  "@homeNudgesLabel": {
+    "description": "Screen-reader name of the cards that help an account without budgets get started."
+  },
+  "homeNudgeBudgetsTitle": "Give your categories a budget",
+  "@homeNudgeBudgetsTitle": {
+    "description": "Home: title of the card for an account without budgets."
+  },
+  "homeNudgeBudgetsLead": "That way Lukitas warns you before you overspend. Tap a category and give it an amount.",
+  "@homeNudgeBudgetsLead": {
+    "description": "Home: the card's explanation."
+  },
+  "homeNudgeBudgetsAction": "Go to Categories",
+  "@homeNudgeBudgetsAction": {
+    "description": "Home: the card's button, which opens the budgets tab."
+  },
+  "homeNudgeDismiss": "Not now: {title}",
+  "@homeNudgeDismiss": {
+    "description": "Screen-reader name of a card's \"Ahora no\" button. {title} is the card's title.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "notNow": "Not now",
+  "@notNow": {
+    "description": "A button that puts a suggestion away for good."
+  },
+  "homeDayToday": "Today · {day}",
+  "@homeDayToday": {
+    "description": "Home: a day's heading for today. {day} is like 'mié 21'.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeDayYesterday": "Yesterday · {day}",
+  "@homeDayYesterday": {
+    "description": "Home: a day's heading for yesterday.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeDayUpcoming": "{day} · upcoming",
+  "@homeDayUpcoming": {
+    "description": "Home: a day's heading for a day still to come.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "homeEmptyTransactions": "No transactions in {month} yet. Tap ＋ and log the first one.",
+  "@homeEmptyTransactions": {
+    "description": "Home: the month has no movements yet. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeMoreTransactions": "Show more",
+  "@homeMoreTransactions": {
+    "description": "Home: loads the next page of the movements list."
+  },
+  "homeLoading": "Loading…",
+  "@homeLoading": {
+    "description": "Home: while the first figures load."
+  },
+  "homeOffline": "No connection. Showing what loaded last.",
+  "@homeOffline": {
+    "description": "Home: the last refresh failed; what is on screen is from the last time it loaded."
+  },
+  "pending": "Pending",
+  "@pending": {
+    "description": "A scheduled transaction that is not paid yet."
+  },
+  "paid": "Paid",
+  "@paid": {
+    "description": "A transaction that is paid."
+  },
+  "pendingPayLabel": "Pending, mark as paid",
+  "@pendingPayLabel": {
+    "description": "Screen-reader label of the Pendiente badge, which marks the transaction paid."
+  },
+  "monthPickerLabel": "Month",
+  "@monthPickerLabel": {
+    "description": "Screen-reader name of the group that holds the month picker's arrows and the month's name."
+  },
+  "monthPickerPrevious": "Previous month",
+  "@monthPickerPrevious": {
+    "description": "Screen-reader name of the month picker's ‹ button."
+  },
+  "monthPickerNext": "Next month",
+  "@monthPickerNext": {
+    "description": "Screen-reader name of the month picker's › button."
+  },
+  "undo": "Undo",
+  "@undo": {
+    "description": "Brings back what was just deleted."
+  },
+  "swipeDelete": "Delete",
+  "@swipeDelete": {
+    "description": "Row swipe left: delete."
+  },
+  "swipeEdit": "Edit",
+  "@swipeEdit": {
+    "description": "Row swipe right: edit."
+  },
+  "swipePaid": "Paid",
+  "@swipePaid": {
+    "description": "Row swipe right on a pending row: mark it paid."
+  },
+  "transactionDeleted": "Deleted: {name}",
+  "@transactionDeleted": {
+    "description": "Toast after deleting a transaction (it has Deshacer).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionRestored": "Back: {name}",
+  "@transactionRestored": {
+    "description": "Toast after bringing a deleted transaction back.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "transactionPaid": "Paid: {name} · {amount}",
+  "@transactionPaid": {
+    "description": "Toast after marking a transaction paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukitasMood": "Lukitas",
+  "@lukitasMood": {
+    "description": "Screen-reader label of Lukitas beside his line on home."
+  },
+  "lukasFirstOfDay1": "“{name}” is your first entry of the day! Nice start.",
+  "@lukasFirstOfDay1": {
+    "description": "Lukitas' line on home, variant 1: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasFirstOfDay2": "“{name}” logged. Great way to start the day!",
+  "@lukasFirstOfDay2": {
+    "description": "Lukitas' line on home, variant 2: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasFirstOfDay3": "First move of the day: “{name}”. Keeping count is half the win.",
+  "@lukasFirstOfDay3": {
+    "description": "Lukitas' line on home, variant 3: first_of_day.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOnTrack1": "You're doing great: {remaining} left for {daysLeft} {daysLeft, plural, one{day} other{days}}.",
+  "@lukasOnTrack1": {
+    "description": "Lukitas' line on home, variant 1: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasOnTrack2": "All good here. {remaining} left and {daysLeft} {daysLeft, plural, one{day} other{days}} to go.",
+  "@lukasOnTrack2": {
+    "description": "Lukitas' line on home, variant 2: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasOnTrack3": "Nice pace: {remaining} free, {daysLeft} {daysLeft, plural, one{day} other{days}} ahead.",
+  "@lukasOnTrack3": {
+    "description": "Lukitas' line on home, variant 3: on_track.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      },
+      "daysLeft": {
+        "type": "int"
+      }
+    }
+  },
+  "lukasNearLimit1": "Careful, {category} only has {remaining} left.",
+  "@lukasNearLimit1": {
+    "description": "Lukitas' line on home, variant 1: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasNearLimit2": "{category} is almost at its limit: {remaining} and that's it.",
+  "@lukasNearLimit2": {
+    "description": "Lukitas' line on home, variant 2: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasNearLimit3": "Easy on {category}: you have {remaining} left.",
+  "@lukasNearLimit3": {
+    "description": "Lukitas' line on home, variant 3: near_limit.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget1": "{category} is {over} over budget. No big deal: now you know.",
+  "@lukasOverBudget1": {
+    "description": "Lukitas' line on home, variant 1: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget2": "{category} went {over} past its budget. Seeing it is already a step.",
+  "@lukasOverBudget2": {
+    "description": "Lukitas' line on home, variant 2: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverBudget3": "We went {over} over in {category}. No drama: it's all here to see.",
+  "@lukasOverBudget3": {
+    "description": "Lukitas' line on home, variant 3: over_budget.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived1": "Money in! “{name}”: {amount} more in your account.",
+  "@lukasIncomeReceived1": {
+    "description": "Lukitas' line on home, variant 1: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived2": "Income logged: “{name}”, {amount}. Good news!",
+  "@lukasIncomeReceived2": {
+    "description": "Lukitas' line on home, variant 2: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasIncomeReceived3": "{amount} from “{name}” just landed. Nice!",
+  "@lukasIncomeReceived3": {
+    "description": "Lukitas' line on home, variant 3: income_received.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid1": "You paid “{name}”: {amount}. What a relief!",
+  "@lukasPendingPaid1": {
+    "description": "Lukitas' line on home, variant 1: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid2": "Done, “{name}” is paid: {amount}. One less thing on your mind.",
+  "@lukasPendingPaid2": {
+    "description": "Lukitas' line on home, variant 2: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasPendingPaid3": "You paid “{name}”: {amount}. Keeping up.",
+  "@lukasPendingPaid3": {
+    "description": "Lukitas' line on home, variant 3: pending_paid.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay1": "Last day of the month! You have {remaining} to spare.",
+  "@lukasMonthLastDay1": {
+    "description": "Lukitas' line on home, variant 1: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay2": "The month ends today with {remaining} on your side. Almost there!",
+  "@lukasMonthLastDay2": {
+    "description": "Lukitas' line on home, variant 2: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthLastDay3": "Final stretch of the month: {remaining} of cushion.",
+  "@lukasMonthLastDay3": {
+    "description": "Lukitas' line on home, variant 3: month_last_day.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen1": "Month closed in the green! You saved {remaining}.",
+  "@lukasMonthClosedGreen1": {
+    "description": "Lukitas' line on home, variant 1: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen2": "You finished with {remaining} left over. That deserves a celebration!",
+  "@lukasMonthClosedGreen2": {
+    "description": "Lukitas' line on home, variant 2: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasMonthClosedGreen3": "Month wrapped up in the black: {remaining} on your side. Well done!",
+  "@lukasMonthClosedGreen3": {
+    "description": "Lukitas' line on home, variant 3: month_closed_green.",
+    "placeholders": {
+      "remaining": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasEmpty": "Hi! Log your first expense with ＋ and I'll keep count.",
+  "@lukasEmpty": {
+    "description": "Lukitas' line on an empty month without budgets."
+  },
+  "lukasNoBudget": "You've spent {spent} this month. Every entry counts.",
+  "@lukasNoBudget": {
+    "description": "Lukitas' line when there are no budgets: what was spent.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOverTotal": "This month you're {over} above your budgets. It's all right here to see.",
+  "@lukasOverTotal": {
+    "description": "Lukitas' line when the month is over its total budget.",
+    "placeholders": {
+      "over": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOfflineMonth": "No connection · showing {month}",
+  "@homeOfflineMonth": {
+    "description": "Home: offline, showing the last good figures of an earlier month. {month} is its name.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRefreshFailed": "Couldn't refresh. Showing what loaded last.",
+  "@homeRefreshFailed": {
+    "description": "Home: a refresh failed with the network up (a server error); what is on screen is from the last time it loaded."
+  },
+  "homeRefreshFailedMonth": "Couldn't refresh · showing {month}",
+  "@homeRefreshFailedMonth": {
+    "description": "Home: a refresh failed with the network up, and the figures on screen are of an earlier month.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeRemainingLabelPast": "Left in {month}",
+  "@homeRemainingLabelPast": {
+    "description": "Home: label of the big amount for an earlier month with budgets and money left.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeOverLabelPast": "Over in {month}",
+  "@homeOverLabelPast": {
+    "description": "Home: label of the big amount for an earlier month over its total budget.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSpentLabelPast": "Spent in {month}",
+  "@homeSpentLabelPast": {
+    "description": "Home: label of the big amount for an earlier month without budgets.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "lukasOtherMonth": "These are your {month} numbers. When the connection is back, I'll show the latest ones.",
+  "@lukasOtherMonth": {
+    "description": "Lukitas' line when home shows figures of an earlier month (a cache opened offline).",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "addFabLabel": "Add expense",
+  "@addFabLabel": {
+    "description": "Home: label of the ＋ button that opens the add sheet."
+  },
+  "addTitleExpense": "New expense",
+  "@addTitleExpense": {
+    "description": "Add sheet: title when adding an expense."
+  },
+  "addTitleIncome": "New income",
+  "@addTitleIncome": {
+    "description": "Add sheet: title when adding an income."
+  },
+  "addTitleEdit": "Edit transaction",
+  "@addTitleEdit": {
+    "description": "Add sheet: title when editing a movement."
+  },
+  "addClose": "Close",
+  "@addClose": {
+    "description": "Add sheet: closes it without saving."
+  },
+  "addKindLabel": "Transaction type",
+  "@addKindLabel": {
+    "description": "Add sheet: names the expense/income switch."
+  },
+  "addKindExpense": "Expense",
+  "@addKindExpense": {
+    "description": "Add sheet: the expense choice."
+  },
+  "addKindIncome": "Income",
+  "@addKindIncome": {
+    "description": "Add sheet: the income choice."
+  },
+  "addCategoryLabel": "Category",
+  "@addCategoryLabel": {
+    "description": "Add sheet: names the category chips (screen readers)."
+  },
+  "addMoreCategories": "More",
+  "@addMoreCategories": {
+    "description": "Add sheet: shows every category."
+  },
+  "addFewerCategories": "Fewer",
+  "@addFewerCategories": {
+    "description": "Add sheet: folds the categories back."
+  },
+  "addNoCategoriesExpense": "You have no spending categories yet.",
+  "@addNoCategoriesExpense": {
+    "description": "Add sheet: no expense categories to pick."
+  },
+  "addNoCategoriesIncome": "You have no income categories yet.",
+  "@addNoCategoriesIncome": {
+    "description": "Add sheet: no income categories to pick."
+  },
+  "addArchived": "archived",
+  "@addArchived": {
+    "description": "Add sheet: marks an archived category on a movement that is still in it."
+  },
+  "addMoreOptions": "More options",
+  "@addMoreOptions": {
+    "description": "Add sheet: opens the date, pending and note."
+  },
+  "addDateLabel": "Date",
+  "@addDateLabel": {
+    "description": "Add sheet: the date field."
+  },
+  "addToday": "Today",
+  "@addToday": {
+    "description": "Add sheet: the date when it is today."
+  },
+  "addPendingLabel": "Pending (not paid yet)",
+  "@addPendingLabel": {
+    "description": "Add sheet: marks a movement as scheduled and unpaid."
+  },
+  "addNoteLabel": "Note (optional)",
+  "@addNoteLabel": {
+    "description": "Add sheet: the note field."
+  },
+  "addSave": "Save",
+  "@addSave": {
+    "description": "Add sheet: saves a new movement."
+  },
+  "addSaveChanges": "Save changes",
+  "@addSaveChanges": {
+    "description": "Add sheet: saves an edited movement."
+  },
+  "addDelete": "Delete",
+  "@addDelete": {
+    "description": "Edit sheet: deletes the movement (the web's transaction.delete)."
+  },
+  "addSaving": "Saving…",
+  "@addSaving": {
+    "description": "Add sheet: while the save is under way."
+  },
+  "addSavedExpense": "Expense in {category}: {amount}",
+  "@addSavedExpense": {
+    "description": "Toast after saving an expense (it has Deshacer).",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addSavedIncome": "Income from {category}: {amount}",
+  "@addSavedIncome": {
+    "description": "Toast after saving an income (it has Deshacer).",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "addUpdated": "Changes saved: {name}",
+  "@addUpdated": {
+    "description": "Toast after editing a movement.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addUndone": "Removed: {name}",
+  "@addUndone": {
+    "description": "Toast after Deshacer on a saved movement.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addNameIt": "Name it",
+  "@addNameIt": {
+    "description": "Toast action after saving without a name: opens the movement on its name."
+  },
+  "addErrorInvalid": "Some of the data isn't valid. Check it and try again.",
+  "@addErrorInvalid": {
+    "description": "Add sheet: the server refused the data."
+  },
+  "addErrorCategory": "Pick one of your active categories.",
+  "@addErrorCategory": {
+    "description": "Add sheet: the category is gone or archived."
+  },
+  "addErrorBusy": "We're still processing your previous request. Hold on a moment.",
+  "@addErrorBusy": {
+    "description": "Add sheet: the first try of this save is still running on the server."
+  },
+  "addErrorNotFound": "We couldn't find that transaction.",
+  "@addErrorNotFound": {
+    "description": "Add sheet: the edited movement no longer exists."
+  },
+  "keypadLabel": "Keypad",
+  "@keypadLabel": {
+    "description": "Add sheet: names the keypad (screen readers)."
+  },
+  "keypadDecimal": "Decimal point",
+  "@keypadDecimal": {
+    "description": "Add sheet: the decimal key (screen readers)."
+  },
+  "keypadBackspace": "Delete digit",
+  "@keypadBackspace": {
+    "description": "Add sheet: the backspace key (screen readers)."
+  },
+  "nameFieldLabel": "Name (optional)",
+  "@nameFieldLabel": {
+    "description": "Add sheet: the name field."
+  },
+  "nameFieldSuggestions": "Recent names",
+  "@nameFieldSuggestions": {
+    "description": "Add sheet: names the shortcuts under the name (screen readers)."
+  },
+  "captureFabLabel": "Say or type a movement",
+  "captureTitle": "Say it or type it",
+  "captureListeningPrompt": "What did you spend on?",
+  "captureListeningNote": "I listen right here: what you say never leaves your phone.",
+  "captureStop": "Done",
+  "captureTypeInstead": "Type it",
+  "captureListen": "Speak",
+  "captureFieldLabel": "Type what you spent",
+  "captureFieldHint": "spent 15 on lunch and 3 on coffee",
+  "captureRead": "Read it",
+  "captureChangeSentence": "Change sentence",
+  "captureMicDenied": "Without the microphone permission I can't hear you, so type it here.",
+  "captureNoEngine": "This phone can't listen with Lukitas, so type it here.",
+  "captureListenFailed": "I couldn't listen. Type it here.",
+  "captureNothingHeard": "I didn't hear anything. Type it here or try again.",
+  "captureNothingRead": "I found no movements. Try an amount, like “15 on lunch”.",
+  "captureOfferTitle": "To hear you, Lukitas needs its English voice",
+  "captureOfferBody": "It downloads once ({megabytes} MB) and stays on your phone: it listens offline and what you say never leaves it. Without it, you can type.",
+  "captureOfferDownload": "Download {megabytes} MB",
+  "captureOfferDecline": "Not now, I'll type",
+  "captureDownloading": "Downloading the voice… {percent}%",
+  "captureDownloadCancel": "Cancel",
+  "captureDownloadFailed": "The voice didn't download. Check your connection and try again; it picks up where it stopped.",
+  "captureDownloadCorrupt": "The voice arrived damaged and was deleted. Try again.",
+  "captureUnread": "I didn't get: “{fragment}”",
+  "captureComplete": "Fill in",
+  "capturePickCategory": "Pick a category",
+  "captureNeedsAmount": "Amount missing",
+  "captureAmountLabel": "Amount",
+  "captureNameLabel": "Name",
+  "captureRemove": "Remove",
+  "captureYesterday": "Yesterday",
+  "captureSave": "SAVE {count}",
+  "captureSaved": "Done! {count, plural, =1{1 movement} other{{count} movements}} for {amount}",
+  "captureUndone": "Removed: {count, plural, =1{1 movement} other{{count} movements}}",
+  "capturePreparing": "Getting the microphone ready…",
+  "captureDownloadNoSpace": "There isn't enough space on the phone: the voice needs about {megabytes} MB free.",
+  "progressTitle": "Save your progress",
+  "progressLead": "Without an email, losing the phone or deleting the app loses your data.",
+  "progressEmailBody": "Add your email and your movements stay exactly as they are, in the same account. We'll send you a code to confirm it.",
+  "progressSave": "Save with my email",
+  "progressPasskeyTitle": "Or add a fingerprint",
+  "progressPasskeyBody": "A fingerprint on this phone lets you in without an email, but if you lose the phone or the fingerprint, you lose the account. To use Lukitas on another device or with AI assistants you need an email.",
+  "progressPasskeyAdd": "Add a fingerprint",
+  "progressPasskeyAdding": "Waiting for your fingerprint…",
+  "progressPasskeyAdded": "Done: you can now sign in with your fingerprint.",
+  "progressPasskeyFailed": "We couldn't save your fingerprint. Try again.",
+  "settingsTitle": "Settings",
+  "settingsOpenLabel": "Settings",
+  "settingsAccount": "Account",
+  "settingsGuestAccount": "You're using Lukitas without an email.",
+  "settingsPreferences": "Preferences",
+  "settingsTheme": "Theme",
+  "settingsThemeSystem": "Automatic",
+  "settingsThemeDay": "Day",
+  "settingsThemeNight": "Night",
+  "settingsThemeHint": "Automatic follows your phone's setting.",
+  "settingsLanguage": "Language",
+  "settingsLanguageAuto": "Automatic",
+  "settingsLanguageEs": "Español",
+  "settingsLanguageEn": "English",
+  "settingsLanguageHint": "Automatic uses your phone's language.",
+  "settingsSound": "Sounds",
+  "settingsSoundHint": "They play when you add and celebrate. Vibration stays on.",
+  "settingsVibration": "Vibration",
+  "settingsVibrationHint": "A soft tap when you add, swipe and undo.",
+  "settingsNotices": "Notices",
+  "settingsDueNotice": "Due today…",
+  "settingsDueNoticeHint": "At 9:00, one notice with the recurring payments due today.",
+  "settingsGuestNotice": "Warning if you have no email",
+  "settingsGuestNoticeHint": "If 45 days pass without opening Lukitas and you have no email, we warn you that your data will be deleted.",
+  "noticeAskTitle": "Want to get notices?",
+  "noticeAskDue": "So Lukitas can tell you at 9:00 on the days a recurring payment is due.",
+  "noticeAskGuest": "So Lukitas can warn you if 45 days pass without opening it and your account has no email, before your data is deleted.",
+  "noticeAskLater": "Not now",
+  "noticeAskAllow": "Allow notices",
+  "settingsWidget": "Widget",
+  "settingsHideAmount": "Hide the amount in the widget",
+  "settingsHideAmountHint": "Shows •••• instead of what's left.",
+  "settingsVoice": "Voice",
+  "settingsDeleteVoice": "Delete the voice models",
+  "settingsDeleteVoiceHint": "Frees space on the phone. Next time you dictate, we'll ask you to download them again.",
+  "settingsDeleteVoiceTitle": "Delete the voice models?",
+  "settingsDeleteVoiceBody": "You won't be able to dictate until you download them again. What you've already logged stays.",
+  "settingsDeleteVoiceConfirm": "Yes, delete",
+  "settingsDeleteVoiceDone": "Done: the voice models are deleted.",
+  "settingsDeleteVoiceFailed": "We couldn't delete the voice models. Try again.",
+  "settingsServer": "Server",
+  "settingsServerTitle": "Change server",
+  "settingsServerLead": "Another server is another account: changing it signs you out here.",
+  "settingsServerField": "Server address",
+  "settingsServerInvalid": "Enter an address that starts with https://, like https://lukitas.example.com.",
+  "settingsServerUseDefault": "Use Lukitas'",
+  "settingsServerChange": "Change",
+  "settingsServerChanged": "Done: you now use {server}.",
+  "@settingsServerChanged": {
+    "placeholders": {
+      "server": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAbout": "About",
+  "settingsWeb": "More on the web",
+  "settingsWebHint": "Lukitas' home page and what's coming.",
+  "settingsWebFailed": "We couldn't open the browser.",
+  "settingsSignedInAs": "Signed in as {email}",
+  "@settingsSignedInAs": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsPhone": "On this phone",
+  "settingsSoundHintVibrationOff": "They play when you add and celebrate. Vibration stays off.",
+  "settingsWebOpen": "See Lukitas' page",
+  "settingsAboutOpen": "Licences and more",
+  "aboutBack": "Back to Settings",
+  "aboutBackShort": "Settings",
+  "settingsSignOut": "Sign out",
+  "guestSignOutTitle": "Sign out without saving your progress?",
+  "guestSignOutBody": "Without an email, losing the phone or deleting the app loses your data. If you sign out now, you won't be able to come back to this account.",
+  "guestSignOutConfirm": "Sign out anyway",
+  "guestServerTitle": "Change server without saving your progress?",
+  "guestServerBody": "Without an email, losing the phone or deleting the app loses your data. Changing server signs you out, and you won't be able to come back to this account.",
+  "guestServerConfirm": "Change anyway",
+  "aboutTitle": "About Lukitas",
+  "aboutLead": "Lukitas is free software, under the AGPL-3.0 licence. You can read and check its code.",
+  "aboutVoice": "Dictation runs on your phone, with the Vosk voice models (Apache-2.0). Your voice never leaves it.",
+  "aboutLicenses": "Licences",
+  "aboutLicensesHint": "For every piece of software Lukitas uses, the voice models and the sounds.",
+  "licenseNoticeModel": "The {language} speech model of quick capture, by Alpha Cephei Inc., under the Apache License 2.0 (https://alphacephei.com/vosk/models). It is not in the app: it is downloaded to the phone when you agree, and it recognises speech without leaving it.",
+  "@licenseNoticeModel": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeVosk": "The Vosk speech engine (https://github.com/alphacep/vosk-api), by Alpha Cephei Inc., under the Apache License 2.0. Its native library, libvosk.so, contains Kaldi (https://github.com/kaldi-asr/kaldi) and OpenFST (https://www.openfst.org), also under the Apache License 2.0, and OpenBLAS and CLAPACK, which are listed separately with their own licences.",
+  "licenseNoticeOpenBlas": "OpenBLAS (https://github.com/OpenMathLib/OpenBLAS), the linear algebra routines inside Vosk's native library, under the BSD 3-Clause licence.",
+  "licenseNoticeClapack": "CLAPACK (https://www.netlib.org/clapack), the C version of LAPACK inside Vosk's native library, under a BSD licence. It comes with libf2c, whose notice follows the licence.",
+  "licenseNoticeLibffi": "libffi (https://github.com/libffi/libffi), inside JNA's native library, under the MIT licence.",
+  "licenseNoticeJna": "Java Native Access (https://github.com/java-native-access/jna), which Vosk reaches its native library through. It is dual-licensed: Apache 2.0 or LGPL 2.1. Lukitas uses it under the Apache License 2.0.",
+  "licenseNoticeLibraries": "Android libraries the app is built with. Each declares its licence in its own POM; this group's is {license}. None of them is Google Play Services or Firebase.",
+  "@licenseNoticeLibraries": {
+    "placeholders": {
+      "license": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeBsd": "An Android library under the BSD 3-Clause licence, with the text published alongside it. It sits inside AndroidX Glance, which the widget uses.",
+  "licenseNoticeFont": "{font} ({source}), the font Lukitas uses for {role}, as the web app does. It is bundled in the app, never downloaded, under the SIL Open Font License 1.1, whose text follows as the font ships it.",
+  "@licenseNoticeFont": {
+    "placeholders": {
+      "font": {
+        "type": "String"
+      },
+      "source": {
+        "type": "String"
+      },
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "licenseNoticeFontRoleDisplay": "titles and amounts",
+  "licenseNoticeFontRoleText": "the rest of the text",
+  "licenseNoticeSounds": "The sounds Lukitas plays when you add, pay, undo, or come near a limit are original work made for Lukitas: a few plain tones, with no third-party samples. They are released under the licence of the app itself, the GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
+  "licenseNoticeApp": "Lukitas is free software, under the GNU Affero General Public License 3.0. Its source code is at https://github.com/andirsun/lukas.",
+  "aboutLegalese": "Free software, AGPL-3.0",
+  "close": "Close",
+  "@close": {
+    "description": "A sheet's header button: closes the sheet."
+  },
+  "navLabel": "Main navigation",
+  "@navLabel": {
+    "description": "Screen-reader name of the bottom bar."
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "Bottom bar: the home tab."
+  },
+  "navInsights": "Insights",
+  "@navInsights": {
+    "description": "Bottom bar: the insights tab."
+  },
+  "navAdd": "Add",
+  "@navAdd": {
+    "description": "Bottom bar: the raised + button that opens the add sheet (screen readers)."
+  },
+  "categoryRowRemaining": "{amount} left",
+  "@categoryRowRemaining": {
+    "description": "A category row: what is left of its budget.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowOver": "{amount} over",
+  "@categoryRowOver": {
+    "description": "A category row: how far over its budget it is.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowNoBudget": "No budget",
+  "@categoryRowNoBudget": {
+    "description": "A category row without a budget."
+  },
+  "categoryRowSpent": "{amount} spent",
+  "@categoryRowSpent": {
+    "description": "A category row without a budget: what was spent.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "categoryRowMeter": "{name}: {status}",
+  "@categoryRowMeter": {
+    "description": "A category row's budget bar, for screen readers: the category and its status.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "swipeHint": "Tap it to edit or delete it.",
+  "@swipeHint": {
+    "description": "What a transaction row's swipes do, for screen readers (they take over swipes)."
+  },
+  "swipeHintPending": "Tap it to edit or delete it; Pending marks it paid.",
+  "@swipeHintPending": {
+    "description": "The same, on a pending row."
+  },
+  "homeNoExpenseCategories": "You have no active spending categories.",
+  "budgetsArchivedNote": "archived",
+  "manageBack": "Back to home",
+  "manageBackShort": "Home",
+  "categoryKindExpense": "Spending category",
+  "categoryKindIncome": "Income category",
+  "categoryArchivedLine": "Archived",
+  "categoryArchivedNote": "This category is archived: it isn't offered when you add a transaction, nor in your budgets. Its transactions stay.",
+  "categoryBudgetTitle": "Budget",
+  "categorySetBudget": "Set a budget",
+  "categoryChangeBudget": "Change budget",
+  "categoryNoBudget": "No budget in {month}. Set one and I'll warn you before you overspend.",
+  "categorySpentOf": "Spent {spent} of {budget}",
+  "categorySpent": "Spent in {month}: {amount}",
+  "categoryReceived": "Received in {month}: {amount}",
+  "categoryTransactionsTitle": "{month} transactions",
+  "categoryEmpty": "No {name} transactions in {month}.",
+  "categoryAddExpense": "Add expense",
+  "categoryAddIncome": "Add income",
+  "categoryNotFoundTitle": "We couldn't find this category",
+  "categoryNotFoundLead": "It may not exist anymore. Go back to your categories and pick another one.",
+  "budgetSheetTitle": "{name} budget",
+  "budgetSheetFromMonth": "From {month} on. Earlier months stay as they were.",
+  "budgetSheetNegative": "A budget can't be negative.",
+  "budgetSheetZero": "Type an amount above zero.",
+  "budgetSheetSave": "Save budget",
+  "budgetSheetSaved": "{name} budget: {amount}",
+  "budgetErrorNotFound": "We couldn't find what you're looking for.",
+  "budgetErrorNotExpense": "Only expense categories can have a budget.",
+  "insightsTitle": "Insights",
+  "@insightsTitle": {
+    "description": "Análisis: the screen's title."
+  },
+  "insightsPeriodLabel": "Period",
+  "@insightsPeriodLabel": {
+    "description": "Análisis: names the 1 mes / 3 meses / 6 meses / 1 año control (screen readers)."
+  },
+  "insightsSpan1": "1 month",
+  "@insightsSpan1": {
+    "description": "Análisis: the 1-month option of the period control."
+  },
+  "insightsSpan3": "3 months",
+  "@insightsSpan3": {
+    "description": "Análisis: the 3-month option of the period control."
+  },
+  "insightsSpan6": "6 months",
+  "@insightsSpan6": {
+    "description": "Análisis: the 6-month option of the period control."
+  },
+  "insightsSpan12": "1 year",
+  "@insightsSpan12": {
+    "description": "Análisis: the 12-month option of the period control."
+  },
+  "insightsPeriodOne": "in {month}",
+  "@insightsPeriodOne": {
+    "description": "Análisis: one month in a sentence (\"en octubre\"). {month} is the month mid-sentence.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsPeriodRange": "from {from} to {to}",
+  "@insightsPeriodRange": {
+    "description": "Análisis: a run of months in a sentence (\"de agosto a octubre\").",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsLukasTop": "{name} took the biggest bite {period}: {amount}.",
+  "@insightsLukasTop": {
+    "description": "Análisis: Lukitas says which category took the biggest bite. {period} is insightsPeriodOne or insightsPeriodRange.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsLukasEmpty": "I don't see any spending {period}. Once you log some, I'll show you here where your money goes.",
+  "@insightsLukasEmpty": {
+    "description": "Análisis: Lukitas when the period has no spending.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutTitle": "By category",
+  "@insightsDonutTitle": {
+    "description": "Por categoría: the card's title."
+  },
+  "insightsDonutKindLabel": "What to show",
+  "@insightsDonutKindLabel": {
+    "description": "Por categoría: names the Gastos / Ingresos control."
+  },
+  "insightsDonutExpense": "Spending",
+  "@insightsDonutExpense": {
+    "description": "Por categoría: the spending option."
+  },
+  "insightsDonutIncome": "Income",
+  "@insightsDonutIncome": {
+    "description": "Por categoría: the income option."
+  },
+  "insightsDonutStatusLabel": "Status",
+  "@insightsDonutStatusLabel": {
+    "description": "Por categoría: names the Todos / Pagados / Pendientes control."
+  },
+  "insightsDonutAll": "All",
+  "@insightsDonutAll": {
+    "description": "Por categoría: every status."
+  },
+  "insightsDonutPaid": "Paid",
+  "@insightsDonutPaid": {
+    "description": "Por categoría: paid ones."
+  },
+  "insightsDonutPending": "Pending",
+  "@insightsDonutPending": {
+    "description": "Por categoría: pending ones."
+  },
+  "insightsDonutCenterExpense": "Spent",
+  "@insightsDonutCenterExpense": {
+    "description": "Por categoría: the label above the total in the donut's hole, for spending."
+  },
+  "insightsDonutCenterIncome": "Received",
+  "@insightsDonutCenterIncome": {
+    "description": "Por categoría: the same, for income."
+  },
+  "insightsDonutCaption": "{what} by category {period}",
+  "@insightsDonutCaption": {
+    "description": "Por categoría: what the chart shows, for screen readers. {what} is insightsDonutWhat..., {period} the period in a sentence.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutWhatExpenseAll": "Spending",
+  "@insightsDonutWhatExpenseAll": {
+    "description": "Por categoría: what the figures are (expense, all), at the start of a sentence."
+  },
+  "insightsDonutWhatExpensePaid": "Paid spending",
+  "@insightsDonutWhatExpensePaid": {
+    "description": "Por categoría: what the figures are (expense, paid), at the start of a sentence."
+  },
+  "insightsDonutWhatExpensePending": "Pending spending",
+  "@insightsDonutWhatExpensePending": {
+    "description": "Por categoría: what the figures are (expense, pending), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomeAll": "Income",
+  "@insightsDonutWhatIncomeAll": {
+    "description": "Por categoría: what the figures are (income, all), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomePaid": "Received income",
+  "@insightsDonutWhatIncomePaid": {
+    "description": "Por categoría: what the figures are (income, paid), at the start of a sentence."
+  },
+  "insightsDonutWhatIncomePending": "Pending income",
+  "@insightsDonutWhatIncomePending": {
+    "description": "Por categoría: what the figures are (income, pending), at the start of a sentence."
+  },
+  "insightsDonutEmpty": "No {what} {period}.",
+  "@insightsDonutEmpty": {
+    "description": "Por categoría: nothing to show. {what} is lower case.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsDonutTotal": "Total",
+  "@insightsDonutTotal": {
+    "description": "Por categoría: the total, in the chart's description for screen readers."
+  },
+  "insightsTrendTitle": "Month by month",
+  "@insightsTrendTitle": {
+    "description": "Mes a mes: the card's title."
+  },
+  "insightsTrendIncome": "Income",
+  "@insightsTrendIncome": {
+    "description": "Mes a mes: income (legend)."
+  },
+  "insightsTrendExpenses": "Spending",
+  "@insightsTrendExpenses": {
+    "description": "Mes a mes: spending (legend)."
+  },
+  "insightsTrendBudget": "Budget",
+  "@insightsTrendBudget": {
+    "description": "Mes a mes: the budget (legend)."
+  },
+  "insightsTrendCaption": "Income, spending and budget per month, {period}",
+  "@insightsTrendCaption": {
+    "description": "Mes a mes: what the chart shows, for screen readers.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsTrendEmpty": "Nothing logged {period} yet.",
+  "@insightsTrendEmpty": {
+    "description": "Mes a mes: nothing logged in the period.",
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsTrendNoBudget": "No budget",
+  "@insightsTrendNoBudget": {
+    "description": "Mes a mes: a month without a budget."
+  },
+  "insightsTrendPrevious": "Show the previous month in the chart",
+  "@insightsTrendPrevious": {
+    "description": "Mes a mes: the arrow that selects the previous month (screen readers)."
+  },
+  "insightsTrendNext": "Show the next month in the chart",
+  "@insightsTrendNext": {
+    "description": "Mes a mes: the arrow that selects the next month (screen readers)."
+  },
+  "insightsLivingTitle": "How much does it cost me to live?",
+  "@insightsLivingTitle": {
+    "description": "¿Cuánto me cuesta vivir?: the card's title."
+  },
+  "insightsLivingPerMonth": "a month",
+  "@insightsLivingPerMonth": {
+    "description": "¿Cuánto me cuesta vivir?: after the monthly average (\"al mes\")."
+  },
+  "insightsLivingFixed": "Fixed",
+  "@insightsLivingFixed": {
+    "description": "¿Cuánto me cuesta vivir?: fixed costs."
+  },
+  "insightsLivingFixedHint": "Categories with a recurring payment",
+  "@insightsLivingFixedHint": {
+    "description": "¿Cuánto me cuesta vivir?: what fixed means."
+  },
+  "insightsLivingVariable": "Variable",
+  "@insightsLivingVariable": {
+    "description": "¿Cuánto me cuesta vivir?: variable costs."
+  },
+  "insightsLivingVariableHint": "What changes from one month to the next",
+  "@insightsLivingVariableHint": {
+    "description": "¿Cuánto me cuesta vivir?: what variable means."
+  },
+  "insightsLivingCaption": "Monthly average per category",
+  "@insightsLivingCaption": {
+    "description": "¿Cuánto me cuesta vivir?: the list, for screen readers."
+  },
+  "insightsLivingTypeFixed": "Fixed",
+  "@insightsLivingTypeFixed": {
+    "description": "¿Cuánto me cuesta vivir?: a category row's type, fixed."
+  },
+  "insightsLivingTypeVariable": "Variable",
+  "@insightsLivingTypeVariable": {
+    "description": "¿Cuánto me cuesta vivir?: a category row's type, variable."
+  },
+  "insightsLivingEmpty": "I need at least one complete month with spending to work this out. Once your first month with transactions closes, you'll see it here.",
+  "@insightsLivingEmpty": {
+    "description": "¿Cuánto me cuesta vivir?: not enough history."
+  },
+  "insightsLivingArchived": "archived",
+  "@insightsLivingArchived": {
+    "description": "¿Cuánto me cuesta vivir?: the note after an archived category's name."
+  },
+  "insightsLivingTotal": "Total",
+  "@insightsLivingTotal": {
+    "description": "¿Cuánto me cuesta vivir?: the total, for screen readers."
+  },
+  "insightsLivingLead": "What a normal month costs you: the average of {count, plural, one{your last complete month} other{your last {count} complete months}}.",
+  "@insightsLivingLead": {
+    "description": "¿Cuánto me cuesta vivir?: what the average is of. {count} is how many complete months.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "themeSwitchToDay": "Switch to day mode",
+  "themeSwitchToNight": "Switch to night mode",
+  "mascotHappy": "Lukitas, happy",
+  "mascotWorried": "Lukitas, worried",
+  "signInOrEmail": "or with your email",
+  "signInFirstTime": "First time? Sign in with your email; you can use your fingerprint afterwards.",
+  "verifyConfirmTitle": "Continue as {email}",
+  "verifyConfirmLead": "Tap Continue to sign in to Lukitas with this email.",
+  "verifyNotMe": "Not me",
+  "passkeyOfferTitle": "Sign in with your fingerprint next time?",
+  "passkeyOfferLead": "That way you skip waiting for the code.",
+  "passkeyOfferKey": "A passkey is a key saved on this phone, in Google, Samsung Pass, iCloud or Proton Pass.",
+  "passkeyOfferUnlock": "Your fingerprint or face only unlocks it. Lukitas never receives them.",
+  "passkeyOfferSync": "It syncs to your other devices that use the same account.",
+  "passkeyOfferBackup": "Your email keeps working as a backup.",
+  "passkeyOfferAdd": "Create my fingerprint",
+  "passkeyOfferAdding": "Waiting for your fingerprint…",
+  "passkeyOfferNotNow": "Not now",
+  "passkeyOfferFailed": "We couldn't save your fingerprint. Try again or carry on without it.",
+  "resendIn": "Resend in {seconds} s",
+  "passkeyOfferAdded": "Done: next time you'll sign in with your fingerprint.",
+  "homeMenuRecurring": "Recurring",
+  "homeMenuCategories": "Categories",
+  "homeNudgeImportTitle": "Bring your history",
+  "homeNudgeImportLead": "Import what you have in Budge and start with your real numbers.",
+  "homeNudgeImportAction": "Bring my history",
+  "recurringTitle": "Recurring",
+  "recurringAdd": "New recurring",
+  "importPageTitle": "Bring your history",
+  "importPageLead": "Bring your transactions from another app.",
+  "settingsDataTitle": "Your data",
+  "settingsImportTitle": "Bring your history",
+  "settingsImportLead": "Import what you have in Budge.",
+  "settingsImportAction": "Import from Budge",
+  "settingsRoadmapOpen": "See what's coming",
+  "settingsTimeAndMoney": "Time and currency",
+  "settingsTimezoneLabel": "Time zone",
+  "settingsTimezoneHint": "It tells us when your day and your month begin.",
+  "settingsTimezoneChange": "Change",
+  "settingsTimezoneChangeLabel": "Change time zone",
+  "settingsTimezoneSheetTitle": "Choose your time zone",
+  "settingsTimezoneSearch": "Search for your city or country",
+  "settingsTimezonePlaceholder": "Bogotá, Colombia, Madrid…",
+  "settingsTimezoneUseDevice": "Use this device's: {city}",
+  "settingsTimezoneCurrent": "Current",
+  "settingsTimezoneNoResults": "We couldn't find “{query}”. Try the nearest big city.",
+  "settingsTimezoneMore": "{count} more: keep typing to find yours.",
+  "settingsTimezoneSaved": "Done: we now use {city} time.",
+  "settingsCurrencyLabel": "Currency",
+  "settingsCurrencyHint": "You can change it until your first transaction.",
+  "settingsCurrencyLocked": "Your currency is {currency}. You already have transactions or recurring payments, so it stays as is.",
+  "settingsCurrencySaved": "Done: your currency is now {currency}.",
+  "settingsPasskeysTitle": "Sign in with your fingerprint",
+  "settingsPasskeysLead": "A passkey is a key saved on your phone or in your password manager. Your fingerprint or face only unlocks it, and your email still works.",
+  "settingsPasskeysEmpty": "You don't have one yet: you sign in with the code in your email.",
+  "settingsPasskeysUnsupported": "This phone can't create fingerprints. Keep signing in with your email.",
+  "settingsPasskeysListFailed": "We couldn't load your fingerprints. Try again in a moment.",
+  "settingsPasskeysDefaultName": "Fingerprint",
+  "settingsPasskeysCreated": "Created on {date}",
+  "settingsPasskeysSynced": "Synced",
+  "settingsPasskeysAdd": "Add a fingerprint",
+  "settingsPasskeysAdding": "Waiting for your fingerprint…",
+  "settingsPasskeysGuest": "Save your progress with an email first; then you can add a fingerprint.",
+  "settingsPasskeysAdded": "Done: you can now sign in with your fingerprint.",
+  "settingsPasskeysAddFailed": "We couldn't save your fingerprint. Try again.",
+  "settingsPasskeysRemove": "Delete",
+  "settingsPasskeysRemoveLabel": "Delete the fingerprint created on {date}",
+  "settingsPasskeysRemoveNamedLabel": "Delete {name}, created on {date}",
+  "settingsPasskeysRemoveTitle": "Delete this fingerprint?",
+  "settingsPasskeysRemoveBody": "You won't be able to sign in with it anymore. Your email still works.",
+  "settingsPasskeysRemoveConfirm": "Yes, delete",
+  "settingsPasskeysRemoved": "Fingerprint deleted.",
+  "settingsPasskeysRemoveFailed": "We couldn't delete the fingerprint. Try again.",
+  "categoriesKindLabel": "Type",
+  "categoriesExpenses": "Spending",
+  "categoriesIncome": "Income",
+  "categoriesAdd": "New category",
+  "categoriesNoneOfKind": "You have no categories of this kind yet.",
+  "categoriesIncomeLine": "Income",
+  "categoriesArchivedFold": "Archived ({count})",
+  "categoriesArchivedTitle": "Archived",
+  "categoriesRestore": "Restore",
+  "categoriesRestoreNamed": "Restore {name}",
+  "categoriesCreated": "Done: you created {name}.",
+  "categoriesSaved": "You saved the changes to {name}.",
+  "categoriesRestored": "{name} is back.",
+  "categoriesArchivedToast": "You archived {name}. Its transactions stay.",
+  "categoryEditLabel": "Edit category",
+  "categoryEditShort": "Edit",
+  "categoryToCategories": "See my categories",
+  "manageBackCategories": "Back to Categories",
+  "manageBackCategoriesShort": "Categories",
+  "archiveSheetTitle": "Archive {name}?",
+  "archiveSheetBody": "It won't be offered when you add a transaction, nor in your budgets. Its transactions stay, and you can restore it any time from Categories.",
+  "archiveSheetConfirm": "Yes, archive",
+  "archiveSheetStopsRecurring": "{count, plural, =1{This also stops {count} recurring payment in this category.} other{This also stops {count} recurring payments in this category.}}",
+  "categoryFormAddTitle": "New category",
+  "categoryFormEditTitle": "Edit category",
+  "categoryFormNameLabel": "Name",
+  "categoryFormNamePlaceholder": "Pets",
+  "categoryFormNameRequired": "Type a name for the category.",
+  "categoryFormGlyphLabel": "Icon",
+  "categoryFormTintLabel": "Color",
+  "categoryFormKindLabel": "Type",
+  "categoryFormKindExpense": "Spending",
+  "categoryFormKindIncome": "Income",
+  "categoryFormSave": "Save category",
+  "categoryFormArchive": "Archive category",
+  "categoryFormKindLocked": "With transactions, its type can't change here.",
+  "categoryTintOrange": "Orange",
+  "categoryTintRed": "Red",
+  "categoryTintPurple": "Purple",
+  "categoryTintIndigo": "Indigo",
+  "categoryTintBlue": "Blue",
+  "categoryTintPink": "Pink",
+  "categoryTintAmber": "Amber",
+  "categoryTintGreen": "Green",
+  "categoryTintTeal": "Teal",
+  "categoryTintGray": "Gray",
+  "categoryTintYellow": "Yellow",
+  "categoryTintSky": "Sky blue",
+  "categoryErrorNameTaken": "You already have a category with that name.",
+  "categoryErrorHasTransactions": "This category already has transactions, so its type can't change.",
+  "recurringLead": "What repeats every month or every year. Lukitas adds it as pending so it doesn't slip by.",
+  "recurringEmpty": "Your fixed payments go here: rent, Spotify, your salary… Create them once and every month they wait for you as pending.",
+  "recurringMonthlyRule": "Every month, on day {day}",
+  "recurringYearlyRule": "Every year, on {month} {day}",
+  "recurringNext": "Next: {date}",
+  "recurringEnded": "Already ended",
+  "recurringSaved": "You saved {name}.",
+  "recurringDeleted": "You deleted {name}. What you already paid stays.",
+  "recurringFormTitleNew": "New recurring",
+  "recurringFormTitleEdit": "Edit recurring",
+  "recurringFormKindLabel": "Type",
+  "recurringFormExpense": "Expense",
+  "recurringFormIncome": "Income",
+  "recurringFormNameLabel": "Name",
+  "recurringFormNamePlaceholder": "Rent",
+  "recurringFormCategoryLabel": "Category",
+  "recurringFormNoCategoriesExpense": "You have no spending categories yet. Create one in Categories.",
+  "recurringFormNoCategoriesIncome": "You have no income categories yet. Create one in Categories.",
+  "recurringFormFrequencyLabel": "Repeats",
+  "recurringFormMonthly": "Every month",
+  "recurringFormYearly": "Every year",
+  "recurringFormDayLabel": "Day of the month",
+  "recurringFormShortMonths": "In months without that day, it falls on the month's last day.",
+  "recurringFormMonthLabel": "Month",
+  "recurringFormMonthPlaceholder": "Pick a month",
+  "recurringFormStartLabel": "From",
+  "recurringFormEndLabel": "Until (optional)",
+  "recurringFormSave": "Save",
+  "recurringFormDelete": "Delete recurring",
+  "recurringFormAmountRequired": "Type the amount.",
+  "recurringFormNameRequired": "Give it a name.",
+  "recurringFormCategoryRequired": "Pick a category.",
+  "recurringFormMonthRequired": "Pick the month it repeats in.",
+  "recurringFormStartRequired": "Pick when it starts.",
+  "recurringFormEndBeforeStart": "The end date goes after the start date.",
+  "recurringDeleteTitle": "Delete {name}?",
+  "recurringDeleteBody": "It won't be added by itself anymore, and its pending ones from this month on are removed. What you already paid stays.",
+  "recurringDeleteConfirm": "Yes, delete",
+  "recurringFormClearEnd": "Remove the end date",
+  "importSourcesLabel": "Where from",
+  "@importSourcesLabel": {
+    "description": "Import: the heading over the list of apps to bring a history from."
+  },
+  "importSourceBudge": "Budge",
+  "@importSourceBudge": {
+    "description": "Import: the source Budge."
+  },
+  "importSourceSheet": "Excel, Google Sheets or CSV",
+  "@importSourceSheet": {
+    "description": "Import: the source \"Excel, Google Sheets or CSV\" (not available yet)."
+  },
+  "importSourceBuddy": "Buddy",
+  "@importSourceBuddy": {
+    "description": "Import: the source Buddy (not available yet)."
+  },
+  "importSourceOther": "Other apps",
+  "@importSourceOther": {
+    "description": "Import: other apps (not available yet)."
+  },
+  "importSoon": "Soon",
+  "@importSoon": {
+    "description": "Import: the badge on a source that is not available yet."
+  },
+  "importBudgeTitle": "Export your transactions from Budge",
+  "@importBudgeTitle": {
+    "description": "Import: the how-to for a Budge file, its heading."
+  },
+  "importBudgeStep1": "In Budge, look for the option to export your transactions as CSV.",
+  "@importBudgeStep1": {
+    "description": "Import: how to get the file out of Budge, step 1."
+  },
+  "importBudgeStep2": "Save the file on this device.",
+  "@importBudgeStep2": {
+    "description": "Import: how to get the file out of Budge, step 2."
+  },
+  "importBudgeStep3": "Upload it here: we show you what we'll import before we do.",
+  "@importBudgeStep3": {
+    "description": "Import: how to get the file out of Budge, step 3."
+  },
+  "importChoose": "Upload a Budge file",
+  "@importChoose": {
+    "description": "Import: the button that opens the document picker."
+  },
+  "importOtherSource": "Pick another source",
+  "@importOtherSource": {
+    "description": "Import: goes back to the list of sources."
+  },
+  "importReading": "Reading your file…",
+  "@importReading": {
+    "description": "Import: shown while the file is read."
+  },
+  "importPreviewTitle": "Here's what we'll import",
+  "@importPreviewTitle": {
+    "description": "Import: the heading of what the file holds."
+  },
+  "importFile": "File: {name}",
+  "@importFile": {
+    "description": "Import: the file chosen.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "importRange": "From {from} to {to}",
+  "@importRange": {
+    "description": "Import: the dates the file covers.",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "importTransactions": "Transactions",
+  "@importTransactions": {
+    "description": "Import: the count of transactions in the file."
+  },
+  "importDuplicates": "Duplicates (already here)",
+  "@importDuplicates": {
+    "description": "Import: the count of transactions that are already there."
+  },
+  "importRejected": "Rows with problems",
+  "@importRejected": {
+    "description": "Import: the count of rows with problems."
+  },
+  "importNewCategories": "New categories",
+  "@importNewCategories": {
+    "description": "Import: the categories the file would add."
+  },
+  "importRejectedDetails": "See the rows with problems",
+  "@importRejectedDetails": {
+    "description": "Import: opens the list of rows with problems."
+  },
+  "importRejectedLine": "Line {line}: {reason}",
+  "@importRejectedLine": {
+    "description": "Import: one row with a problem.",
+    "placeholders": {
+      "line": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "importReasonInvalidDate": "invalid date",
+  "@importReasonInvalidDate": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonInvalidAmount": "invalid amount",
+  "@importReasonInvalidAmount": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonZeroAmount": "zero amount",
+  "@importReasonZeroAmount": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonMissingCategory": "no category",
+  "@importReasonMissingCategory": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonCurrencyMismatch": "another currency",
+  "@importReasonCurrencyMismatch": {
+    "description": "Import: why a row was rejected."
+  },
+  "importReasonOther": "couldn't be read",
+  "@importReasonOther": {
+    "description": "Import: why a row was rejected, for a reason the app does not know."
+  },
+  "importRejectedMore": "and {count} more",
+  "@importRejectedMore": {
+    "description": "Import: how many rows with problems are not listed.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importCurrencySwitched": "Your file is in {currency}, so your account now uses {currency}.",
+  "@importCurrencySwitched": {
+    "description": "Import: the account now uses the file's currency.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "importCurrencySwitching": "Your file is in {currency}: importing it switches your account to {currency}.",
+  "@importCurrencySwitching": {
+    "description": "Import: importing will switch the account to the file's currency.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "importBudgetsDropped": "Your budgets in {old} will be deleted when you switch to {currency}.",
+  "@importBudgetsDropped": {
+    "description": "Import: the budgets go with the old currency.",
+    "placeholders": {
+      "old": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "importCurrencyLocked": "Your file is in {file}, but your account already uses {account}: those rows won't be imported.",
+  "@importCurrencyLocked": {
+    "description": "Import: the account keeps its currency, so the file's rows are not imported.",
+    "placeholders": {
+      "file": {
+        "type": "String"
+      },
+      "account": {
+        "type": "String"
+      }
+    }
+  },
+  "importConfirm": "Import {count, plural, one{{count} transaction} other{{count} transactions}}",
+  "@importConfirm": {
+    "description": "Import: the button that imports.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importImporting": "Importing…",
+  "@importImporting": {
+    "description": "Import: the button while it imports."
+  },
+  "importOtherFile": "Use another file",
+  "@importOtherFile": {
+    "description": "Import: drops the preview to pick another file."
+  },
+  "importImported": "We imported {count, plural, one{{count} transaction} other{{count} transactions}}.",
+  "@importImported": {
+    "description": "Import: the heading once it is done.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPageBudgetsTitle": "Your budgets",
+  "@importPageBudgetsTitle": {
+    "description": "Import page: the budgets heading after an import."
+  },
+  "importPageBudgetsLead": "Check them and save them. You can leave some empty.",
+  "@importPageBudgetsLead": {
+    "description": "Import page: the line under the budgets heading."
+  },
+  "importSaveBudgets": "Save budgets",
+  "@importSaveBudgets": {
+    "description": "Import page: saves the budgets."
+  },
+  "importSavingBudgets": "Saving…",
+  "@importSavingBudgets": {
+    "description": "Import page: the save button while it saves."
+  },
+  "importBudgetsSaved": "Your budgets are saved.",
+  "@importBudgetsSaved": {
+    "description": "Import page: the budgets were saved."
+  },
+  "importGoHome": "Go home",
+  "@importGoHome": {
+    "description": "Import page: goes home."
+  },
+  "importPrefillBasis": "Based on what you spent in {months, plural, one{your last month} other{your last {months} months}}",
+  "@importPrefillBasis": {
+    "description": "Import page: where the prefilled budgets come from.",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "importPrefillBasisActivity": "Based on {months, plural, one{your last month} other{your last {months} months}} with activity",
+  "@importPrefillBasisActivity": {
+    "description": "Import page: where the prefilled budgets come from, for an old file.",
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetsAmountLabel": "Budget for {category}",
+  "@budgetsAmountLabel": {
+    "description": "Budgets form: the name of a category's field.",
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsInvalid": "Type just the number, like {example}.",
+  "@budgetsInvalid": {
+    "description": "Budgets form: a field that is not an amount.",
+    "placeholders": {
+      "example": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetsNone": "No budget",
+  "@budgetsNone": {
+    "description": "Budgets form: a field left empty."
+  },
+  "budgetsTotalLabel": "What you can spend per month",
+  "@budgetsTotalLabel": {
+    "description": "Budgets form: the label of the total."
+  },
+  "budgetsEmpty": "You have no spending categories. You can create them later in Categories.",
+  "@budgetsEmpty": {
+    "description": "Budgets form: there are no spending categories."
+  },
+  "errorImportDuplicateFile": "You already imported this file.",
+  "@errorImportDuplicateFile": {
+    "description": "Import: the same file was imported before."
+  },
+  "errorImportTooLarge": "That file is too large. The limit is 5 MB.",
+  "@errorImportTooLarge": {
+    "description": "Import: the file is over the limit."
+  },
+  "errorImportUnrecognizedFormat": "We don't recognize this file. Use a Budge export.",
+  "@errorImportUnrecognizedFormat": {
+    "description": "Import: the file is not a Budge export."
+  },
+  "errorImportNotInPreview": "This import is no longer in preview.",
+  "@errorImportNotInPreview": {
+    "description": "Import: the preview was already used or dropped."
+  },
+  "errorImportCurrencyChanged": "Your account's currency changed after the file was read. Upload it again.",
+  "@errorImportCurrencyChanged": {
+    "description": "Import: the account's currency changed after the file was read."
+  },
+  "errorCurrencyLocked": "This account already has transactions or recurring payments, so its currency can't be changed.",
+  "@errorCurrencyLocked": {
+    "description": "The account has movements, so the currency cannot change."
+  },
+  "importFresh": "No, I'm starting fresh",
+  "@importFresh": {
+    "description": "Import: under the sources, to start without importing (the welcome)."
+  },
+  "importPrefilled": "We filled in your budgets with what you spend on average each month.",
+  "@importPrefilled": {
+    "description": "Import: said once budgets were filled from the file (the welcome)."
+  },
+  "welcomeProgress": "Step {current} of {total}",
+  "welcomeBack": "Back",
+  "welcomeSkip": "Skip",
+  "welcomeSaving": "Saving…",
+  "welcomeNext": "Next",
+  "welcomeTitle": "Welcome to Lukitas",
+  "welcomeLead": "Set up your currency, categories and budget in a minute, or go straight in and do it later.",
+  "welcomeSetup": "Set up in 1 minute",
+  "welcomeDirect": "Go straight in",
+  "welcomeDirectNote": "If you go straight in, your currency will be {currency} and we use the suggested categories. You can change it in Settings before your first transaction.",
+  "welcomeCurrencyTitle": "Which currency do you use?",
+  "welcomeCurrencyLead": "We use it to show your amounts. If you bring your history, we use the file's currency.",
+  "welcomeCurrencyLabel": "Currency",
+  "welcomeImportTitle": "Coming from another app?",
+  "welcomeImportLead": "Bring your transactions and start with your real numbers.",
+  "welcomeCategoriesTitle": "Where does your money go?",
+  "welcomeCategoriesLead": "These are your categories. Tap one to remove it, edit them, or add your own.",
+  "welcomeCategoriesLeadFresh": "We picked some for you. Tap one to remove it, edit them, or add your own.",
+  "welcomeCategoriesExpenses": "Spending",
+  "welcomeCategoriesIncome": "Income",
+  "welcomeCategoriesAdd": "Add category",
+  "welcomeCategoriesEditToggle": "Edit categories",
+  "welcomeCategoriesEditDone": "Done",
+  "welcomeCategoriesEditHint": "Tap a category to edit it.",
+  "welcomeCategoriesEditLabel": "Edit {name}",
+  "welcomeCategoriesCantRemove": "“{name}” can't be removed because it has {count, plural, one{{count} transaction} other{{count} transactions}}. You can archive it in Edit categories so it doesn't show up when you add one.",
+  "welcomeCategoriesCantRemoveUnknown": "We couldn't check whether “{name}” has transactions, so it stays chosen.",
+  "categoryFormCounting": "Counting its transactions…",
+  "categoryFormDelete": "Delete category",
+  "categoryFormHasTransactions": "It can't be deleted because it has {count, plural, one{{count} transaction} other{{count} transactions}}. You can archive it so it doesn't show up when you add one.",
+  "categoryFormHasManyTransactions": "It can't be deleted because it has more than {count} transactions. You can archive it so it doesn't show up when you add one.",
+  "categoryFormCountFailed": "We couldn't count its transactions. You can archive it so it doesn't show up when you add one.",
+  "welcomeBudgetsTitle": "How much do you want to spend each month?",
+  "welcomeBudgetsLead": "Give each category a budget. You can leave some empty and set them later.",
+  "settingsExportTitle": "Download your data",
+  "settingsExportLead": "Everything as JSON, or your transactions as CSV to open in Excel or Google Sheets.",
+  "settingsExportJson": "Download JSON",
+  "settingsExportCsv": "Download CSV",
+  "settingsExportGuest": "Save your progress with an email first; then you can download your data.",
+  "settingsExportReadyTitle": "Your file is ready",
+  "settingsExportReadyBody": "What should we do with {file}?",
+  "settingsExportSave": "Save on this phone",
+  "settingsExportShare": "Share",
+  "settingsExportSaved": "Done: we saved {file}.",
+  "settingsExportSaveFailed": "We couldn't save the file. Try again.",
+  "settingsExportShareFailed": "We couldn't find an app to share the file with.",
+  "settingsAccountDeleteTitle": "Delete your account",
+  "settingsAccountDeleteLead": "We delete your account and all your entries right away. Backups that include them delete themselves within 14 days.",
+  "settingsAccountDeleteAction": "Delete my account",
+  "settingsAccountDeleteSheetTitle": "Delete your account?",
+  "settingsAccountDeleteSheetBody": "Your transactions, categories, budgets, recurring payments and fingerprints are deleted right away. Backups that include them delete themselves within 14 days.",
+  "settingsAccountDeleteExportFirst": "Download your data first",
+  "settingsAccountDeleteConfirmLabel": "Type your email to confirm",
+  "settingsAccountDeleteConfirmHint": "Your email is {email}.",
+  "settingsAccountDeleteConfirm": "Yes, delete my account",
+  "settingsAccountDeleting": "Deleting…",
+  "settingsAccountDeleteGuest": "Save your progress with an email first; then you can delete your account.",
+  "settingsFeedbackTitle": "Feedback and ideas",
+  "settingsFeedbackLead": "Something not working, or want Lukitas to do something more? Tell us by email.",
+  "settingsFeedbackAction": "Write to us",
+  "settingsFeedbackAddress": "If your email doesn't open, write to {email}.",
+  "settingsFeedbackMailSubject": "Lukitas: feedback",
+  "settingsFeedbackMailBody": "Lukitas version: {version}\nLanguage: {language}",
+  "settingsFeedbackNoAppTitle": "We couldn't find an email app",
+  "settingsFeedbackNoAppBody": "Write to us at {email}.",
+  "settingsFeedbackCopy": "Copy address",
+  "settingsFeedbackCopied": "We copied {email}.",
+  "settingsAccountDeleteExpired": "Your session had expired, so your account was NOT deleted. Sign in again and try again."
+}

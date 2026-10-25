@@ -4,6 +4,20 @@ type Locale = "es" | "en";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
+interface Copy {
+  subject: (code: string) => string;
+  preheader: (code: string) => string;
+  heading: string;
+  lead: string;
+  /** The button and the line under it, for an email that carries a link. */
+  button?: string | undefined;
+  buttonFallback?: string | undefined;
+  expiry: (minutes: number) => string;
+  ignore: string;
+  footer: string;
+  alt: string;
+}
+
 const COPY = {
   es: {
     subject: (code: string) => `Tu código de Lukitas: ${code}`,
@@ -29,7 +43,34 @@ const COPY = {
     footer: "Lukitas · free and open source",
     alt: "Lukitas waving hello",
   },
-} satisfies Record<Locale, unknown>;
+} satisfies Record<Locale, Copy>;
+
+/** A guest saving their progress: the code that attaches this email to their account. No link. */
+const CLAIM_COPY = {
+  es: {
+    ...COPY.es,
+    subject: (code: string) => `Tu código para guardar tu progreso: ${code}`,
+    preheader: (code: string) => `Tu código para guardar tu progreso en Lukitas: ${code}`,
+    heading: "Tu código para guardar tu progreso",
+    lead: "Escríbelo en Lukitas para guardar tu progreso con este correo.",
+    button: undefined,
+    buttonFallback: undefined,
+    expiry: (m: number) => `El código vence en ${plural(m, "minuto", "minutos")}.`,
+    ignore: "Si no pediste este correo, ignóralo: nadie puede usar tu correo sin este código.",
+  },
+  en: {
+    ...COPY.en,
+    subject: (code: string) => `Your code to save your progress: ${code}`,
+    preheader: (code: string) => `Your code to save your progress in Lukitas: ${code}`,
+    heading: "Your code to save your progress",
+    lead: "Type it into Lukitas to save your progress with this email.",
+    button: undefined,
+    buttonFallback: undefined,
+    expiry: (m: number) => `The code expires in ${plural(m, "minute", "minutes")}.`,
+    ignore:
+      "If you didn't ask for this email, ignore it: nobody can use your email without this code.",
+  },
+} satisfies Record<Locale, Copy>;
 
 /** The day palette of docs/design/system/project/tokens.json. Dark backgrounds break in many clients. */
 const C = {
@@ -64,19 +105,33 @@ const BUTTON_HEIGHT = 56;
 /** Pads the preheader so clients do not pull body text in after it. */
 const PREHEADER_FILLER = "&#847;&zwnj;&nbsp;".repeat(60);
 
-export function signInEmail(input: {
+interface CodeEmailInput {
   code: string;
-  /** The magic link Better Auth built, with `lang` and `next` already on it. */
-  link: string;
   locale: Locale;
   /** The web origin (`WEB_URL`): where the mascot image and the footer link point. */
   webUrl: string;
   expiresInMinutes: number;
-}): Omit<Mail, "to"> {
-  const copy = COPY[input.locale];
+}
+
+export function signInEmail(
+  input: CodeEmailInput & {
+    /** The magic link Better Auth built, with `lang` and `next` already on it. */
+    link: string;
+  },
+): Omit<Mail, "to"> {
+  return codeEmail(COPY[input.locale], input);
+}
+
+/** The code a guest types to save their progress with this email (spec §4.2): code only. */
+export function claimEmail(input: CodeEmailInput): Omit<Mail, "to"> {
+  return codeEmail(CLAIM_COPY[input.locale], input);
+}
+
+/** The shared layout: mascot, heading, the code, then the link (when there is one) and expiry. */
+function codeEmail(copy: Copy, input: CodeEmailInput & { link?: string }): Omit<Mail, "to"> {
   const web = input.webUrl.replace(/\/+$/, "");
   const code = escapeHtml(input.code);
-  const link = escapeHtml(input.link);
+  const link = input.link === undefined ? undefined : escapeHtml(input.link);
   const webHref = escapeHtml(web);
   const image = escapeHtml(`${web}/email/lukitas-wave.png`);
   const expiry = escapeHtml(copy.expiry(input.expiresInMinutes));
@@ -87,7 +142,7 @@ export function signInEmail(input: {
     input.code,
     "",
     copy.lead,
-    input.link,
+    ...(input.link === undefined ? [] : [input.link]),
     "",
     copy.expiry(input.expiresInMinutes),
     copy.ignore,
@@ -96,6 +151,27 @@ export function signInEmail(input: {
     web,
     "",
   ].join("\n");
+
+  // The button and the copy-this-link line, only for an email that carries a link.
+  const linkRows =
+    link === undefined
+      ? ""
+      : `<tr>
+<td align="center" style="padding:0 0 12px 0;">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${link}" style="height:${BUTTON_HEIGHT}px;v-text-anchor:middle;width:${BUTTON_WIDTH}px;" arcsize="28%" strokecolor="${C.brandEdge}" strokeweight="2px" fillcolor="${C.brand}"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;letter-spacing:1px;">${escapeHtml(copy.button ?? "")}</center></v:roundrect><![endif]-->
+<!--[if !mso]><!-->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="max-width:100%;"><tr>
+<td align="center" bgcolor="${C.brand}" style="background-color:${C.brand};border-radius:16px;border-bottom:4px solid ${C.brandEdge};">
+<a href="${link}" target="_blank" style="display:inline-block;padding:16px 32px;font-family:${DISPLAY};font-size:17px;line-height:24px;font-weight:700;letter-spacing:1px;color:#ffffff;text-decoration:none;border-radius:16px;">${escapeHtml(copy.button ?? "")}</a>
+</td>
+</tr></table>
+<!--<![endif]-->
+</td>
+</tr>
+<tr>
+<td align="center" style="padding:0 0 24px 0;font-family:${TEXT};font-size:13px;line-height:20px;font-weight:600;color:${C.muted};">${escapeHtml(copy.buttonFallback ?? "")}<br><a href="${link}" target="_blank" style="color:${C.brand};text-decoration:underline;word-break:break-all;">${link}</a></td>
+</tr>
+`;
 
   const html = `<!doctype html>
 <html lang="${input.locale}" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -148,22 +224,7 @@ export function signInEmail(input: {
 </tr></table>
 </td>
 </tr>
-<tr>
-<td align="center" style="padding:0 0 12px 0;">
-<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${link}" style="height:${BUTTON_HEIGHT}px;v-text-anchor:middle;width:${BUTTON_WIDTH}px;" arcsize="28%" strokecolor="${C.brandEdge}" strokeweight="2px" fillcolor="${C.brand}"><w:anchorlock/><center style="color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;letter-spacing:1px;">${escapeHtml(copy.button)}</center></v:roundrect><![endif]-->
-<!--[if !mso]><!-->
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="max-width:100%;"><tr>
-<td align="center" bgcolor="${C.brand}" style="background-color:${C.brand};border-radius:16px;border-bottom:4px solid ${C.brandEdge};">
-<a href="${link}" target="_blank" style="display:inline-block;padding:16px 32px;font-family:${DISPLAY};font-size:17px;line-height:24px;font-weight:700;letter-spacing:1px;color:#ffffff;text-decoration:none;border-radius:16px;">${escapeHtml(copy.button)}</a>
-</td>
-</tr></table>
-<!--<![endif]-->
-</td>
-</tr>
-<tr>
-<td align="center" style="padding:0 0 24px 0;font-family:${TEXT};font-size:13px;line-height:20px;font-weight:600;color:${C.muted};">${escapeHtml(copy.buttonFallback)}<br><a href="${link}" target="_blank" style="color:${C.brand};text-decoration:underline;word-break:break-all;">${link}</a></td>
-</tr>
-<tr>
+${linkRows}<tr>
 <td align="center" style="border-top:2px solid ${C.stroke};padding:20px 0 0 0;font-family:${TEXT};font-size:15px;line-height:22px;font-weight:700;color:${C.ink};">${expiry}</td>
 </tr>
 <tr>

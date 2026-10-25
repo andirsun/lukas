@@ -3,7 +3,6 @@ import {
   createRecurrenceSchema,
   firstDay,
   type RecurrenceDto,
-  recurrenceDto,
   updateRecurrenceSchema,
 } from "@lukas/core";
 import { recurrences, type Tx, transactions, withUser } from "@lukas/db";
@@ -12,6 +11,7 @@ import type { AppDeps } from "../deps.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
 import { router } from "../http/router.ts";
+import { CreateRecurrence, Recurrence, UpdateRecurrence } from "../http/schemas.ts";
 import { dropPendingOccurrences } from "../services/recurrence-stop.ts";
 import { currentMonth } from "../services/time.ts";
 import { defaultAccount, requireActiveCategory } from "../services/transactions.ts";
@@ -44,7 +44,8 @@ export function recurrenceRoutes(deps: AppDeps) {
     createRoute({
       method: "get",
       path: "/v1/recurrences",
-      responses: { 200: jsonResponse(z.array(recurrenceDto), "Recurrences") },
+      operationId: "listRecurrences",
+      responses: { 200: jsonResponse(z.array(Recurrence), "Recurrences") },
     }),
     async (c) => {
       const rows = await withUser(deps.db, c.get("userId"), (tx) =>
@@ -58,8 +59,9 @@ export function recurrenceRoutes(deps: AppDeps) {
     createRoute({
       method: "post",
       path: "/v1/recurrences",
-      request: { body: jsonBody(createRecurrenceSchema) },
-      responses: { 201: jsonResponse(recurrenceDto, "Created"), ...problems(422) },
+      operationId: "createRecurrence",
+      request: { body: jsonBody(CreateRecurrence) },
+      responses: { 201: jsonResponse(Recurrence, "Created"), ...problems(422) },
     }),
     async (c) => {
       const input = c.req.valid("json");
@@ -89,8 +91,9 @@ export function recurrenceRoutes(deps: AppDeps) {
     createRoute({
       method: "patch",
       path: "/v1/recurrences/{id}",
-      request: { params: idParam, body: jsonBody(updateRecurrenceSchema) },
-      responses: { 200: jsonResponse(recurrenceDto, "Updated"), ...problems(404, 422) },
+      operationId: "updateRecurrence",
+      request: { params: idParam, body: jsonBody(UpdateRecurrence) },
+      responses: { 200: jsonResponse(Recurrence, "Updated"), ...problems(404, 422) },
     }),
     async (c) => {
       const { id } = c.req.valid("param");
@@ -129,6 +132,7 @@ export function recurrenceRoutes(deps: AppDeps) {
     createRoute({
       method: "delete",
       path: "/v1/recurrences/{id}",
+      operationId: "deleteRecurrence",
       request: { params: idParam },
       responses: {
         204: {

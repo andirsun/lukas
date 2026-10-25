@@ -1,5 +1,5 @@
-import { describe, expect, test } from "vitest";
-import { SmtpMailer, smtpTransport } from "../src/mailer.ts";
+import { describe, expect, test, vi } from "vitest";
+import { MemoryMailer, ResendMailer, SmtpMailer, smtpTransport } from "../src/mailer.ts";
 
 /** What nodemailer ended up using for the connection. */
 const optionsOf = (mailer: SmtpMailer) =>
@@ -56,5 +56,48 @@ describe("SMTP transport TLS", () => {
     new SmtpMailer("smtp://localhost:1025", "a@b.test", { tlsInsecure: true });
     const other = optionsOf(new SmtpMailer("smtp://localhost:1025", "a@b.test"));
     expect(other.tls).toBeUndefined();
+  });
+});
+
+describe("undeliverable addresses", () => {
+  // Guests get placeholder emails under guest.lukitas.invalid: the .invalid TLD never resolves, and
+  // nothing may ever be mailed there.
+  const placeholder = "temp-abc123@guest.lukitas.invalid";
+
+  test("every mailer refuses an address under .invalid, and records nothing", async () => {
+    const memory = new MemoryMailer();
+    for (const to of [placeholder, "Someone@Example.INVALID", " x@y.invalid ", "x@y.invalid."]) {
+      await expect(memory.send({ to, subject: "s", text: "t", html: "h" })).rejects.toThrow(
+        /\.invalid/,
+      );
+    }
+    expect(memory.sent).toHaveLength(0);
+  });
+
+  test("SMTP refuses before connecting to anything", async () => {
+    // Port 9 on localhost: a connection attempt would fail with ECONNREFUSED, not this message.
+    const smtp = new SmtpMailer("smtp://localhost:9", "a@b.test");
+    await expect(
+      smtp.send({ to: placeholder, subject: "s", text: "t", html: "h" }),
+    ).rejects.toThrow(/\.invalid/);
+  });
+
+  test("Resend refuses before calling the API", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("no network"));
+    try {
+      const resend = new ResendMailer("re_test", "a@b.test");
+      await expect(
+        resend.send({ to: placeholder, subject: "s", text: "t", html: "h" }),
+      ).rejects.toThrow(/\.invalid/);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+    }
+  });
+
+  test("ordinary addresses still go out", async () => {
+    const memory = new MemoryMailer();
+    await memory.send({ to: "ana@invalid.example.com", subject: "s", text: "t", html: "h" });
+    expect(memory.sent).toHaveLength(1);
   });
 });

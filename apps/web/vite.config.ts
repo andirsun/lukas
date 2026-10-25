@@ -1,8 +1,13 @@
+import { readFileSync } from "node:fs";
 import { reactRouter } from "@react-router/dev/vite";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
+const { version } = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
+
 export default defineConfig({
+  // The version Settings' "Comentarios e ideas" puts in the email (features/settings/feedback.ts).
+  define: { __APP_VERSION__: JSON.stringify(version) },
   plugins: [tailwindcss(), reactRouter()],
   // Keep Vite's manifest: the landing e2e reads it to hold the initial JavaScript of `/` to its
   // budget. react-router.config.ts moves it out of what ships, to build/vite-manifest.json.

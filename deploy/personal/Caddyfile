@@ -64,6 +64,15 @@
 		file_server
 	}
 
+	# --- Android App Links and passkeys: the app's package and signing certificates. The file is
+	# written when the container starts (web-entrypoint.sh, from ANDROID_CERT_SHA256) and is `[]`
+	# when none is set, never a 404. Android fetches it without redirects and reads it as JSON.
+	handle /.well-known/assetlinks.json {
+		header Content-Type "application/json"
+		header Cache-Control "no-cache"
+		file_server
+	}
+
 	# --- The landing and roadmap live on their own site: send visitors there (same path and query).
 	# A temporary redirect, so the landing can move without browsers remembering the old answer.
 	@pages path / /en /en/ /roadmap /roadmap/ /en/roadmap /en/roadmap/

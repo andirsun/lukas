@@ -10,6 +10,7 @@ import { PressButton } from "../../ui/PressButton.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
 import { useAppPath } from "./app-path.ts";
+import { SHOW_CATEGORIES } from "./home-storage.ts";
 import { type SignOutRequest, useSignOut } from "./use-sign-out.ts";
 
 export interface HomeHeaderProps {
@@ -24,7 +25,8 @@ export interface HomeHeaderProps {
 /** Sections that live in the avatar menu (on phones, the only way there). */
 const SECTIONS = [
   { key: "recurring", to: "/recurring" },
-  { key: "categories", to: "/categories" },
+  // Categories are managed in home's Categorías tab: the link opens home on it.
+  { key: "categories", to: "", state: SHOW_CATEGORIES },
   { key: "settings", to: "/settings" },
 ] as const;
 
@@ -96,13 +98,15 @@ export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeader
           <ThemeToggle />
         </div>
         <ul className="m-0 flex list-none flex-col gap-(--space-1) p-0">
-          {SECTIONS.map(({ key, to }) => (
-            <li key={key}>
+          {SECTIONS.map((section) => (
+            <li key={section.key}>
               <Link
-                to={appPath(to)}
+                to={appPath(section.to)}
+                state={"state" in section ? section.state : undefined}
+                onClick={() => setOpen(false)}
                 className="flex min-h-11 items-center justify-between rounded-sm text-[14px] font-bold text-ink no-underline hover:underline focus-visible:outline-3 focus-visible:outline-focus focus-visible:outline-offset-2"
               >
-                {t(`nav.${key}`)}
+                {t(`nav.${section.key}`)}
                 <span aria-hidden="true">›</span>
               </Link>
             </li>

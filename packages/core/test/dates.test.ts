@@ -46,7 +46,30 @@ test("todayIn respects the user's time zone", () => {
   expect(todayIn("Europe/Lisbon", now)).toBe("2026-11-01");
 });
 
-test("isValidTimeZone", () => {
-  expect(isValidTimeZone("Europe/Lisbon")).toBe(true);
-  expect(isValidTimeZone("Mars/Base")).toBe(false);
+test("isValidTimeZone: named zones the runtime knows, aliases and other cases included", () => {
+  for (const zone of [
+    "Europe/Lisbon",
+    "America/Bogota",
+    "UTC",
+    "Asia/Calcutta",
+    "america/bogota",
+  ]) {
+    expect(isValidTimeZone(zone)).toBe(true);
+  }
+});
+
+test("isValidTimeZone: offsets, unknown names, junk and over-long input are refused", () => {
+  // Intl accepts offsets, but they are not zones (no daylight saving rules): profiles store names.
+  for (const zone of [
+    "+05:00",
+    "-03",
+    "Mars/Base",
+    "Not/AZone",
+    "",
+    " ",
+    "Europe/Lisbon; x",
+    "a".repeat(200),
+  ]) {
+    expect(isValidTimeZone(zone)).toBe(false);
+  }
 });

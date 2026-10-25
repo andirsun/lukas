@@ -17,6 +17,17 @@ describe("isSignInAllowed", () => {
     expect(isSignInAllowed(config, "founder@lukas.test.evil.example")).toBe(false);
     expect(isSignInAllowed(config, "")).toBe(false);
   });
+
+  test("never an address under .invalid (a guest's placeholder), list or no list", () => {
+    expect(isSignInAllowed({}, "temp-abc@guest.lukitas.invalid")).toBe(false);
+    expect(isSignInAllowed({}, " Temp-ABC@Guest.Lukitas.INVALID. ")).toBe(false);
+    expect(
+      isSignInAllowed(
+        { SIGN_IN_ALLOWLIST: ["x@guest.lukitas.invalid"] },
+        "x@guest.lukitas.invalid",
+      ),
+    ).toBe(false);
+  });
 });
 
 describe("sign-in allowlist", () => {

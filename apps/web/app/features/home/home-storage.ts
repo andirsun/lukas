@@ -27,6 +27,18 @@ function write(key: string, value: string): void {
   }
 }
 
+/**
+ * The navigation state that opens home on its Categorías list (the avatar menu's and the sidebar's
+ * Categorías, the budgets card's button): categories live in that tab, not on a page of their own.
+ */
+export const SHOW_CATEGORIES = { view: "budgets" } as const satisfies { view: HomeView };
+
+/** The list a navigation asked home to show (`SHOW_CATEGORIES`), if any. */
+export function requestedView(state: unknown): HomeView | null {
+  const view = (state as { view?: unknown } | null)?.view;
+  return view === "budgets" || view === "transactions" ? view : null;
+}
+
 /** Forgets everything home remembers for this person (stories start from nothing). */
 export function clearHomeStorage(userId: string): void {
   try {

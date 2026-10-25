@@ -199,3 +199,119 @@ export const NightIncomeSaved: Story = {
     await expect(await canvas.findByTestId("celebration")).toBeVisible();
   },
 };
+
+/** `--celebrate` as the tokens give it: the stay of a celebration, and one loop of the confetti. */
+const CELEBRATE_MS = 1200;
+
+/**
+ * For the mobile parity pictures (docs/mobile/parity.md): the shots take CSS animations at their
+ * end, where a celebration is gone, so these stories stop the live one part of the way through.
+ * The stay is made an hour long first, so the overlay is still on the page when the shot is taken.
+ */
+const longStay = () => {
+  document.documentElement.style.setProperty("--celebrate", "3600s");
+  return () => document.documentElement.style.removeProperty("--celebrate");
+};
+
+/**
+ * Stops every animation of the celebration where it would be `fraction` of the way through one
+ * `--celebrate` (the confetti and Lukitas' pop last one; his sprite loops on its own clock), and
+ * keeps what each piece looks like then as plain styles: the animations are cancelled, so the
+ * pictures that take them "at rest" see the celebration as it was.
+ */
+function freezeAt(overlay: HTMLElement, fraction: number) {
+  const animations = overlay.getAnimations({ subtree: true });
+  for (const animation of animations) {
+    const timing = (animation.effect as KeyframeEffect).getComputedTiming();
+    animation.pause();
+    animation.currentTime =
+      timing.iterations === Number.POSITIVE_INFINITY
+        ? fraction * CELEBRATE_MS
+        : fraction * Number(timing.duration);
+  }
+  const looks = animations.map((animation) => {
+    const target = (animation.effect as KeyframeEffect).target as HTMLElement;
+    const style = getComputedStyle(target);
+    return {
+      target,
+      transform: style.transform,
+      opacity: style.opacity,
+      backgroundPosition: style.backgroundPosition,
+    };
+  });
+  for (const animation of animations) animation.cancel();
+  for (const look of looks) {
+    look.target.style.transform = look.transform;
+    look.target.style.opacity = look.opacity;
+    if (look.target.classList.contains("lk-lukas-sprite")) {
+      look.target.style.backgroundPosition = look.backgroundPosition;
+    }
+  }
+}
+
+/** Half a second in: the confetti is out and falling, and Lukitas stands above the spot. */
+export const MidFlight: Story = {
+  beforeEach: longStay,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "paid" }));
+    freezeAt(await canvas.findByTestId("celebration"), 0.5);
+  },
+};
+
+/** The same with the undo toast up: he stands above the toast. */
+export const MidFlightClearOfTheToast: Story = {
+  args: { toast: true },
+  beforeEach: longStay,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "paid" }));
+    const overlay = await canvas.findByTestId("celebration");
+    await sleep(100);
+    freezeAt(overlay, 0.5);
+  },
+};
+
+/** No spot on the screen: he shows at the top, and the confetti bursts from there. */
+export const MidFlightNoSpot: Story = {
+  args: { spot: false },
+  beforeEach: longStay,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "paid" }));
+    freezeAt(await canvas.findByTestId("celebration"), 0.5);
+  },
+};
+
+/** A tenth in: Lukitas is still growing to his size, and the confetti is just leaving. */
+export const MidFlightEarly: Story = {
+  beforeEach: longStay,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "paid" }));
+    freezeAt(await canvas.findByTestId("celebration"), 0.1);
+  },
+};
+
+/** By day and in English, an expense saved, three quarters of the way through. */
+export const MidFlightDayEnglish: Story = {
+  args: { event: "expenseSaved" },
+  globals: { theme: "day", locale: "en" },
+  beforeEach: longStay,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "expenseSaved" }));
+    freezeAt(await canvas.findByTestId("celebration"), 0.75);
+  },
+};
+
+/** Under reduced motion: no confetti, his still frame, fully faded in half way through. */
+export const MidFlightReducedMotion: Story = {
+  parameters: { reducedMotion: true },
+  beforeEach: longStay,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole("button", { name: "paid" }));
+    freezeAt(await canvas.findByTestId("celebration"), 0.5);
+  },
+};

@@ -1,0 +1,181 @@
+{
+  "storyId": "home-home--sheet-day-theme",
+  "now": "2026-10-21T15:00:00.000Z",
+  "timezone": "Europe/Madrid",
+  "api": true,
+  "responses": {
+    "GET /v1/categories": {
+      "status": 200,
+      "body": [
+        {
+          "id": "cat-food",
+          "name": "Comida",
+          "kind": "expense",
+          "icon": "🍽️",
+          "color": "#ff5c7a",
+          "sortOrder": 0,
+          "archived": false,
+          "currentBudget": 80000000
+        },
+        {
+          "id": "cat-home",
+          "name": "Casa",
+          "kind": "expense",
+          "icon": "🏠",
+          "color": "#3fa7ff",
+          "sortOrder": 1,
+          "archived": false,
+          "currentBudget": 150000000
+        },
+        {
+          "id": "cat-salary",
+          "name": "Salario",
+          "kind": "income",
+          "icon": "💰",
+          "color": "#2fd388",
+          "sortOrder": 7,
+          "archived": false,
+          "currentBudget": null
+        }
+      ]
+    },
+    "GET /v1/categories?includeArchived=true": {
+      "status": 200,
+      "body": [
+        {
+          "id": "cat-food",
+          "name": "Comida",
+          "kind": "expense",
+          "icon": "🍽️",
+          "color": "#ff5c7a",
+          "sortOrder": 0,
+          "archived": false,
+          "currentBudget": 80000000
+        },
+        {
+          "id": "cat-home",
+          "name": "Casa",
+          "kind": "expense",
+          "icon": "🏠",
+          "color": "#3fa7ff",
+          "sortOrder": 1,
+          "archived": false,
+          "currentBudget": 150000000
+        },
+        {
+          "id": "cat-salary",
+          "name": "Salario",
+          "kind": "income",
+          "icon": "💰",
+          "color": "#2fd388",
+          "sortOrder": 7,
+          "archived": false,
+          "currentBudget": null
+        }
+      ]
+    },
+    "GET /v1/me": {
+      "status": 200,
+      "body": {
+        "id": "u-ana",
+        "email": "ana@example.com",
+        "timezone": "Europe/Madrid",
+        "locale": "es",
+        "onboardingCompletedAt": "2026-10-01T10:00:00.000Z",
+        "currency": "COP",
+        "isAnonymous": false
+      }
+    },
+    "GET /v1/recurrences": {
+      "status": 200,
+      "body": []
+    },
+    "GET /v1/summary?month=2026-10": {
+      "status": 200,
+      "body": {
+        "month": "2026-10",
+        "budgetTotal": 230000000,
+        "spent": 0,
+        "remaining": 230000000,
+        "income": 0,
+        "balance": 0,
+        "categories": [
+          {
+            "categoryId": "cat-food",
+            "budget": 80000000,
+            "spent": 0,
+            "remaining": 80000000,
+            "ratio": 0,
+            "state": "ok"
+          },
+          {
+            "categoryId": "cat-home",
+            "budget": 150000000,
+            "spent": 0,
+            "remaining": 150000000,
+            "ratio": 0,
+            "state": "ok"
+          }
+        ]
+      }
+    },
+    "GET /v1/transactions/suggestions?q=": {
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "name": "continente",
+            "categoryId": "cat-groceries"
+          },
+          {
+            "name": "pingo doce",
+            "categoryId": "cat-groceries"
+          },
+          {
+            "name": "desayuno",
+            "categoryId": "cat-restaurant"
+          },
+          {
+            "name": "cine",
+            "categoryId": "cat-fun"
+          }
+        ]
+      }
+    },
+    "GET /v1/transactions?category=cat-casa&limit=50&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [],
+        "nextCursor": null
+      }
+    },
+    "GET /v1/transactions?category=cat-fun&limit=50&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [],
+        "nextCursor": null
+      }
+    },
+    "GET /v1/transactions?limit=1": {
+      "status": 200,
+      "body": {
+        "items": [],
+        "nextCursor": null
+      }
+    },
+    "GET /v1/transactions?limit=200&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [],
+        "nextCursor": null
+      }
+    },
+    "GET /v1/transactions?limit=50&month=2026-10": {
+      "status": 200,
+      "body": {
+        "items": [],
+        "nextCursor": null
+      }
+    }
+  }
+}

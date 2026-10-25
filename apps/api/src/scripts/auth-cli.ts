@@ -13,6 +13,7 @@ export const auth = createAuth({
     PORT: 3000,
     NODE_ENV: "test",
     CLIENT_IP_HEADER: "x-forwarded-for",
+    GUEST_SIGNUP: true,
     TRUSTED_PROXIES: [],
   },
   db: {} as never,

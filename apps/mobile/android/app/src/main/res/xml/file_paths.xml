@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The only folder the share sheet's FileProvider serves (files/FilesChannel.kt): a copy of the
+     file being shared, made in the app's cache just before. Nothing else of the app is reachable
+     through it. -->
+<paths>
+    <cache-path name="shared" path="shared/"/>
+</paths>

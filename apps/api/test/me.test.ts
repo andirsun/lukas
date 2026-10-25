@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { sql } from "@lukas/db/orm";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { createTestApp, type TestApp } from "./harness.ts";
@@ -39,9 +40,90 @@ test("profile can be read and updated", async () => {
     email: "a@lukas.test",
     timezone: "America/Bogota",
     locale: "en",
-    onboardingCompletedAt: null,
+    // `a` has a movement (seeded above): reading the profile stamped the welcome as done.
+    onboardingCompletedAt: expect.any(String),
     currency: "EUR",
+    isAnonymous: false,
   });
+});
+
+type Me = { onboardingCompletedAt: string | null };
+const readMe = async (headers: { authorization: string }) =>
+  (await (await t.request("GET", "/v1/me", { headers })).json()) as Me;
+
+test("an account that already has a movement is stamped as onboarded when its profile is read", async () => {
+  // An account that predates the welcome (the app's, made before it existed): it has data, and
+  // no `onboardingCompletedAt`. Reading it stamps it, so neither client sends it to the welcome.
+  const old = await t.signIn("old@lukas.test");
+  await seed(old.headers, "Casa");
+  const before = Date.now();
+  const me = await readMe(old.headers);
+  expect(me.onboardingCompletedAt).not.toBeNull();
+  expect(Date.parse(me.onboardingCompletedAt as string)).toBeGreaterThanOrEqual(before - 1000);
+  // Once: later reads keep the first time.
+  expect((await readMe(old.headers)).onboardingCompletedAt).toBe(me.onboardingCompletedAt);
+});
+
+test("an empty account is not stamped: it is the one the welcome is for", async () => {
+  const fresh = await t.signIn("fresh@lukas.test");
+  expect((await readMe(fresh.headers)).onboardingCompletedAt).toBeNull();
+  // Categories alone are not movements.
+  await t.request("POST", "/v1/categories", {
+    headers: fresh.headers,
+    body: { name: "Solo categoría", kind: "expense", icon: "cart", color: "orange" },
+  });
+  expect((await readMe(fresh.headers)).onboardingCompletedAt).toBeNull();
+});
+
+test("an account that is already stamped is left as it is", async () => {
+  const done = await t.signIn("done@lukas.test");
+  const patched = (await (
+    await t.request("PATCH", "/v1/me", {
+      headers: done.headers,
+      body: { onboardingCompleted: true },
+    })
+  ).json()) as Me;
+  await seed(done.headers, "Después");
+  expect((await readMe(done.headers)).onboardingCompletedAt).toBe(patched.onboardingCompletedAt);
+});
+
+const BUDGE_CSV = readFileSync(
+  new URL("../../../packages/importers/test/fixtures/budge-sample.csv", import.meta.url),
+  "utf8",
+);
+
+/** What the welcome's import step does: upload a Budge export and confirm it. */
+async function importInWelcome(headers: { authorization: string }) {
+  const form = new FormData();
+  form.append("source", "budge");
+  form.append("file", new File([BUDGE_CSV], "budge.csv", { type: "text/csv" }));
+  const preview = await t.request("POST", "/v1/imports", { headers, body: form });
+  expect(preview.status).toBeLessThan(300);
+  const { id } = (await preview.json()) as { id: string };
+  const confirm = await t.request("POST", `/v1/imports/${id}/confirm`, { headers });
+  expect(confirm.status).toBe(200);
+}
+
+test("an account that imports during its welcome is not stamped; a manual movement stamps it", async () => {
+  // The welcome's import step comes before categories and budgets: the account has rows by then,
+  // but it is still in its welcome, and a restart must resume it.
+  const welcoming = await t.signIn("welcoming@lukas.test");
+  await importInWelcome(welcoming.headers);
+  expect((await readMe(welcoming.headers)).onboardingCompletedAt).toBeNull();
+  // A PATCH answers with the same profile: it does not stamp either.
+  const patched = await t.request("PATCH", "/v1/me", {
+    headers: welcoming.headers,
+    body: { timezone: "America/Bogota" },
+  });
+  expect(((await patched.json()) as Me).onboardingCompletedAt).toBeNull();
+  // A movement the welcome cannot have made (by hand, or captured) does.
+  await seed(welcoming.headers, "Mascotas");
+  expect((await readMe(welcoming.headers)).onboardingCompletedAt).not.toBeNull();
+});
+
+test("a movement of another account does not stamp this one", async () => {
+  const other = await t.signIn("other@lukas.test");
+  expect((await readMe(other.headers)).onboardingCompletedAt).toBeNull();
 });
 
 test("the currency can be chosen while the account has no transactions", async () => {

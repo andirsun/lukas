@@ -42,7 +42,7 @@ function Demo({ onChange }: { onChange?: (view: View) => void }) {
         position={pager.position}
         options={[
           { value: "transactions", label: "Movimientos" },
-          { value: "budgets", label: "Presupuestos" },
+          { value: "budgets", label: "Categorías" },
         ]}
         onChange={choose}
       />
@@ -62,8 +62,8 @@ function Demo({ onChange }: { onChange?: (view: View) => void }) {
           </SwipeRow>
           <div className="h-[200px]" />
         </section>
-        <section role="tabpanel" aria-label="Presupuestos" className="lk-panel flex">
-          <h2 className="lk-panel-title">Presupuestos</h2>
+        <section role="tabpanel" aria-label="Categorías" className="lk-panel flex">
+          <h2 className="lk-panel-title">Categorías</h2>
           <p className="m-0">Supermercado · quedan 120 €</p>
         </section>
       </PagerTrack>
@@ -90,7 +90,7 @@ const thumbOf = (canvasElement: HTMLElement) =>
 
 /**
  * The track follows the finger 1:1 (and the tab's thumb with it); let go past half the width it
- * springs to Presupuestos, with a light vibration.
+ * springs to Categorías, with a light vibration.
  */
 export const DragAndSnap: Story = {
   play: async ({ canvasElement, args }) => {
@@ -115,7 +115,7 @@ export const DragAndSnap: Story = {
       });
       await waitFor(() => expect(args.onChange).toHaveBeenCalledWith("budgets"), SETTLE);
       await waitFor(() =>
-        expect(canvas.getByRole("tab", { name: "Presupuestos" })).toHaveAttribute(
+        expect(canvas.getByRole("tab", { name: "Categorías" })).toHaveAttribute(
           "aria-selected",
           "true",
         ),
@@ -216,7 +216,7 @@ export const TapSlides: Story = {
     const canvas = within(canvasElement);
     const track = trackOf(canvasElement);
     const width = track.getBoundingClientRect().width;
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
+    await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
     await expect(args.onChange).toHaveBeenCalledWith("budgets");
     // Mid-slide, then settled.
     await waitFor(
@@ -245,7 +245,7 @@ export const ReducedMotion: Story = {
       () => expect(translateX(track)).toBeCloseTo(-(width + GESTURE.pagerGap), 0),
       SETTLE,
     );
-    const page = canvas.getByRole("tabpanel", { name: "Presupuestos" });
+    const page = canvas.getByRole("tabpanel", { name: "Categorías" });
     // The short cross-fade, then fully there.
     await waitFor(
       () => expect(getComputedStyle(page.parentElement as HTMLElement).opacity).toBe("1"),
@@ -260,7 +260,7 @@ export const TapMidSpringSettles: Story = {
     const canvas = within(canvasElement);
     const track = trackOf(canvasElement);
     const width = track.getBoundingClientRect().width;
-    await userEvent.click(canvas.getByRole("tab", { name: "Presupuestos" }));
+    await userEvent.click(canvas.getByRole("tab", { name: "Categorías" }));
     await fingerDrag(canvas.getByTestId("card"), { steps: 0 });
     await waitFor(
       () => expect(translateX(track)).toBeCloseTo(-(width + GESTURE.pagerGap), 0),

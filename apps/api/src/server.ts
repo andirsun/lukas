@@ -3,6 +3,7 @@ import { createDb, runMigrations } from "@lukas/db";
 import { createApp } from "./app.ts";
 import { loadConfig } from "./config.ts";
 import { type Mailer, ResendMailer, SmtpMailer } from "./mailer.ts";
+import { scheduleGuestCleanup } from "./services/guest-cleanup.ts";
 
 const config = loadConfig(process.env);
 // Development applies migrations itself; elsewhere they are a separate step with the owner role
@@ -24,3 +25,7 @@ const app = createApp({ config, db, mailer, now: pinned ? () => new Date(pinned)
 serve({ fetch: app.fetch, port: config.PORT }, ({ port }) => {
   console.log(`Lukitas API listening on http://localhost:${port}`);
 });
+
+// Guests idle for over 60 days are deleted once a day (spec §4.4). Always the real clock: the
+// pinned E2E clock would misjudge real session times.
+scheduleGuestCleanup({ db });

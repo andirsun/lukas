@@ -7,8 +7,8 @@ import {
   todayIn,
 } from "@lukas/core";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { type RefObject, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router";
 import { useTranslations } from "use-intl";
 import { useApi, useApiMode } from "../../api/ApiProvider.tsx";
 import { ApiProblem, problemMessage, type Translator } from "../../api/errors.ts";
@@ -23,7 +23,6 @@ import { formatDay, formatMoney, formatMonth } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { moodFor } from "../../lukas/mood.ts";
 import { BudgetBar } from "../../ui/BudgetBar.tsx";
-import { CategoryRow } from "../../ui/CategoryRow.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
 import { cx } from "../../ui/cx.ts";
 import { LukasBubble } from "../../ui/LukasBubble.tsx";
@@ -38,12 +37,19 @@ import { TransactionRow } from "../../ui/TransactionRow.tsx";
 import { useWideScreen } from "../../ui/use-wide-screen.ts";
 import { useTransactionSheet } from "../add-transaction/TransactionSheetProvider.tsx";
 import type { TransactionEvent } from "../add-transaction/use-add-transaction.ts";
+import { CategoriesTab } from "../categories/CategoriesTab.tsx";
 import { createSuggestions, useHasTransactions } from "../onboarding/onboarding-api.ts";
 import { SUGGESTED_CATEGORIES } from "../onboarding/suggested-categories.ts";
 import { useAppPath } from "./app-path.ts";
 import { HomeHeader } from "./HomeHeader.tsx";
 import { type DayGroup, groupByDay, homeLukasLine, overallState } from "./home-model.ts";
-import { type HomeView, useDismissed, useHomeView } from "./home-storage.ts";
+import {
+  type HomeView,
+  requestedView,
+  SHOW_CATEGORIES,
+  useDismissed,
+  useHomeView,
+} from "./home-storage.ts";
 import type { SignOutRequest } from "./use-sign-out.ts";
 
 /** How long Lukitas celebrates after a save or a payment. */
@@ -57,7 +63,7 @@ const VIEWS: readonly HomeView[] = ["transactions", "budgets"];
  * Home (`/app`, spec §2.5): the month (the person's current one by default, earlier ones
  * browsable), Lukitas with a line about it, what is left (or, without budgets, what was spent),
  * and two lists: Movimientos (by day: today on top, the upcoming pending ones next, then the past)
- * and Presupuestos (one row per spending category, opening its detail). On phones they are two
+ * and Categorías (one row per spending category, opening its detail). On phones they are two
  * pages that follow the finger (a sideways drag anywhere on the screen but a row, which has its
  * own swipes; `gestureOwner` decides), or the segmented control above them; Movimientos first and
  * by default, the choice remembered on the device. On wide screens they sit side by side,
@@ -145,7 +151,25 @@ function MonthView({
   // Archived ones too: older transactions (and a month's summary) can still be in them.
   const categories = useAllCategories();
   const [view, setView] = useHomeView();
+  // "Categorías" in the menu or the sidebar lands here with the tab asked for; a new navigation
+  // (its key) asks again, even for the same tab.
+  const location = useLocation();
+  const requested = requestedView(location.state);
   const wide = useWideScreen();
+  // Side by side, both lists are in view already, so switching to one shows nothing: the sidebar's
+  // link moves focus to the list it names and brings it to the top instead.
+  const wideRef = useRef(wide);
+  wideRef.current = wide;
+  const panels = useRef<Partial<Record<HomeView, HTMLElement | null>>>({});
+  useEffect(() => {
+    if (!requested) return;
+    setView(requested);
+    const panel = wideRef.current ? panels.current[requested] : null;
+    if (!panel) return;
+    panel.focus({ preventScroll: true });
+    const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    panel.scrollIntoView({ block: "start", behavior: calm ? "auto" : "smooth" });
+  }, [location.key, requested, setView]);
   const pager = usePager({
     index: VIEWS.indexOf(view),
     count: VIEWS.length,
@@ -196,6 +220,7 @@ function MonthView({
             <Lists
               view={view}
               onView={setView}
+              panels={panels}
               pager={wide ? null : pager}
               summary={summary.data}
               categories={categories.data}
@@ -375,7 +400,11 @@ function Nudges({
           id: "budgets",
           title: t("nudge_budgets_title"),
           lead: t("nudge_budgets_lead"),
-          action: { label: t("nudge_budgets_action"), to: appPath("/categories") },
+          action: {
+            label: t("nudge_budgets_action"),
+            to: appPath(),
+            state: SHOW_CATEGORIES,
+          },
         }
       : null,
     canImport && hasTransactions.data === false && !dismissed.has("import")
@@ -407,7 +436,7 @@ function Nudge({
   title: string;
   lead: string;
   /** Where the card leads; without one it is marked "pronto". */
-  action?: { label: string; to: string };
+  action?: { label: string; to: string; state?: object };
   onDismiss(): void;
 }) {
   const t = useTranslations();
@@ -424,7 +453,13 @@ function Nudge({
         </h2>
         <p className="m-0 text-[12px] font-bold text-ink-muted">{lead}</p>
         {action && (
-          <PressLink to={action.to} variant="secondary" size="sm" className="self-start">
+          <PressLink
+            to={action.to}
+            state={action.state}
+            variant="secondary"
+            size="sm"
+            className="self-start"
+          >
             {action.label}
           </PressLink>
         )}
@@ -488,6 +523,8 @@ function NoCategories() {
 interface ListsProps {
   view: HomeView;
   onView(view: HomeView): void;
+  /** Each list's panel, for the sidebar's link to focus and scroll to on wide screens. */
+  panels: RefObject<Partial<Record<HomeView, HTMLElement | null>>>;
   /** Phones: the two lists are the pager's pages. Wide screens (null): side by side. */
   pager: Pager | null;
   summary: MonthSummary | undefined;
@@ -504,6 +541,7 @@ interface ListsProps {
 function Lists({
   view,
   onView,
+  panels,
   pager,
   summary,
   categories,
@@ -516,7 +554,15 @@ function Lists({
 }: ListsProps) {
   const t = useTranslations("home");
   const transactions = (
-    <section role="tabpanel" aria-label={t("view.transactions")} className="lk-panel flex">
+    <section
+      ref={(node) => {
+        panels.current.transactions = node;
+      }}
+      tabIndex={-1}
+      role="tabpanel"
+      aria-label={t("view.transactions")}
+      className="lk-panel flex scroll-mt-(--space-4)"
+    >
       <h2 className="lk-panel-title">{t("view.transactions")}</h2>
       <Transactions
         items={items}
@@ -529,9 +575,17 @@ function Lists({
     </section>
   );
   const budgets = (
-    <section role="tabpanel" aria-label={t("view.budgets")} className="lk-panel flex">
+    <section
+      ref={(node) => {
+        panels.current.budgets = node;
+      }}
+      tabIndex={-1}
+      role="tabpanel"
+      aria-label={t("view.budgets")}
+      className="lk-panel flex scroll-mt-(--space-4)"
+    >
       <h2 className="lk-panel-title">{t("view.budgets")}</h2>
-      <Budgets summary={summary} categories={categories} currency={currency} month={month} />
+      <CategoriesTab summary={summary} categories={categories} currency={currency} month={month} />
     </section>
   );
 
@@ -563,58 +617,6 @@ function Lists({
         {transactions}
         {budgets}
       </PagerTrack>
-    </>
-  );
-}
-
-function Budgets({
-  summary,
-  categories,
-  currency,
-  month,
-}: {
-  summary: MonthSummary | undefined;
-  categories: CategoryDto[] | undefined;
-  currency: string;
-  month: Month;
-}) {
-  const t = useTranslations("home");
-  const tTransaction = useTranslations("transaction");
-  const navigate = useNavigate();
-  const appPath = useAppPath();
-  if (!summary || !categories) return <div className="min-h-[120px]" aria-busy="true" />;
-  const byId = new Map(categories.map((c) => [c.id, c]));
-  const rows = summary.categories
-    .flatMap((s) => {
-      const category = byId.get(s.categoryId);
-      // The summary keeps an archived category only while it has spending that month.
-      return category && category.kind === "expense" ? [{ s, category }] : [];
-    })
-    .sort((a, b) => a.category.sortOrder - b.category.sortOrder);
-  if (rows.length === 0) {
-    return <p className="m-0 text-[14px] font-bold text-ink-muted">{t("no_expense_categories")}</p>;
-  }
-  return (
-    <>
-      {rows.map(({ s, category }) => {
-        const look = categoryLook(category);
-        return (
-          <CategoryRow
-            key={category.id}
-            name={category.name}
-            glyph={look.glyph}
-            tint={look.tint}
-            budget={s.budget}
-            spent={s.spent}
-            remaining={s.remaining}
-            state={s.state}
-            currency={currency}
-            {...(category.archived ? { note: tTransaction("archived") } : {})}
-            // Its detail, in the month on screen.
-            onOpen={() => navigate(appPath(`/categories/${category.id}?month=${month}`))}
-          />
-        );
-      })}
     </>
   );
 }

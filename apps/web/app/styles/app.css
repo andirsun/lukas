@@ -718,6 +718,10 @@
     transform: translateY(3px);
     box-shadow: 0 1px 0 var(--surface-edge);
   }
+  /* The ring is the pill's; without this the browser also outlines the 44px button around it. */
+  .lk-shortcut-button:focus-visible {
+    outline: none;
+  }
   .lk-shortcut-button:focus-visible .lk-shortcut {
     outline: 3px solid var(--focus);
     outline-offset: 2px;
@@ -1182,10 +1186,16 @@
   .lk-sheet.has-footer .lk-sheet-amount {
     line-height: 1.15;
   }
-  /* The sheet's save row: stuck to the bottom of the sheet, the content scrolls above it. */
+  /*
+   * The sheet's save row: stuck to the bottom of the sheet, the content scrolls above it. It
+   * reaches over the sheet's own bottom padding (the negative margin), and `bottom` says the
+   * same: Chrome holds the footer's border box, not its margin box, inside the scroller's content
+   * box, so with `bottom: 0` the footer was pushed up by that padding even when nothing scrolled,
+   * and sat flush on the keypad, hiding the last row's solid edge (the keys looked cut).
+   */
   .lk-sheet-footer {
     position: sticky;
-    bottom: 0;
+    bottom: calc(-1 * var(--space-4));
     z-index: 1;
     margin: 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
     padding: var(--space-2) var(--space-3) max(var(--space-3), env(safe-area-inset-bottom));
@@ -1532,6 +1542,24 @@
       font-size: 28px;
     }
   }
+  /*
+   * A sheet that scrolls as a whole under a stuck footer (the budget, a fixed cost) takes the same
+   * tighter keys and smaller amount on those phones: the keypad and the save button then fit
+   * without the keypad scrolling under the footer.
+   */
+  @media (max-height: 859.98px) {
+    .lk-sheet:not(.has-footer):has(.lk-sheet-footer) .lk-keys {
+      gap: 4px;
+    }
+    .lk-sheet:not(.has-footer):has(.lk-sheet-footer) .lk-key {
+      padding: 4px 0;
+    }
+  }
+  @media (max-height: 799.98px) {
+    .lk-sheet:not(.has-footer):has(.lk-sheet-footer) .lk-sheet-amount {
+      font-size: 28px;
+    }
+  }
 }
 
 @keyframes lk-toast-countdown {
@@ -1553,8 +1581,9 @@
 @layer components {
   /*
    * Home's tabs on phones: stuck under the header (the demo's banner sets --lk-sticky-top) once the
-   * summary scrolls away. The negative margins keep the layout as it was; the background hides the
-   * list scrolling under it.
+   * summary scrolls away. The negative margins keep the layout as it was. It paints no background
+   * of its own (founder decision 2026-10-24): the tabs and the list sit on the page's own
+   * gradient, not on a darker band.
    */
   .lk-tabs-sticky {
     position: sticky;
@@ -1562,6 +1591,5 @@
     z-index: 20;
     margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-4)) calc(-1 * var(--space-1));
     padding: var(--space-2) var(--space-4) var(--space-1);
-    background: var(--bg);
   }
 }

@@ -18,6 +18,9 @@ function smtpHostIsLocal(smtpUrl: string | undefined): boolean {
   }
 }
 
+/** A certificate's SHA-256 fingerprint as keytool and release.sh print it: 32 hex pairs. */
+const SHA256_FINGERPRINT = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/;
+
 const configSchema = z
   .object({
     DATABASE_URL: z.string().url(),
@@ -64,6 +67,44 @@ const configSchema = z
         "SIGN_IN_ALLOWLIST must be a comma-separated list of emails",
       )
       .transform((list) => (list.length > 0 ? list : undefined))
+      .optional(),
+    /**
+     * Guest sign-up (`POST /auth/sign-in/anonymous`): an account without an email, for the Android
+     * app. On by default, allowlist or not; `false` turns it off (spec §4.1).
+     */
+    GUEST_SIGNUP: z
+      .preprocess(
+        (v) => (v === "" || v === undefined ? "true" : v),
+        z.enum(["true", "false"]).transform((v) => v === "true"),
+      )
+      .default(true),
+    /**
+     * The SHA-256 fingerprints of the certificates the Android app is signed with, comma-separated,
+     * as release.sh prints them (AA:BB:…, 32 pairs) — the value the web container writes into
+     * /.well-known/assetlinks.json. Passkeys from the app (whose origin is
+     * `android:apk-key-hash:<that SHA-256>`) are accepted for these; unset or blank, the web only.
+     * Read like the web container reads it (spaces, quotes and case ignored), but a value that is
+     * not a fingerprint stops the API instead of being skipped: a passkey that never works fails
+     * silently on the phone.
+     */
+    ANDROID_CERT_SHA256: z
+      .preprocess(
+        (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+        z
+          .string()
+          .transform((v) =>
+            v
+              .split(",")
+              .map((entry) => entry.replace(/[\s"]/g, "").toUpperCase())
+              .filter(Boolean),
+          )
+          .refine(
+            (list) => list.every((entry) => SHA256_FINGERPRINT.test(entry)),
+            "ANDROID_CERT_SHA256 must be comma-separated SHA-256 fingerprints (AA:BB:…, 32 pairs)",
+          )
+          .transform((list) => (list.length > 0 ? list : undefined))
+          .optional(),
+      )
       .optional(),
     PORT: z.coerce.number().int().default(3000),
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),

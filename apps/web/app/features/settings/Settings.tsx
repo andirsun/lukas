@@ -9,6 +9,7 @@ import { ManageFrame } from "../categories/CategoryDetail.tsx";
 import { useAppPath } from "../home/app-path.ts";
 import { liveSignOut, type SignOutRequest } from "../home/use-sign-out.ts";
 import { DeleteAccount } from "./DeleteAccount.tsx";
+import { FeedbackSection } from "./FeedbackSection.tsx";
 import { PasskeysSection } from "./PasskeysSection.tsx";
 import { PreferencesSection } from "./PreferencesSection.tsx";
 import { DemoOffNote, SettingLabel, SettingsSection } from "./parts.tsx";
@@ -29,8 +30,8 @@ export interface SettingsProps {
 
 /**
  * Settings (`/app/settings`, spec §2.7): language, theme and sound; time zone, and the currency
- * while it can still change; passkeys; import from Budge and the export; and deleting the
- * account. Reached from the avatar menu (phones) and the sidebar (wide screens). In the demo
+ * while it can still change; passkeys; import from Budge and the export; comments and ideas (an
+ * email to the founder); and deleting the account. Reached from the avatar menu (phones) and the sidebar (wide screens). In the demo
  * (`/demo/settings`, spec §2.6b) passkeys, import, export and deleting the account are off, each
  * with a note: there is no account behind them.
  */
@@ -100,6 +101,7 @@ export function Settings({
           </div>
           {demo && <DemoOffNote id={dataOffId} />}
         </SettingsSection>
+        <FeedbackSection />
         <DeleteAccount
           email={me.email}
           signOut={signOut}

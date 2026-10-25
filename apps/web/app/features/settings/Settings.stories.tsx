@@ -4,6 +4,7 @@ import { expectTarget } from "../../../.storybook/story-utils.ts";
 import { SOUND_STORAGE_KEY } from "../../feedback/feedback.ts";
 import { THEME_STORAGE_KEY } from "../../theme/theme-bootstrap.ts";
 import { HomeStage, STORY_TODAY, storyPasskeys } from "../home/story-harness.tsx";
+import { APP_VERSION, FEEDBACK_EMAIL } from "./feedback.ts";
 
 /**
  * Settings (spec §2.7): language, theme, sound, time zone, currency (while it can still change),
@@ -81,6 +82,7 @@ export const Overview: Story = {
       "Hora y moneda",
       "Entrar con tu huella",
       "Tus datos",
+      "Comentarios e ideas",
       "Eliminar tu cuenta",
     ]) {
       await expect(canvas.getByRole("region", { name })).toBeVisible();
@@ -487,5 +489,285 @@ export const English: Story = {
     await title(canvas, "Settings");
     await expect(canvas.getByRole("radio", { name: "English" })).toBeChecked();
     await expect(canvas.getByRole("button", { name: "Delete my account" })).toBeVisible();
+  },
+};
+
+/**
+ * Where the page stops so a card below the fold fills the phone's viewport: the card starts this
+ * many px under the top of it, or as near as the page's end lets it (the same rule as Insights'
+ * scrolled stories). The app's test scrolls to the same place.
+ */
+const SCROLL_GAP = 16;
+
+async function scrollTo(card: HTMLElement) {
+  window.scrollTo(0, card.getBoundingClientRect().top + window.scrollY - SCROLL_GAP);
+  await waitFor(() => expect(window.scrollY).toBeGreaterThan(0));
+}
+
+/** The page as the phone app draws it (docs/mobile/parity.md): every card, from the top. */
+export const AppSections: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    await expect(canvas.getByRole("switch", { name: "Sonidos" })).toBeChecked();
+  },
+};
+
+/** The same by day and in English. */
+export const AppSectionsDayEnglish: Story = {
+  globals: { theme: "day", locale: "en" },
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas, "Settings");
+    await expect(canvas.getByRole("switch", { name: "Sounds" })).toBeChecked();
+  },
+};
+
+/** Sounds turned off with a tap: the switch is off, and the keyboard's ring is on it. */
+export const AppSectionsSoundOff: Story = {
+  render: (args) => stage(args),
+  beforeEach: () => {
+    localStorage.removeItem(SOUND_STORAGE_KEY);
+    return () => localStorage.removeItem(SOUND_STORAGE_KEY);
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    const sound = canvas.getByRole("switch", { name: "Sonidos" });
+    await userEvent.click(sound);
+    await expect(sound).not.toBeChecked();
+  },
+};
+
+/** The currency still open (an empty account), its options scrolled to the top of the picture. */
+export const AppSectionsCurrencyOpen: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    const time = await region(canvas, "Hora y moneda");
+    await time.findByRole("radio", { name: /Euro/ });
+    await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+    // The currency's own options, not the whole card, fill the top of the picture.
+    await scrollTo(time.getByRole("radio", { name: /Euro/ }).closest("fieldset") as HTMLElement);
+  },
+};
+
+/** The passkeys listed (one named, one synced), scrolled into view. */
+export const AppSectionsPasskeys: Story = {
+  render: (args) =>
+    stage(args, {
+      data: "empty",
+      noRecurrences: true,
+      passkeys: storyPasskeys({
+        initial: [
+          { id: "pk-1", name: null, createdAt: "2026-10-02T09:00:00.000Z", synced: true },
+          { id: "pk-2", name: "Pixel 9", createdAt: "2026-10-05T10:00:00.000Z", synced: false },
+        ],
+      }),
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    const keys = await region(canvas, "Entrar con tu huella");
+    await keys.findByText("Creada el 2 oct 2026");
+    await scrollTo(canvas.getByRole("region", { name: "Entrar con tu huella" }));
+  },
+};
+
+/** "Tus datos" (import and export) near the foot of the page, scrolled into view. */
+export const AppSectionsData: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    // The passkeys' list has loaded: the page is as tall as it will be.
+    await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+    await scrollTo(canvas.getByRole("region", { name: "Tus datos" }));
+  },
+};
+
+/** The time zone sheet, open, after searching a country. */
+export const TimeZoneSheetOpen: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
+    await userEvent.type(
+      sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" }),
+      "colombia",
+    );
+    await expect(await sheet.findByRole("button", { name: /^Bogota/ })).toBeVisible();
+  },
+};
+
+/** The zone in use among the results: it says "Actual". */
+export const TimeZoneSheetCurrent: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    await userEvent.click(canvas.getByRole("button", { name: "Cambiar zona horaria" }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Elige tu zona horaria" }));
+    await userEvent.type(
+      sheet.getByRole("searchbox", { name: "Busca tu ciudad o país" }),
+      "madrid",
+    );
+    await expect(await sheet.findByText("Actual")).toBeVisible();
+  },
+};
+
+/** The question before deleting a passkey, open. */
+export const PasskeyRemoveSheetOpen: Story = {
+  render: (args) =>
+    stage(args, {
+      passkeys: storyPasskeys({
+        initial: [{ id: "pk-1", name: null, createdAt: "2026-10-02T09:00:00.000Z", synced: true }],
+      }),
+    }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    const keys = await region(canvas, "Entrar con tu huella");
+    await userEvent.click(
+      await keys.findByRole("button", { name: "Eliminar la huella creada el 2 oct 2026" }),
+    );
+    await expect(
+      await screen.findByRole("dialog", { name: "¿Eliminar esta huella?" }),
+    ).toBeVisible();
+  },
+};
+
+/** The card that deletes the account, at the foot of the page, scrolled into view. */
+export const AppSectionsDelete: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    // The passkeys' list has loaded: the page is as tall as it will be.
+    await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+    await scrollTo(canvas.getByRole("region", { name: "Eliminar tu cuenta" }));
+  },
+};
+
+/** Opens the deletion sheet from the card, scrolled into view first as the phone's test does. */
+async function openDeleteSheet(canvas: Canvas) {
+  await title(canvas);
+  await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+  const card = canvas.getByRole("region", { name: "Eliminar tu cuenta" });
+  await scrollTo(card);
+  await userEvent.click(within(card).getByRole("button", { name: "Eliminar mi cuenta" }));
+  const dialog = await screen.findByRole("dialog", { name: "¿Eliminar tu cuenta?" });
+  return { dialog, sheet: within(dialog) };
+}
+
+/** The question before deleting the account: what goes, the export, the email to type. */
+export const DeleteSheetOpen: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const { sheet } = await openDeleteSheet(within(canvasElement));
+    await expect(sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" })).toBeDisabled();
+  },
+};
+
+/** The email typed (in capitals, with spaces around it): the deleting button is on. */
+export const DeleteSheetReady: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const { sheet } = await openDeleteSheet(within(canvasElement));
+    await userEvent.type(
+      sheet.getByRole("textbox", { name: "Escribe tu correo para confirmar" }),
+      "  ANA@Example.com ",
+    );
+    await expect(sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" })).toBeEnabled();
+  },
+};
+
+/** A delete the server refused: the sheet stays, with the reason under the field. */
+export const DeleteSheetFailed: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true, failDelete: true }),
+  play: async ({ canvasElement, args }) => {
+    const { sheet } = await openDeleteSheet(within(canvasElement));
+    await userEvent.type(
+      sheet.getByRole("textbox", { name: "Escribe tu correo para confirmar" }),
+      "ana@example.com",
+    );
+    await userEvent.click(sheet.getByRole("button", { name: "Sí, eliminar mi cuenta" }));
+    await expect(
+      await sheet.findByText(
+        "Tuvimos un problema de nuestro lado. Inténtalo de nuevo en un momento.",
+      ),
+    ).toHaveAttribute("role", "alert");
+    await expect(args.signOut).not.toHaveBeenCalled();
+    // Whether the button keeps the focus depends on when the browser disables it while it deletes;
+    // the picture is of the sheet at rest, with the focus nowhere.
+    (document.activeElement as HTMLElement | null)?.blur();
+  },
+};
+
+/** The same sheet by day and in English. */
+export const DeleteSheetDayEnglish: Story = {
+  globals: { theme: "day", locale: "en" },
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas, "Settings");
+    await canvas.findByText("You don't have one yet: you sign in with the code in your email.");
+    const card = canvas.getByRole("region", { name: "Delete your account" });
+    await scrollTo(card);
+    await userEvent.click(within(card).getByRole("button", { name: "Delete my account" }));
+    await expect(await screen.findByRole("dialog", { name: "Delete your account?" })).toBeVisible();
+  },
+};
+
+/**
+ * Comments and ideas: a link that opens the email app with a message to the founder, its subject
+ * in the person's language and its body only the version and the language.
+ */
+export const Feedback: Story = {
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    const card = await region(canvas, "Comentarios e ideas");
+    const link = card.getByRole("link", { name: "Escribirnos" });
+    await expect(link).toHaveAttribute(
+      "href",
+      `mailto:${FEEDBACK_EMAIL}?subject=Lukitas%3A%20comentarios&body=%0A%0AVersi%C3%B3n%20de%20Lukitas%3A%20${encodeURIComponent(APP_VERSION)}%0AIdioma%3A%20es`,
+    );
+    await expectTarget(link);
+    await expect(
+      card.getByText(`Si no se abre tu correo, escribe a ${FEEDBACK_EMAIL}.`),
+    ).toBeVisible();
+  },
+};
+
+/** The same in English: the subject and the body speak it. */
+export const FeedbackEnglish: Story = {
+  globals: { locale: "en" },
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas, "Settings");
+    const card = await region(canvas, "Feedback and ideas");
+    await expect(card.getByRole("link", { name: "Write to us" })).toHaveAttribute(
+      "href",
+      `mailto:${FEEDBACK_EMAIL}?subject=Lukitas%3A%20feedback&body=%0A%0ALukitas%20version%3A%20${encodeURIComponent(APP_VERSION)}%0ALanguage%3A%20en`,
+    );
+  },
+};
+
+/** The card between "Tus datos" and deleting the account, scrolled into view. */
+export const AppSectionsFeedback: Story = {
+  render: (args) => stage(args, { data: "empty", noRecurrences: true }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas);
+    await canvas.findByText("Aún no tienes ninguna: entras con el código de tu correo.");
+    await scrollTo(canvas.getByRole("region", { name: "Comentarios e ideas" }));
   },
 };

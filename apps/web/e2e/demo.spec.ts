@@ -189,10 +189,13 @@ test("es: every demo screen keeps its links in /demo, and settings turns off wha
   await expect(page).toHaveTitle("Demo · Análisis · Lukitas");
   await expectLinksStayInDemo(page);
 
-  // Categories, then one category's detail.
+  // Categories are managed in home's Categorías tab; from it, one category's detail.
   await openSection(page, l, l.categories);
-  await expect(page).toHaveURL(/\/demo\/categories$/);
-  const restaurants = page.getByRole("link", { name: /Restaurantes/ }).first();
+  await expect(page).toHaveURL(/\/demo$/);
+  await expect(page.getByRole("tabpanel", { name: l.categories })).toBeVisible();
+  const restaurants = page
+    .getByRole("tabpanel", { name: l.categories })
+    .getByRole("button", { name: /Restaurantes/ });
   await expect(restaurants).toBeVisible();
   await expectLinksStayInDemo(page);
   await restaurants.click();

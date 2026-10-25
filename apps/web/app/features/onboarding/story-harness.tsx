@@ -1,8 +1,10 @@
 import { addMonths, monthOf, todayIn } from "@lukas/core";
 import { useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router";
+import { exposeStoryFetch } from "../../../.storybook/parity.ts";
 import { ApiProvider } from "../../api/ApiProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
+import { AppShell } from "../home/AppShell.tsx";
 import { ImportPage } from "./ImportPage.tsx";
 import type { ImportDto } from "./import-state.ts";
 import {
@@ -397,6 +399,37 @@ export function ImportPageStage({
         <ToastProvider>
           <Routes>
             <Route path="/app/import" element={<ImportPage />} />
+            <Route path="/app" element={<p className="p-(--space-4) text-ink">App (stand-in)</p>} />
+          </Routes>
+        </ToastProvider>
+      </ApiProvider>
+    </MemoryRouter>
+  );
+}
+
+/**
+ * `/app/import` as the app shows it: inside the signed-in frame (the bottom bar, the page's
+ * gradient), as the route does, against the fake API. Its fetch is exposed to the mobile parity
+ * harness (docs/mobile/parity.md), which reads the profile and the categories from it.
+ */
+export function ImportShellStage({
+  initialEntry = "/app/import",
+  ...api
+}: Partial<WelcomeStageProps> & FakeApiOptions) {
+  const [fetchImpl] = useState(() => exposeStoryFetch(onboardingFetch(api)));
+  return (
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <ApiProvider fetch={fetchImpl}>
+        <ToastProvider>
+          <Routes>
+            <Route
+              path="/app/import"
+              element={
+                <AppShell>
+                  <ImportPage />
+                </AppShell>
+              }
+            />
             <Route path="/app" element={<p className="p-(--space-4) text-ink">App (stand-in)</p>} />
           </Routes>
         </ToastProvider>

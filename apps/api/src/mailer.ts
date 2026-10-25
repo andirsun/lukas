@@ -13,6 +13,18 @@ export interface Mailer {
   send(mail: Mail): Promise<void>;
 }
 
+/**
+ * Refuses an address under the `.invalid` TLD (RFC 2606: it never resolves). Guests have placeholder
+ * emails under guest.lukitas.invalid, and nothing may ever be mailed there; every mailer checks
+ * this before it touches the network.
+ */
+export function assertDeliverable(to: string): void {
+  const address = to.trim().toLowerCase().replace(/\.+$/, "");
+  if (address.endsWith(".invalid")) {
+    throw new Error("Refusing to mail an address under .invalid (a guest's placeholder email)");
+  }
+}
+
 export class ResendMailer implements Mailer {
   private readonly resend: Resend;
   constructor(
@@ -22,6 +34,7 @@ export class ResendMailer implements Mailer {
     this.resend = new Resend(apiKey);
   }
   async send(mail: Mail): Promise<void> {
+    assertDeliverable(mail.to);
     const { error } = await this.resend.emails.send({ from: this.from, ...mail });
     if (error) throw new Error(`Resend failed: ${error.message}`);
   }
@@ -75,6 +88,7 @@ export class SmtpMailer implements Mailer {
     this.transport = nodemailer.createTransport(smtpTransport(url, options));
   }
   async send(mail: Mail): Promise<void> {
+    assertDeliverable(mail.to);
     await this.transport.sendMail({ from: this.from, ...mail });
   }
 }
@@ -83,6 +97,7 @@ export class SmtpMailer implements Mailer {
 export class MemoryMailer implements Mailer {
   readonly sent: Mail[] = [];
   async send(mail: Mail): Promise<void> {
+    assertDeliverable(mail.to);
     this.sent.push(mail);
   }
   lastTo(email: string): Mail | undefined {
