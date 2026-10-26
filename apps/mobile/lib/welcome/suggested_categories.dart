@@ -36,60 +36,60 @@ const suggestedCategories = [
     glyph: '🛒',
     tint: '#ff9f1c',
     kind: CategoryKindEnum.expense,
-    names: {'es': 'Supermercado', 'en': 'Groceries'},
+    names: {'es': 'Supermercado', 'en': 'Groceries', 'it': 'Supermercato', 'pt': 'Supermercado'},
   ),
   SuggestedCategory(
     key: 'eating_out',
     glyph: '🍽️',
     tint: '#ff5c7a',
     kind: CategoryKindEnum.expense,
-    names: {'es': 'Restaurante', 'en': 'Eating out'},
+    names: {'es': 'Restaurante', 'en': 'Eating out', 'it': 'Ristorante', 'pt': 'Restaurante'},
   ),
   SuggestedCategory(
     key: 'home',
     glyph: '🏠',
     tint: '#6d6bff',
     kind: CategoryKindEnum.expense,
-    names: {'es': 'Casa', 'en': 'Home'},
+    names: {'es': 'Casa', 'en': 'Home', 'it': 'Casa', 'pt': 'Casa'},
   ),
   SuggestedCategory(
     key: 'transport',
     glyph: '🚗',
     tint: '#3fa7ff',
     kind: CategoryKindEnum.expense,
-    names: {'es': 'Transporte', 'en': 'Transport'},
+    names: {'es': 'Transporte', 'en': 'Transport', 'it': 'Trasporti', 'pt': 'Transportes'},
   ),
   SuggestedCategory(
     key: 'fun',
     glyph: '⭐',
     tint: '#a66bff',
     kind: CategoryKindEnum.expense,
-    names: {'es': 'Ocio', 'en': 'Fun'},
+    names: {'es': 'Ocio', 'en': 'Fun', 'it': 'Tempo libero', 'pt': 'Lazer'},
   ),
   SuggestedCategory(
     key: 'subscriptions',
     glyph: '☂️',
     tint: '#ff8fd8',
     kind: CategoryKindEnum.expense,
-    names: {'es': 'Suscripciones', 'en': 'Subscriptions'},
+    names: {'es': 'Suscripciones', 'en': 'Subscriptions', 'it': 'Abbonamenti', 'pt': 'Subscrições'},
   ),
   SuggestedCategory(
     key: 'health',
     glyph: '❤️',
     tint: '#ffb547',
     kind: CategoryKindEnum.expense,
-    names: {'es': 'Vida', 'en': 'Health'},
+    names: {'es': 'Vida', 'en': 'Health', 'it': 'Salute', 'pt': 'Saúde'},
   ),
   SuggestedCategory(
     key: 'salary',
     glyph: '💰',
     tint: '#2fd388',
     kind: CategoryKindEnum.income,
-    names: {'es': 'Salario', 'en': 'Salary'},
+    names: {'es': 'Salario', 'en': 'Salary', 'it': 'Stipendio', 'pt': 'Salário'},
   ),
 ];
 
-/// The suggestion a category name stands for, in either language ("Salário" -> salary).
+/// The suggestion a category name stands for, in any language ("Salário" -> salary).
 SuggestedCategory? suggestionFor(String name) {
   final key = normalizeName(name);
   for (final suggestion in suggestedCategories) {

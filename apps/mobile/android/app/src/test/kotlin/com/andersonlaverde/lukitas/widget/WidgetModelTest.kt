@@ -18,6 +18,7 @@ class WidgetModelTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val zone = ZoneId.of("America/Bogota")
     private val now = Instant.parse("2026-10-22T20:00:00Z")
+    private val nbsp = "\u00a0"
 
     private fun snapshot(
         remaining: Long = 150000000,
@@ -147,6 +148,32 @@ class WidgetModelTest {
         assertEquals("October", model.month)
         val signedOut = widgetModel(context, WidgetSnapshot(signedIn = false, locale = "en"), now, zone)
         assertEquals("Open Lukitas to get started", (signedOut as WidgetModel.SignedOut).message)
+    }
+
+    @Test
+    fun `in Italian and Portuguese, words, months and amounts follow the snapshot's language`() {
+        val italian = figures(snapshot(locale = "it", currency = "EUR"))
+        assertEquals("Ti restano", italian.label)
+        assertEquals("Ottobre", italian.month)
+        assertEquals("1.500.000,00${nbsp}€", italian.amount)
+        val portuguese = figures(snapshot(locale = "pt", currency = "EUR"))
+        assertEquals("Restam-te", portuguese.label)
+        assertEquals("Outubro", portuguese.month)
+        assertEquals("1${nbsp}500${nbsp}000,00${nbsp}€", portuguese.amount)
+        assertEquals("25% del budget speso", figures(snapshot(locale = "it")).progressDescription)
+        assertEquals("25% do orçamento gasto", figures(snapshot(locale = "pt")).progressDescription)
+        val signedOut = widgetModel(context, WidgetSnapshot(signedIn = false, locale = "pt"), now, zone)
+        assertEquals("Abre Lukitas para começar", (signedOut as WidgetModel.SignedOut).message)
+        assertEquals("Hai sforato in Settembre", figures(snapshot(locale = "it", month = "2026-09", remaining = -1)).label)
+    }
+
+    @Test
+    fun `the snapshot keeps the four languages and drops any other`() {
+        for (language in listOf("es", "en", "it", "pt")) {
+            val json = """{"v":3,"signedIn":false,"locale":"$language"}"""
+            assertEquals(language, WidgetSnapshot.parse(json)!!.locale)
+        }
+        assertNull(WidgetSnapshot.parse("""{"v":3,"signedIn":false,"locale":"fr"}""")!!.locale)
     }
 
     @Test

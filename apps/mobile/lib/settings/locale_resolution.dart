@@ -17,3 +17,14 @@ Locale resolveAppLocale(Locale? requested, Iterable<Locale> supported) {
   }
   return const Locale('es');
 }
+
+/// Where the web's landing page (or its [roadmap]) lives for the app language [language]: Spanish
+/// has no prefix, the others sit under their code. The paths of the web's `LANDING_PATH` and
+/// `ROADMAP_PATH` (apps/web/app/site/paths.ts).
+String webPagePath(String language, {bool roadmap = false}) {
+  final prefix = switch (language) {
+    'en' || 'it' || 'pt' => '/$language',
+    _ => '',
+  };
+  return roadmap ? '$prefix/roadmap' : (prefix.isEmpty ? '/' : prefix);
+}

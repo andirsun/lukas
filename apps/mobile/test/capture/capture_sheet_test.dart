@@ -283,6 +283,43 @@ void main() {
     expect(find.byKey(const Key('capture.listen')), findsNothing);
   });
 
+  for (final (language, why, save) in [
+    ('it', 'Per ora non ti ascolto in italiano, quindi scrivilo qui.', 'SALVA 2'),
+    ('pt', 'Por agora não te ouço em português, por isso escreve aqui.', 'GUARDAR 2'),
+  ]) {
+    testWidgets('in $language there is no voice yet: typing works, nothing listens or downloads', (
+      tester,
+    ) async {
+      final env = await _pump(tester, locale: Locale(language));
+      await _open(tester);
+      expect(env.engine.listens, 0);
+      expect(env.models.downloads, 0);
+      expect(find.byKey(const Key('capture.field')), findsOneWidget);
+      expect(find.text(why), findsOneWidget);
+      expect(find.byKey(const Key('capture.listen')), findsNothing);
+      expect(find.byKey(const Key('capture.offer.download')), findsNothing);
+      await tester.enterText(find.byKey(const Key('capture.field')), '15 pranzo, 3 uber');
+      await tester.tap(find.byKey(const Key('capture.read')));
+      await tester.pumpAndSettle();
+      expect(find.text(save), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('in $language the mic link only types, and a late "no model" never offers one', (
+      tester,
+    ) async {
+      final env = await _pump(
+        tester,
+        locale: Locale(language),
+        failure: const SpeechFailure(SpeechFailureKind.noModel),
+      );
+      await _open(tester);
+      expect(env.engine.listens, 0, reason: 'the engine is never asked without a model');
+      expect(find.byKey(const Key('capture.offer.download')), findsNothing);
+      expect(find.byKey(const Key('capture.field')), findsOneWidget);
+    });
+  }
+
   testWidgets('without the model, an opt-in shows its size; declining leaves the typing field', (
     tester,
   ) async {

@@ -6,7 +6,7 @@ Lukitas es tu presupuesto, y te va a dar gusto cuidarlo: anota un gasto en segun
 <li>Decirlo o escribirlo en una frase, como «15 mil en almuerzo y 3 lukas en uber». Lukitas la separa en movimientos y los ves antes de guardar; puedes quitarlos o deshacer.</li>
 <li>Ver cuánto llevas gastado este mes y tus movimientos, agrupados por día.</li>
 <li>Un widget en la pantalla de inicio con ＋ y 🎤, y un mosaico en los ajustes rápidos, para anotar sin buscar la app.</li>
-<li>En español y en inglés, de noche o de día, con sonidos y vibración suaves que puedes apagar.</li>
+<li>En español, inglés, italiano y portugués, de noche o de día, con sonidos y vibración suaves que puedes apagar.</li>
 </ul>
 
 <b>Sin correo y sin contraseñas</b>

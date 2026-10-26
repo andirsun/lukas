@@ -63,7 +63,7 @@ private fun themeOf(name: String?): WidgetTheme = when (name) {
     else -> WidgetTheme.NIGHT
 }
 
-/** [context] with its resources in [language] ("es" or "en"). */
+/** [context] with its resources in [language] ("es", "en", "it" or "pt"). */
 private fun localized(context: Context, language: String): Context {
     val configuration = Configuration(context.resources.configuration)
     configuration.setLocale(Locale.forLanguageTag(language))
@@ -88,7 +88,7 @@ fun widgetModel(context: Context, snapshot: WidgetSnapshot?, now: Instant, zone:
     if (snapshot == null || !snapshot.signedIn) {
         return WidgetModel.SignedOut(strings.getString(R.string.widget_signed_out), theme)
     }
-    val language = snapshot.locale ?: if (Locale.getDefault().language == "en") "en" else "es"
+    val language = snapshot.locale ?: Locale.getDefault().language.takeIf { it in WidgetSnapshot.LANGUAGES } ?: "es"
     val month = try {
         YearMonth.parse(snapshot.month)
     } catch (_: java.time.format.DateTimeParseException) {

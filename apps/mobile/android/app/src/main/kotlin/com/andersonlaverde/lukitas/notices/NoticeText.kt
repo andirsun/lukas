@@ -2,18 +2,20 @@ package com.andersonlaverde.lukitas.notices
 
 import android.content.Context
 import com.andersonlaverde.lukitas.R
+import com.andersonlaverde.lukitas.widget.WidgetSnapshot
 import java.util.Locale
 
 /**
- * The words of the two notices, from the Android string resources (values/ is Spanish, values-en/
- * English), in the language the app is set to; null follows the phone.
+ * The words of the two notices, from the Android string resources (values/ is Spanish; values-en/,
+ * values-it/ and values-pt/ are the others), in the language the app is set to; null follows the
+ * phone.
  */
 object NoticeText {
-    /** The Context whose resources speak [language] (`es` or `en`); [context] itself for any other. */
+    /** The Context whose resources speak [language] (`es`, `en`, `it` or `pt`); [context] itself for any other. */
     fun localized(context: Context, language: String?): Context {
-        if (language != "es" && language != "en") return context
+        if (language == null || language !in WidgetSnapshot.LANGUAGES) return context
         val configuration = android.content.res.Configuration(context.resources.configuration)
-        configuration.setLocale(Locale(language))
+        configuration.setLocale(Locale.forLanguageTag(language))
         return context.createConfigurationContext(configuration)
     }
 
@@ -39,8 +41,8 @@ object NoticeText {
 
     /**
      * Spanish says "e" instead of "y" before the sound i: Internet, Hipoteca, Ítaca; not before a
-     * glide, as in Hielo or Iatrogenia. (English has the same word for both, so this is harmless
-     * there.)
+     * glide, as in Hielo or Iatrogenia. (English, Italian and Portuguese have the same word for
+     * both, so this is harmless there.)
      */
     private fun startsWithI(name: String): Boolean {
         val word = name.trim().lowercase(Locale.ROOT).trimStart { !it.isLetterOrDigit() }

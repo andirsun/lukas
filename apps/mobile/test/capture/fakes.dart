@@ -177,7 +177,7 @@ class FakeModelStore extends ModelStore {
     CancelToken? cancel,
   }) async {
     downloads++;
-    final total = modelFor(locale).bytes;
+    final total = modelFor(locale)?.bytes ?? 0;
     onProgress?.call(total ~/ 2, total);
     await Future<void>.delayed(const Duration(milliseconds: 10));
     final failed = failure;

@@ -125,6 +125,22 @@ void main() {
       expect(find('mexico'), contains('America/Mexico_City'));
     });
 
+    test('finds Italy and Portugal by the names in their own placeholders, in any language', () {
+      // The placeholders of the Italian and Portuguese catalogs: each example finds its zone.
+      for (final query in ['Roma', 'Italia', 'Italy', 'Milano']) {
+        expect(find(query), contains('Europe/Rome'), reason: query);
+      }
+      for (final query in ['Lisboa', 'Portugal', 'Porto']) {
+        expect(find(query), contains('Europe/Lisbon'), reason: query);
+      }
+      expect(find('Portugal'), containsAll(['Atlantic/Madeira', 'Atlantic/Azores']));
+      expect(find('Brasil'), contains('America/Sao_Paulo'));
+      expect(find('Brasile'), contains('America/Sao_Paulo'));
+      // The place people mean comes before cities that merely start with the same letters.
+      expect(find('Porto').first, 'Europe/Lisbon');
+      expect(find('Roma').first, 'Europe/Rome');
+    });
+
     test('still finds by city first, and is built once per list', () {
       expect(find('bogo'), ['America/Bogota']);
       expect(identical(zoneSearchIndex(zones), index), isTrue);

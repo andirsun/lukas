@@ -123,6 +123,15 @@ void main() {
       expect(store.values, isEmpty);
     });
 
+    test('every language the app speaks is read back, and only those', () async {
+      for (final code in ['es', 'en', 'it', 'pt']) {
+        final initial = await InitialSettings.read(FakeSettingsStore({localeKey: code}));
+        expect(initial.locale, Locale(code), reason: code);
+      }
+      expect((await InitialSettings.read(FakeSettingsStore({localeKey: 'fr'}))).locale, isNull);
+      expect((await InitialSettings.read(FakeSettingsStore({localeKey: 'pt-BR'}))).locale, isNull);
+    });
+
     test(
       'a stored value nobody understands reads as the defaults: night, and the phone\'s language',
       () async {

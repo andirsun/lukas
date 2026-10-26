@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The home-screen widget and the Quick Settings tile (spec section 7.1). Spanish is the default;
-     values-en has English. The app's own words are in lib/l10n (ARB). -->
+     values-en, values-it and values-pt have the others (test/tooling/android_strings_test.dart keeps
+     their keys the same). The app's own words are in lib/l10n (ARB). -->
 <resources>
     <!-- The figure's label: with budgets, money left or overspent; without, what was spent. -->
     <string name="widget_remaining">Te quedan</string>

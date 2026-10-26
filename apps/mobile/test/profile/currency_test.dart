@@ -97,6 +97,15 @@ void main() {
       expect(currencyName('EUR', 'en'), 'Euro');
     });
 
+    test('is the CLDR name in Italian and in Portuguese from Portugal', () {
+      expect(currencyName('COP', 'it'), 'Peso colombiano');
+      expect(currencyName('USD', 'it'), 'Dollaro statunitense');
+      expect(currencyName('EUR', 'it'), 'Euro');
+      expect(currencyName('COP', 'pt'), 'Peso colombiano');
+      expect(currencyName('USD', 'pt'), 'Dólar dos Estados Unidos');
+      expect(currencyName('EUR', 'pt'), 'Euro');
+    });
+
     test('is the code for one it has no name for', () {
       expect(currencyName('CLP', 'es'), 'CLP');
     });

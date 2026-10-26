@@ -1029,6 +1029,10 @@
   "@captureNoEngine": {
     "description": "Quick capture: the one sentence over the typing field when the phone cannot run the speech engine."
   },
+  "captureNoVoiceYet": "Todavía no te escucho en este idioma, así que escríbelo aquí.",
+  "@captureNoVoiceYet": {
+    "description": "Quick capture: the one sentence over the typing field when the app's language has no voice model yet (Italian and Portuguese until theirs ships)."
+  },
   "captureListenFailed": "No pude escucharte. Escríbelo aquí.",
   "@captureListenFailed": {
     "description": "Quick capture: the microphone or the engine failed."
@@ -1204,11 +1208,19 @@
   "settingsLanguageAuto": "Automático",
   "settingsLanguageEs": "Español",
   "@settingsLanguageEs": {
-    "description": "The language's own name: the same in both catalogs."
+    "description": "The language's own name: the same in every catalog."
   },
   "settingsLanguageEn": "English",
   "@settingsLanguageEn": {
-    "description": "The language's own name: the same in both catalogs."
+    "description": "The language's own name: the same in every catalog."
+  },
+  "settingsLanguageIt": "Italiano",
+  "@settingsLanguageIt": {
+    "description": "The language's own name: the same in every catalog."
+  },
+  "settingsLanguagePt": "Português",
+  "@settingsLanguagePt": {
+    "description": "The language's own name: the same in every catalog."
   },
   "settingsLanguageHint": "Automático usa el idioma de tu teléfono.",
   "settingsSound": "Sonidos",

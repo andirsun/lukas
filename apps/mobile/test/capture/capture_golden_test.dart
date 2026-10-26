@@ -42,7 +42,7 @@ class _SlowModelStore extends FakeModelStore {
     CancelToken? cancel,
   }) async {
     downloads++;
-    final total = modelFor(locale).bytes;
+    final total = modelFor(locale)!.bytes;
     onProgress?.call((total * 0.405).round(), total);
     await _done.future;
   }

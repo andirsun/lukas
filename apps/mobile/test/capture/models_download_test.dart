@@ -360,10 +360,32 @@ void main() {
       releaseUrl: server.base,
       models: {'es': _model(_payload), 'en': en},
     );
-    expect(s.modelFor('en').name, 'vosk-model-small-en-us-0.15');
-    expect(s.modelFor('pt').name, 'vosk-model-small-es-0.42', reason: 'Spanish otherwise');
+    expect(s.modelFor('en')!.name, 'vosk-model-small-en-us-0.15');
     await s.download('en');
     expect(await s.installedPath('en'), isNotNull);
     expect(await s.installedPath('es'), isNull);
+  });
+
+  test('Italian and Portuguese have no model yet, and are never given the Spanish one', () async {
+    final s = ModelStore(
+      files: files,
+      http: Dio(),
+      releaseUrl: server.base,
+      models: {'es': _model(_payload)},
+    );
+    // The Spanish model is on the phone: it is not the answer for anyone else.
+    await s.download('es');
+    expect(await s.installedPath('es'), isNotNull);
+    for (final language in ['it', 'pt', 'fr']) {
+      expect(s.hasModel(language), isFalse, reason: language);
+      expect(s.modelFor(language), isNull, reason: language);
+      expect(await s.installedPath(language), isNull, reason: language);
+      await expectLater(
+        s.download(language),
+        throwsA(isA<ModelDownloadFailure>()),
+        reason: language,
+      );
+    }
+    expect(s.hasModel('es'), isTrue);
   });
 }

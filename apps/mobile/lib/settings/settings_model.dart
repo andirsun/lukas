@@ -63,7 +63,7 @@ String _normalize(String text) {
   return plain.toString().replaceAll(_separators, ' ').replaceAll(_spaces, ' ').trim();
 }
 
-/// Countries whose zones are better found by the names people type, in Spanish and English: the
+/// Countries whose zones are better found by the names people type, in Spanish, English, Italian and Portuguese: the
 /// web adds these where `Intl` names a zone otherwise (Spain's is "Central European Time", the
 /// United States' "Eastern Time"...). The table of countries has them too; they are kept as the
 /// web has them (spellings such as EEUU and USA).
@@ -74,6 +74,15 @@ const zoneAliases = <String, List<String>>{
   'America/Denver': ['Estados Unidos', 'EEUU', 'EE UU', 'USA', 'United States'],
   'America/Los_Angeles': ['Estados Unidos', 'EEUU', 'EE UU', 'USA', 'United States'],
   'America/Mexico_City': ['México', 'Mexico'],
+  // Italian and Portuguese searches: their countries, capitals and best-known cities.
+  'Europe/Rome': ['Italia', 'Italy', 'Roma', 'Milano', 'Napoli', 'Torino'],
+  'Europe/Lisbon': ['Portugal', 'Lisboa', 'Porto'],
+  'Atlantic/Madeira': ['Portugal', 'Madeira'],
+  'Atlantic/Azores': ['Portugal', 'Açores', 'Azores'],
+  'America/Sao_Paulo': ['Brasil', 'Brazil', 'Brasile'],
+  'America/Bahia': ['Brasil', 'Brazil', 'Brasile'],
+  'America/Fortaleza': ['Brasil', 'Brazil', 'Brasile'],
+  'America/Manaus': ['Brasil', 'Brazil', 'Brasile'],
 };
 
 /// Spellings people type for a country, beside its names: the United States by its initials.
@@ -125,8 +134,15 @@ List<String> _countryText(String? country) {
     for (final zone in zones)
       if ((index?[zone] ?? _normalize(zone)).contains(wanted)) zone,
   ];
+  // A name people type for a zone (an alias: "Porto" for Lisbon) beats a city that merely starts
+  // with the same letters (Porto-Novo), then cities starting with it, then the rest.
+  bool aliased(String zone) => (zoneAliases[zone] ?? const []).any((a) => _normalize(a) == wanted);
   bool cityStarts(String zone) => _normalize(zoneCity(zone)).startsWith(wanted);
-  final cityFirst = [...found.where(cityStarts), ...found.where((zone) => !cityStarts(zone))];
+  final cityFirst = [
+    ...found.where(aliased),
+    ...found.where((zone) => !aliased(zone) && cityStarts(zone)),
+    ...found.where((zone) => !aliased(zone) && !cityStarts(zone)),
+  ];
   return (
     matches: cityFirst.take(limit).toList(),
     more: cityFirst.length > limit ? cityFirst.length - limit : 0,

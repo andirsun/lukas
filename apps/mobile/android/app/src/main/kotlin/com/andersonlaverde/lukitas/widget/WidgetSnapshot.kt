@@ -23,7 +23,7 @@ data class WidgetSnapshot(
     val spent: Long = 0,
     val budgetTotal: Long = 0,
     val currency: String = "",
-    /** "es" or "en": the widget's words and how amounts are written. Null: the phone's. */
+    /** "es", "en", "it" or "pt": the widget's words and how amounts are written. Null: the phone's. */
     val locale: String? = null,
     /** `YYYY-MM`. */
     val month: String = "",
@@ -80,6 +80,9 @@ data class WidgetSnapshot(
         const val KEY = "lukitas.widget.snapshot"
         const val VERSION = 3
 
+        /** The languages the app speaks (lib/settings/locale_resolution.dart, `appLanguages`). */
+        val LANGUAGES = setOf("es", "en", "it", "pt")
+
         /** The snapshot in [json], or null when there is none of this version. */
         fun parse(json: String?): WidgetSnapshot? {
             if (json == null) return null
@@ -91,7 +94,7 @@ data class WidgetSnapshot(
             if (doc.optInt("v", -1) != VERSION) return null
             val hideAmount = doc.optBoolean("hideAmount", false)
             val theme = doc.optString("theme", "dark")
-            val locale = doc.optString("locale", "").takeIf { it == "es" || it == "en" }
+            val locale = doc.optString("locale", "").takeIf { it in LANGUAGES }
             val signedOut = WidgetSnapshot(
                 signedIn = false,
                 locale = locale,

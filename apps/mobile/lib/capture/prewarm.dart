@@ -1,16 +1,19 @@
 import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../settings/preferences.dart';
+import 'capture_language.dart';
 import 'capture_note.dart';
 import 'engine/speech_engine.dart';
 import 'models_download.dart';
 
-/// The language the voice model is for: English for an English app, Spanish otherwise (as the app's
-/// own language, and as `_CaptureSheetState._locale` decides it).
+/// The language the voice model is for: the app's own language (the one chosen in Settings, else the
+/// phone's), as `CaptureSheetState.locale` decides it. Italian and Portuguese name themselves even
+/// though they have no model yet: the Spanish one is never loaded for them.
 String voiceLocale(Locale? chosen) =>
-    (chosen ?? WidgetsBinding.instance.platformDispatcher.locale).languageCode == 'en' ? 'en' : 'es';
+    captureLanguage((chosen ?? WidgetsBinding.instance.platformDispatcher.locale).languageCode);
 
 /// Loads the speech model in the background so a tap on 🎤 starts listening at once (the app's own,
 /// the widget's, the tile's): when the app starts and each time it comes back to the front. Only
@@ -43,7 +46,8 @@ class VoicePrewarm with WidgetsBindingObserver {
       // The note is on until the first capture: nothing is loaded before the person first uses it.
       if (_ref.read(captureNoteProvider)) return;
       final locale = voiceLocale(_ref.read(localeOverrideProvider));
-      if (await _ref.read(modelStoreProvider).installedPath(locale) == null) return;
+      final models = _ref.read(modelStoreProvider);
+      if (!models.hasModel(locale) || await models.installedPath(locale) == null) return;
       await _ref.read(speechEngineProvider).warmUp(locale: locale);
     } on Object {
       // Not loaded in advance: the first tap loads it.

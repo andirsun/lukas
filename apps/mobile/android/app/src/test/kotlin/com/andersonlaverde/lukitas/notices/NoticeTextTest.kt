@@ -42,6 +42,25 @@ class NoticeTextTest {
     }
 
     @Test
+    fun `and in Italian`() {
+        assertEquals("Oggi scade Affitto", NoticeText.due(context, listOf("Affitto"), "it"))
+        assertEquals("Oggi scadono Affitto e Spotify", NoticeText.due(context, listOf("Affitto", "Spotify"), "it"))
+        assertEquals(
+            "Oggi scadono Affitto, Netflix e Spotify",
+            NoticeText.due(context, listOf("Affitto", "Netflix", "Spotify"), "it"),
+        )
+    }
+
+    @Test
+    fun `and in Portuguese from Portugal`() {
+        assertEquals("Hoje vence Renda", NoticeText.due(context, listOf("Renda"), "pt"))
+        assertEquals("Hoje vencem Renda e Spotify", NoticeText.due(context, listOf("Renda", "Spotify"), "pt"))
+        // No "e" for "y" swap before the sound i, which only Spanish makes.
+        assertEquals("Hoje vencem Luz e Internet", NoticeText.due(context, listOf("Luz", "Internet"), "pt"))
+        assertEquals("Oggi scadono Luce e Internet", NoticeText.due(context, listOf("Luce", "Internet"), "it"))
+    }
+
+    @Test
     fun `blank and repeated names are left out`() {
         assertEquals(
             "Hoy vencen Arriendo y Spotify",
@@ -58,6 +77,18 @@ class NoticeTextTest {
         assertEquals(
             "Your data will be deleted in 15 days if you don't add your email",
             NoticeText.guestWarning(context, "en"),
+        )
+    }
+
+    @Test
+    fun `the guest warning in Italian and Portuguese`() {
+        assertEquals(
+            "I tuoi dati verranno cancellati tra 15 giorni se non aggiungi la tua email",
+            NoticeText.guestWarning(context, "it"),
+        )
+        assertEquals(
+            "Os teus dados serão apagados dentro de 15 dias se não adicionares o teu email",
+            NoticeText.guestWarning(context, "pt"),
         )
     }
 

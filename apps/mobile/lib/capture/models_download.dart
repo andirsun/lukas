@@ -112,14 +112,20 @@ class ModelStore {
   final Map<String, VoiceModel> _models;
   final _running = <String, Future<void>>{};
 
-  /// The model for [locale]: English for `en`, Spanish otherwise (as the app's language).
-  VoiceModel modelFor(String locale) => _models[locale] ?? _models['es']!;
+  /// The model for [locale]; null when there is none (Italian and Portuguese have none yet). A
+  /// language is never given another language's model: Spanish audio would be read with English
+  /// words, and the other way round.
+  VoiceModel? modelFor(String locale) => _models[locale];
+
+  /// Whether [locale] has a voice model to download at all.
+  bool hasModel(String locale) => _models.containsKey(locale);
 
   Future<String> _voiceDir() async => '${await _files.modelsDirectory()}/voice';
 
   /// The model's folder, when it is downloaded, verified and unzipped; otherwise null.
   Future<String?> installedPath(String locale) async {
     final model = modelFor(locale);
+    if (model == null) return null;
     final dir = await _voiceDir();
     final ready = File('$dir/${model.name}.ready');
     if (!ready.existsSync() || (await ready.readAsString()).trim() != model.sha256) return null;
@@ -136,6 +142,8 @@ class ModelStore {
     CancelToken? cancel,
   }) {
     final model = modelFor(locale);
+    // No model for this language: the same failure as a download that did not work.
+    if (model == null) return Future.error(const ModelDownloadFailure());
     return _running[model.name] ??= _download(model, onProgress, cancel).whenComplete(() {
       // A block, not `=>`: remove returns this very future, which whenComplete would wait for.
       _running.remove(model.name);

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/gen/lukitas_api.dart';
 import '../api/session.dart';
 import '../capture/parser/dates.dart';
+import '../settings/locale_resolution.dart';
 import 'home_cache.dart';
 import 'home_repository.dart';
 import 'lukas_line.dart';
@@ -34,9 +35,13 @@ final widgetSnapshotWriterProvider =
               .summaryLoaded(summary, currency: currency, locale: locale, timezone: timezone),
     );
 
-/// The language amounts and dates are written in: English when the phone asks for it, Spanish
-/// otherwise (the same rule as the app's `localeResolutionCallback`).
-String languageOfTag(String tag) => tag.toLowerCase().startsWith('en') ? 'en' : 'es';
+/// The language amounts and dates are written in: the phone's language when the app has it
+/// (English, Italian, Portuguese), Spanish otherwise (the same rule as the app's
+/// `localeResolutionCallback`, `resolveAppLocale`). A region never matters: `pt-BR` reads `pt`.
+String languageOfTag(String tag) {
+  final code = tag.toLowerCase().split(RegExp('[-_]')).first;
+  return appLanguages.contains(code) ? code : 'es';
+}
 
 /// The month on screen: its summary and movements.
 class HomeData {

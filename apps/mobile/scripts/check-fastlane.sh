@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # Checks the F-Droid metadata in fastlane/metadata/android against F-Droid's limits and against
-# itself: both locales (es-ES, en-US) have a title (30 characters at most), a short description (80),
-# a full description (4000), changelogs of 500 bytes at most named for a version code, and PNG
-# screenshots that are small (the repo is not an image store); the changelogs and the number of
-# screenshots are the same in both. Run from anywhere:
+# itself: every locale (es-ES, en-US, it-IT, pt-PT) has a title (30 characters at most), a short
+# description (80), a full description (4000) and changelogs of 500 bytes at most named for a version
+# code, the same in all of them. PNG screenshots are small (the repo is not an image store); es-ES and
+# en-US have at least 2 and the same number, and it-IT and pt-PT have none until the app has been
+# shot in Italian and Portuguese (Spanish pictures would not be theirs). Run from anywhere:
 #
 #   apps/mobile/scripts/check-fastlane.sh
 # Exit codes: 0 fine, 1 something is off.
@@ -11,7 +12,9 @@ set -uo pipefail
 
 MOBILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 META="$MOBILE/fastlane/metadata/android"
-LOCALES=(es-ES en-US)
+LOCALES=(es-ES en-US it-IT pt-PT)
+# The locales whose screenshots are required, and must agree in number.
+SHOT_LOCALES=(es-ES en-US)
 MAX_SCREENSHOT_BYTES=250000
 failed=0
 fail() { echo "fastlane: $1"; failed=1; }
@@ -45,6 +48,8 @@ for locale in "${LOCALES[@]}"; do
   if [ "$locale" = "${LOCALES[0]}" ]; then reference_codes="$codes"; fi
   [ "$codes" = "$reference_codes" ] || fail "$locale changelogs ($codes) differ from ${LOCALES[0]}'s ($reference_codes)"
 
+  required=0
+  for shot_locale in "${SHOT_LOCALES[@]}"; do [ "$shot_locale" = "$locale" ] && required=1; done
   count=0
   for shot in "$dir"/images/phoneScreenshots/*; do
     [ -e "$shot" ] || continue
@@ -58,9 +63,11 @@ for locale in "${LOCALES[@]}"; do
       fail "${shot#"$MOBILE"/} is ${width}x${height}: phone screenshots between 320 and 1080 pixels wide"
     fi
   done
-  [ "$count" -ge 2 ] || fail "$locale needs at least 2 phone screenshots (has $count)"
-  if [ "$locale" = "${LOCALES[0]}" ]; then reference_count="$count"; fi
-  [ "$count" -eq "$reference_count" ] || fail "$locale has $count screenshots, ${LOCALES[0]} has $reference_count"
+  if [ "$required" -eq 1 ]; then
+    [ "$count" -ge 2 ] || fail "$locale needs at least 2 phone screenshots (has $count)"
+    if [ "$locale" = "${SHOT_LOCALES[0]}" ]; then reference_count="$count"; fi
+    [ "$count" -eq "$reference_count" ] || fail "$locale has $count screenshots, ${SHOT_LOCALES[0]} has $reference_count"
+  fi
 done
 
 [ "$failed" -eq 0 ] && echo "F-Droid metadata fine: ${LOCALES[*]}"

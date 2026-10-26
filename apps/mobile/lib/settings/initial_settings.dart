@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/server_address.dart';
+import 'locale_resolution.dart';
 import 'settings_store.dart';
 
 /// The settings the app needs before it draws or calls anything: the server, the theme and the
@@ -11,13 +12,13 @@ class InitialSettings {
   const InitialSettings({required this.serverUrl, required this.themeMode, this.locale});
 
   /// The defaults: the Lukitas server, night (spec section 6.2), and the phone's own language
-  /// (Spanish or English; Spanish for any other).
+  /// (Spanish, English, Italian or Portuguese; Spanish for any other).
   static final defaults = InitialSettings(serverUrl: defaultServerUrl, themeMode: ThemeMode.dark);
 
   final Uri serverUrl;
   final ThemeMode themeMode;
 
-  /// A language the person picked (`es` or `en`), or null to follow the phone.
+  /// A language the person picked (one of [appLanguages]), or null to follow the phone.
   final Locale? locale;
 
   /// What [store] holds. A value nobody understands, or a store that cannot be read, gives the
@@ -40,8 +41,7 @@ class InitialSettings {
         _ => ThemeMode.dark,
       },
       locale: switch (await get(localeKey)) {
-        'es' => const Locale('es'),
-        'en' => const Locale('en'),
+        final code? when appLanguages.contains(code) => Locale(code),
         _ => null,
       },
     );

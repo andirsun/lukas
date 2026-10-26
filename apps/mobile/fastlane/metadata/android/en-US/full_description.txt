@@ -6,7 +6,7 @@ Lukitas is your budget, and you'll actually enjoy looking after it: log an expen
 <li>Say it or type it as one sentence, like "spent 12 on lunch and 3 on coffee". Lukitas splits it into entries and you review them before saving; you can remove them or undo.</li>
 <li>See what you have spent this month and your entries, grouped by day.</li>
 <li>A home-screen widget with ＋ and 🎤, and a Quick Settings tile, to log without hunting for the app.</li>
-<li>In Spanish and English, night or day, with soft sounds and vibration you can turn off.</li>
+<li>In Spanish, English, Italian and Portuguese, night or day, with soft sounds and vibration you can turn off.</li>
 </ul>
 
 <b>No email, no passwords</b>
