@@ -2,6 +2,7 @@ package com.andersonlaverde.lukitas.widget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.ColorFilter
@@ -9,10 +10,12 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.action.Action
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.LinearProgressIndicator
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.background
@@ -43,6 +46,19 @@ import java.time.ZoneId
 
 /** The two widgets: small (2×1) and medium (4×2). */
 enum class WidgetSize { SMALL, MEDIUM }
+
+/** The smallest box the medium layout fits: a little under 4×2's 250×110 dp, for launchers that round down. */
+private val mediumBox = DpSize(220.dp, 100.dp)
+
+/**
+ * Both widgets draw the layout that fits the box they really have, not the one they were added
+ * as: a 4×2 box once showed the small layout (no Lukitas, no 🎤) until the app was opened.
+ */
+val widgetSizeMode = SizeMode.Responsive(setOf(DpSize(110.dp, 40.dp), mediumBox))
+
+/** The layout for a box of [size]. */
+fun widgetSizeFor(size: DpSize): WidgetSize =
+    if (size.width >= mediumBox.width && size.height >= mediumBox.height) WidgetSize.MEDIUM else WidgetSize.SMALL
 
 /**
  * The colours the widget uses, from the app's tokens (lib/theme/tokens.g.dart, generated from
@@ -281,14 +297,19 @@ fun MediumWidgetContent(model: WidgetModel) {
     }
 }
 
-/** The widget of [size] for what is stored now (home_widget's state: its SharedPreferences). */
+/** [model] in the layout that fits the widget's box. */
 @Composable
-fun StoredWidgetContent(size: WidgetSize) {
-    val preferences = currentState<HomeWidgetGlanceState>().preferences
-    val snapshot = WidgetSnapshot.parse(preferences.getString(WidgetSnapshot.KEY, null))
-    val model = widgetModel(LocalContext.current, snapshot, Instant.now(), ZoneId.systemDefault())
-    when (size) {
+fun SizedWidgetContent(model: WidgetModel) {
+    when (widgetSizeFor(LocalSize.current)) {
         WidgetSize.SMALL -> SmallWidgetContent(model)
         WidgetSize.MEDIUM -> MediumWidgetContent(model)
     }
+}
+
+/** The widget for what is stored now (home_widget's state: its SharedPreferences). */
+@Composable
+fun StoredWidgetContent() {
+    val preferences = currentState<HomeWidgetGlanceState>().preferences
+    val snapshot = WidgetSnapshot.parse(preferences.getString(WidgetSnapshot.KEY, null))
+    SizedWidgetContent(widgetModel(LocalContext.current, snapshot, Instant.now(), ZoneId.systemDefault()))
 }
