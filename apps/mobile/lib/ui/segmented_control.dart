@@ -111,33 +111,33 @@ class _SegmentedControlState<T> extends State<SegmentedControl<T>> {
           ),
       ],
     );
-    return Semantics(
+    // The tab bar's semantics sit inside the 3 px padding, so the container is exactly its tabs:
+    // a scroll that cuts through the padding never leaves it standing with no tab in it.
+    final tabs = Semantics(
       container: true,
       role: SemanticsRole.tabBar,
       label: widget.label,
-      child: Focus(
-        canRequestFocus: false,
-        skipTraversal: true,
-        onKeyEvent: _onKey,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.surfaceSunken,
-            borderRadius: LkSurface.radius(LkRadius.md),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(3),
-            child: position == null
-                ? row
-                : Stack(
-                    children: [
-                      Positioned.fill(
-                        child: _Thumb(position: position, count: options.length),
-                      ),
-                      row,
-                    ],
-                  ),
-          ),
+      child: position == null
+          ? row
+          : Stack(
+              children: [
+                Positioned.fill(
+                  child: _Thumb(position: position, count: options.length),
+                ),
+                row,
+              ],
+            ),
+    );
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: _onKey,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colors.surfaceSunken,
+          borderRadius: LkSurface.radius(LkRadius.md),
         ),
+        child: Padding(padding: const EdgeInsets.all(3), child: tabs),
       ),
     );
   }

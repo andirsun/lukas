@@ -2,7 +2,7 @@ package com.andersonlaverde.lukitas.notices
 
 import android.content.Context
 import com.andersonlaverde.lukitas.R
-import com.andersonlaverde.lukitas.widget.WidgetSnapshot
+import com.andersonlaverde.lukitas.AppLanguages
 import java.util.Locale
 
 /**
@@ -13,7 +13,7 @@ import java.util.Locale
 object NoticeText {
     /** The Context whose resources speak [language] (`es`, `en`, `it` or `pt`); [context] itself for any other. */
     fun localized(context: Context, language: String?): Context {
-        if (language == null || language !in WidgetSnapshot.LANGUAGES) return context
+        if (language == null || language !in AppLanguages.ALL) return context
         val configuration = android.content.res.Configuration(context.resources.configuration)
         configuration.setLocale(Locale.forLanguageTag(language))
         return context.createConfigurationContext(configuration)

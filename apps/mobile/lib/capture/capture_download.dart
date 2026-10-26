@@ -51,6 +51,7 @@ class CaptureOfferBody extends StatelessWidget {
     final l10n = session.l10n;
     final colors = context.lkColors;
     final model = session.model;
+    if (model == null) return const SizedBox.shrink();
     final megabytes = (model.bytes / 1e6).round();
     final failure = session.downloadFailure;
     return _VoiceCard(
@@ -86,7 +87,7 @@ class CaptureOfferActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final session = CaptureSession.of(context);
     final l10n = session.l10n;
-    final megabytes = (session.model.bytes / 1e6).round();
+    final megabytes = ((session.model?.bytes ?? 0) / 1e6).round();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: LukitasTokens.space1,
@@ -121,7 +122,7 @@ class CaptureDownloadingBody extends StatelessWidget {
     final session = CaptureSession.of(context);
     final l10n = session.l10n;
     final colors = context.lkColors;
-    final total = session.model.bytes;
+    final total = session.model?.bytes ?? 0;
     final fraction = total == 0 ? 0.0 : (session.downloaded / total).clamp(0.0, 1.0);
     return _VoiceCard(
       title: Semantics(

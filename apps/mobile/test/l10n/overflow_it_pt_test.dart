@@ -11,6 +11,7 @@ void main() {
       for (final location in [
         '/',
         '/settings',
+        '/categories',
         '/settings/about',
         '/progress',
         '/recurring',

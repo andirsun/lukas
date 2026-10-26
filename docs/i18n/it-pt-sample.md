@@ -115,3 +115,66 @@ The sign-in email and the claim email (a guest saving their progress, no link).
 | `email.sign_in.ignore` | Si no pediste este correo, ignóralo: nadie puede entrar sin este código. | Se non hai chiesto questa email, ignorala: nessuno può entrare senza questo codice. | Se não pediste este email, ignora-o: ninguém consegue entrar sem este código. |
 | `email.claim.subject` | Tu código para guardar tu progreso: 123456 | Il tuo codice per salvare i tuoi progressi: 123456 | O teu código para guardares o teu progresso: 123456 |
 | `email.claim.lead` | Escríbelo en Lukitas para guardar tu progreso con este correo. | Scrivilo in Lukitas per salvare i tuoi progressi con questa email. | Escreve-o em Lukitas para guardar o teu progresso com este email. |
+
+## App
+
+The app's own words, which the web does not have: the capture sheet, guest accounts, the voice and server settings, the widget and the two notices (Flutter ARB and Android strings), plus the store short description. Keys are ARB keys, `values*/strings.xml` names, or the fastlane file. Notes for the founder:
+
+- Voice dictation and the sentence parser exist only in Spanish and English today. Until they ship in Italian and Portuguese the capture sheet opens on typing, with `captureNoVoiceYet` over it, and the store copy says so.
+- The example sentence («15 pranzo, 3 uber», «15 almoço, 3 uber») is what typing understands now: amount, then name, separated by commas.
+- Store short descriptions say "Libera" / "Livre" (free as in freedom, like the Spanish "Libre").
+
+### Quick capture (say it or type it)
+
+| key | es | it | pt |
+|---|---|---|---|
+| `captureTitle` | Dilo o escríbelo | Dillo o scrivilo | Diz ou escreve |
+| `captureListeningPrompt` | ¿En qué gastaste? | Per cosa hai speso? | Em que gastaste? |
+| `captureListeningNote` | Te escucho aquí mismo: lo que dices no sale de tu teléfono. | Ti ascolto qui: quello che dici non esce dal telefono. | Ouço-te aqui mesmo: o que dizes não sai do teu telemóvel. |
+| `captureFieldLabel` | Escribe lo que gastaste | Scrivi quello che hai speso | Escreve o que gastaste |
+| `captureNoVoiceYet` | Todavía no te escucho en este idioma, así que escríbelo aquí. | Per ora non ti ascolto in italiano, quindi scrivilo qui. | Por agora não te ouço em português, por isso escreve aqui. |
+| `captureNothingRead` | No encontré movimientos. Prueba con un monto, como «15 mil en almuerzo». | Non ho trovato movimenti. Prova con un importo, come «15 pranzo». | Não encontrei movimentos. Experimenta com um valor, como «15 almoço». |
+| `captureOfferTitle` | Para escucharte, Lukitas necesita su voz en español | Per ascoltarti, Lukitas ha bisogno della sua voce in italiano | Para te ouvir, Lukitas precisa da sua voz em português |
+| `captureOfferBody` | Se descarga una sola vez ({megabytes} MB) y queda en tu teléfono: escucha sin internet y lo que dices nunca sale de él. Sin ella, puedes escribir. | Si scarica una sola volta ({megabytes} MB) e resta sul tuo telefono: ascolta senza internet e quello che dici non esce mai da lì. Senza la voce, puoi scrivere. | Descarrega-se uma só vez ({megabytes} MB) e fica no teu telemóvel: ouve sem internet e o que dizes nunca sai de lá. Sem ela, podes escrever. |
+| `captureDownloadFailed` | No se pudo descargar la voz. Revisa tu internet e inténtalo de nuevo; seguirá donde quedó. | Non è stato possibile scaricare la voce. Controlla internet e riprova: riprenderà da dove si era fermata. | Não foi possível descarregar a voz. Verifica a tua internet e tenta de novo; continua de onde parou. |
+| `captureSaved` | ¡Listo! {count, plural, =1{1 movimiento} other{{count} movimientos}} por {amount} | Fatto! {count, plural, =1{1 movimento} other{{count} movimenti}} per {amount} | Pronto! {count, plural, =0{{count} movimentos} =1{1 movimento} other{{count} movimentos}} por {amount} |
+
+### Guest accounts and saving progress
+
+| key | es | it | pt |
+|---|---|---|---|
+| `guestSaveTitle` | ¿Guardamos lo que ya anotaste? | Salviamo quello che hai già annotato? | Guardamos o que já registaste? |
+| `guestSaveBody` | Estás usando Lukitas sin correo. Podemos guardar tu progreso en {email}: sigues con los mismos movimientos. | Stai usando Lukitas senza email. Possiamo salvare i tuoi progressi in {email}: continui con gli stessi movimenti. | Estás a usar Lukitas sem email. Podemos guardar o teu progresso em {email}: continuas com os mesmos movimentos. |
+| `progressLead` | Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos. | Senza email, se perdi il telefono o cancelli l'app, perdi i tuoi dati. | Sem email, se perderes o telemóvel ou apagares a app, perdes os teus dados. |
+| `progressPasskeyBody` | Una huella en este teléfono te deja entrar sin correo, pero si pierdes el teléfono o la huella, pierdes la cuenta. Para usar Lukitas en otro dispositivo o con asistentes de IA necesitas un correo. | Un'impronta su questo telefono ti fa entrare senza email, ma se perdi il telefono o l'impronta, perdi l'account. Per usare Lukitas su un altro dispositivo o con gli assistenti IA ti serve un'email. | Uma impressão digital neste telemóvel deixa-te entrar sem email, mas se perderes o telemóvel ou a impressão digital, perdes a conta. Para usar Lukitas noutro dispositivo ou com assistentes de IA precisas de um email. |
+
+### Voice and model settings
+
+| key | es | it | pt |
+|---|---|---|---|
+| `settingsDeleteVoice` | Borrar los modelos de voz | Elimina i modelli vocali | Apagar os modelos de voz |
+| `settingsDeleteVoiceBody` | No podrás dictar hasta descargarlos de nuevo. Lo que ya anotaste no cambia. | Non potrai dettare finché non li scarichi di nuovo. Quello che hai già annotato non cambia. | Não poderás ditar até os descarregares de novo. O que já registaste não muda. |
+| `settingsServerLead` | Otro servidor es otra cuenta: al cambiar, cierras sesión aquí. | Un altro server è un altro account: se lo cambi, esci da qui. | Outro servidor é outra conta: ao mudares, terminas a sessão aqui. |
+| `settingsHideAmount` | Ocultar el monto en el widget | Nascondi l'importo nel widget | Ocultar o valor no widget |
+
+### Widget, tile and notices
+
+| key | es | it | pt |
+|---|---|---|---|
+| `widget_remaining` | Te quedan | Ti restano | Restam-te |
+| `widget_over` | Te pasaste | Hai sforato | Passaste do limite |
+| `widget_remaining_past` | Te quedaron en %1$s | Ti sono rimasti in %1$s | Sobraram-te em %1$s |
+| `widget_signed_out` | Abre Lukitas para empezar | Apri Lukitas per iniziare | Abre Lukitas para começar |
+| `widget_stale` | hace un rato | poco fa | há algum tempo |
+| `tile_capture` | Decir un gasto | Annota una spesa | Registar uma despesa |
+| `widget_small_description` | Lo que te queda este mes, y ＋ para anotar un gasto. | Quello che ti resta questo mese, e ＋ per annotare una spesa. | O que te resta este mês, e ＋ para registar uma despesa. |
+| `notice_due_one` | Hoy vence %1$s | Oggi scade %1$s | Hoje vence %1$s |
+| `notice_due_many` | Hoy vencen %1$s | Oggi scadono %1$s | Hoje vencem %1$s |
+| `notice_guest` | Tus datos se borrarán en 15 días si no agregas tu correo | I tuoi dati verranno cancellati tra 15 giorni se non aggiungi la tua email | Os teus dados serão apagados dentro de 15 dias se não adicionares o teu email |
+| `noticeAskDue` | Así Lukitas puede avisarte a las 9:00 los días en que vence un pago recurrente. | Così Lukitas può avvisarti alle 9:00 nei giorni in cui scade un pagamento ricorrente. | Assim Lukitas pode avisar-te às 9:00 nos dias em que vence um pagamento recorrente. |
+
+### Store
+
+| key | es | it | pt |
+|---|---|---|---|
+| `short_description.txt` | Anota un gasto en segundos, con tu voz si quieres. Libre y sin rastreadores. | Annota una spesa in pochi secondi. Libera e senza tracker. | Regista uma despesa em segundos. Livre e sem rastreadores. |

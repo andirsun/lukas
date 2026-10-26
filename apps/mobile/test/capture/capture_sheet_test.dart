@@ -25,6 +25,26 @@ import 'fakes.dart';
 
 const _sentence = 'gasté 15 mil en almuerzo y 3 lukas en uber';
 
+/// A store that has a model until the engine is first asked to listen.
+class _FlippingModels extends FakeModelStore {
+  var has = true;
+
+  @override
+  bool hasModel(String locale) => has;
+}
+
+class _FlippingEngine extends FakeSpeechEngine {
+  _FlippingEngine(this.models, {super.failure});
+
+  final _FlippingModels models;
+
+  @override
+  Stream<String> listen({required String locale}) {
+    models.has = false;
+    return super.listen(locale: locale);
+  }
+}
+
 class _Env {
   _Env(this.server, this.capture, this.engine, this.models, this.harness, this.celebrated);
   final FakeHomeRepository server;
@@ -305,19 +325,38 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('in $language the mic link only types, and a late "no model" never offers one', (
-      tester,
-    ) async {
-      final env = await _pump(
-        tester,
-        locale: Locale(language),
-        failure: const SpeechFailure(SpeechFailureKind.noModel),
-      );
-      await _open(tester);
-      expect(env.engine.listens, 0, reason: 'the engine is never asked without a model');
-      expect(find.byKey(const Key('capture.offer.download')), findsNothing);
-      expect(find.byKey(const Key('capture.field')), findsOneWidget);
-    });
+    testWidgets(
+      'in $language a late "no model" from the engine types, and never offers a download',
+      (tester) async {
+        // The language has a model when listening starts (so listen() goes ahead), and none by the
+        // time the engine says noModel: the late branch must still end on the typing field.
+        final models = _FlippingModels();
+        final engine = _FlippingEngine(
+          models,
+          failure: const SpeechFailure(SpeechFailureKind.noModel),
+        );
+        final server = FakeHomeRepository(
+          categoryList: [category('cat-food', 'Comida', icon: '🍽️')],
+          items: [tx('coffee', '2026-10-20', -450000, name: 'Café', categoryId: 'cat-food')],
+        );
+        await pumpHome(
+          tester,
+          server,
+          locale: Locale(language),
+          overrides: [
+            captureRepositoryProvider.overrideWithValue(FakeCaptureRepository(server)),
+            speechEngineProvider.overrideWithValue(engine),
+            modelStoreProvider.overrideWithValue(models),
+          ],
+        );
+        await _open(tester);
+        expect(engine.listens, 1, reason: 'listening started, then the engine said noModel');
+        expect(find.byKey(const Key('capture.offer.download')), findsNothing);
+        expect(find.byKey(const Key('capture.field')), findsOneWidget);
+        expect(find.text(why), findsOneWidget);
+        expect(models.downloads, 0);
+      },
+    );
   }
 
   testWidgets('without the model, an opt-in shows its size; declining leaves the typing field', (

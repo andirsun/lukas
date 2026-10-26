@@ -2,6 +2,7 @@ package com.andersonlaverde.lukitas.widget
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.andersonlaverde.lukitas.AppLanguages
 import org.json.JSONException
 import org.json.JSONObject
 import java.time.DateTimeException
@@ -80,9 +81,6 @@ data class WidgetSnapshot(
         const val KEY = "lukitas.widget.snapshot"
         const val VERSION = 3
 
-        /** The languages the app speaks (lib/settings/locale_resolution.dart, `appLanguages`). */
-        val LANGUAGES = setOf("es", "en", "it", "pt")
-
         /** The snapshot in [json], or null when there is none of this version. */
         fun parse(json: String?): WidgetSnapshot? {
             if (json == null) return null
@@ -94,7 +92,7 @@ data class WidgetSnapshot(
             if (doc.optInt("v", -1) != VERSION) return null
             val hideAmount = doc.optBoolean("hideAmount", false)
             val theme = doc.optString("theme", "dark")
-            val locale = doc.optString("locale", "").takeIf { it in LANGUAGES }
+            val locale = doc.optString("locale", "").takeIf { it in AppLanguages.ALL }
             val signedOut = WidgetSnapshot(
                 signedIn = false,
                 locale = locale,

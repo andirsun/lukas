@@ -99,7 +99,7 @@ void main() {
   ) async {
     final handle = t.ensureSemantics();
     await t.pumpWidget(uiApp(const _Host()));
-    expect(t.getSemantics(find.byType(SegmentedControl<String>)).label, 'Vista');
+    expect(t.getSemantics(find.bySemanticsLabel('Vista')).label, 'Vista');
     // 3px of padding either side of a 44px tab.
     expect(t.getSize(find.byType(SegmentedControl<String>)).height, greaterThanOrEqualTo(44 + 6));
     handle.dispose();

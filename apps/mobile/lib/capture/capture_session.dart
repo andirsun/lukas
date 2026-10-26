@@ -186,9 +186,9 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
   /// The microphone's level, live, while listening.
   Stream<double> get levels => engine.levels;
 
-  /// The voice model of the app's language: its size is shown before it is downloaded. Only asked
-  /// for when the language has one ([hasVoice]); never another language's.
-  VoiceModel get model => ref.read(modelStoreProvider).modelFor(locale)!;
+  /// The voice model of the app's language: its size is shown before it is downloaded. Null when the
+  /// language has none ([hasVoice]); never another language's.
+  VoiceModel? get model => ref.read(modelStoreProvider).modelFor(locale);
 
   /// Whether the app's language has a voice model at all. Italian and Portuguese have none yet:
   /// the sheet then opens on the typing field, as it does when the phone cannot listen.
@@ -296,6 +296,9 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
             _listening = null;
             final kind = error is SpeechFailure ? error.kind : SpeechFailureKind.failed;
             switch (kind) {
+              case SpeechFailureKind.noModel when !hasVoice:
+                // A language with no model has nothing to offer: typing, with the note why.
+                type(CaptureWhy.noVoiceYet);
               case SpeechFailureKind.noModel:
                 _set(() {
                   stage = CaptureStage.offer;

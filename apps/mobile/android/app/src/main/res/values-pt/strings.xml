@@ -13,7 +13,7 @@
     <string name="widget_lukitas">Lukitas</string>
     <string name="widget_small_description">O que te resta este mês, e ＋ para registar uma despesa.</string>
     <string name="widget_medium_description">Lukitas, o que te resta este mês, ＋ e 🎤 para registar.</string>
-    <string name="tile_capture">Dizer uma despesa</string>
+    <string name="tile_capture">Registar uma despesa</string>
     <!-- With the amount hidden: a neutral label (nothing about how the month goes), and what
          TalkBack reads in place of the dots. -->
     <string name="widget_hidden_label">Este mês</string>

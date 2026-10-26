@@ -2,6 +2,7 @@ package com.andersonlaverde.lukitas.widget
 
 import android.content.Context
 import android.content.res.Configuration
+import com.andersonlaverde.lukitas.AppLanguages
 import com.andersonlaverde.lukitas.R
 import java.time.Duration
 import java.time.Instant
@@ -88,13 +89,15 @@ fun widgetModel(context: Context, snapshot: WidgetSnapshot?, now: Instant, zone:
     if (snapshot == null || !snapshot.signedIn) {
         return WidgetModel.SignedOut(strings.getString(R.string.widget_signed_out), theme)
     }
-    val language = snapshot.locale ?: Locale.getDefault().language.takeIf { it in WidgetSnapshot.LANGUAGES } ?: "es"
+    val language = snapshot.locale ?: Locale.getDefault().language.takeIf { it in AppLanguages.ALL } ?: "es"
     val month = try {
         YearMonth.parse(snapshot.month)
     } catch (_: java.time.format.DateTimeParseException) {
         return WidgetModel.SignedOut(strings.getString(R.string.widget_signed_out), theme)
     }
     val name = monthName(month, language)
+    // In the middle of a sentence the month is lowercase except in English, as the app writes it (monthInSentence).
+    val inSentence = if (language == "en") name else name.lowercase(Locale.forLanguageTag(language))
     val current = month == YearMonth.from(now.atZone(snapshot.zone(zone)))
     val budgets = snapshot.budgetTotal > 0
     val over = budgets && snapshot.remaining < 0
@@ -105,17 +108,17 @@ fun widgetModel(context: Context, snapshot: WidgetSnapshot?, now: Instant, zone:
         !budgets -> if (current) {
             strings.getString(R.string.widget_spent)
         } else {
-            strings.getString(R.string.widget_spent_past, name)
+            strings.getString(R.string.widget_spent_past, inSentence)
         }
         over -> if (current) {
             strings.getString(R.string.widget_over)
         } else {
-            strings.getString(R.string.widget_over_past, name)
+            strings.getString(R.string.widget_over_past, inSentence)
         }
         else -> if (current) {
             strings.getString(R.string.widget_remaining)
         } else {
-            strings.getString(R.string.widget_remaining_past, name)
+            strings.getString(R.string.widget_remaining_past, inSentence)
         }
     }
     val cents = if (budgets) kotlin.math.abs(snapshot.remaining) else snapshot.spent

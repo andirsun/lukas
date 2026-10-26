@@ -164,7 +164,15 @@ class WidgetModelTest {
         assertEquals("25% do orçamento gasto", figures(snapshot(locale = "pt")).progressDescription)
         val signedOut = widgetModel(context, WidgetSnapshot(signedIn = false, locale = "pt"), now, zone)
         assertEquals("Abre Lukitas para começar", (signedOut as WidgetModel.SignedOut).message)
-        assertEquals("Hai sforato in Settembre", figures(snapshot(locale = "it", month = "2026-09", remaining = -1)).label)
+        assertEquals("Hai sforato in settembre", figures(snapshot(locale = "it", month = "2026-09", remaining = -1)).label)
+    }
+
+    @Test
+    fun `an earlier month is lowercase mid-sentence, except in English, and capitalized as a label`() {
+        assertEquals("Ti sono rimasti in settembre", figures(snapshot(locale = "it", month = "2026-09")).label)
+        assertEquals("Passaste do limite em setembro", figures(snapshot(locale = "pt", month = "2026-09", remaining = -1)).label)
+        assertEquals("Left in September", figures(snapshot(locale = "en", month = "2026-09")).label)
+        assertEquals("Settembre", figures(snapshot(locale = "it", month = "2026-09")).month)
     }
 
     @Test
@@ -178,10 +186,10 @@ class WidgetModelTest {
 
     @Test
     fun `figures of an earlier month never say this month`() {
-        assertEquals("Te quedaron en Septiembre", figures(snapshot(month = "2026-09")).label)
-        assertEquals("Te pasaste en Septiembre", figures(snapshot(month = "2026-09", remaining = -1)).label)
+        assertEquals("Te quedaron en septiembre", figures(snapshot(month = "2026-09")).label)
+        assertEquals("Te pasaste en septiembre", figures(snapshot(month = "2026-09", remaining = -1)).label)
         assertEquals(
-            "Gastado en Septiembre",
+            "Gastado en septiembre",
             figures(snapshot(month = "2026-09", budgetTotal = 0)).label,
         )
     }
@@ -201,7 +209,7 @@ class WidgetModelTest {
         val bogotaProfile = widgetModel(context, snapshot(timezone = "America/Bogota"), at, madrid)
         assertEquals("Te quedan", (bogotaProfile as WidgetModel.Figures).label)
         val madridProfile = widgetModel(context, snapshot(timezone = "Europe/Madrid"), at, zone)
-        assertEquals("Te quedaron en Octubre", (madridProfile as WidgetModel.Figures).label)
+        assertEquals("Te quedaron en octubre", (madridProfile as WidgetModel.Figures).label)
         // A zone that is not one falls back to the phone's.
         val unknown = widgetModel(context, snapshot(timezone = "Not/AZone"), at, zone)
         assertEquals("Te quedan", (unknown as WidgetModel.Figures).label)
