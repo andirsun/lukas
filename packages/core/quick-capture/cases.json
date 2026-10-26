@@ -9191,5 +9191,129 @@
       ],
       "unread": []
     }
+  },
+  {
+    "id": "focus-it-name-dal-is-dropped",
+    "input": "oggi ho ricevuto 350 euro dal cliente",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 35000,
+          "kind": "income",
+          "name": "cliente",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-name-dalla-is-dropped",
+    "input": "ho speso 12 euro dalla parrucchiera",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200,
+          "kind": "expense",
+          "name": "parrucchiera",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-name-sui-is-dropped",
+    "input": "ho speso 9 euro sui libri",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 900,
+          "kind": "expense",
+          "name": "libri",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-name-dall-elided-is-dropped",
+    "input": "ho speso 30 euro dall'idraulico",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 3000,
+          "kind": "expense",
+          "name": "idraulico",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
   }
 ]

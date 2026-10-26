@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import com.andersonlaverde.lukitas.launch.LaunchLinks
 import es.antonborri.home_widget.HomeWidgetGlanceState
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -99,11 +100,17 @@ class WidgetContentTest {
 
     @Test
     fun `the layout follows the box - a launcher's rounding still gets the medium one`() {
-        assert(widgetSizeFor(DpSize(110.dp, 40.dp)) == WidgetSize.SMALL)
-        assert(widgetSizeFor(DpSize(180.dp, 110.dp)) == WidgetSize.SMALL)
-        assert(widgetSizeFor(DpSize(250.dp, 50.dp)) == WidgetSize.SMALL)
-        assert(widgetSizeFor(DpSize(230.dp, 104.dp)) == WidgetSize.MEDIUM)
-        assert(widgetSizeFor(DpSize(320.dp, 180.dp)) == WidgetSize.MEDIUM)
+        assertEquals(WidgetSize.SMALL, widgetSizeFor(DpSize(110.dp, 40.dp)))
+        assertEquals(WidgetSize.SMALL, widgetSizeFor(DpSize(180.dp, 110.dp)))
+        assertEquals(WidgetSize.SMALL, widgetSizeFor(DpSize(250.dp, 50.dp)))
+        assertEquals(WidgetSize.MEDIUM, widgetSizeFor(DpSize(230.dp, 104.dp)))
+        assertEquals(WidgetSize.MEDIUM, widgetSizeFor(DpSize(320.dp, 180.dp)))
+    }
+
+    @Test
+    fun `both widgets use the responsive size mode`() {
+        assertEquals(widgetSizeMode, LukitasSmallWidget().sizeMode)
+        assertEquals(widgetSizeMode, LukitasMediumWidget().sizeMode)
     }
 
     @Test

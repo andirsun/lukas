@@ -7,7 +7,7 @@
 ## Status
 
 - **Not decided.** The bar is measured on real voices, and those do not exist yet: the founder or a friend must record the sentences below. The results table is empty.
-- **What is shipped meanwhile:** voice is on for Italian and for Portuguese. Portuguese is labelled **beta** in the copy (the pt offer title and body, the store descriptions), as the spec asks while European Portuguese is unmeasured. Italian carries no label.
+- **What is shipped meanwhile:** voice is on for Italian and for Portuguese. Both are labelled **beta** in the copy (the offer title and body in the app, and the four store descriptions) until the recorded run clears 80% for that language: Portuguese because European Portuguese is unmeasured (spec), Italian because the synthetic run was at the bar only after a merge fix (below).
 - **A provisional synthetic run exists** (macOS text-to-speech voices through the real models and the real merge and parser). It is **not** the spike and cannot pass or fail it. Its one worrying result, for Italian, is in "Provisional synthetic run" below.
 
 ## What is being tested
@@ -74,8 +74,8 @@ Optionally add two noisy takes per language (kitchen tap or street), repeating i
 - A sentence has **amounts right** when the drafts have exactly the expected amounts (in cents) and kinds, with no extra and no missing movement. This is the measure with the bar.
 - **Kinds, dates and names** are counted per expected movement, separately (names compare ignoring case, accents and a leading article; an expected "no name" accepts anything).
 - **The bar is 80%:** at least 8 of the 10 sentences with amounts right, per language.
-- **If `it` falls under the bar:** the merge needs work before shipping voice for Italian (see the finding below), and Italian is labelled beta in the meantime.
-- **If `pt` falls under the bar:** it stays labelled beta. Typing keeps working either way. If `pt` reaches the bar, remove "beta" from the pt copy (`captureOfferTitle`, `captureOfferBody`, the pt and es/en/it store descriptions).
+- **`it` is labelled beta too** until its recorded run is at or over the bar; if it is under, the merge needs more work (see the finding below). When it clears, remove "beta" from the it copy.
+- **If `pt` falls under the bar:** it stays labelled beta. Typing keeps working either way. If `pt` reaches the bar, remove "beta" from the pt copy (`captureOfferTitle`, `captureOfferBody`, the store descriptions).
 
 ## Results (to fill in)
 
@@ -125,7 +125,7 @@ Per-sentence table, one for each language:
 
 | Voice | Free pass alone | Grammar pass alone | Merged (what the app does) | Merged: kinds / dates / names (of 12 movements) |
 |---|---|---|---|---|
-| Italian, Alice | 8 | 4 | **6** | 9 / 8 / 7 |
+| Italian, Alice | 8 | 4 | **8** (6 before the gate) | 10 / 9 / 8 |
 | Portuguese, Joana (pt-PT) | 6 | 5 | **7** | 9 / 9 / 8 |
 | Portuguese, Luciana (pt-BR, reference) | 8 | 6 | **8** | 10 / 9 / 7 |
 | Typed sentences, both languages | | | 10 | 12 / 12 / 12 |
@@ -133,24 +133,26 @@ Per-sentence table, one for each language:
 ### What it shows
 
 - **European Portuguese is the weaker accent**, as the spec feared: the pt-PT voice gets 7 merged against 8 for the pt-BR voice, and its free pass gets 6 against 8. The grammar pass gains Joana one sentence net (the merge fixes pt05 "mil e duzentos" and pt10, and loses pt09, where a stray "quinhentas" replaced "cliente"), so the two-pass design is not hurting Portuguese here. This agrees with the beta label.
-- **Italian is the surprise: the merge makes it worse** (free pass 8, merged 6). Two causes in the transcripts:
-  - **False number words from the grammar pass.** Rule v2 lets any grammar number word win over whatever the free pass heard. With about 1 000 number words in the Italian grammar, the grammar pass puts one over a name: "benzina" became "ventinove" (it06), "l'affitto" became "otto" (it03), "centoventi" became "trecentoventi" (it07). The Spanish list (about 80 words) leaked less in Stage 3.
-  - **A lost joiner:** the grammar pass dropped the "e" in "otto euro e venti" (it04), so the parser read 8,00 and 20,00 instead of 8,20 (the free pass heard "eventi").
-- **A narrower Italian grammar is not the cure:** with only the numbers up to 99, the bare hundreds and "mila" (141 words), the merged result was 5 of 10. The compounds are needed.
-- **Possible follow-ups, for the founder to decide after the recorded run** (none is done): use the `conf` that the grammar pass already returns to ignore a number word of low confidence that overlaps a free word that is not a number; and let the parser read "euro venti" as cents. Both change shared behaviour and need the real recordings first.
+- **Italian: the merge first made it worse** (free pass 8, merged 6), for two reasons:
+  - **False number words from the grammar pass.** Rule v2 lets any grammar number word win over whatever the free pass heard. With about 1 000 number words in the Italian grammar, the grammar pass put one over a name: "benzina" became "ventinove" (it06), "l'affitto" became "otto" (it03). These had low confidence (0.55, 0.54).
+  - **A lost joiner:** the grammar pass dropped the "e" in "otto euro e venti" (it04), so the parser reads 8,00 and 20,00 instead of 8,20 (the free pass heard "eventi"). Still a miss.
+- **Fix round 1: an Italian-only confidence gate** in \`mergePasses\`: a grammar number word with \`conf\` under 0.7 does not replace a free word that is not grammar vocabulary (it may still replace a number word, so "due" becomes "duemila" at conf 0.58). \`HeardWord\` gained \`conf\`. Spanish, English and Portuguese cannot change (tested). Re-run on the same saved outputs: **Italian 8 of 10 merged** (it03 and it06 recovered; it04 and it07 still miss, the latter "centoventi" heard as "trecentoventi", a number over a number), Portuguese unchanged at 7 and 8. The threshold was set after seeing three false words on one synthetic voice, so it must be re-checked on the recorded run.
+- **A narrower Italian grammar is not the cure:** with only the numbers up to 99, the bare hundreds and "mila" (141 words), the merged result was 5 of 10 (before the gate). The compounds are needed.
+- **Left open, for after the recorded run:** letting the parser read "euro venti" as cents (it changes shared behaviour).
+- **Beta:** 8 of 10 is exactly the bar, on clean synthetic speech, so Italian voice is labelled beta like Portuguese until the recorded run clears 80%.
 
 ### Merged transcripts
 
-#### Italian, macOS voice Alice (it-IT)
+#### Italian, macOS voice Alice (it-IT), with the confidence gate
 
 | # | Free pass | Grammar pass | Merged (what the parser reads) | Amounts right: free / grammar / merged |
 |---|---|---|---|---|
 | 1 | ho speso quindici euro per il pranzo | speso quindici euro | speso quindici euro per il pranzo | yes / yes / yes |
 | 2 | ho speso quindici euro e cinquanta per il caffè | speso quindici euro cinquanta | speso quindici euro e cinquanta per il caffè | yes / no / yes |
-| 3 | l'aereo pagato l'affitto ottocento euro | dollari pagato otto ottocento euro | l'aereo pagato otto ottocento euro | yes / no / no |
+| 3 | l'aereo pagato l'affitto ottocento euro | dollari pagato otto ottocento euro | l'aereo pagato l'affitto ottocento euro | yes / no / yes |
 | 4 | ho comprato pane e latte per otto euro eventi | comprato otto euro venti | comprato pane e latte per otto euro venti | no / no / no |
 | 5 | mi hanno pagato milleduecento euro | mi hanno pagato mille duecento euro | mi hanno pagato mille duecento euro | yes / yes / yes |
-| 6 | benzina quaranta euro e farmacie dodici euro | ventinove quaranta euro dodici euro | ventinove quaranta euro e farmacie dodici euro | yes / no / no |
+| 6 | benzina quaranta euro e farmacie dodici euro | ventinove quaranta euro dodici euro | benzina quaranta euro e farmacie dodici euro | yes / no / yes |
 | 7 | palestra centoventi euro lunedì | trecentoventi euro lunedì | palestra trecentoventi euro lunedì | yes / no / no |
 | 8 | ho speso due cinquecento euro per le vacanze | speso duemila cinquecento euro | speso duemila cinquecento euro per le vacanze | no / yes / yes |
 | 9 | oggi ho ricevuto trecentocinquanta euro di stipendio | oggi ricevuto trecentocinquanta euro | oggi ho ricevuto trecentocinquanta euro di stipendio | yes / yes / yes |

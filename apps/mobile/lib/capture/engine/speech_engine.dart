@@ -11,7 +11,7 @@ abstract class SpeechEngine {
   /// Whether this phone can run the engine at all (with or without a model downloaded).
   Future<bool> available();
 
-  /// Listens in [locale] (`es` or `en`) until [stop], or until the person stops talking. The first
+  /// Listens in [locale] (`es`, `en`, `it` or `pt`) until [stop], or until the person stops talking. The first
   /// event comes once the engine really listens (an empty one when nothing is heard yet), so the
   /// prompt shows only then. Each event is the transcript so far; the last one, just before the
   /// stream closes, is the final one. Fails with a [SpeechFailure].

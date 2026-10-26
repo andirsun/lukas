@@ -3,7 +3,7 @@ Lukitas é o teu orçamento, e vais gostar de cuidar dele: regista uma despesa e
 <b>O que podes fazer</b>
 <ul>
 <li>Registar uma despesa com o teclado numérico: valor, categoria e já está.</li>
-<li>Escrever várias despesas numa frase, como «15 almoço, 3 uber»: Lukitas separa-as em movimentos e vês antes de guardar; podes removê-los ou desfazer. O ditado por voz existe em português (em beta), italiano, espanhol e inglês.</li>
+<li>Escrever várias despesas numa frase, como «15 almoço, 3 uber»: Lukitas separa-as em movimentos e vês antes de guardar; podes removê-los ou desfazer. O ditado por voz existe em espanhol e inglês, e em beta em português e italiano.</li>
 <li>Ver quanto gastaste este mês e os teus movimentos, agrupados por dia.</li>
 <li>Um widget no ecrã inicial e um mosaico nas definições rápidas, para registar sem procurar a app.</li>
 <li>Em português, italiano, espanhol e inglês, de noite ou de dia, com sons e vibração suaves que podes desligar.</li>
@@ -13,7 +13,7 @@ Lukitas é o teu orçamento, e vais gostar de cuidar dele: regista uma despesa e
 Experimenta sem email, como convidado, e adiciona o teu email depois sem perderes o que registaste. Com email entras com um código de 6 dígitos ou uma ligação e, se quiseres, com uma passkey (a tua impressão digital ou o bloqueio do telemóvel; requer Android 14 ou mais recente). Sem email, se perderes o telemóvel ou apagares a app, perdes os teus dados, e uma conta sem email é apagada passados 60 dias sem abrir Lukitas: a app avisa ao fim de 45.
 
 <b>Privacidade</b>
-Sem anúncios, sem análises nem relatórios automáticos de falhas, sem Google Play Services nem Firebase. O ditado (em português, em beta, italiano, espanhol e inglês) funciona no teu telemóvel, sem internet, com os modelos de voz livres Vosk (Apache-2.0): o que dizes não sai de lá. O modelo da tua língua descarrega-se uma só vez (entre 30 e 50 MB) e podes apagá-lo nas Definições. Pede apenas as permissões que usa: internet, microfone (para o ditado), vibração, avisos, e o que o widget precisa para se atualizar (saber se há rede e reagendar-se quando o telemóvel reinicia).
+Sem anúncios, sem análises nem relatórios automáticos de falhas, sem Google Play Services nem Firebase. O ditado (em espanhol e inglês, e em beta em português e italiano) funciona no teu telemóvel, sem internet, com os modelos de voz livres Vosk (Apache-2.0): o que dizes não sai de lá. O modelo da tua língua descarrega-se uma só vez (entre 30 e 50 MB) e podes apagá-lo nas Definições. Pede apenas as permissões que usa: internet, microfone (para o ditado), vibração, avisos, e o que o widget precisa para se atualizar (saber se há rede e reagendar-se quando o telemóvel reinicia).
 
 Os avisos são apenas dois, ambos locais e que podes desligar: «Vence hoje…» às 9:00 com os pagamentos recorrentes do dia, e um aviso se passarem 45 dias sem abrir a app e a tua conta não tiver email.
 

@@ -1,5 +1,8 @@
-// Generated: the Italian compound number words (1-999 as one word, and the thousands built on
-// them) that are in vosk-model-small-it-0.22's vocabulary (see test/fixtures/).
+// The Italian compound number words the grammar pass may hear: every word of `italianNumbers`
+// (parser/words.dart, 1 to 999 written as one word) and every `<number>mila` (`duemila`,
+// `quindicimila`) that is in vosk-model-small-it-0.22's vocabulary. Kept by hand, not generated:
+// when the parser's table or the model changes, redo the intersection and the fixture
+// test/fixtures/vosk_vocab_it.json, which grammar_test.dart checks this list against.
 const italianNumberWordsInModel = <String>[
   'cento',
   'centocinquanta',

@@ -106,7 +106,7 @@ Examples are European Portuguese (`pt-PT`). The voice model for `pt` is trained 
 | Verbs, expense | `ho speso`, `speso`, `ho pagato`, `pagato`, `ho comprato`, `comprato` | `gastei`, `paguei`, `comprei` |
 | Verbs, income | `ho ricevuto`, `ricevuto`, `ho guadagnato`, `guadagnato`, `ho incassato`, `incassato`, `mi hanno pagato` | `recebi`, `ganhei`, `me pagaram`, `pagaram-me` |
 | Dates | `oggi`, `ieri`, `l'altro ieri`/`altroieri`/`avantieri`, a weekday (`lunedì` … `domenica`) | `hoje`, `ontem`, `anteontem`/`antes de ontem`, a weekday (`sábado`, `domingo`, and `segunda-feira` … `sexta-feira`, one date word; see the weekday rule) |
-| Dropped from names | `in per al alla allo ai alle di del dello della dei delle da a il lo la i gli le un uno una nel nella nello nei nelle sul sulla` and the elided `l' d' dell' all' nell'` | `em no na nos nas para pra de do da dos das por pelo pela pelos pelas ao aos a as o os um uma uns umas` |
+| Dropped from names | `in per al alla allo ai alle di del dello della dei delle da a il lo la i gli le un uno una nel nella nello nei nelle sul sullo sulla sui sulle sugli dal dallo dalla dai dalle dagli` and the elided `l' d' dell' all' nell' sull' dall'` | `em no na nos nas para pra de do da dos das por pelo pela pelos pelas ao aos a as o os um uma uns umas` |
 | Connectors | `e`, `ed`, `anche`, `,` | `e`, `também`, `,` |
 
 - **Italian numbers are one word.** A number written as one word (`quindicimila`, `duemilacinquecento`, `milleduecento`) is read as the words it is made of: `quindici mila`, `due mila cinquecento`, `mille duecento`. Only a whole word that is made of number words counts, so `treno` and `camilla` are names. The same words written apart (`quindici mila`, `cento venti`) read the same.

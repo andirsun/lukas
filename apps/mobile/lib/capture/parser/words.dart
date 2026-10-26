@@ -148,7 +148,8 @@ const droppedWords = {
 const _droppedWordsIt = {
   'in', 'per', 'al', 'alla', 'allo', 'ai', 'alle', 'all', 'di', 'del', 'della', 'dello', 'dei', //
   'delle', 'dell', 'd', 'da', 'a', 'il', 'lo', 'la', 'i', 'gli', 'le', 'l', 'un', 'uno', 'una', //
-  'nel', 'nella', 'nello', 'nei', 'nelle', 'nell', 'sul', 'sulla',
+  'nel', 'nella', 'nello', 'nei', 'nelle', 'nell', 'sul', 'sulla', 'sullo', 'sui', 'sulle', //
+  'sugli', 'sull', 'dal', 'dalla', 'dallo', 'dai', 'dalle', 'dagli', 'dall',
 };
 const _droppedWordsPt = {
   'em', 'no', 'na', 'nos', 'nas', 'para', 'pra', 'de', 'do', 'da', 'dos', 'das', 'por', 'pelo', //
