@@ -27,9 +27,6 @@ import '../support/parity_home.dart';
 /// Update the goldens with `flutter test --update-goldens test/parity/it_pt_parity_test.dart`, then
 /// compare with `dart run tool/parity/compose.dart` (docs/mobile/parity.md).
 
-/// What the stories say in each language.
-const _movements = {'it': 'Movimenti', 'pt': 'Movimentos'};
-
 Widget _home() => ShellFrame(
   padding: const EdgeInsets.all(16),
   // The web has no 🎤 (spec §5).
@@ -114,70 +111,139 @@ List<Override> _settingsOverrides(ParityFixture fixture) {
   ];
 }
 
+Future<void> _homeTransactions(
+  WidgetTester t, {
+  required String id,
+  required String story,
+  required Locale locale,
+  required String movements,
+}) async {
+  final fixture = ParityFixtures.load(story);
+  await parityGolden(
+    t,
+    id,
+    _home(),
+    theme: 'night',
+    locale: locale,
+    overrides: parityHomeOverrides(FixtureHomeRepository(fixture)),
+    act: (t) async {
+      await precacheLukitas(t);
+      await t.tap(find.text(movements));
+      await t.pumpAndSettle();
+    },
+  );
+}
+
+Future<void> _addSheet(
+  WidgetTester t, {
+  required String id,
+  required String story,
+  required Locale locale,
+}) async {
+  final fixture = ParityFixtures.load(story);
+  await parityGolden(
+    t,
+    id,
+    _home(),
+    theme: 'night',
+    locale: locale,
+    overrides: parityHomeOverrides(
+      FixtureHomeRepository(fixture),
+      add: FixtureAddRepository(fixture),
+    ),
+    act: (t) async {
+      await precacheLukitas(t);
+      await t.tap(find.byKey(const Key('home.add')));
+      await t.pumpAndSettle();
+      await _keys(t, '39,9');
+      await t.tap(find.byKey(const Key('category.cat-groceries')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const Key('add.more')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const Key('add.pending')));
+      await t.pumpAndSettle();
+      await _clickFocus(t, find.byKey(const Key('add.pending')));
+    },
+  );
+}
+
+Future<void> _settingsPage(
+  WidgetTester t, {
+  required String id,
+  required String story,
+  required Locale locale,
+}) async {
+  final fixture = ParityFixtures.load(story);
+  await parityGolden(
+    t,
+    id,
+    _settings(),
+    theme: 'night',
+    locale: locale,
+    overrides: _settingsOverrides(fixture),
+  );
+}
+
+// The ids are written out in full: test/parity/harness_test.dart looks for each one in its file.
 void main() {
-  for (final entry in {'it': 'italian', 'pt': 'portuguese'}.entries) {
-    final code = entry.key;
-    final name = entry.value;
-    final movements = _movements[code]!;
-    final locale = Locale(code);
-
-    testWidgets('it/pt parity: Movimenti, the list ($name, night)', (t) async {
-      final fixture = ParityFixtures.load('home-home--transactions-$name');
-      await parityGolden(
-        t,
-        'home-transactions-$name',
-        _home(),
-        theme: 'night',
-        locale: locale,
-        overrides: parityHomeOverrides(FixtureHomeRepository(fixture)),
-        act: (t) async {
-          await precacheLukitas(t);
-          await t.tap(find.text(movements));
-          await t.pumpAndSettle();
-        },
-      );
-    });
-
-    testWidgets('it/pt parity: the add sheet, more options open, pending ticked ($name, night)', (
+  testWidgets('it/pt parity: Movimenti, the list (italian, night)', (t) async {
+    await _homeTransactions(
       t,
-    ) async {
-      final fixture = ParityFixtures.load('home-home--more-options-$name');
-      await parityGolden(
-        t,
-        'add-sheet-more-options-$name',
-        _home(),
-        theme: 'night',
-        locale: locale,
-        overrides: parityHomeOverrides(
-          FixtureHomeRepository(fixture),
-          add: FixtureAddRepository(fixture),
-        ),
-        act: (t) async {
-          await precacheLukitas(t);
-          await t.tap(find.byKey(const Key('home.add')));
-          await t.pumpAndSettle();
-          await _keys(t, '39,9');
-          await t.tap(find.byKey(const Key('category.cat-groceries')));
-          await t.pumpAndSettle();
-          await t.tap(find.byKey(const Key('add.more')));
-          await t.pumpAndSettle();
-          await t.tap(find.byKey(const Key('add.pending')));
-          await t.pumpAndSettle();
-          await _clickFocus(t, find.byKey(const Key('add.pending')));
-        },
-      );
-    });
+      id: 'home-transactions-italian',
+      story: 'home-home--transactions-italian',
+      locale: const Locale('it'),
+      movements: 'Movimenti',
+    );
+  });
 
-    testWidgets('it/pt parity: settings, every card from the top ($name, night)', (t) async {
-      final fixture = ParityFixtures.load('manage-settings--app-sections-$name');
-      await parityGolden(
+  testWidgets('it/pt parity: Movimentos, the list (portuguese, night)', (t) async {
+    await _homeTransactions(
+      t,
+      id: 'home-transactions-portuguese',
+      story: 'home-home--transactions-portuguese',
+      locale: const Locale('pt'),
+      movements: 'Movimentos',
+    );
+  });
+
+  testWidgets('it/pt parity: the add sheet, more options open, pending ticked (italian, night)', (
+    t,
+  ) async {
+    await _addSheet(
+      t,
+      id: 'add-sheet-more-options-italian',
+      story: 'home-home--more-options-italian',
+      locale: const Locale('it'),
+    );
+  });
+
+  testWidgets(
+    'it/pt parity: the add sheet, more options open, pending ticked (portuguese, night)',
+    (t) async {
+      await _addSheet(
         t,
-        'settings-app-sections-$name',
-        _settings(),
-        theme: 'night',
-        locale: locale,
-        overrides: _settingsOverrides(fixture),
+        id: 'add-sheet-more-options-portuguese',
+        story: 'home-home--more-options-portuguese',
+        locale: const Locale('pt'),
       );
-    });
-  }
+    },
+  );
+
+  testWidgets('it/pt parity: settings, every card from the top (italian, night)', (t) async {
+    await _settingsPage(
+      t,
+      id: 'settings-app-sections-italian',
+      story: 'manage-settings--app-sections-italian',
+      locale: const Locale('it'),
+    );
+  });
+
+  testWidgets('it/pt parity: settings, every card from the top (portuguese, night)', (t) async {
+    await _settingsPage(
+      t,
+      id: 'settings-app-sections-portuguese',
+      story: 'manage-settings--app-sections-portuguese',
+      locale: const Locale('pt'),
+    );
+  });
 }
