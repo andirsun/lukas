@@ -251,6 +251,143 @@ const EN: DemoSeed = {
   pastMonths: PAST_MONTHS,
 };
 
+/**
+ * The euro months of the English seed, without the words: the day, the category and the amount of
+ * each purchase, in order. Italian and Portuguese tell the same story (eating out over its budget,
+ * coffee near it, rent using all of its own) with their own names, in `euroSeed`.
+ */
+const EURO_MONTH: Omit<DemoSpend, "name">[] = EN.month.map(({ day, category, amount }) => ({
+  day,
+  category,
+  amount,
+}));
+
+/** The names of `EURO_MONTH`'s purchases, in the same order. */
+interface EuroWords {
+  locale: Locale;
+  timezone: string;
+  categories: Record<string, string>;
+  recurrences: { rent: string; salary: string };
+  month: string[];
+}
+
+/** The English seed's euros and story, told in another language: the same amounts and budgets. */
+function euroSeed(words: EuroWords): DemoSeed {
+  const budgets = Object.fromEntries(
+    EN.categories.map((c) => [c.key, c.budget] as const),
+  ) as Record<string, number | null>;
+  return {
+    profile: { ...EN.profile, locale: words.locale, timezone: words.timezone },
+    categories: categories(words.categories, budgets),
+    recurrences: EN.recurrences.map((r) => ({
+      ...r,
+      name:
+        r.key === "rent"
+          ? words.recurrences.rent
+          : r.key === "salary"
+            ? words.recurrences.salary
+            : r.name,
+    })),
+    month: EURO_MONTH.map((spend, i) => ({ ...spend, name: words.month[i] as string })),
+    pastMonths: PAST_MONTHS,
+  };
+}
+
+/** Italian: someone in Milan, in euros. */
+const IT: DemoSeed = euroSeed({
+  locale: "it",
+  timezone: "Europe/Rome",
+  categories: {
+    groceries: "Spesa",
+    eating_out: "Ristoranti",
+    transport: "Trasporti",
+    home: "Affitto",
+    bills: "Bollette",
+    health: "Salute",
+    fun: "Svago",
+    coffee: "Caffè",
+    salary: "Stipendio",
+  },
+  recurrences: { rent: "Affitto", salary: "Stipendio" },
+  month: [
+    "Abbonamento ai mezzi",
+    "Spesa settimanale",
+    "Caffè",
+    "Pranzo con il team",
+    "Farmacia",
+    "Luce",
+    "Caffè",
+    "Pizza con gli amici",
+    "Internet",
+    "Caffè e cornetto",
+    "Taxi",
+    "Mercato",
+    "Caffè",
+    "Hamburger",
+    "Acqua",
+    "Caffè",
+    "Biglietti del treno",
+    "Spesa settimanale",
+    "Caffè e pasticcino",
+    "Cena di compleanno",
+    "Caffè",
+    "Cinema",
+    "Libro",
+    "Panificio",
+    "Caffè",
+    "Spesa grande",
+    "Caffè",
+    "Caffè con Andrés",
+  ],
+});
+
+/** European Portuguese: someone in Lisbon, in euros. */
+const PT: DemoSeed = euroSeed({
+  locale: "pt",
+  timezone: "Europe/Lisbon",
+  categories: {
+    groceries: "Supermercado",
+    eating_out: "Restaurantes",
+    transport: "Transportes",
+    home: "Renda",
+    bills: "Contas",
+    health: "Saúde",
+    fun: "Lazer",
+    coffee: "Café",
+    salary: "Salário",
+  },
+  recurrences: { rent: "Renda", salary: "Salário" },
+  month: [
+    "Passe de metro",
+    "Compras da semana",
+    "Café",
+    "Almoço com a equipa",
+    "Farmácia",
+    "Eletricidade",
+    "Café",
+    "Pizza com amigos",
+    "Internet",
+    "Café e croissant",
+    "Táxi",
+    "Mercado",
+    "Café",
+    "Hambúrgueres",
+    "Água",
+    "Café",
+    "Bilhetes de comboio",
+    "Compras da semana",
+    "Café e pastel de nata",
+    "Jantar de anos",
+    "Café",
+    "Cinema",
+    "Livro",
+    "Padaria",
+    "Café",
+    "Compras grandes",
+    "Café",
+    "Café com o Andrés",
+  ],
+});
+
 /** The demo's seed per language: the page's language picks the person (and her currency). */
-// Italian and Portuguese use the Spanish seed until they have their own.
-export const DEMO_SEED: Record<Locale, DemoSeed> = { es: ES, en: EN, it: ES, pt: ES };
+export const DEMO_SEED: Record<Locale, DemoSeed> = { es: ES, en: EN, it: IT, pt: PT };

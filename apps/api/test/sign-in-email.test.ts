@@ -69,7 +69,7 @@ describe("sign-in email", () => {
   });
 
   test("the text part has the same content, with the raw link on its own line", () => {
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       const mail = signInEmail({ ...input, locale });
       expect(mail.text.split("\n")).toContain(link);
       expect(mail.text).toContain("123456");
@@ -81,6 +81,47 @@ describe("sign-in email", () => {
     );
     expect(signInEmail({ ...input, locale: "es" }).text).toContain(
       "Lukitas · gratis y de código abierto",
+    );
+  });
+
+  test("Italian: subject, preheader, heading, button, expiry (singular too), ignore note, footer", () => {
+    const mail = signInEmail({ ...input, locale: "it" });
+    expect(mail.subject).toBe("Il tuo codice Lukitas: 123456");
+    expect(mail.html).toContain("Il tuo codice per entrare in Lukitas: 123456");
+    expect(mail.html).toContain('lang="it"');
+    const text = visibleText(mail.html);
+    expect(text).toContain("Ciao! Questo è il tuo codice per entrare");
+    expect(text).toContain("ENTRA IN LUKITAS");
+    expect(text).toContain("Il codice e il link scadono tra 10 minuti.");
+    expect(text).toContain(
+      "Se non hai chiesto questa email, ignorala: nessuno può entrare senza questo codice.",
+    );
+    expect(text).toContain("Lukitas · gratis e open source");
+    expect(signInEmail({ ...input, locale: "it", expiresInMinutes: 1 }).text).toContain(
+      "scadono tra 1 minuto.",
+    );
+    // Not Spanish, not English.
+    expect(text).not.toMatch(/Tu código|Your Lukitas|ENTRAR A/);
+  });
+
+  test("European Portuguese: the tu form, ligação and not link, no Brazilian words", () => {
+    const mail = signInEmail({ ...input, locale: "pt" });
+    expect(mail.subject).toBe("O teu código Lukitas: 123456");
+    expect(mail.html).toContain("Código para entrares em Lukitas: 123456");
+    expect(mail.html).toContain('lang="pt"');
+    const text = visibleText(mail.html);
+    expect(text).toContain("Olá! Este é o teu código para entrar");
+    expect(text).toContain("ENTRAR EM LUKITAS");
+    expect(text).toContain("O código e a ligação expiram dentro de 10 minutos.");
+    expect(text).toContain(
+      "Se não pediste este email, ignora-o: ninguém consegue entrar sem este código.",
+    );
+    expect(text).toContain("Lukitas · grátis e de código aberto");
+    expect(signInEmail({ ...input, locale: "pt", expiresInMinutes: 1 }).text).toContain(
+      "dentro de 1 minuto.",
+    );
+    expect(text).not.toMatch(
+      /Tu código|Your Lukitas|ENTRAR A|\bvocê\b|\bseu código\b|\bcelular\b/i,
     );
   });
 
@@ -153,12 +194,12 @@ describe("sign-in email", () => {
     expect(mail.html).toContain("&lt;b&gt;&quot;&amp;&lt;/b&gt;");
   });
 
-  test("neither language names the product Lukas, or calls it a game", () => {
-    for (const locale of ["es", "en"] as const) {
+  test("no language names the product Lukas, or calls it a game", () => {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       const mail = signInEmail({ ...input, locale });
       const all = `${mail.subject}\n${mail.text}\n${visibleText(mail.html)}`;
       expect(all).not.toMatch(/\bLukas\b/);
-      expect(all).not.toMatch(/\b(game|juego)\b/i);
+      expect(all).not.toMatch(/\b(game|juego|gioco|jogo)\b/i);
     }
   });
 });
@@ -189,8 +230,32 @@ describe("claim email (a guest saves their progress)", () => {
     expect(text).not.toMatch(/\blink\b/i);
   });
 
+  test("Italian: the save-progress subject and heading, the code, the expiry, no link", () => {
+    const mail = claimEmail({ ...claim, locale: "it" });
+    expect(mail.subject).toBe("Il tuo codice per salvare i tuoi progressi: 123456");
+    const text = visibleText(mail.html);
+    expect(text).toContain("Il tuo codice per salvare i tuoi progressi");
+    expect(text).toContain("Scrivilo in Lukitas per salvare i tuoi progressi con questa email.");
+    expect(text).toContain("Il codice scade tra 10 minuti.");
+    expect(text).not.toContain("ENTRA IN LUKITAS");
+    expect(text).not.toMatch(/\blink\b|pulsante/i);
+    expect(mail.html).toContain('lang="it"');
+  });
+
+  test("European Portuguese: the save-progress subject and heading, the code, the expiry, no link", () => {
+    const mail = claimEmail({ ...claim, locale: "pt" });
+    expect(mail.subject).toBe("O teu código para guardares o teu progresso: 123456");
+    const text = visibleText(mail.html);
+    expect(text).toContain("O teu código para guardar o teu progresso");
+    expect(text).toContain("Escreve-o em Lukitas para guardar o teu progresso com este email.");
+    expect(text).toContain("O código expira dentro de 10 minutos.");
+    expect(text).not.toContain("ENTRAR EM LUKITAS");
+    expect(text).not.toMatch(/\bligação\b|\blink\b|botão/i);
+    expect(mail.html).toContain('lang="pt"');
+  });
+
   test("the text part has the code and the web URL, and no other link", () => {
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       const mail = claimEmail({ ...claim, locale });
       expect(mail.text).toContain("123456");
       expect(mail.text.match(/https?:\/\/\S+/g)).toEqual([WEB_URL]);

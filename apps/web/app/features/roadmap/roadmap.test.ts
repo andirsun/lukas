@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import en from "../../i18n/messages/en.json" with { type: "json" };
 import es from "../../i18n/messages/es.json" with { type: "json" };
+import itMessages from "../../i18n/messages/it.json" with { type: "json" };
+import ptMessages from "../../i18n/messages/pt.json" with { type: "json" };
 import {
   LANDING_ROADMAP_IDS,
   ROADMAP_ITEMS,
@@ -21,7 +23,12 @@ function flatten(tree: Tree, prefix = ""): Record<string, string> {
   return out;
 }
 
-const catalogs = { es: flatten(es), en: flatten(en) } as const;
+const catalogs = {
+  es: flatten(es),
+  en: flatten(en),
+  it: flatten(itMessages),
+  pt: flatten(ptMessages),
+} as const;
 
 describe("roadmap items", () => {
   it("has unique ids", () => {
@@ -49,16 +56,17 @@ describe("roadmap items", () => {
       "roadmap.landing.title",
       "roadmap.landing.cta",
     ];
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       for (const key of keys) expect(catalogs[locale], `${locale}:${key}`).toHaveProperty([key]);
     }
   });
 
   it("promises no dates and no call to propose or vote", () => {
     const datePattern =
-      /\b(20\d\d|Q[1-4]|T[1-4])\b|\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|january|february|march|april|june|july|august|september|october|november|december)\b/i;
-    const votePattern = /discussions|\bvot(a|o|e|ar|ing|es)\b|\bpropon(e|er|ga)\b|\bpropose\b/i;
-    for (const locale of ["es", "en"] as const) {
+      /\b(20\d\d|Q[1-4]|T[1-4])\b|\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|january|february|march|april|june|july|august|september|october|november|december|gennaio|febbraio|aprile|maggio|giugno|luglio|settembre|ottobre|dicembre|janeiro|fevereiro|março|maio|junho|julho|setembro|outubro|novembro|dezembro)\b/i;
+    const votePattern =
+      /discussions|\bvot(a|o|e|ar|ing|es|are|ate)\b|\bpropon(e|er|ga)\b|\bpropose\b|\bproponi\b|\bpropõe\b/i;
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       for (const [key, value] of Object.entries(catalogs[locale])) {
         if (!key.startsWith("roadmap.")) continue;
         expect(value, `${locale}:${key}`).not.toMatch(datePattern);
@@ -68,10 +76,12 @@ describe("roadmap items", () => {
   });
 
   it("never calls Lukitas a game", () => {
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       for (const [key, value] of Object.entries(catalogs[locale])) {
         if (!key.startsWith("roadmap.")) continue;
-        expect(value, `${locale}:${key}`).not.toMatch(/\bjueg(o|a)s?\b|\bgames?\b/i);
+        expect(value, `${locale}:${key}`).not.toMatch(
+          /\bjueg(o|a)s?\b|\bgames?\b|\bgiochi?\b|\bjogos?\b/i,
+        );
       }
     }
   });

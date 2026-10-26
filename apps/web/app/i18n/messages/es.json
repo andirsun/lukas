@@ -13,7 +13,9 @@
   "language": {
     "label": "Idioma",
     "es": "Español",
-    "en": "English"
+    "en": "English",
+    "it": "Italiano",
+    "pt": "Português"
   },
   "mascot": {
     "happy": "Lukitas, contento",
@@ -180,7 +182,7 @@
       },
       "languages": {
         "q": "¿En qué idiomas está?",
-        "a": "En español y en inglés. Cambias de idioma cuando quieras en Ajustes, y los montos y las fechas siguen el formato de tu idioma."
+        "a": "En español, inglés, italiano y portugués. Cambias de idioma cuando quieras en Ajustes, y los montos y las fechas siguen el formato de tu idioma."
       }
     },
     "closing": {

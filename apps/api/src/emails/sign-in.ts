@@ -1,6 +1,6 @@
 import type { Mail } from "../mailer.ts";
 
-type Locale = "es" | "en";
+type Locale = "es" | "en" | "it" | "pt";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -43,6 +43,31 @@ const COPY = {
     footer: "Lukitas · free and open source",
     alt: "Lukitas waving hello",
   },
+  it: {
+    subject: (code: string) => `Il tuo codice Lukitas: ${code}`,
+    preheader: (code: string) => `Il tuo codice per entrare in Lukitas: ${code}`,
+    heading: "Ciao! Questo è il tuo codice per entrare",
+    lead: "Scrivilo in Lukitas, oppure tocca il pulsante per entrare subito.",
+    button: "ENTRA IN LUKITAS",
+    buttonFallback: "Il pulsante non funziona? Copia questo link nel tuo browser:",
+    expiry: (m: number) => `Il codice e il link scadono tra ${plural(m, "minuto", "minuti")}.`,
+    ignore: "Se non hai chiesto questa email, ignorala: nessuno può entrare senza questo codice.",
+    footer: "Lukitas · gratis e open source",
+    alt: "Lukitas che saluta",
+  },
+  pt: {
+    subject: (code: string) => `O teu código Lukitas: ${code}`,
+    preheader: (code: string) => `Código para entrares em Lukitas: ${code}`,
+    heading: "Olá! Este é o teu código para entrar",
+    lead: "Escreve-o em Lukitas ou toca no botão para entrares logo.",
+    button: "ENTRAR EM LUKITAS",
+    buttonFallback: "O botão não funciona? Copia esta ligação para o teu navegador:",
+    expiry: (m: number) =>
+      `O código e a ligação expiram dentro de ${plural(m, "minuto", "minutos")}.`,
+    ignore: "Se não pediste este email, ignora-o: ninguém consegue entrar sem este código.",
+    footer: "Lukitas · grátis e de código aberto",
+    alt: "Lukitas a acenar",
+  },
 } satisfies Record<Locale, Copy>;
 
 /** A guest saving their progress: the code that attaches this email to their account. No link. */
@@ -69,6 +94,29 @@ const CLAIM_COPY = {
     expiry: (m: number) => `The code expires in ${plural(m, "minute", "minutes")}.`,
     ignore:
       "If you didn't ask for this email, ignore it: nobody can use your email without this code.",
+  },
+  it: {
+    ...COPY.it,
+    subject: (code: string) => `Il tuo codice per salvare i tuoi progressi: ${code}`,
+    preheader: (code: string) => `Il tuo codice per salvare i tuoi progressi in Lukitas: ${code}`,
+    heading: "Il tuo codice per salvare i tuoi progressi",
+    lead: "Scrivilo in Lukitas per salvare i tuoi progressi con questa email.",
+    button: undefined,
+    buttonFallback: undefined,
+    expiry: (m: number) => `Il codice scade tra ${plural(m, "minuto", "minuti")}.`,
+    ignore:
+      "Se non hai chiesto questa email, ignorala: nessuno può usare la tua email senza questo codice.",
+  },
+  pt: {
+    ...COPY.pt,
+    subject: (code: string) => `O teu código para guardares o teu progresso: ${code}`,
+    preheader: (code: string) => `O teu código para guardares o teu progresso em Lukitas: ${code}`,
+    heading: "O teu código para guardar o teu progresso",
+    lead: "Escreve-o em Lukitas para guardar o teu progresso com este email.",
+    button: undefined,
+    buttonFallback: undefined,
+    expiry: (m: number) => `O código expira dentro de ${plural(m, "minuto", "minutos")}.`,
+    ignore: "Se não pediste este email, ignora-o: ninguém pode usar o teu email sem este código.",
   },
 } satisfies Record<Locale, Copy>;
 

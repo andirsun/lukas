@@ -2,7 +2,7 @@ import type { Decorator, Preview } from "@storybook/react-vite";
 import { MotionConfig } from "motion/react";
 import { configure } from "storybook/test";
 import { AppMessages } from "../app/i18n/AppMessages.tsx";
-import type { Locale } from "../app/i18n/format.ts";
+import { isLocale, type Locale } from "../app/i18n/format.ts";
 import { IntlProvider } from "../app/i18n/IntlProvider.tsx";
 import { ThemeProvider } from "../app/theme/ThemeProvider.tsx";
 import { THEME_STORAGE_KEY, type Theme } from "../app/theme/theme-bootstrap.ts";
@@ -21,7 +21,7 @@ configure({ asyncUtilTimeout: 5000 });
 
 const withThemeAndLocale: Decorator = (Story, context) => {
   const theme: Theme = context.globals.theme === "day" ? "day" : "night";
-  const locale: Locale = context.globals.locale === "en" ? "en" : "es";
+  const locale: Locale = isLocale(context.globals.locale) ? context.globals.locale : "es";
   // Set during render (not in an effect) so the first paint and the a11y run see the theme.
   document.documentElement.dataset.theme = theme;
   // The app's ThemeProvider (which components such as ThemeToggle read) starts from the stored
@@ -76,6 +76,8 @@ const preview: Preview = {
         items: [
           { value: "es", title: "Español" },
           { value: "en", title: "English" },
+          { value: "it", title: "Italiano" },
+          { value: "pt", title: "Português" },
         ],
         dynamicTitle: true,
       },

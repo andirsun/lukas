@@ -334,3 +334,49 @@ test("Ahora no is remembered: the offer does not come back on this device", asyn
   await page.getByRole("textbox", { name: "Dígito 1 de 6" }).fill(second.code);
   await expect(page).toHaveURL(/\/welcome$/);
 });
+
+for (const language of [
+  {
+    lang: "it",
+    heading: "Entra in Lukitas",
+    subject: /^Il tuo codice Lukitas: \d{6}$/,
+    email: "La tua email",
+    send: "Invia codice",
+    title: "Controlla la tua email",
+    offer: "Entrare con l'impronta la prossima volta?",
+    notNow: "Non ora",
+  },
+  {
+    lang: "pt",
+    heading: "Entra em Lukitas",
+    subject: /^O teu código Lukitas: \d{6}$/,
+    email: "O teu email",
+    send: "Enviar código",
+    title: "Verifica o teu email",
+    offer: "Entrar com a impressão digital da próxima vez?",
+    notNow: "Agora não",
+  },
+] as const) {
+  test(`${language.lang}: the page, the email and the new profile speak the language of the landing`, async ({
+    page,
+  }) => {
+    const email = freshEmail(language.lang);
+    await page.goto(`/sign-in?lang=${language.lang}`);
+    await expect(page.getByRole("heading", { level: 1, name: language.heading })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", language.lang);
+    await page.getByRole("textbox", { name: language.email }).fill(email);
+    await page.getByRole("button", { name: language.send }).click();
+    await expect(page.getByRole("heading", { level: 1, name: language.title })).toBeVisible();
+
+    const mail = await readSignInMail(email);
+    expect(mail.subject).toMatch(language.subject);
+    expect(new URL(mail.link).searchParams.get("lang")).toBe(language.lang);
+
+    await page.keyboard.type(mail.code);
+    await expect(page.getByRole("heading", { level: 1, name: language.offer })).toBeVisible();
+    await page.getByRole("button", { name: language.notNow }).click();
+    await expect(page).toHaveURL(/\/welcome$/);
+    const me = await page.request.get("/api/v1/me");
+    expect(await me.json()).toMatchObject({ email, locale: language.lang, currency: "EUR" });
+  });
+}

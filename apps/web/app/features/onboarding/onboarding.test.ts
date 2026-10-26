@@ -246,6 +246,46 @@ describe("categoryChips", () => {
     archived,
   });
 
+  it("names the suggestions in each language, none of them left in Spanish", () => {
+    const names = (locale: "es" | "en" | "it" | "pt") =>
+      categoryChips([], locale).map((chip) => chip.name);
+    expect(names("it")).toEqual([
+      "Supermercato",
+      "Ristorante",
+      "Casa",
+      "Trasporti",
+      "Tempo libero",
+      "Abbonamenti",
+      "Salute",
+      "Stipendio",
+    ]);
+    expect(names("pt")).toEqual([
+      "Supermercado",
+      "Restaurante",
+      "Casa",
+      "Transportes",
+      "Lazer",
+      "Subscrições",
+      "Saúde",
+      "Salário",
+    ]);
+    // An imported "Stipendio" or "Salário" covers the salary suggestion in any language.
+    const covered = categoryChips(
+      [
+        {
+          id: "1",
+          name: "Stipendio",
+          kind: "income",
+          icon: "cash",
+          color: "green",
+          archived: false,
+        },
+      ],
+      "pt",
+    );
+    expect(covered.filter((chip) => chip.suggestionKey === "salary")).toEqual([]);
+  });
+
   it("is the suggestions, in order, when the person has no categories", () => {
     const chips = categoryChips([], "es");
     expect(chips.map((c) => c.name)).toEqual(SUGGESTED_CATEGORIES.map((s) => s.names.es));

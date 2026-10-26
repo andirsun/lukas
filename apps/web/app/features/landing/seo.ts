@@ -1,8 +1,10 @@
 import type { LinkDescriptor, MetaDescriptor } from "react-router";
 import { createTranslator } from "use-intl/core";
-import type { Locale } from "../../i18n/format.ts";
+import { intlTag, LOCALES, type Locale } from "../../i18n/format.ts";
 import en from "../../i18n/messages/en.json" with { type: "json" };
 import es from "../../i18n/messages/es.json" with { type: "json" };
+import it from "../../i18n/messages/it.json" with { type: "json" };
+import pt from "../../i18n/messages/pt.json" with { type: "json" };
 import { SITE_ORIGIN } from "../../site/config.ts";
 import { LANDING_PATH, PAGE_PATH, ROADMAP_PATH, type SitePage } from "../../site/paths.ts";
 import { landingFontPreloads } from "./font-preloads.ts";
@@ -12,8 +14,7 @@ export { LANDING_PATH };
 /** The 1200×630 share images rendered by `scripts/og/render.ts`. */
 const OG_IMAGE = { width: 1200, height: 630 };
 
-// Italian and Portuguese read Spanish until their catalogs land (spec §2.2).
-const CATALOGS = { es, en, it: es, pt: es } as const;
+const CATALOGS = { es, en, it, pt } as const;
 
 /** Absolute URLs use the site's origin (`VITE_SITE_URL`, see `app/site/config.ts`). */
 function absolute(path: string): string {
@@ -53,15 +54,22 @@ function pageLinks(page: SitePage, locale: Locale): LinkDescriptor[] {
   const paths = PAGE_PATH[page];
   return [
     { rel: "canonical", href: absolute(paths[locale]) },
-    { rel: "alternate", hrefLang: "es", href: absolute(paths.es) },
-    { rel: "alternate", hrefLang: "en", href: absolute(paths.en) },
+    ...LOCALES.map((language) => ({
+      rel: "alternate",
+      hrefLang: language,
+      href: absolute(paths[language]),
+    })),
     { rel: "alternate", hrefLang: "x-default", href: absolute(paths.es) },
   ];
 }
 
 /** Title, description and Open Graph / Twitter tags for a landing page. */
 export function landingMeta(locale: Locale): MetaDescriptor[] {
-  const t = createTranslator({ locale, messages: CATALOGS[locale], namespace: "landing.meta" });
+  const t = createTranslator({
+    locale: intlTag(locale),
+    messages: CATALOGS[locale],
+    namespace: "landing.meta",
+  });
   return pageMeta({
     locale,
     path: LANDING_PATH[locale],
@@ -90,8 +98,8 @@ export function landingLinks(locale: Locale): LinkDescriptor[] {
  */
 export function roadmapMeta(locale: Locale): MetaDescriptor[] {
   const messages = CATALOGS[locale];
-  const t = createTranslator({ locale, messages, namespace: "roadmap.meta" });
-  const image = createTranslator({ locale, messages, namespace: "landing.meta" });
+  const t = createTranslator({ locale: intlTag(locale), messages, namespace: "roadmap.meta" });
+  const image = createTranslator({ locale: intlTag(locale), messages, namespace: "landing.meta" });
   return pageMeta({
     locale,
     path: ROADMAP_PATH[locale],

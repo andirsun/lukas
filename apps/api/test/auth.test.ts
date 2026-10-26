@@ -158,12 +158,16 @@ describe("email code + magic link", () => {
     ["EN-gb", "Your Lukitas code", "en"],
     ["es-CO", "Tu código de Lukitas", "es"],
     ["es_419", "Tu código de Lukitas", "es"],
+    ["it-IT", "Il tuo codice Lukitas", "it"],
+    ["pt-PT", "O teu código Lukitas", "pt"],
+    ["pt-BR", "O teu código Lukitas", "pt"],
   ])(
     "a phone's language tag %j picks the email's language (the app sends the full tag)",
     async (tag, subject, lang) => {
       const email = `tag-${tag.toLowerCase().replace(/[^a-z0-9]/g, "")}@lukas.test`;
       // The opposite language in Accept-Language: the app's hint must win over it.
-      const accept = lang === "en" ? "es-CO,es;q=0.9" : "en-US,en;q=0.9";
+      const accept =
+        lang === "en" || lang === "it" || lang === "pt" ? "es-CO,es;q=0.9" : "en-US,en;q=0.9";
       await sendCode(email, { "x-lukas-locale": tag, "accept-language": accept });
       const mail = t.mailer.lastTo(email);
       expect(mail?.subject.startsWith(subject)).toBe(true);

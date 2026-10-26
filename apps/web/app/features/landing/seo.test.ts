@@ -58,3 +58,39 @@ describe("roadmapLinks", () => {
     expect(landingLinks("es")).toContainEqual({ rel: "canonical", href: `${SITE_ORIGIN}/` });
   });
 });
+
+describe("Italian and Portuguese pages", () => {
+  it("title and describe each page in its own language, at its own URL and share image", () => {
+    const it = landingMeta("it");
+    const pt = landingMeta("pt");
+    expect(it).toContainEqual({ title: "Lukitas · I tuoi soldi, finalmente chiari" });
+    expect(pt).toContainEqual({ title: "Lukitas · O teu dinheiro, finalmente claro" });
+    expect(metaContent(it, "property", "og:url")).toBe(`${SITE_ORIGIN}/it`);
+    expect(metaContent(pt, "property", "og:url")).toBe(`${SITE_ORIGIN}/pt`);
+    expect(metaContent(it, "property", "og:image")).toBe(`${SITE_ORIGIN}/og-it.png`);
+    expect(metaContent(pt, "property", "og:image")).toBe(`${SITE_ORIGIN}/og-pt.png`);
+    expect(roadmapMeta("it")).toContainEqual({ title: "Lukitas · Cosa arriva" });
+    expect(roadmapMeta("pt")).toContainEqual({ title: "Lukitas · O que vem aí" });
+    expect(metaContent(roadmapMeta("it"), "property", "og:url")).toBe(`${SITE_ORIGIN}/it/roadmap`);
+    expect(metaContent(roadmapMeta("pt"), "property", "og:url")).toBe(`${SITE_ORIGIN}/pt/roadmap`);
+  });
+
+  it("every page lists the four languages as alternates, plus x-default to Spanish", () => {
+    for (const links of [
+      landingLinks("it"),
+      landingLinks("pt"),
+      roadmapLinks("it"),
+      roadmapLinks("pt"),
+    ]) {
+      const hrefLangs = links.flatMap((link) =>
+        "rel" in link && link.rel === "alternate" ? [link.hrefLang] : [],
+      );
+      expect(hrefLangs).toEqual(["es", "en", "it", "pt", "x-default"]);
+    }
+    expect(landingLinks("pt")).toContainEqual({ rel: "canonical", href: `${SITE_ORIGIN}/pt` });
+    expect(roadmapLinks("it")).toContainEqual({
+      rel: "canonical",
+      href: `${SITE_ORIGIN}/it/roadmap`,
+    });
+  });
+});

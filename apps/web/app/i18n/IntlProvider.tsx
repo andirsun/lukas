@@ -14,17 +14,18 @@ import {
   IntlErrorCode,
   IntlProvider as UseIntlProvider,
 } from "use-intl";
-import { type Locale, localeFromPathname } from "./format.ts";
+import { intlTag, type Locale, localeFromPathname } from "./format.ts";
 import en from "./messages/en.json" with { type: "json" };
 import es from "./messages/es.json" with { type: "json" };
+import it from "./messages/it.json" with { type: "json" };
+import pt from "./messages/pt.json" with { type: "json" };
 
 /**
  * The public pages' messages (the landing, the roadmap, the switches in their header and footer).
  * The app's screens add the rest with `AppMessages` (catalog.ts), so visitors of the landing do
  * not download them.
  */
-// Italian and Portuguese read Spanish until their catalogs land (spec §2.2).
-const MESSAGES: Record<Locale, AbstractIntlMessages> = { es, en, it: es, pt: es };
+const MESSAGES: Record<Locale, AbstractIntlMessages> = { es, en, it, pt };
 
 interface LocaleContextValue {
   locale: Locale;
@@ -53,7 +54,11 @@ function IntlRoot({ locale, setLocale, children }: LocaleContextValue & { childr
 
   return (
     <LocaleContext.Provider value={value}>
-      <UseIntlProvider locale={locale} messages={MESSAGES[locale]} onError={reportIntlError}>
+      <UseIntlProvider
+        locale={intlTag(locale)}
+        messages={MESSAGES[locale]}
+        onError={reportIntlError}
+      >
         {children}
       </UseIntlProvider>
     </LocaleContext.Provider>

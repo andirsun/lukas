@@ -494,17 +494,23 @@ test.describe("landing-only build output", () => {
         "email",
         "en",
         "index.html",
+        "it",
         "lukas",
         "og-en.png",
         "og-es.png",
+        "og-it.png",
+        "og-pt.png",
+        "pt",
         "robots.txt",
         "roadmap",
         "sitemap.xml",
       ].sort(),
     );
-    expect(readdirSync(`${CLIENT}en`).sort()).toEqual(["index.html", "roadmap"]);
+    for (const language of ["en", "it", "pt"]) {
+      expect(readdirSync(`${CLIENT}${language}`).sort()).toEqual(["index.html", "roadmap"]);
+      expect(readdirSync(`${CLIENT}${language}/roadmap`)).toEqual(["index.html"]);
+    }
     expect(readdirSync(`${CLIENT}roadmap`)).toEqual(["index.html"]);
-    expect(readdirSync(`${CLIENT}en/roadmap`)).toEqual(["index.html"]);
     expect(existsSync(`${CLIENT}__spa-fallback.html`)).toBe(false);
   });
 
@@ -518,6 +524,9 @@ test.describe("landing-only build output", () => {
     expect(sitemap).toContain(`<loc>${ORIGIN}/en</loc>`);
     expect(sitemap).toContain(`<loc>${ORIGIN}/roadmap</loc>`);
     expect(sitemap).toContain(`<loc>${ORIGIN}/en/roadmap</loc>`);
+    for (const path of ["/it", "/pt", "/it/roadmap", "/pt/roadmap"]) {
+      expect(sitemap).toContain(`<loc>${ORIGIN}${path}</loc>`);
+    }
     expect(sitemap).toContain(`hreflang="en" href="${ORIGIN}/en/roadmap"`);
     expect(sitemap).not.toContain("lukas.app");
   });

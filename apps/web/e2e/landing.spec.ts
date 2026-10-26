@@ -45,7 +45,10 @@ const LOCALES = [
     signIn: "Entrar",
     toggleToDay: "Cambiar a modo día",
     toggleToNight: "Cambiar a modo noche",
-    other: { name: "English", path: "/en" },
+    name: "Español",
+    how: "Cómo funciona",
+    questions: "Preguntas",
+    other: { name: "English", path: "/en", lang: "en" },
     titlePart: "Tus lukas, por fin claras",
   },
   {
@@ -80,8 +83,92 @@ const LOCALES = [
     signIn: "Sign in",
     toggleToDay: "Switch to day mode",
     toggleToNight: "Switch to night mode",
-    other: { name: "Español", path: "/" },
+    name: "English",
+    how: "How it works",
+    questions: "Questions",
+    other: { name: "Español", path: "/", lang: "es" },
     titlePart: "Your money, finally clear",
+  },
+  {
+    locale: "it",
+    path: "/it",
+    headline: "I tuoi soldi, finalmente chiari.",
+    highlight: "soldi",
+    annotation: "Gratis, e lo sarà sempre!",
+    lead: "Lukitas è il tuo budget, e ti farà piacere prendertene cura.",
+    description: "Annota una spesa in pochi secondi e guarda dove va ogni centesimo.",
+    newTab: "(si apre in una nuova scheda)",
+    perks: "Gratis per sempre · Open source · Senza password",
+    openSourcePerk: "Open source",
+    removedQuestions: ["Dove se ne vanno tutti i miei soldi?", "Quanto mi costa vivere?"],
+    cta: "Inizia ora",
+    demoCta: "Provala senza account",
+    webCta: "Inizia",
+    soon: "Presto",
+    ways: ["Sul web", "App per Android e iOS", "Con la tua IA"],
+    importStep: "Porta il tuo storico",
+    importQuestion: "Posso portare il mio storico da altre app?",
+    freeQuestion: "È gratis?",
+    freeAnswer: "Sì, e lo sarà sempre.",
+    openSource: { title: "Open source", cta: "Vedi il codice su GitHub" },
+    metaDescription: [/Gratis per sempre/, /open source/],
+    banned: [/migliore amico/i, /\bgioc(o|hi)\b/i, /Inizia gratis/i],
+    overclaims: [
+      /non possa trapelare/i,
+      /end-to-end|da un capo all'altro/i,
+      /non possiamo vedere/i,
+      /a riposo/i,
+    ],
+    privacyAnswer:
+      "I tuoi dati viaggiano cifrati e non li vendiamo né li condividiamo mai con gli inserzionisti.",
+    faq: "Domande frequenti",
+    privacy: "Privacy",
+    signIn: "Entra",
+    toggleToDay: "Passa alla modalità giorno",
+    toggleToNight: "Passa alla modalità notte",
+    name: "Italiano",
+    how: "Come funziona",
+    questions: "Domande",
+    other: { name: "Português", path: "/pt", lang: "pt" },
+    titlePart: "I tuoi soldi, finalmente chiari",
+  },
+  {
+    locale: "pt",
+    path: "/pt",
+    headline: "O teu dinheiro, finalmente claro.",
+    highlight: "dinheiro",
+    annotation: "Grátis, e vai ser sempre!",
+    lead: "Lukitas é o teu orçamento, e vais gostar de cuidar dele.",
+    description: "Regista uma despesa em segundos e vê para onde vai cada cêntimo.",
+    newTab: "(abre num novo separador)",
+    perks: "Grátis para sempre · Código aberto · Sem palavras-passe",
+    openSourcePerk: "Código aberto",
+    removedQuestions: ["Para onde vai todo o meu dinheiro?", "Quanto me custa viver?"],
+    cta: "Começa agora",
+    demoCta: "Experimenta sem conta",
+    webCta: "Começar",
+    soon: "Em breve",
+    ways: ["Na web", "App para Android e iOS", "Com a tua IA"],
+    importStep: "Traz o teu histórico",
+    importQuestion: "Posso trazer o meu histórico de outras apps?",
+    freeQuestion: "É grátis?",
+    freeAnswer: "Sim, e vai ser sempre.",
+    openSource: { title: "Código aberto", cta: "Ver o código no GitHub" },
+    metaDescription: [/Grátis para sempre/, /código aberto/],
+    banned: [/melhor amigo/i, /\bjogos?\b/i, /Começa grátis/i],
+    overclaims: [/não possa vazar/i, /ponta a ponta/i, /não podemos ver/i, /em repouso/i],
+    privacyAnswer:
+      "Os teus dados viajam cifrados e nunca os vendemos nem os partilhamos com anunciantes.",
+    faq: "Perguntas frequentes",
+    privacy: "Privacidade",
+    signIn: "Entrar",
+    toggleToDay: "Mudar para o modo dia",
+    toggleToNight: "Mudar para o modo noite",
+    name: "Português",
+    how: "Como funciona",
+    questions: "Perguntas",
+    other: { name: "Italiano", path: "/it", lang: "it" },
+    titlePart: "O teu dinheiro, finalmente claro",
   },
 ] as const;
 
@@ -150,6 +237,62 @@ const ROADMAP = {
     navLink: "What's next",
     description: /What we have planned for Lukitas/,
     logo: "Lukitas, home",
+  },
+  it: {
+    path: "/it/roadmap",
+    otherPath: "/pt/roadmap",
+    title: "Cosa arriva",
+    titlePart: "Cosa arriva",
+    intro: "Questo è quello che abbiamo in programma. Può cambiare nel tempo.",
+    columns: [
+      { label: "Fatto", items: ["Provala senza account"] },
+      { label: "In costruzione", items: ["App web", "Importa il tuo storico da Budge"] },
+      {
+        label: "Prossimo",
+        items: ["Android: widget con microfono", "Più spese in una frase", "Collega la tua IA"],
+      },
+      {
+        label: "Più avanti",
+        items: [
+          "App per iPhone",
+          "Cattura automatica degli avvisi della tua banca",
+          "Importa da Buddy e da altre app",
+        ],
+      },
+    ],
+    landingItems: ["Android: widget con microfono", "Più spese in una frase", "Collega la tua IA"],
+    cta: "Vedi la roadmap",
+    navLink: "Cosa arriva",
+    description: /Cosa abbiamo in programma per Lukitas/,
+    logo: "Lukitas, home",
+  },
+  pt: {
+    path: "/pt/roadmap",
+    otherPath: "/it/roadmap",
+    title: "O que vem aí",
+    titlePart: "O que vem aí",
+    intro: "Isto é o que temos planeado. Pode mudar com o tempo.",
+    columns: [
+      { label: "Já está", items: ["Experimenta sem conta"] },
+      { label: "Em construção", items: ["App web", "Importa o teu histórico do Budge"] },
+      {
+        label: "A seguir",
+        items: ["Android: widget com microfone", "Várias despesas numa frase", "Liga a tua IA"],
+      },
+      {
+        label: "Mais à frente",
+        items: [
+          "App para iPhone",
+          "Captura automática dos alertas do teu banco",
+          "Importa do Buddy e de outras apps",
+        ],
+      },
+    ],
+    landingItems: ["Android: widget com microfone", "Várias despesas numa frase", "Liga a tua IA"],
+    cta: "Ver o roadmap",
+    navLink: "O que vem aí",
+    description: /O que temos planeado para Lukitas/,
+    logo: "Lukitas, início",
   },
 } as const;
 
@@ -545,6 +688,14 @@ for (const l of LOCALES) {
         "href",
         `${ORIGIN}/en`,
       );
+      await expect(head.locator('link[rel="alternate"][hreflang="it"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/it`,
+      );
+      await expect(head.locator('link[rel="alternate"][hreflang="pt"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/pt`,
+      );
       await expect(head.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute(
         "href",
         `${ORIGIN}/`,
@@ -669,9 +820,7 @@ for (const l of LOCALES) {
       await expect(footerLink).not.toHaveAttribute("aria-current", /.+/);
       // The active language is marked the same way on the landing.
       await expect(
-        page
-          .getByRole("contentinfo")
-          .getByRole("link", { name: l.locale === "es" ? "Español" : "English" }),
+        page.getByRole("contentinfo").getByRole("link", { name: l.name }),
       ).toHaveAttribute("aria-current", "true");
       const headerLink = page.getByRole("banner").getByRole("link", { name: r.navLink });
       // The phone header has no room for it (hidden, so not in the accessibility tree); from
@@ -684,11 +833,7 @@ for (const l of LOCALES) {
           .getByRole("navigation")
           .getByRole("link")
           .allInnerTexts();
-        expect(names.slice(0, 3)).toEqual([
-          l.locale === "es" ? "Cómo funciona" : "How it works",
-          r.navLink,
-          l.locale === "es" ? "Preguntas" : "Questions",
-        ]);
+        expect(names.slice(0, 3)).toEqual([l.how, r.navLink, l.questions]);
       } else {
         await expect(headerLink).toHaveCount(0);
         await expect(page.locator("header a[href='" + r.path + "']")).toBeHidden();
@@ -713,7 +858,7 @@ for (const l of LOCALES) {
       const footer = page.getByRole("contentinfo");
       const switchLink = footer.getByRole("link", { name: l.other.name });
       await expect(switchLink).toHaveAttribute("href", l.other.path);
-      await expect(switchLink).toHaveAttribute("hreflang", l.other.path === "/" ? "es" : "en");
+      await expect(switchLink).toHaveAttribute("hreflang", l.other.lang);
       const privacy = footer.getByRole("link", { name: l.privacy });
       await expect(privacy).toHaveAttribute("href", "#privacy");
       // A placeholder anchor until the policy has its page: the FAQ answer about your data,
@@ -725,7 +870,7 @@ for (const l of LOCALES) {
 
       await switchLink.click();
       await expect(page).toHaveURL(new RegExp(`${l.other.path}$`));
-      await expect(page.locator("html")).toHaveAttribute("lang", l.locale === "es" ? "en" : "es");
+      await expect(page.locator("html")).toHaveAttribute("lang", l.other.lang);
     });
 
     test.describe(() => {
@@ -830,6 +975,49 @@ test.describe("landing with JavaScript", () => {
     await expect(page).toHaveTitle(/Your money, finally clear/);
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${ORIGIN}/en`);
+    expect(errors).toEqual([]);
+  });
+
+  test("lists the four languages, each in its own name, and switches between them", async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") errors.push(message.text());
+    });
+    page.on("pageerror", (error) => errors.push(error.message));
+
+    await page.goto("/it");
+    await page.waitForLoadState("networkidle");
+    const footer = page.getByRole("contentinfo");
+    await expect(footer.locator(".lk-landing-langs a")).toHaveText([
+      "Español",
+      "English",
+      "Italiano",
+      "Português",
+    ]);
+    for (const [name, code] of [
+      ["Español", "es"],
+      ["English", "en"],
+      ["Italiano", "it"],
+      ["Português", "pt"],
+    ] as const) {
+      await expect(footer.getByRole("link", { name })).toHaveAttribute("hreflang", code);
+    }
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "I tuoi soldi, finalmente chiari.",
+    );
+
+    await footer.getByRole("link", { name: "Português" }).click();
+    await expect(page).toHaveURL(/\/pt$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "O teu dinheiro, finalmente claro.",
+    );
+    await expect(page.locator("html")).toHaveAttribute("lang", "pt");
+
+    await footer.getByRole("link", { name: "Español" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tus lukas, por fin claras.");
     expect(errors).toEqual([]);
   });
 
@@ -1019,6 +1207,14 @@ for (const l of LOCALES) {
         "href",
         `${ORIGIN}/en/roadmap`,
       );
+      await expect(head.locator('link[rel="alternate"][hreflang="it"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/it/roadmap`,
+      );
+      await expect(head.locator('link[rel="alternate"][hreflang="pt"]')).toHaveAttribute(
+        "href",
+        `${ORIGIN}/pt/roadmap`,
+      );
       await expect(head.locator('link[rel="alternate"][hreflang="x-default"]')).toHaveAttribute(
         "href",
         `${ORIGIN}/roadmap`,
@@ -1058,9 +1254,10 @@ for (const l of LOCALES) {
         const link = header.getByRole("link", { name: r.navLink });
         await expect(link).toHaveAttribute("aria-current", "page");
         // The section links lead back to the landing's sections.
-        await expect(
-          header.getByRole("link", { name: l.locale === "es" ? "Cómo funciona" : "How it works" }),
-        ).toHaveAttribute("href", `${l.path}#how`);
+        await expect(header.getByRole("link", { name: l.how })).toHaveAttribute(
+          "href",
+          `${l.path}#how`,
+        );
       }
       const footer = page.getByRole("contentinfo");
       await expect(footer.getByRole("link", { name: r.navLink })).toHaveAttribute(
@@ -1069,9 +1266,10 @@ for (const l of LOCALES) {
       );
       // Only the page link is "current": the active language is marked another way.
       await expect(footer.locator('a[aria-current="page"]')).toHaveCount(1);
-      await expect(
-        footer.getByRole("link", { name: l.locale === "es" ? "Español" : "English" }),
-      ).toHaveAttribute("aria-current", "true");
+      await expect(footer.getByRole("link", { name: l.name })).toHaveAttribute(
+        "aria-current",
+        "true",
+      );
       await expect(footer.getByRole("link", { name: l.privacy })).toHaveAttribute(
         "href",
         `${l.path}#privacy`,
@@ -1083,7 +1281,7 @@ for (const l of LOCALES) {
       await expect(switchLink).toHaveAttribute("href", r.otherPath);
       await switchLink.click();
       await expect(page).toHaveURL(new RegExp(`${r.otherPath}$`));
-      await expect(page.locator("html")).toHaveAttribute("lang", l.locale === "es" ? "en" : "es");
+      await expect(page.locator("html")).toHaveAttribute("lang", l.other.lang);
     });
 
     test("fits the viewport and keeps every target at 44px", async ({ page }) => {
@@ -1162,8 +1360,11 @@ test.describe("static files", () => {
     expect(sitemap).toContain('hreflang="x-default"');
     expect(sitemap).toContain("<loc>https://lukas.app/roadmap</loc>");
     expect(sitemap).toContain("<loc>https://lukas.app/en/roadmap</loc>");
+    for (const path of ["/it", "/pt", "/it/roadmap", "/pt/roadmap"]) {
+      expect(sitemap).toContain(`<loc>https://lukas.app${path}</loc>`);
+    }
 
-    for (const locale of ["es", "en"]) {
+    for (const locale of ["es", "en", "it", "pt"]) {
       const image = await request.get(`/og-${locale}.png`);
       expect(image.headers()["content-type"]).toBe("image/png");
       const bytes = await image.body();

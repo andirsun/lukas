@@ -174,7 +174,7 @@ export async function sendClaimCode(
 ) {
   const mail = claimEmail({
     code: input.code,
-    locale: emailLocale(asLocale(input.locale) ?? "es"),
+    locale: asLocale(input.locale) ?? "es",
     webUrl: deps.config.WEB_URL,
     expiresInMinutes: Math.ceil(CODE_TTL_SECONDS / 60),
   });
@@ -182,13 +182,6 @@ export async function sendClaimCode(
 }
 
 type Locale = "es" | "en" | "it" | "pt";
-
-/**
- * The language an email is written in. The sign-in and claim emails have Spanish and English
- * copy; until Italian and Portuguese copy lands (spec §2.2), those two read Spanish, the fallback.
- * The link still carries the real `lang`, so the web opens in the person's language.
- */
-const emailLocale = (locale: Locale): "es" | "en" => (locale === "en" ? "en" : "es");
 
 /** Headers the web app sends with a code request: the page's language and where to go after. */
 export const LOCALE_HINT_HEADER = "x-lukas-locale";
@@ -477,7 +470,7 @@ export function createAuth(deps: AppDeps) {
           const mail = signInEmail({
             code: otp,
             link,
-            locale: emailLocale(locale),
+            locale,
             webUrl: config.WEB_URL,
             expiresInMinutes: Math.ceil(CODE_TTL_SECONDS / 60),
           });

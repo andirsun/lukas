@@ -107,7 +107,7 @@ const apiClient = () =>
  */
 export async function requestCode(
   email: string,
-  hints: { locale?: "es" | "en"; next?: string; client?: "android" } = {},
+  hints: { locale?: Lang; next?: string; client?: "android" } = {},
 ): Promise<void> {
   const api = await apiClient();
   const response = await api.post("/api/auth/email-otp/send-verification-otp", {
@@ -138,28 +138,56 @@ export async function sessionUser(page: Page): Promise<{ id: string; email: stri
   return body?.user ?? null;
 }
 
+/** The four languages of the app. */
+export type Lang = "es" | "en" | "it" | "pt";
+
+/** The sign-in screens' words the helpers click, per language (app.<lang>.json). */
+const SIGN_IN_WORDS: Record<
+  Lang,
+  { notNow: string; email: string; sendCode: string; digit1: string }
+> = {
+  es: {
+    notNow: "Ahora no",
+    email: "Tu correo",
+    sendCode: "Enviar código",
+    digit1: "Dígito 1 de 6",
+  },
+  en: { notNow: "Not now", email: "Your email", sendCode: "Send code", digit1: "Digit 1 of 6" },
+  it: {
+    notNow: "Non ora",
+    email: "La tua email",
+    sendCode: "Invia codice",
+    digit1: "Cifra 1 di 6",
+  },
+  pt: {
+    notNow: "Agora não",
+    email: "O teu email",
+    sendCode: "Enviar código",
+    digit1: "Dígito 1 de 6",
+  },
+};
+
 /**
  * After an email sign-in Lukitas offers a passkey ("¿Entrar con tu huella la próxima vez?") once per
  * user per device. Tests that are about something else say "Ahora no" and carry on: this waits
  * for whichever comes first, the offer or the page sign-in was heading to, and dismisses the offer.
  */
-export async function skipPasskeyOffer(page: Page, { lang = "es" as "es" | "en" } = {}) {
+export async function skipPasskeyOffer(page: Page, { lang = "es" as Lang } = {}) {
   await expect(page).toHaveURL(/\/(passkey-offer|welcome|app)(\?|\/|$)/);
   if (new URL(page.url()).pathname !== "/passkey-offer") return;
-  await page.getByRole("button", { name: lang === "en" ? "Not now" : "Ahora no" }).click();
+  await page.getByRole("button", { name: SIGN_IN_WORDS[lang].notNow }).click();
   await expect(page).not.toHaveURL(/\/passkey-offer/);
 }
 
 /** Signs a brand-new user in through the sign-in page; returns their email. Lands on /welcome. */
-export async function signUpNewUser(page: Page, { lang = "es" as "es" | "en" } = {}) {
+export async function signUpNewUser(page: Page, { lang = "es" as Lang } = {}) {
   const email = freshEmail();
   await page.goto(`/sign-in?lang=${lang}`);
-  await page.getByRole("textbox", { name: lang === "en" ? "Your email" : "Tu correo" }).fill(email);
-  await page.getByRole("button", { name: lang === "en" ? "Send code" : "Enviar código" }).click();
+  const words = SIGN_IN_WORDS[lang];
+  await page.getByRole("textbox", { name: words.email }).fill(email);
+  await page.getByRole("button", { name: words.sendCode }).click();
   const mail = await readSignInMail(email);
-  await page
-    .getByRole("textbox", { name: lang === "en" ? "Digit 1 of 6" : "Dígito 1 de 6" })
-    .fill(mail.code);
+  await page.getByRole("textbox", { name: words.digit1 }).fill(mail.code);
   await skipPasskeyOffer(page, { lang });
   await expect(page).toHaveURL(/\/welcome$/);
   return email;

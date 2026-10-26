@@ -1,17 +1,18 @@
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { createTranslator } from "use-intl/core";
-import type { Locale } from "../../i18n/format.ts";
+import { intlTag, type Locale } from "../../i18n/format.ts";
 import en from "../../i18n/messages/en.json" with { type: "json" };
 import es from "../../i18n/messages/es.json" with { type: "json" };
+import it from "../../i18n/messages/it.json" with { type: "json" };
+import pt from "../../i18n/messages/pt.json" with { type: "json" };
 import { Lukas } from "../../lukas/Lukas.tsx";
 import { LANDING_PATH } from "../../site/paths.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
 import "./landing.css";
 
-// Italian and Portuguese read Spanish until their catalogs land (spec §2.2).
-const CATALOGS = { es, en, it: es, pt: es } as const;
+const CATALOGS = { es, en, it, pt } as const;
 
 /** The page's tags: titled in both languages and kept out of search results. */
 export const notFoundMeta = () => [
@@ -21,7 +22,7 @@ export const notFoundMeta = () => [
 
 function Message({ locale, primary }: { locale: Locale; primary: boolean }) {
   const t = createTranslator({
-    locale,
+    locale: intlTag(locale),
     messages: CATALOGS[locale],
     namespace: "landing.not_found",
   });

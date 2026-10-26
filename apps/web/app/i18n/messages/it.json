@@ -1,0 +1,207 @@
+{
+  "app": {
+    "name": "Lukitas"
+  },
+  "theme": {
+    "label": "Tema",
+    "auto": "Automatico",
+    "night": "Notte",
+    "day": "Giorno",
+    "switch_to_day": "Passa alla modalità giorno",
+    "switch_to_night": "Passa alla modalità notte"
+  },
+  "language": {
+    "label": "Lingua",
+    "es": "Español",
+    "en": "English",
+    "it": "Italiano",
+    "pt": "Português"
+  },
+  "mascot": {
+    "happy": "Lukitas, contento",
+    "worried": "Lukitas, preoccupato",
+    "celebrating": "Lukitas che festeggia"
+  },
+  "roadmap": {
+    "meta": {
+      "title": "Lukitas · Cosa arriva",
+      "description": "Cosa abbiamo in programma per Lukitas: la web app, il widget con microfono per Android, più spese in una frase, la tua IA collegata e altro. Senza date, e può cambiare."
+    },
+    "title": "Cosa arriva",
+    "intro": "Questo è quello che abbiamo in programma. Può cambiare nel tempo.",
+    "status": {
+      "done": "Fatto",
+      "building": "In costruzione",
+      "next": "Prossimo",
+      "later": "Più avanti"
+    },
+    "landing": {
+      "title": "Cosa arriva",
+      "cta": "Vedi la roadmap"
+    },
+    "items": {
+      "web_app": {
+        "title": "App web",
+        "body": "Budget per categoria, movimenti, analisi e quanto ti costa vivere."
+      },
+      "import_budge": {
+        "title": "Importa il tuo storico da Budge",
+        "body": "Carica il tuo file CSV e guarda un'anteprima prima di portare dentro qualcosa."
+      },
+      "demo": {
+        "title": "Provala senza account",
+        "body": "Una demo con dati inventati, per usare l'app prima di registrarti."
+      },
+      "widget_mic": {
+        "title": "Android: widget con microfono",
+        "body": "Di' cosa hai speso e resta annotato."
+      },
+      "multi_expense": {
+        "title": "Più spese in una frase",
+        "body": "“Ho speso 15 per il pranzo e 3 per Uber” e restano annotate entrambe."
+      },
+      "connect_ai": {
+        "title": "Collega la tua IA",
+        "body": "Usa Claude o ChatGPT per consultare e annotare le tue spese."
+      },
+      "iphone_app": {
+        "title": "App per iPhone",
+        "body": "La stessa app, anche su iOS."
+      },
+      "bank_alerts": {
+        "title": "Cattura automatica degli avvisi della tua banca",
+        "body": "Bancolombia, Nequi e altre: gli avvisi diventano movimenti da controllare."
+      },
+      "import_others": {
+        "title": "Importa da Buddy e da altre app",
+        "body": "Più modi per portare il tuo storico."
+      }
+    }
+  },
+  "landing": {
+    "new_tab": "(si apre in una nuova scheda)",
+    "meta": {
+      "title": "Lukitas · I tuoi soldi, finalmente chiari",
+      "description": "Lukitas è il tuo budget, e ti farà piacere prendertene cura: annota una spesa in pochi secondi e guarda dove vanno i tuoi soldi. Gratis per sempre, open source e senza password.",
+      "image_alt": "Lukitas, una moneta d'oro sorridente, saluta accanto al titolo: I tuoi soldi, finalmente chiari. In alto, a mano: Gratis, e lo sarà sempre!"
+    },
+    "nav": {
+      "label": "Principale",
+      "home": "Lukitas, home",
+      "how": "Come funziona",
+      "roadmap": "Cosa arriva",
+      "faq": "Domande",
+      "sign_in": "Entra",
+      "sign_in_soon": "Presto"
+    },
+    "hero": {
+      "annotation": "Gratis, e lo sarà sempre!",
+      "headline": "I tuoi <mark>soldi</mark>, finalmente chiari.",
+      "description": "<lead>Lukitas è il tuo budget, e ti farà piacere prendertene cura.</lead> Annota una spesa in pochi secondi e guarda dove va ogni centesimo.",
+      "cta": "Inizia ora",
+      "cta_soon": "Presto · Seguilo su GitHub",
+      "cta_demo": "Provala senza account",
+      "perks": "Gratis per sempre · <github>Open source</github> · Senza password",
+      "mascot": "Lukitas, una moneta d'oro sorridente, ti saluta"
+    },
+    "ways": {
+      "title": "Usala come preferisci",
+      "soon": "Presto",
+      "web": {
+        "title": "Sul web",
+        "body": "Dal browser del telefono o del computer. Niente da installare.",
+        "cta": "Inizia"
+      },
+      "mobile": {
+        "title": "App per Android e iOS",
+        "body": "Con un widget per annotare una spesa senza aprire l'app."
+      },
+      "ai": {
+        "title": "Con la tua IA",
+        "with": "Claude / ChatGPT",
+        "body": "«Lukitas, quanto ho speso al ristorante?», e il tuo assistente ti risponde con i tuoi numeri."
+      }
+    },
+    "how": {
+      "title": "Come funziona",
+      "demo_categories": {
+        "groceries": "Supermercato",
+        "going_out": "Uscite",
+        "home": "Casa",
+        "transport": "Trasporti"
+      },
+      "log": {
+        "title": "Annota in pochi secondi",
+        "body": "Tocchi ＋, scrivi l'importo e fatto: meno di cinque secondi da quando apri l'app. Lukitas festeggia con te.",
+        "demo_name": "Caffè e cornetto",
+        "demo_saved": "Annotato!"
+      },
+      "spend": {
+        "title": "Guarda dove vanno i tuoi soldi",
+        "body": "Ogni spesa finisce nella sua categoria. Con un'occhiata sai quanto va in spesa, in uscite o in trasporti, e quanto ti costa davvero vivere.",
+        "demo_label": "Questo mese"
+      },
+      "budgets": {
+        "title": "Budget che ti avvisano",
+        "body": "Metti un tetto a ogni categoria. Le barre si riempiono con quello che spendi e cambiano colore prima che tu sfori, non dopo.",
+        "demo_remaining": "Restano {amount}"
+      },
+      "import": {
+        "title": "Porta il tuo storico",
+        "body": "Importa i tuoi movimenti da altre app di finanze: oggi da Budge, e presto da Buddy e altre.",
+        "demo_file": "budge.csv",
+        "demo_rows": "{count, plural, one {# movimento pronto} other {# movimenti pronti}}"
+      }
+    },
+    "open_source": {
+      "title": "Open source",
+      "body": "Chiunque può leggere il codice di Lukitas: non c'è niente di nascosto. È software libero, con licenza AGPL-3.0.",
+      "cta": "Vedi il codice su GitHub"
+    },
+    "faq": {
+      "title": "Domande frequenti",
+      "what": {
+        "q": "Cos'è Lukitas?",
+        "a": "Un'app per seguire il tuo budget del mese senza che sembri un compito. Annoti quello che spendi, vedi quanto ti resta in ogni categoria e Lukitas, una moneta d'oro con tanta personalità, ti fa compagnia: festeggia quando annoti e ti avvisa quando qualcosa si sta riempiendo."
+      },
+      "import": {
+        "q": "Posso portare il mio storico da altre app?",
+        "a": "Sì. Oggi puoi importare da Budge: esporta i tuoi movimenti in CSV e caricalo quando crei il tuo account o dopo, da Impostazioni. Presto anche da Buddy e da altre app. Prima di importare vedi un'anteprima: quanti movimenti entrano, quali sono doppi e quali categorie verranno create."
+      },
+      "passwords": {
+        "q": "Perché non mi chiede la password?",
+        "a": "Perché non ti serve. Entri con un codice di 6 cifre o con un link che ti arriva via email e, se vuoi, con una passkey: la tua impronta, il tuo viso o il blocco del telefono. Nessuna password da ricordare."
+      },
+      "privacy": {
+        "q": "Cosa fate con i miei dati?",
+        "a": "I tuoi dati viaggiano cifrati e non li vendiamo né li condividiamo mai con gli inserzionisti. Puoi esportarli o cancellare il tuo account quando vuoi. Il codice è open source: chiunque può leggere il codice che li gestisce."
+      },
+      "free": {
+        "q": "È gratis?",
+        "a": "Sì, e lo sarà sempre. Lukitas è gratis e open source: tutto il codice è su <github>GitHub</github> e chiunque può controllarlo. Non ti chiediamo la carta."
+      },
+      "languages": {
+        "q": "In che lingue è disponibile?",
+        "a": "In spagnolo, inglese, italiano e portoghese. Cambi lingua quando vuoi in Impostazioni, e importi e date seguono il formato della tua lingua."
+      }
+    },
+    "closing": {
+      "title": "Quando vuoi, partiamo.",
+      "body": "Crea il tuo account con la tua email in meno di un minuto. A renderlo divertente ci pensa Lukitas.",
+      "body_soon": "Lukitas è in costruzione, in aperto. Guarda come avanza su GitHub e prova l'app appena apre.",
+      "body_invite": "Lukitas funziona già e la stiamo provando con un piccolo gruppo. Se ti hanno invitato, entra con la tua email."
+    },
+    "footer": {
+      "language": "Lingua",
+      "privacy": "Privacy",
+      "copyright": "© {year} Lukitas",
+      "roadmap": "Cosa arriva"
+    },
+    "not_found": {
+      "title": "Questa pagina non esiste",
+      "body": "Forse il link è rotto o la pagina è stata spostata. Lukitas l'ha già cercata ovunque.",
+      "home": "Torna alla home",
+      "mascot": "Lukitas, una moneta d'oro preoccupata, cerca la pagina"
+    }
+  }
+}

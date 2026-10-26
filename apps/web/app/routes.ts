@@ -8,9 +8,13 @@ export default [
   // The landing page, prerendered per language (react-router.config.ts).
   index("routes/_index.tsx"),
   route("en", "routes/en._index.tsx"),
+  route("it", "routes/it._index.tsx"),
+  route("pt", "routes/pt._index.tsx"),
   // The public roadmap, prerendered per language like the landing (react-router.config.ts).
   route("roadmap", "routes/roadmap.tsx"),
   route("en/roadmap", "routes/en.roadmap.tsx"),
+  route("it/roadmap", "routes/it.roadmap.tsx"),
+  route("pt/roadmap", "routes/pt.roadmap.tsx"),
   // Every screen of the app (sign-in, welcome, /app/*) nests under this layout, which holds the
   // API client, its cache and the toasts. The landing stays outside it, so visitors do not download
   // that code. The demo (/demo/*) has its own layout with a demo ApiProvider, beside this one.

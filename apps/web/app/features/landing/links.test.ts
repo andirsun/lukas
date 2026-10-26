@@ -10,7 +10,7 @@ describe("appLinkProps", () => {
   });
 
   it("leads to the GitHub repo, in a new tab, in landing-only mode without an app URL", () => {
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       expect(appLinkProps(locale, true)).toEqual({
         to: GITHUB_HREF,
         target: "_blank",

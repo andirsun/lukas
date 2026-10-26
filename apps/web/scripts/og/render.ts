@@ -1,15 +1,20 @@
 /**
- * Renders the Open Graph images, public/og-es.png and public/og-en.png (1200×630), from og.html
+ * Renders the Open Graph images, public/og-es.png, og-en.png, og-it.png and og-pt.png (1200×630), from og.html
  * with headless Chromium (Playwright's). The copy comes from the message catalogs, so the images
  * say exactly what the landing page says.
  *
- *   pnpm --filter @lukas/web og
+ *   pnpm --filter @lukas/web og          (all four)
+ *   pnpm --filter @lukas/web og it pt    (only those)
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
-const LOCALES = ["es", "en"] as const;
+const ALL_LOCALES = ["es", "en", "it", "pt"] as const;
+/** Every language, or only the ones named (`pnpm og it pt`). */
+const LOCALES = ALL_LOCALES.filter(
+  (locale) => process.argv.length <= 2 || process.argv.slice(2).includes(locale),
+);
 const template = new URL("./og.html", import.meta.url);
 
 function catalog(locale: string): Record<string, unknown> {
