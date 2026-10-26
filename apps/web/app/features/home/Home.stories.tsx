@@ -465,6 +465,81 @@ export const MoreOptionsSent: Story = {
   },
 };
 
+/**
+ * The same screens in Italian and European Portuguese, at night: the longer words of the tabs, the
+ * bottom bar and the sheet's buttons (spec §3), and the mobile parity picture of each.
+ */
+const WORDS = {
+  it: {
+    remaining: "Ti restano questo mese",
+    movements: "Movimenti",
+    add: "Aggiungi",
+    sheet: "Nuova spesa",
+    keypad: "Tastierino numerico",
+    decimal: "Virgola decimale",
+    category: "Categoria",
+    more: /^Altre opzioni/,
+    pending: "In sospeso (non l'hai ancora pagato)",
+  },
+  pt: {
+    remaining: "Restam-te este mês",
+    movements: "Movimentos",
+    add: "Adicionar",
+    sheet: "Nova despesa",
+    keypad: "Teclado numérico",
+    decimal: "Vírgula decimal",
+    category: "Categoria",
+    more: /^Mais opções/,
+    pending: "Pendente (ainda não pagaste)",
+  },
+} as const;
+
+function transactionsIn(locale: keyof typeof WORDS): Story {
+  const w = WORDS[locale];
+  return {
+    globals: { theme: "night", locale },
+    render: (args) => <HomeStage onRequest={args.onRequest} />,
+    play: async ({ canvasElement }) => {
+      const canvas = within(canvasElement);
+      await canvas.findByRole("region", { name: w.remaining });
+      await userEvent.click(canvas.getByRole("tab", { name: w.movements }));
+      await canvas.findByRole("tabpanel", { name: w.movements });
+    },
+  };
+}
+
+function moreOptionsIn(locale: keyof typeof WORDS): Story {
+  const w = WORDS[locale];
+  return {
+    globals: { theme: "night", locale },
+    render: (args) => <HomeStage onRequest={args.onRequest} />,
+    play: async ({ canvasElement }) => {
+      const canvas = within(canvasElement);
+      await canvas.findByRole("region", { name: w.remaining });
+      await userEvent.click(await canvas.findByRole("button", { name: w.add }));
+      const sheet = within(await screen.findByRole("dialog", { name: w.sheet }));
+      const keypad = within(sheet.getByRole("group", { name: w.keypad }));
+      for (const key of "39,9") {
+        await userEvent.click(keypad.getByRole("button", { name: key === "," ? w.decimal : key }));
+      }
+      await userEvent.click(
+        within(sheet.getByRole("group", { name: w.category })).getByRole("button", {
+          name: "Supermercado",
+        }),
+      );
+      const more = sheet.getByRole("button", { name: w.more });
+      await userEvent.click(more);
+      await expect(more).toHaveAttribute("aria-expanded", "true");
+      await userEvent.click(sheet.getByRole("checkbox", { name: w.pending }));
+    },
+  };
+}
+
+export const TransactionsItalian: Story = transactionsIn("it");
+export const TransactionsPortuguese: Story = transactionsIn("pt");
+export const MoreOptionsItalian: Story = moreOptionsIn("it");
+export const MoreOptionsPortuguese: Story = moreOptionsIn("pt");
+
 /** In pesos the sheet adds the lukas hint, small, and so does the saved toast. */
 export const PesosHint: Story = {
   render: (args) => <HomeStage onRequest={args.onRequest} currency="COP" />,

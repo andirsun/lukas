@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/ui/bottom_bar.dart';
@@ -189,4 +190,32 @@ void main() {
     );
     expect(t.takeException(), isNull);
   });
+
+  // Italian and European Portuguese run longer than Spanish (spec §3): the two tab labels still
+  // draw whole, on one line each, on a 360px phone at 130% (and on a 320px one).
+  for (final (code, labels) in [
+    ('it', ['Home', 'Analisi']),
+    ('pt', ['Início', 'Análise']),
+  ]) {
+    for (final width in [360.0, 320.0]) {
+      testWidgets(
+        '$code: the labels ${labels.join(' and ')} are not cut off at 130% on ${width}px',
+        (t) async {
+          await t.pumpWidget(
+            uiApp(
+              BottomBar(current: 'home', onAdd: () {}, onMic: () {}, onNavigate: (_) {}),
+              locale: Locale(code),
+              width: width,
+              textScale: 1.3,
+            ),
+          );
+          expect(t.takeException(), isNull);
+          for (final label in labels) {
+            final paragraph = t.renderObject<RenderParagraph>(find.text(label));
+            expect(paragraph.didExceedMaxLines, isFalse, reason: label);
+          }
+        },
+      );
+    }
+  }
 }

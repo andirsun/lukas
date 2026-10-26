@@ -525,6 +525,27 @@ export const AppSectionsDayEnglish: Story = {
   },
 };
 
+/** The same page at night in Italian and European Portuguese: the longer words of its rows. */
+export const AppSectionsItalian: Story = {
+  globals: { theme: "night", locale: "it" },
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas, "Impostazioni");
+    await expect(canvas.getByRole("switch", { name: "Suoni" })).toBeChecked();
+  },
+};
+
+export const AppSectionsPortuguese: Story = {
+  globals: { theme: "night", locale: "pt" },
+  render: (args) => stage(args),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await title(canvas, "Definições");
+    await expect(canvas.getByRole("switch", { name: "Sons" })).toBeChecked();
+  },
+};
+
 /** Sounds turned off with a tap: the switch is off, and the keyboard's ring is on it. */
 export const AppSectionsSoundOff: Story = {
   render: (args) => stage(args),
