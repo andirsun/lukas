@@ -69,7 +69,7 @@ describe("Italian and Portuguese pages", () => {
     expect(metaContent(pt, "property", "og:url")).toBe(`${SITE_ORIGIN}/pt`);
     expect(metaContent(it, "property", "og:image")).toBe(`${SITE_ORIGIN}/og-it.png`);
     expect(metaContent(pt, "property", "og:image")).toBe(`${SITE_ORIGIN}/og-pt.png`);
-    expect(roadmapMeta("it")).toContainEqual({ title: "Lukitas · Cosa arriva" });
+    expect(roadmapMeta("it")).toContainEqual({ title: "Lukitas · In arrivo" });
     expect(roadmapMeta("pt")).toContainEqual({ title: "Lukitas · O que vem aí" });
     expect(metaContent(roadmapMeta("it"), "property", "og:url")).toBe(`${SITE_ORIGIN}/it/roadmap`);
     expect(metaContent(roadmapMeta("pt"), "property", "og:url")).toBe(`${SITE_ORIGIN}/pt/roadmap`);

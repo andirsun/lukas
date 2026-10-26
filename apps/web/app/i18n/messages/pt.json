@@ -58,7 +58,7 @@
       },
       "multi_expense": {
         "title": "Várias despesas numa frase",
-        "body": "“Gastei 15 no almoço e 3 no Uber” e ficam as duas registadas."
+        "body": "«Gastei 15 no almoço e 3 no Uber» e ficam as duas registadas."
       },
       "connect_ai": {
         "title": "Liga a tua IA",
@@ -105,7 +105,7 @@
       "mascot": "Lukitas, uma moeda de ouro sorridente, cumprimenta-te"
     },
     "ways": {
-      "title": "Usa como preferires",
+      "title": "Usa-o como preferires",
       "soon": "Em breve",
       "web": {
         "title": "Na web",
@@ -187,7 +187,7 @@
     },
     "closing": {
       "title": "Quando quiseres, começamos.",
-      "body": "Cria a tua conta com o teu email em menos de um minuto. Lukitas trata de a tornar divertida.",
+      "body": "Cria a tua conta com o teu email em menos de um minuto. Lukitas encarrega-se de que seja divertido.",
       "body_soon": "Lukitas está em construção, em aberto. Vê como avança no GitHub e experimenta a app assim que abrir.",
       "body_invite": "Lukitas já funciona e estamos a testá-la com um grupo pequeno. Se te convidaram, entra com o teu email."
     },

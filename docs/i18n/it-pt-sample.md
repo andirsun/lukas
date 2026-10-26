@@ -33,7 +33,7 @@ Questions for you:
 | `landing.faq.passwords.a` | Porque no la necesitas. Entras con un código de 6 dígitos o un enlace que te llega al correo y, si quieres, con una passkey: tu huella, tu cara o el bloqueo de tu teléfono. No hay contraseña que recordar. | Perché non ti serve. Entri con un codice di 6 cifre o con un link che ti arriva via email e, se vuoi, con una passkey: la tua impronta, il tuo viso o il blocco del telefono. Nessuna password da ricordare. | Porque não precisas dela. Entras com um código de 6 dígitos ou com uma ligação que te chega ao email e, se quiseres, com uma passkey: a tua impressão digital, a tua cara ou o bloqueio do telemóvel. Não há palavra-passe para decorar. |
 | `landing.faq.privacy.a` | Tus datos viajan cifrados y nunca los vendemos ni los compartimos con anunciantes. Puedes exportarlos o borrar tu cuenta cuando quieras. El código es abierto: cualquiera puede leer el código que los maneja. | I tuoi dati viaggiano cifrati e non li vendiamo né li condividiamo mai con gli inserzionisti. Puoi esportarli o cancellare il tuo account quando vuoi. Il codice è open source: chiunque può leggere il codice che li gestisce. | Os teus dados viajam cifrados e nunca os vendemos nem os partilhamos com anunciantes. Podes exportá-los ou apagar a tua conta quando quiseres. O código é aberto: qualquer pessoa pode ler o código que os trata. |
 | `landing.faq.free.a` | Sí, y lo será siempre. Lukitas es gratis y de código abierto: todo el código está en <github>GitHub</github> y cualquiera puede revisarlo. No te pedimos tarjeta. | Sì, e lo sarà sempre. Lukitas è gratis e open source: tutto il codice è su <github>GitHub</github> e chiunque può controllarlo. Non ti chiediamo la carta. | Sim, e vai ser sempre. Lukitas é grátis e de código aberto: todo o código está no <github>GitHub</github> e qualquer pessoa o pode rever. Não te pedimos cartão. |
-| `roadmap.items.multi_expense.body` | «Gasté 15 mil en almuerzo y 3 mil en Uber» y quedan los dos anotados. | “Ho speso 15 per il pranzo e 3 per Uber” e restano annotate entrambe. | “Gastei 15 no almoço e 3 no Uber” e ficam as duas registadas. |
+| `roadmap.items.multi_expense.body` | «Gasté 15 mil en almuerzo y 3 mil en Uber» y quedan los dos anotados. | «Ho speso 15 per il pranzo e 3 per Uber» e restano annotate entrambe. | «Gastei 15 no almoço e 3 no Uber» e ficam as duas registadas. |
 
 ## Home, tabs and navigation
 
@@ -50,9 +50,9 @@ Questions for you:
 | `transaction.title_expense` | Nuevo gasto | Nuova spesa | Nova despesa |
 | `common.save` | Guardar | Salva | Guardar |
 | `home.remaining_label` | Te quedan este mes | Ti restano questo mese | Restam-te este mês |
-| `home.over_label` | Te pasaste este mes | Hai sforato questo mese | Excedeste-te este mês |
+| `home.over_label` | Te pasaste este mes | Hai sforato questo mese | Passaste do limite este mês |
 | `category_row.remaining` | Quedan {amount} | Restano {amount} | Restam {amount} |
-| `category_row.over` | Te pasaste {amount} | Hai sforato di {amount} | Excedeste {amount} |
+| `category_row.over` | Te pasaste {amount} | Hai sforato di {amount} | Passaste {amount} do limite |
 | `onboarding.budgets.title` | ¿Cuánto quieres gastar al mes? | Quanto vuoi spendere al mese? | Quanto queres gastar por mês? |
 | `onboarding.budgets.lead` | Ponle un presupuesto a cada categoría. Puedes dejar alguna vacía y ponerlo después. | Dai un budget a ogni categoria. Puoi lasciarne qualcuna vuota e metterlo dopo. | Define um orçamento para cada categoria. Podes deixar alguma vazia e preenchê-la depois. |
 | `home.nudge_budgets_lead` | Así Lukitas te avisa antes de que te pases. Toca una categoría y ponle un monto. | Così Lukitas ti avvisa prima che tu sfori. Tocca una categoria e metti un importo. | Assim Lukitas avisa-te antes de te excederes. Toca numa categoria e define um valor. |

@@ -46,7 +46,7 @@ function normalize(text: string): string {
 
 /**
  * Countries whose zones `Intl` doesn't name after them (Spain's is "Central European Time", the
- * United States' "Eastern Time"…), by the names people type, in Spanish and English.
+ * United States' "Eastern Time"…), by the names people type, in Spanish, English, Italian and Portuguese.
  */
 export const ZONE_ALIASES: Readonly<Record<string, readonly string[]>> = {
   "Europe/Madrid": ["España", "Spain"],
@@ -55,6 +55,15 @@ export const ZONE_ALIASES: Readonly<Record<string, readonly string[]>> = {
   "America/Denver": ["Estados Unidos", "EEUU", "EE UU", "USA", "United States"],
   "America/Los_Angeles": ["Estados Unidos", "EEUU", "EE UU", "USA", "United States"],
   "America/Mexico_City": ["México", "Mexico"],
+  // Italian and Portuguese searches: their countries, capitals and best-known cities.
+  "Europe/Rome": ["Italia", "Italy", "Roma", "Milano", "Napoli", "Torino"],
+  "Europe/Lisbon": ["Portugal", "Lisboa", "Porto"],
+  "Atlantic/Madeira": ["Portugal", "Madeira"],
+  "Atlantic/Azores": ["Portugal", "Açores", "Azores"],
+  "America/Sao_Paulo": ["Brasil", "Brazil", "Brasile"],
+  "America/Bahia": ["Brasil", "Brazil", "Brasile"],
+  "America/Fortaleza": ["Brasil", "Brazil", "Brasile"],
+  "America/Manaus": ["Brasil", "Brazil", "Brasile"],
 };
 
 /** The zone's generic name in `locale` ("hora estándar de Colombia"), or "" where there is none. */
@@ -76,7 +85,7 @@ export type ZoneSearchIndex = ReadonlyMap<string, string>;
 const indexes = new WeakMap<readonly string[], ZoneSearchIndex>();
 
 /**
- * The search text of every zone: the id, the generic name in Spanish and English (so "Colombia",
+ * The search text of every zone: the id, the generic name in all four languages (so "Colombia",
  * "Perú" or "Chile" find their zones) and the aliases above, normalized. Built once per list of
  * zones (a few hundred `Intl` formatters, some tens of ms) and kept.
  */
@@ -91,6 +100,8 @@ export function zoneSearchIndex(zones: readonly string[]): ZoneSearchIndex {
           zone,
           genericName(zone, "es"),
           genericName(zone, "en"),
+          genericName(zone, "it"),
+          genericName(zone, "pt"),
           ...(ZONE_ALIASES[zone] ?? []),
         ].join(" "),
       ),
@@ -113,9 +124,14 @@ export function searchZones(
 ): { matches: string[]; more: number } {
   const wanted = normalize(query);
   const found = zones.filter((zone) => (index?.get(zone) ?? normalize(zone)).includes(wanted));
+  // A name people type for a zone (an alias: "Porto" for Lisbon) beats a city that merely starts
+  // with the same letters (Porto-Novo), then cities starting with it, then the rest.
+  const aliased = (zone: string) => (ZONE_ALIASES[zone] ?? []).some((a) => normalize(a) === wanted);
+  const cityStarts = (zone: string) => normalize(zoneCity(zone)).startsWith(wanted);
   const cityFirst = [
-    ...found.filter((zone) => normalize(zoneCity(zone)).startsWith(wanted)),
-    ...found.filter((zone) => !normalize(zoneCity(zone)).startsWith(wanted)),
+    ...found.filter(aliased),
+    ...found.filter((zone) => !aliased(zone) && cityStarts(zone)),
+    ...found.filter((zone) => !aliased(zone) && !cityStarts(zone)),
   ];
   return { matches: cityFirst.slice(0, limit), more: Math.max(0, cityFirst.length - limit) };
 }

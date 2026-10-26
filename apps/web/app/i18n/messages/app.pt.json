@@ -22,8 +22,8 @@
     "meta_title": "Início · Lukitas",
     "remaining_label": "Restam-te este mês",
     "remaining_label_past": "Sobraram-te em {month}",
-    "over_label": "Excedeste-te este mês",
-    "over_label_past": "Excedeste-te em {month}",
+    "over_label": "Passaste do limite este mês",
+    "over_label_past": "Passaste do limite em {month}",
     "spent_label_past": "Gasto em {month}",
     "spent": "Gasto {amount}",
     "spent_meter": "Gasto {spent} de {budget}",
@@ -102,7 +102,7 @@
     "over_budget": {
       "1": "Em {category} estás {over} acima. Nada de grave: já sabes.",
       "2": "{category} ultrapassou o orçamento em {over}. Vê-lo já é um passo.",
-      "3": "Passámos {over} em {category}. Sem drama: tens tudo à vista."
+      "3": "Passámos {over} do limite em {category}. Sem drama: tens tudo à vista."
     },
     "income_received": {
       "1": "Entrou dinheiro! «{name}»: mais {amount} na tua conta.",
@@ -127,7 +127,7 @@
   },
   "category_row": {
     "remaining": "Restam {amount}",
-    "over": "Excedeste {amount}",
+    "over": "Passaste {amount} do limite",
     "no_budget": "Sem orçamento",
     "spent": "Gasto {amount}",
     "meter": "{name}: {status}"

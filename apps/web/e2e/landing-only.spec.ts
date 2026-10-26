@@ -549,15 +549,26 @@ test.describe("landing-only build output", () => {
     });
   }
 
-  test("the 404 page speaks both languages and links home in each", async ({ page }) => {
+  test("the 404 page speaks the four languages and links home in each", async ({ page }) => {
     await page.goto("/nowhere");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Esta página no existe");
-    await expect(page.getByRole("heading", { level: 2 })).toHaveText("This page doesn't exist");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+      "This page doesn't exist",
+      "Questa pagina non esiste",
+      "Esta página não existe",
+    ]);
     const es = page.getByRole("link", { name: "Volver al inicio" });
     await expect(es).toHaveAttribute("href", "/");
     await expect(es).toHaveClass(/lk-btn-primary/);
-    const en = page.getByRole("link", { name: "Back to home" });
-    await expect(en).toHaveAttribute("href", "/en");
+    await expect(page.getByRole("link", { name: "Back to home" })).toHaveAttribute("href", "/en");
+    await expect(page.getByRole("link", { name: "Torna alla home" })).toHaveAttribute(
+      "href",
+      "/it",
+    );
+    await expect(page.getByRole("link", { name: "Voltar ao início" })).toHaveAttribute(
+      "href",
+      "/pt",
+    );
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex");
     await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
     expect(

@@ -111,7 +111,7 @@ const CLAIM_COPY = {
     ...COPY.pt,
     subject: (code: string) => `O teu código para guardares o teu progresso: ${code}`,
     preheader: (code: string) => `O teu código para guardares o teu progresso em Lukitas: ${code}`,
-    heading: "O teu código para guardar o teu progresso",
+    heading: "O teu código para guardares o teu progresso",
     lead: "Escreve-o em Lukitas para guardar o teu progresso com este email.",
     button: undefined,
     buttonFallback: undefined,

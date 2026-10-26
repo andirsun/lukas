@@ -45,7 +45,7 @@ describe("roadmap items", () => {
     for (const item of ROADMAP_ITEMS) expect(item.glyph.trim(), item.id).not.toBe("");
   });
 
-  it("has every catalog key in both languages", () => {
+  it("has every catalog key in every language", () => {
     const keys = [
       ...ROADMAP_ITEMS.flatMap((item) => [item.title, item.body]),
       ...ROADMAP_STATUSES.map((status) => `roadmap.status.${status}`),

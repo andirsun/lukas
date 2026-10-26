@@ -23,7 +23,7 @@ describe("problemMessage", () => {
     expect(problemMessage(problem("category_name_taken"), tEn)).toBe(en.errors.category_name_taken);
   });
 
-  it("explains that sign-in is closed to an address, in both languages", () => {
+  it("explains that sign-in is closed to an address, in each language", () => {
     const closed = problem("sign_in_not_allowed", 403);
     expect(problemMessage(closed, tEs)).toBe(
       "Lukitas todavía no está abierto al público. Si quieres probarlo, escríbele a quien te invitó.",
@@ -33,19 +33,31 @@ describe("problemMessage", () => {
     expect(problemMessage(closed, tEn)).not.toBe(en.errors.generic);
   });
 
-  it("explains that guest accounts are turned off, in both languages", () => {
+  it("explains that guest accounts are turned off, in each language", () => {
     const off = problem("guest_signup_disabled", 403);
     expect(problemMessage(off, tEs)).toBe("Por ahora no se pueden crear cuentas de invitado.");
     expect(problemMessage(off, tEn)).toBe("Guest accounts are turned off for now.");
   });
 
-  it("explains a guest's email claim refusals, in both languages", () => {
+  it("explains a guest's email claim refusals, in each language", () => {
     const taken = problem("email_taken");
     expect(problemMessage(taken, tEs)).toBe("Ese correo ya tiene una cuenta. Entra con él.");
     expect(problemMessage(taken, tEn)).toBe("That email already has an account. Sign in with it.");
     const notGuest = problem("not_a_guest");
     expect(problemMessage(notGuest, tEs)).toBe("Tu cuenta ya tiene correo.");
     expect(problemMessage(notGuest, tEn)).toBe("Your account already has an email.");
+  });
+
+  it("speaks Italian and Portuguese too, and falls back to their own generic message", () => {
+    for (const locale of ["it", "pt"] as const) {
+      const messages = CATALOGS[locale];
+      const t = createTranslator({ locale, messages, onError: () => {} });
+      for (const code of ["sign_in_not_allowed", "email_taken", "category_name_taken"]) {
+        expect(problemMessage(problem(code), t)).toBe(messages.errors[code as "email_taken"]);
+      }
+      expect(problemMessage(problem("totally_new_code"), t)).toBe(messages.errors.generic);
+      expect(messages.errors.generic).not.toBe(es.errors.generic);
+    }
   });
 
   it("falls back to errors.generic for unknown codes", () => {

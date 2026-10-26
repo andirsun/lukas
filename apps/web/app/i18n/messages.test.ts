@@ -5,6 +5,7 @@ import type { LukasMessageKey } from "@lukas/core";
 import { createTranslator } from "use-intl/core";
 import { describe, expect, it } from "vitest";
 import { CATALOGS } from "./catalog.ts";
+import { intlTag } from "./format.ts";
 import appEn from "./messages/app.en.json" with { type: "json" };
 import appEs from "./messages/app.es.json" with { type: "json" };
 import appIt from "./messages/app.it.json" with { type: "json" };
@@ -56,6 +57,22 @@ function icuArguments(message: string): string[] {
   for (const match of message.matchAll(/\{\s*([A-Za-z_]\w*)\s*[,}]/g))
     names.add(match[1] as string);
   return [...names].sort();
+}
+
+/**
+ * The plural/select shape of a message: each `{name, plural|select` and each branch key (`one`,
+ * `other`, `=0`...), sorted. A translation that drops a branch or swaps plural for select differs.
+ */
+function icuShape(message: string): string[] {
+  const parts = [
+    ...[...message.matchAll(/\{\s*\w+\s*,\s*(plural|select|selectordinal)\s*,/g)].map(
+      (m) => m[1] as string,
+    ),
+    ...[...message.matchAll(/(?:^|[\s,}])(zero|one|two|few|many|other|=\d+)\s*\{/g)].map(
+      (m) => `branch:${m[1]}`,
+    ),
+  ];
+  return parts.sort();
 }
 
 /** Sorted rich-text tag names of a message (`<mark>lukas</mark>` → `mark`), for `t.rich`. */
@@ -124,6 +141,23 @@ describe("message catalogs", () => {
     }
   });
 
+  it("has the same plural and select branches as es for every key, in every language", () => {
+    expect(icuShape("{n, plural, one {# día} other {# días}}")).toEqual([
+      "branch:one",
+      "branch:other",
+      "plural",
+    ]);
+    let plurals = 0;
+    for (const language of LANGUAGES) {
+      for (const key of Object.keys(catalogs.es)) {
+        const shape = icuShape(catalogs.es[key] ?? "");
+        if (shape.length > 0 && language === "es") plurals++;
+        expect(icuShape(catalogs[language][key] ?? ""), `${language}:${key}`).toEqual(shape);
+      }
+    }
+    expect(plurals).toBeGreaterThan(10);
+  });
+
   it("uses the same rich-text tags as es for every key, in every language", () => {
     for (const language of LANGUAGES) {
       for (const key of Object.keys(catalogs.es)) {
@@ -161,8 +195,13 @@ describe("message catalogs", () => {
   });
 
   it("writes Portuguese as in Portugal: no Brazilian words", () => {
+    // Unicode-aware boundaries: `\b` never matches next to an accented letter (você, ônibus).
     const brazilian =
-      /\b(celular|tela|usuário|registrar|você|gastando|salvar|arquivo|deletar|baixar|aplicativo|cadastro|conta corrente|ônibus)\b/i;
+      /(?<![\p{L}])(celular|tela|usuário|registrar|você|gastando|salvar|arquivo|deletar|baixar|aplicativo|cadastro|conta corrente|ônibus)(?![\p{L}])/iu;
+    expect("obrigado, você sabe").toMatch(brazilian);
+    expect("apanha o ônibus").toMatch(brazilian);
+    expect("o teu telemóvel").not.toMatch(brazilian);
+    expect("o Usuário").toMatch(brazilian);
     for (const [key, value] of Object.entries(catalogs.pt)) {
       expect(value, `pt:${key}`).not.toMatch(brazilian);
     }
@@ -194,7 +233,7 @@ describe("message catalogs", () => {
           expect(variants.length).toBeGreaterThanOrEqual(3);
           // A bad ICU string or a missing param must fail the test, not fall back to the key path.
           const t = createTranslator({
-            locale,
+            locale: intlTag(locale),
             messages: CATALOGS[locale],
             onError: (error) => {
               throw error;

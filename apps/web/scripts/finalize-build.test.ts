@@ -33,6 +33,8 @@ describe("finalizeBuild", () => {
       const sitemap = readFileSync(join(dir, "sitemap.xml"), "utf8");
       expect(sitemap).toContain(`<loc>${ORIGIN}/roadmap</loc>`);
       expect(sitemap).toContain(`<loc>${ORIGIN}/en/roadmap</loc>`);
+      expect(sitemap).toContain(`<loc>${ORIGIN}/it/roadmap</loc>`);
+      expect(sitemap).toContain(`<loc>${ORIGIN}/pt/roadmap</loc>`);
     }
   });
 

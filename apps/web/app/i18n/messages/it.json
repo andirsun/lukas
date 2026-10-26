@@ -24,10 +24,10 @@
   },
   "roadmap": {
     "meta": {
-      "title": "Lukitas · Cosa arriva",
+      "title": "Lukitas · In arrivo",
       "description": "Cosa abbiamo in programma per Lukitas: la web app, il widget con microfono per Android, più spese in una frase, la tua IA collegata e altro. Senza date, e può cambiare."
     },
-    "title": "Cosa arriva",
+    "title": "In arrivo",
     "intro": "Questo è quello che abbiamo in programma. Può cambiare nel tempo.",
     "status": {
       "done": "Fatto",
@@ -36,7 +36,7 @@
       "later": "Più avanti"
     },
     "landing": {
-      "title": "Cosa arriva",
+      "title": "In arrivo",
       "cta": "Vedi la roadmap"
     },
     "items": {
@@ -46,7 +46,7 @@
       },
       "import_budge": {
         "title": "Importa il tuo storico da Budge",
-        "body": "Carica il tuo file CSV e guarda un'anteprima prima di portare dentro qualcosa."
+        "body": "Carica il tuo file CSV e guarda un'anteprima prima di importare qualsiasi cosa."
       },
       "demo": {
         "title": "Provala senza account",
@@ -58,7 +58,7 @@
       },
       "multi_expense": {
         "title": "Più spese in una frase",
-        "body": "“Ho speso 15 per il pranzo e 3 per Uber” e restano annotate entrambe."
+        "body": "«Ho speso 15 per il pranzo e 3 per Uber» e restano annotate entrambe."
       },
       "connect_ai": {
         "title": "Collega la tua IA",
@@ -89,7 +89,7 @@
       "label": "Principale",
       "home": "Lukitas, home",
       "how": "Come funziona",
-      "roadmap": "Cosa arriva",
+      "roadmap": "In arrivo",
       "faq": "Domande",
       "sign_in": "Entra",
       "sign_in_soon": "Presto"
@@ -166,7 +166,7 @@
       },
       "import": {
         "q": "Posso portare il mio storico da altre app?",
-        "a": "Sì. Oggi puoi importare da Budge: esporta i tuoi movimenti in CSV e caricalo quando crei il tuo account o dopo, da Impostazioni. Presto anche da Buddy e da altre app. Prima di importare vedi un'anteprima: quanti movimenti entrano, quali sono doppi e quali categorie verranno create."
+        "a": "Sì. Oggi puoi importare da Budge: esporta i tuoi movimenti in CSV e caricalo quando crei il tuo account o dopo, da Impostazioni. Presto anche da Buddy e da altre app. Prima di importare vedi un'anteprima: quanti movimenti entrano, quali sono duplicati e quali categorie verranno create."
       },
       "passwords": {
         "q": "Perché non mi chiede la password?",
@@ -188,14 +188,14 @@
     "closing": {
       "title": "Quando vuoi, partiamo.",
       "body": "Crea il tuo account con la tua email in meno di un minuto. A renderlo divertente ci pensa Lukitas.",
-      "body_soon": "Lukitas è in costruzione, in aperto. Guarda come avanza su GitHub e prova l'app appena apre.",
+      "body_soon": "Lukitas è in costruzione, alla luce del sole. Guarda come avanza su GitHub e prova l'app appena apre.",
       "body_invite": "Lukitas funziona già e la stiamo provando con un piccolo gruppo. Se ti hanno invitato, entra con la tua email."
     },
     "footer": {
       "language": "Lingua",
       "privacy": "Privacy",
       "copyright": "© {year} Lukitas",
-      "roadmap": "Cosa arriva"
+      "roadmap": "In arrivo"
     },
     "not_found": {
       "title": "Questa pagina non esiste",

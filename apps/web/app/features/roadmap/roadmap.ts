@@ -1,7 +1,7 @@
 /**
- * The public roadmap: the single source for the roadmap page (`/roadmap`, `/en/roadmap`) and the
- * landing's "what's next" section. Add, move or remove an item here (and its copy in both message
- * catalogs under `roadmap.items`) and both places follow. No dates anywhere: only a status.
+ * The public roadmap: the single source for the roadmap page (`/roadmap`, `/en/roadmap`, `/it/roadmap`, `/pt/roadmap`) and the
+ * landing's "what's next" section. Add, move or remove an item here (and its copy in every message
+ * catalog under `roadmap.items`) and both places follow. No dates anywhere: only a status.
  */
 
 /** Left to right on a desktop, top to bottom on a phone. */

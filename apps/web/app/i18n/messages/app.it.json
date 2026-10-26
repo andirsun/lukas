@@ -5,7 +5,7 @@
     "cancel": "Annulla",
     "save": "Salva",
     "close": "Chiudi",
-    "undo": "Annulla",
+    "undo": "Annulla l'ultima azione",
     "not_now": "Non ora",
     "pending": "In sospeso",
     "paid": "Pagato",
@@ -230,7 +230,7 @@
     "send_new_code": "Invia un nuovo codice"
   },
   "onboarding": {
-    "meta_title": "Benvenuto · Lukitas",
+    "meta_title": "Inizia · Lukitas",
     "progress": "Passo {current} di {total}",
     "back": "Indietro",
     "skip": "Salta",
@@ -242,8 +242,8 @@
     },
     "categories": {
       "title": "Dove se ne va il tuo denaro?",
-      "lead": "Queste sono le tue categorie. Tocca una per toglierla, modificale o aggiungi le tue.",
-      "lead_fresh": "Ne abbiamo già scelte alcune per te. Tocca una per toglierla, modificale o aggiungi le tue.",
+      "lead": "Queste sono le tue categorie. Toccane una per toglierla, modificale o aggiungi le tue.",
+      "lead_fresh": "Ne abbiamo già scelte alcune per te. Toccane una per toglierla, modificale o aggiungi le tue.",
       "expenses": "Spese",
       "income": "Entrate",
       "add": "Aggiungi categoria",
@@ -303,7 +303,7 @@
       "preview_title": "Ecco cosa stiamo per importare",
       "file": "File: {name}",
       "transactions": "Movimenti",
-      "duplicates": "Doppi (li hai già)",
+      "duplicates": "Duplicati (li hai già)",
       "rejected": "Righe con problemi",
       "new_categories": "Categorie nuove",
       "range": "Dal {from} al {to}",
@@ -350,7 +350,7 @@
     "prefill_basis": "In base a quanto hai speso {months, plural, one {nell'ultimo mese} other {negli ultimi # mesi}}",
     "next": "Avanti",
     "welcome": {
-      "title": "Benvenuto in Lukitas",
+      "title": "Ti diamo il benvenuto in Lukitas",
       "lead": "Imposta la tua valuta, le tue categorie e il tuo budget in un minuto, oppure entra subito e fallo dopo.",
       "setup": "Configura in 1 minuto",
       "direct": "Entra subito",
@@ -478,7 +478,7 @@
     },
     "delete_sheet": {
       "title": "Eliminare {name}?",
-      "body": "Non verrà più annotato da solo, e i suoi in sospeso da questo mese in poi vengono cancellati. Quello che hai già pagato resta.",
+      "body": "Non verrà più annotato da solo, e i suoi movimenti in sospeso da questo mese in poi vengono cancellati. Quello che hai già pagato resta.",
       "confirm": "Sì, elimina"
     }
   },

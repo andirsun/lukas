@@ -241,8 +241,8 @@ const ROADMAP = {
   it: {
     path: "/it/roadmap",
     otherPath: "/pt/roadmap",
-    title: "Cosa arriva",
-    titlePart: "Cosa arriva",
+    title: "In arrivo",
+    titlePart: "In arrivo",
     intro: "Questo è quello che abbiamo in programma. Può cambiare nel tempo.",
     columns: [
       { label: "Fatto", items: ["Provala senza account"] },
@@ -262,7 +262,7 @@ const ROADMAP = {
     ],
     landingItems: ["Android: widget con microfono", "Più spese in una frase", "Collega la tua IA"],
     cta: "Vedi la roadmap",
-    navLink: "Cosa arriva",
+    navLink: "In arrivo",
     description: /Cosa abbiamo in programma per Lukitas/,
     logo: "Lukitas, home",
   },

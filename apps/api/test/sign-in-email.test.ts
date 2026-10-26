@@ -121,8 +121,15 @@ describe("sign-in email", () => {
       "dentro de 1 minuto.",
     );
     expect(text).not.toMatch(
-      /Tu código|Your Lukitas|ENTRAR A|\bvocê\b|\bseu código\b|\bcelular\b/i,
+      /Tu código|Your Lukitas|ENTRAR A|(?<![\p{L}])(você|seu código|celular|ônibus)(?![\p{L}])/iu,
     );
+  });
+
+  test("the Brazilian-word guard sees accented words (você, ônibus)", () => {
+    const guard = /(?<![\p{L}])(você|seu código|celular|ônibus)(?![\p{L}])/iu;
+    expect("Olá, você").toMatch(guard);
+    expect("apanha o ônibus").toMatch(guard);
+    expect("o teu código").not.toMatch(guard);
   });
 
   test("the text part gives the magic link before any other URL", () => {
@@ -246,7 +253,7 @@ describe("claim email (a guest saves their progress)", () => {
     const mail = claimEmail({ ...claim, locale: "pt" });
     expect(mail.subject).toBe("O teu código para guardares o teu progresso: 123456");
     const text = visibleText(mail.html);
-    expect(text).toContain("O teu código para guardar o teu progresso");
+    expect(text).toContain("O teu código para guardares o teu progresso");
     expect(text).toContain("Escreve-o em Lukitas para guardar o teu progresso com este email.");
     expect(text).toContain("O código expira dentro de 10 minutos.");
     expect(text).not.toContain("ENTRAR EM LUKITAS");

@@ -35,7 +35,7 @@ export const suggestionChipId = (key: string) => `s:${key}`;
 /**
  * The categories step's chips, in order: the person's active categories first (after an import,
  * the file's), then the suggestions none of them covers yet. Names are compared without case or
- * accents, in either language, so an imported "supermercado" or "Groceries" covers "Supermercado"
+ * accents, in any language, so an imported "supermercado" or "Groceries" covers "Supermercado"
  * and no duplicate shows. Archived categories don't count: their suggestion can come back.
  */
 export function categoryChips(categories: ServerCategory[], locale: Locale): CategoryChipModel[] {

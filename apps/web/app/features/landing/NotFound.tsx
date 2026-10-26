@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
 import { createTranslator } from "use-intl/core";
-import { intlTag, type Locale } from "../../i18n/format.ts";
+import { intlTag, LOCALES, type Locale } from "../../i18n/format.ts";
 import en from "../../i18n/messages/en.json" with { type: "json" };
 import es from "../../i18n/messages/es.json" with { type: "json" };
 import it from "../../i18n/messages/it.json" with { type: "json" };
@@ -14,7 +14,7 @@ import "./landing.css";
 
 const CATALOGS = { es, en, it, pt } as const;
 
-/** The page's tags: titled in both languages and kept out of search results. */
+/** The page's tags: titled in every language and kept out of search results. */
 export const notFoundMeta = () => [
   { title: "Lukitas · 404" },
   { name: "robots", content: "noindex" },
@@ -39,9 +39,9 @@ function Message({ locale, primary }: { locale: Locale; primary: boolean }) {
 }
 
 /**
- * The page for any path that is not the landing, in the landing look. It speaks both languages
- * (the site has two and an unknown path says nothing about which one the visitor reads), each with
- * a link to its own home. Prerendered to `404.html` in the landing-only release, which Cloudflare
+ * The page for any path that is not the landing, in the landing look. It speaks all four languages
+ * (an unknown path says nothing about which one the visitor reads), each with a link to its own
+ * home. Prerendered to `404.html` in the landing-only release, which Cloudflare
  * Pages serves for unknown paths.
  */
 export function NotFound() {
@@ -63,8 +63,9 @@ export function NotFound() {
         <div className="lk-landing-notfound-lukas" role="img" aria-label={t("mascot")}>
           <Lukas mood="worried" size="100%" decorative />
         </div>
-        <Message locale="es" primary />
-        <Message locale="en" primary={false} />
+        {LOCALES.map((locale) => (
+          <Message key={locale} locale={locale} primary={locale === "es"} />
+        ))}
       </main>
     </div>
   );

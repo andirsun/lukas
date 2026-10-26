@@ -100,7 +100,7 @@ describe("parseBudgetInput", () => {
 
   it("gives an example that parses", () => {
     for (const currency of ["COP", "EUR", "CLP", "USD"]) {
-      for (const locale of ["es", "en"] as const) {
+      for (const locale of ["es", "en", "it", "pt"] as const) {
         expect(parseBudgetInput(budgetExample(currency, locale), locale)).toBeGreaterThan(0);
       }
     }
@@ -215,7 +215,7 @@ describe("SUGGESTED_CATEGORIES", () => {
     expect(new Set(SUGGESTED_CATEGORIES.map((c) => c.key)).size).toBe(8);
   });
 
-  it("finds the suggestion behind a name, in either language, ignoring case and accents", () => {
+  it("finds the suggestion behind a name, in any language, ignoring case and accents", () => {
     expect(suggestionFor("supermercado")?.key).toBe("groceries");
     expect(suggestionFor("Eating out")?.key).toBe("eating_out");
     expect(suggestionFor("Salário")?.key).toBe("salary");
@@ -229,7 +229,7 @@ describe("draftFromCents", () => {
     expect(draftFromCents(30_000_000, "es")).toBe("300.000");
     expect(draftFromCents(30_000_000, "en")).toBe("300,000");
     for (const cents of [3589, 30_000_000, 102_050, 125_000_050]) {
-      for (const locale of ["es", "en"] as const) {
+      for (const locale of ["es", "en", "it", "pt"] as const) {
         expect(parseBudgetInput(draftFromCents(cents, locale), locale)).toBe(cents);
       }
     }
