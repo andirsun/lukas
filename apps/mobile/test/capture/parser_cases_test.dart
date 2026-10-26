@@ -39,7 +39,7 @@ void main() {
       .cast<Map<String, dynamic>>();
 
   test('the cases file is there and full', () {
-    expect(cases.length, greaterThanOrEqualTo(207));
+    expect(cases.length, greaterThanOrEqualTo(332));
   });
 
   group('quick-capture cases', () {

@@ -23,21 +23,28 @@ void main() {
     }
   });
 
-  test('a sentence in Italian or Portuguese is read with the rules that need no words', () {
+  test('each of the app\'s four languages is read with its own rules, any other as Spanish', () {
     expect(parserLanguage('es'), 'es');
     expect(parserLanguage('en'), 'en');
-    expect(parserLanguage('it'), 'es');
-    expect(parserLanguage('pt'), 'es');
+    expect(parserLanguage('it'), 'it');
+    expect(parserLanguage('pt'), 'pt');
+    expect(parserLanguage('fr'), 'es');
   });
 
   test(
-    'a typed sentence in Italian or Portuguese never fails: digits, commas and names are read',
+    'a typed sentence in Italian or Portuguese never fails, even in words of another language',
     () {
       for (final (language, sentence) in [
         ('it', '15 pranzo, 3 uber'),
         ('pt', '15 almoço, 3 uber'),
         ('it', 'ho speso 12,50 per il pranzo'),
         ('pt', 'gastei 12,50 no almoço'),
+        ('it', 'gastei quinze euros e cinquenta no almoço'),
+        ('pt', 'ho speso quindici euro per il pranzo'),
+        ('it', 'gasté 15 mil en almuerzo'),
+        ('pt', 'gasté quince mil en almuerzo'),
+        ('it', 'mille milione milioni mila e e e ,, € 😀 l\'altro ieri'),
+        ('pt', 'cem e cem e cento e e meio milhão pagaram-me sexta-feira'),
       ]) {
         final result = parseSentence(
           sentence,
@@ -50,8 +57,10 @@ void main() {
             usual: const [],
           ),
         );
-        expect(result.drafts, isNotEmpty, reason: '$language "$sentence"');
-        expect(result.drafts.first.amount, anyOf(1500, 1250), reason: '$language "$sentence"');
+        expect(result.drafts.length + result.unread.length, greaterThan(0), reason: sentence);
+        if (sentence.contains(RegExp(r'^(15|ho speso 12|gastei 12)'))) {
+          expect(result.drafts.first.amount, anyOf(1500, 1250), reason: '$language "$sentence"');
+        }
       }
     },
   );

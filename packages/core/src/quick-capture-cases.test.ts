@@ -61,6 +61,13 @@ const RELATIVE: Record<string, number> = {
   yesterday: -1,
   antier: -2,
   anteayer: -2,
+  oggi: 0,
+  ieri: -1,
+  altroieri: -2,
+  avantieri: -2,
+  hoje: 0,
+  ontem: -1,
+  anteontem: -2,
 };
 const WEEKDAYS: Record<string, number> = {
   domingo: 0,
@@ -77,8 +84,30 @@ const WEEKDAYS: Record<string, number> = {
   friday: 5,
   sabado: 6,
   saturday: 6,
+  lunedi: 1,
+  martedi: 2,
+  mercoledi: 3,
+  giovedi: 4,
+  venerdi: 5,
+  sabato: 6,
+  domenica: 0,
+  segunda: 1,
+  terca: 2,
+  quarta: 3,
+  quinta: 4,
+  sexta: 5,
 };
-const wordsOf = (input: string) => plain(input).match(/[a-z]+/g) ?? [];
+// Date phrases of several words count as the one date word they mean.
+const PHRASES: [RegExp, string][] = [
+  [/\bl ?altro ieri\b/g, "altroieri"],
+  [/\bavant ieri\b/g, "avantieri"],
+  [/\bantes de ontem\b/g, "anteontem"],
+];
+const wordsOf = (input: string) => {
+  let text = plain(input).replace(/['\u2019]/g, " ");
+  for (const [phrase, word] of PHRASES) text = text.replace(phrase, word);
+  return text.match(/[a-z]+/g) ?? [];
+};
 
 describe("quick-capture cases file", () => {
   test("validates against cases.schema.json", () => {
@@ -112,9 +141,17 @@ describe("quick-capture cases file", () => {
 
   test("has the volume and spread the brief asks for", () => {
     expect(cases.length).toBeGreaterThanOrEqual(60);
-    // Most of them are Colombian: es, COP.
+    // Most of the es and en ones are Colombian: es, COP.
     const colombian = cases.filter((c) => c.locale === "es" && c.currency === "COP");
-    expect(colombian.length).toBeGreaterThan(cases.length / 2);
+    const esEn = cases.filter((c) => c.locale === "es" || c.locale === "en");
+    expect(colombian.length).toBeGreaterThan(esEn.length / 2);
+    // Italian and Portuguese have at least 40 each, and at least 3 sentences typed in the other
+    // languages' words (Review Focus 4).
+    for (const locale of ["it", "pt"]) {
+      const own = cases.filter((c) => c.locale === locale);
+      expect(own.length, locale).toBeGreaterThanOrEqual(40);
+      expect(own.filter((c) => c.id.startsWith("focus-")).length, locale).toBeGreaterThanOrEqual(3);
+    }
     const prefixes = new Set(cases.map((c) => c.id.split("-")[0]));
     expect([...prefixes].sort()).toEqual(
       ["amount", "category", "date", "focus", "kind", "real", "spike", "split", "unread"].sort(),

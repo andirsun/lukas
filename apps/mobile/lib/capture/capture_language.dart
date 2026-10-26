@@ -5,8 +5,11 @@ import '../settings/locale_resolution.dart';
 /// It picks the voice model and the grammar that biases it.
 String captureLanguage(String code) => appLanguages.contains(code) ? code : 'es';
 
-/// The language whose rules read a typed or heard sentence in the capture [language]. Spanish and
-/// English have their own words; Italian and Portuguese read digits, decimal commas and the
-/// connectors they share with Spanish until their own word lists exist, so what is typed in them
-/// works for amounts and never fails. (The Italian and Portuguese parsers plug in here.)
-String parserLanguage(String language) => language == 'en' ? 'en' : 'es';
+/// The language whose rules read a typed or heard sentence in the capture [language]: each of the
+/// app's four has its own (packages/core/quick-capture/README.md), and any other reads as Spanish.
+String parserLanguage(String language) => switch (language) {
+  'en' => 'en',
+  'it' => 'it',
+  'pt' => 'pt',
+  _ => 'es',
+};

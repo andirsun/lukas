@@ -1,6 +1,6 @@
 # Quick-capture parser cases
 
-Shared test cases for the on-device sentence parser (spec section 5, `docs/superpowers/specs/2026-10-22-stage-3-mobile-design.md`). The Dart parser in `apps/mobile` runs every case. A future TypeScript parser on the web runs the same file.
+Shared test cases for the on-device sentence parser (spec section 5, `docs/superpowers/specs/2026-10-22-stage-3-mobile-design.md`). The Dart parser in `apps/mobile` runs every case. A future TypeScript parser on the web runs the same file (the web has none today).
 
 - `cases.json`: the cases (a JSON array).
 - `cases.schema.json`: JSON Schema (2020-12) for that file.
@@ -88,6 +88,35 @@ The spec leaves these open, and the expected values rely on them. If the parser 
   - **Only categories of the draft's kind count**, in both steps. A transaction takes its sign from its category, so an income draft must never get an expense category. A usual pair counts only when its category is among `categories` and of the draft's kind; otherwise matching goes on to step 2. With no match of the same kind, `categoryId` is null (`category-kind-filter-usual`, `category-kind-filter-name`, `category-kind-filter-falls-through`).
 - **Unread:** a movement with no readable amount is unread as a whole (`compré pan`, `ayer fui al cine`, `me de ópalo en el éxito`). Text with no amount that sits next to a movement is part of its name, never unread.
 
+## Italian (`it`) and European Portuguese (`pt`)
+
+Each has its own rules, chosen by the `locale` of the case (the app picks the rules from its language). Everything above that is not about a word list holds in both: digit forms, the cap, the no-connector rule, the context that carries over, categories, unread. `it` and `pt` read **only their own words**. They do not read the Spanish or English ones (`mil` is not a scale word in `it`; `ayer` is a name in both), and the COP slang units `lukas` and `palos` do not exist in them. A sentence in the wrong language is therefore any other unknown phrasing: the digits and the words they know are read, the rest stays in the name, and a sentence with no amount is unread whole (`focus-it-*`, `focus-pt-*`). It never throws. A bare `mil` in `pt` is 1.000, as in `es`, so a Spanish sentence typed into `pt` can read an amount the person did not mean; the preview is where they fix it.
+
+Examples are European Portuguese (`pt-PT`). The voice model for `pt` is trained on Brazilian speech, so the number words also accept the Brazilian spellings of 16, 17, 19 and 14; they are not listed here.
+
+| | `it` | `pt` |
+|---|---|---|
+| Units and teens | `uno` … `nove`, `dieci` … `diciannove` | `um`/`uma`, `dois`/`duas` … `nove`, `dez` … `dezanove` |
+| Tens | `venti` … `novanta`; with a unit they are one word: `trentacinque`, `ventuno`, `ventotto` (the vowel drops before `uno` and `otto`) | `vinte` … `noventa`; with a unit they take `e`: `trinta e cinco` |
+| Hundreds | `cento`, `duecento` … `novecento`, one word with what follows: `centoventi`, `centottanta` (`cento venti` too) | `cem` (100 alone), `cento`, `duzentos` … `novecentos`, with `e` before what follows: `cento e vinte` |
+| Scale words | `mille` (1.000, alone), `mila`, `milione`, `milioni`, `k` | `mil`, `milhão`, `milhões`, `k` |
+| Half | `mezzo milione`, `un milione e mezzo` | `meio milhão`, `um milhão e meio` |
+| Decimal in words | `virgola` | `vírgula` |
+| Currency and cents words | `euro`, `dollaro`/`dollari`; `centesimo`/`centesimi` | `euro`/`euros`, `dólar`/`dólares`; `cêntimo(s)`, `centavo(s)` |
+| Verbs, expense | `ho speso`, `speso`, `ho pagato`, `pagato`, `ho comprato`, `comprato` | `gastei`, `paguei`, `comprei` |
+| Verbs, income | `ho ricevuto`, `ricevuto`, `ho guadagnato`, `guadagnato`, `ho incassato`, `incassato`, `mi hanno pagato` | `recebi`, `ganhei`, `me pagaram`, `pagaram-me` |
+| Dates | `oggi`, `ieri`, `l'altro ieri`/`altroieri`/`avantieri`, a weekday (`lunedì` … `domenica`) | `hoje`, `ontem`, `anteontem`/`antes de ontem`, a weekday (`segunda` … `sexta`, `sábado`, `domingo`; `terça-feira` and `sexta-feira` are one date word) |
+| Dropped from names | `in per al alla allo ai alle di del della dei delle da a il lo la i gli le un uno una nel nella sul` and the elided `l' d' dell' all' nell'` | `em no na nos nas para pra de do da dos das por pelo pela ao aos a as o os um uma` |
+| Connectors | `e`, `ed`, `anche`, `,` | `e`, `também`, `,` |
+
+- **Italian numbers are one word.** A number written as one word (`quindicimila`, `duemilacinquecento`, `milleduecento`) is read as the words it is made of: `quindici mila`, `due mila cinquecento`, `mille duecento`. Only a whole word that is made of number words counts, so `treno` and `camilla` are names. The same words written apart (`quindici mila`, `cento venti`) read the same.
+- **`e` inside a number.** In `pt` it joins a tens word and a unit (`vinte e cinco`), and a hundred and what follows (`cento e vinte`, not after `cem`). In both languages it may follow a scale word before a spelled-out number (`mil e quinhentos`, `dois mil e quinhentos`, `un milione e duecentomila`, `mille e duecento`), and `e mezzo`/`e meio` adds half of a scale (`mille e mezzo`). A digit never follows that `e`: `mille e 3 per l'uber` is two movements. Anywhere else `e` is a connector (`pão e leite 8 euros` is one movement named `pão e leite`; `15 almoço e 3 uber` is two).
+- **`e` between euros and cents.** After a currency word, `e` and a number from 10 to 99 are the cents: `quindici euro e cinquanta`, `quinze euros e cinquenta` and `15 euros e 50` are 15,50. With a cent word any 1 to 99 is cents (`15 euro e 5 centesimi`). Below 10 and without a cent word, it is the connector, so `15 euro e 3 per l'uber` is two movements (`split-it-e-is-cents-or-separator`). Without a currency word, `e` never joins units and cents: `quinze e cinquenta` is two amounts. The decimal comma (`15,50`, `1.234,50`) and `virgola`/`vírgula` (`12 virgola 50`) read as in `es`.
+- **Currency sign.** `€` is dropped with the amount, glued or not (`15€`).
+- **`l'altro ieri`.** The apostrophe separates words, so it is three words, one date. `l'`, `d'`, `dell'` and the like are dropped articles.
+- **Weekdays** follow the Spanish rule: the most recent one strictly before today, so today's own weekday is a week ago (`date-it-weekday-today-is-last-week`, `date-pt-weekday-today-is-last-week`).
+- **Digit forms** are the Spanish ones, space thousands included (`120 000`).
+
 ## Review Focus decisions
 
 ### "15 lukas" in EUR (and "palos" in USD)
@@ -122,6 +151,8 @@ Ids start with their group:
 | `split-` | Where a sentence is one movement and where it is several. |
 | `category-` | Usual name, category name ignoring accents, and none. |
 | `unread-` | Sentences with nothing to read. |
+
+The Italian and Portuguese cases carry `it` and `pt` in `locale`, EUR, and `Europe/Rome` or `Europe/Lisbon`; the `it` and `pt` in an id (`amount-it-mille`, `split-pt-tambem`) says which. Their `focus-` cases are the sentences typed in another language's words (Review Focus 4).
 
 Notes on the `real-` cases:
 

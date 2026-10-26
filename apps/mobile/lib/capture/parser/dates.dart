@@ -3,6 +3,8 @@
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'words.dart';
+
 var _tzReady = false;
 
 /// Today in [timeZone] (an IANA name, the profile's) at the instant [nowUtc], as `YYYY-MM-DD`.
@@ -41,29 +43,84 @@ String addDays(String date, int days) {
   return formatDate(moved.year, moved.month, moved.day);
 }
 
-/// Days back from today for each relative date word (folded).
-const _relative = {'hoy': 0, 'today': 0, 'ayer': 1, 'yesterday': 1, 'antier': 2, 'anteayer': 2};
-
-/// Weekday words (folded) to [DateTime.weekday] (Monday is 1).
-const _weekdays = {
-  'lunes': 1,
-  'martes': 2,
-  'miercoles': 3,
-  'jueves': 4,
-  'viernes': 5,
-  'sabado': 6,
-  'domingo': 7,
-  'monday': 1,
-  'tuesday': 2,
-  'wednesday': 3,
-  'thursday': 4,
-  'friday': 5,
-  'saturday': 6,
-  'sunday': 7,
+/// Days back from today for each relative date word (folded), in every language.
+const _relative = {
+  'hoy': 0, 'today': 0, 'ayer': 1, 'yesterday': 1, 'antier': 2, 'anteayer': 2, //
+  'oggi': 0, 'ieri': 1, 'altroieri': 2, 'avantieri': 2, //
+  'hoje': 0, 'ontem': 1, 'anteontem': 2,
 };
 
-/// Whether [word] (folded) is a date word.
-bool isDateWord(String word) => _relative.containsKey(word) || _weekdays.containsKey(word);
+/// Weekday words (folded) to [DateTime.weekday] (Monday is 1), in every language.
+const _weekdays = {
+  'lunes': 1, 'martes': 2, 'miercoles': 3, 'jueves': 4, 'viernes': 5, 'sabado': 6, 'domingo': 7, //
+  'monday': 1, 'tuesday': 2, 'wednesday': 3, 'thursday': 4, 'friday': 5, 'saturday': 6, //
+  'sunday': 7,
+  'lunedi': 1, 'martedi': 2, 'mercoledi': 3, 'giovedi': 4, 'venerdi': 5, 'sabato': 6, //
+  'domenica': 7,
+  'segunda': 1, 'terca': 2, 'terça': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5,
+};
+
+// The date words each language reads. Spanish and English read each other's (as they always
+// have); Italian and Portuguese read only their own.
+const _wordsEsEn = {
+  'hoy', 'today', 'ayer', 'yesterday', 'antier', 'anteayer', //
+  'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo', //
+  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+};
+const _wordsIt = {
+  'oggi', 'ieri', 'altroieri', 'avantieri', //
+  'lunedi', 'martedi', 'mercoledi', 'giovedi', 'venerdi', 'sabato', 'domenica',
+};
+const _wordsPt = {
+  'hoje', 'ontem', 'anteontem', //
+  'segunda', 'terca', 'terça', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo',
+};
+
+// Date phrases of several words, folded, and the date word each one means.
+const _phrasesIt = <(List<String>, String)>[
+  (['l', 'altro', 'ieri'], 'altroieri'),
+  (['altro', 'ieri'], 'altroieri'),
+  (['avant', 'ieri'], 'avantieri'),
+];
+const _phrasesPt = <(List<String>, String)>[
+  (['antes', 'de', 'ontem'], 'anteontem'),
+];
+
+/// Whether [word] (folded) is a Spanish or English date word.
+bool isDateWord(String word) => _wordsEsEn.contains(word);
+
+bool _wordIs(List<Token> tokens, int i, String word) =>
+    i < tokens.length && !tokens[i].isNumber && !tokens[i].isComma && tokens[i].norm == word;
+
+/// The date word at token [i] in [locale], as how many tokens it takes and the folded word it
+/// means (`dateOf` takes it), or null. `l'altro ieri` is three tokens and means `altroieri`;
+/// Portuguese weekdays may be followed by `feira` (`sexta-feira`).
+(int, String)? dateAt(List<Token> tokens, int i, String locale) {
+  final t = tokens[i];
+  if (t.isNumber || t.isComma) return null;
+  final phrases = switch (locale) {
+    'it' => _phrasesIt,
+    'pt' => _phrasesPt,
+    _ => const <(List<String>, String)>[],
+  };
+  for (final (words, key) in phrases) {
+    var all = true;
+    for (var k = 0; k < words.length && all; k++) {
+      all = _wordIs(tokens, i + k, words[k]);
+    }
+    if (all) return (words.length, key);
+  }
+  final words = switch (locale) {
+    'it' => _wordsIt,
+    'pt' => _wordsPt,
+    _ => _wordsEsEn,
+  };
+  if (!words.contains(t.norm)) return null;
+  if (locale == 'pt' && _weekdays.containsKey(t.norm) && _wordIs(tokens, i + 1, 'feira')) {
+    return (2, t.norm);
+  }
+  return (1, t.norm);
+}
 
 /// The date a date word (folded) means, given [today]. A weekday is the most recent one strictly
 /// before today, so today's own weekday is a week ago.
