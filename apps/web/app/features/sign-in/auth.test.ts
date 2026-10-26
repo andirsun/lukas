@@ -97,7 +97,6 @@ describe("langFrom", () => {
     expect(langFrom("pt")).toBe("pt");
     expect(langFrom("fr")).toBeNull();
     expect(langFrom("EN")).toBeNull();
-    expect(langFrom("fr")).toBeNull();
     expect(langFrom(null)).toBeNull();
   });
 });

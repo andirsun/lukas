@@ -17,7 +17,7 @@ import { RecurringForm } from "./RecurringForm.tsx";
 import { nextOccurrence } from "./recurring-model.ts";
 
 /** A date as `23 oct 2026` (es) or `Oct 23, 2026` (en). */
-function formatDate(date: string, locale: Locale): string {
+export function formatDate(date: string, locale: Locale): string {
   return new Intl.DateTimeFormat(intlTag(locale), { dateStyle: "medium", timeZone: "UTC" })
     .format(new Date(`${date}T00:00:00Z`))
     .replace(/\./g, "");

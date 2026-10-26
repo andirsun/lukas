@@ -3,6 +3,8 @@ import type { Locale } from "../i18n/format.ts";
 import {
   type AmountFormat,
   amountCents,
+  centsOf,
+  keypadText,
   pasteAmount,
   pastedNegative,
   pressKey,
@@ -158,5 +160,13 @@ describe("pastedNegative: a minus before the first digit", () => {
   });
   it.each(["50-", "50.000", "6,08 €", "2026-10-21", "$ 15.000", ""])("%j is not", (text) => {
     expect(pastedNegative(text)).toBe(false);
+  });
+});
+
+describe("keypadText round trip", () => {
+  it.each(["es", "en", "it", "pt"] as const)("reads back what it wrote in %s", (locale) => {
+    expect(keypadText(26280, locale, "EUR")).toBe(locale === "en" ? "262.80" : "262,80");
+    expect(centsOf(keypadText(26280, locale, "EUR"), locale)).toBe(26280);
+    expect(centsOf(keypadText(5000, locale, "EUR"), locale)).toBe(5000);
   });
 });
