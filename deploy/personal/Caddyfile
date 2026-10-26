@@ -75,7 +75,7 @@
 
 	# --- The landing and roadmap live on their own site: send visitors there (same path and query).
 	# A temporary redirect, so the landing can move without browsers remembering the old answer.
-	@pages path / /en /en/ /roadmap /roadmap/ /en/roadmap /en/roadmap/
+	@pages path / /en /en/ /it /it/ /pt /pt/ /roadmap /roadmap/ /en/roadmap /en/roadmap/ /it/roadmap /it/roadmap/ /pt/roadmap /pt/roadmap/
 	handle @pages {
 		header Cache-Control "no-cache"
 		redir {$LANDING_URL}{uri} 302

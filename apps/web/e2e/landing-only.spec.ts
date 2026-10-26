@@ -534,6 +534,11 @@ test.describe("landing-only build output", () => {
   test("_headers caches assets for good, HTML briefly, and sets the security headers", () => {
     const headers = readFileSync(`${CLIENT}_headers`, "utf8");
     expect(headers).toMatch(/\/assets\/\*\s+Cache-Control: public, max-age=31536000, immutable/);
+    for (const path of ["/en", "/it", "/pt", "/it/roadmap", "/pt/roadmap/"]) {
+      expect(headers, path).toMatch(
+        new RegExp(`^${path}\\n\\s+Cache-Control: public, max-age=300, must-revalidate`, "m"),
+      );
+    }
     expect(headers).toMatch(/X-Content-Type-Options: nosniff/);
     expect(headers).toMatch(/Referrer-Policy: strict-origin-when-cross-origin/);
     expect(headers).toMatch(/Permissions-Policy: .*camera=\(\)/);
