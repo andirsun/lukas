@@ -9,8 +9,11 @@ export interface SuggestedCategory {
   /** Mid-tone color, mixed into the tile's surface so it reads in night and day: saved as `color`. */
   tint: string;
   kind: CategoryKind;
-  /** The category's name in each language; the person's language decides which one is created. */
-  names: Record<Locale, string>;
+  /**
+   * The category's name in each language; the person's language decides which one is created.
+   * A language without a name here (Italian, Portuguese, until their copy lands) uses Spanish.
+   */
+  names: { es: string; en: string } & Partial<Record<Locale, string>>;
 }
 
 /** The onboarding's suggestions (spec §2.4). The names match the Budge import's usual categories. */
@@ -60,6 +63,11 @@ export const SUGGESTED_CATEGORIES: readonly SuggestedCategory[] = [
     names: { es: "Salario", en: "Salary" },
   },
 ];
+
+/** A suggestion's name in a language: Spanish where it has none yet. */
+export function suggestionName(suggestion: SuggestedCategory, locale: Locale): string {
+  return suggestion.names[locale] ?? suggestion.names.es;
+}
 
 /** Lowercase, without accents: how the API and the importer compare category names. */
 export function normalizeName(name: string): string {

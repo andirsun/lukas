@@ -257,3 +257,32 @@ test("a guest's defaults read an underscore tag (en_US) like a hyphenated one", 
   expect(read("es_CO")).toMatchObject({ locale: "es", region: "CO" });
   expect(read("en-US")).toMatchObject({ locale: "en", region: "US" });
 });
+
+test("a tag maps to a locale: it-* is Italian, pt-* (Brazil too) is Portuguese, the rest Spanish or the fallback", () => {
+  const read = (tag: string) => guestDefaults(new Headers({ "x-lukas-locale": tag }));
+  expect(read("it-IT")).toMatchObject({ locale: "it", region: "IT" });
+  expect(read("it")).toMatchObject({ locale: "it" });
+  expect(read("it_CH")).toMatchObject({ locale: "it", region: "CH" });
+  expect(read("pt-PT")).toMatchObject({ locale: "pt", region: "PT" });
+  expect(read("pt-BR")).toMatchObject({ locale: "pt", region: "BR" });
+  expect(read("pt")).toMatchObject({ locale: "pt" });
+  expect(read("fr-FR").locale).toBe("es");
+  const accept = (value: string) => guestDefaults(new Headers({ "accept-language": value }));
+  expect(accept("it-IT,it;q=0.9,en;q=0.5").locale).toBe("it");
+  expect(accept("pt-PT,pt;q=0.9").locale).toBe("pt");
+  expect(accept("fr").locale).toBe("es");
+});
+
+describe("sign-in email language for it and pt", () => {
+  test.each([
+    ["it-IT", "it"],
+    ["it", "it"],
+    ["pt-PT", "pt"],
+    ["pt-BR", "pt"],
+    ["pt", "pt"],
+  ])("a phone's tag %j puts lang=%s on the link", async (tag, lang) => {
+    const email = `lang-${tag.toLowerCase().replace(/[^a-z0-9]/g, "")}@lukas.test`;
+    await sendCode(email, { "x-lukas-locale": tag, "accept-language": "en-US,en;q=0.9" });
+    expect(t.mailer.lastTo(email)?.text).toContain(`&lang=${lang}`);
+  });
+});

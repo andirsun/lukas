@@ -124,7 +124,7 @@ export type UpdateRecurrence = z.infer<typeof updateRecurrenceSchema>;
 export const updateProfileSchema = z
   .object({
     timezone: z.string().refine(isValidTimeZone, "Unknown time zone"),
-    locale: z.enum(["es", "en"]),
+    locale: z.enum(["es", "en", "it", "pt"]),
     currency: z.enum(SUPPORTED_CURRENCIES),
     onboardingCompleted: z.literal(true),
   })

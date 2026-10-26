@@ -49,7 +49,10 @@ String? regionOf(String tag) => _tag.firstMatch(tag)?.group(1)?.toUpperCase();
 /// language -> EUR, and a bare `es` in an America/* zone -> USD.
 String defaultCurrency(List<String> languages, String? timeZone) {
   final regions = [for (final tag in languages) ?regionOf(tag)];
-  final region = regions.contains('CO') ? 'CO' : regions.firstOrNull;
+  // A bare Italian or Portuguese language reads as Italy or Portugal: euros (spec section 2.3).
+  final first = languages.firstOrNull?.split(RegExp('[-_]')).first.toLowerCase();
+  final home = first == 'it' ? 'IT' : (first == 'pt' ? 'PT' : null);
+  final region = regions.contains('CO') ? 'CO' : (regions.firstOrNull ?? home);
   return defaultCurrencyFor(timeZone ?? '', region);
 }
 

@@ -11,6 +11,7 @@ import {
   SUGGESTED_CATEGORIES,
   type SuggestedCategory,
   suggestionFor,
+  suggestionName,
 } from "./suggested-categories.ts";
 
 export type Profile = paths["/v1/me"]["get"]["responses"][200]["content"]["application/json"];
@@ -49,7 +50,7 @@ export async function allCategories(api: ApiClient): Promise<Category[]> {
 /** The body that creates a suggested category, named in the person's language. */
 export function suggestionBody(suggestion: SuggestedCategory, locale: Locale) {
   return {
-    name: suggestion.names[locale],
+    name: suggestionName(suggestion, locale),
     kind: suggestion.kind,
     icon: suggestion.glyph,
     color: suggestion.tint,

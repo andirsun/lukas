@@ -3,6 +3,8 @@
  * name of a downloaded export, and finding and naming time zones.
  */
 
+import { intlTag } from "../../i18n/format.ts";
+
 /** Whether what was typed is the account's email: case-insensitive, surrounding spaces trimmed. */
 export function emailMatches(typed: string, email: string): boolean {
   const wanted = email.trim().toLowerCase();
@@ -59,7 +61,7 @@ export const ZONE_ALIASES: Readonly<Record<string, readonly string[]>> = {
 function genericName(zone: string, locale: string): string {
   try {
     return (
-      new Intl.DateTimeFormat(locale, { timeZone: zone, timeZoneName: "longGeneric" })
+      new Intl.DateTimeFormat(intlTag(locale), { timeZone: zone, timeZoneName: "longGeneric" })
         .formatToParts(0)
         .find((part) => part.type === "timeZoneName")?.value ?? ""
     );
@@ -121,7 +123,7 @@ export function searchZones(
 /** The zone's offset from UTC at `at` (`GMT-5`, `GMT+2`, `GMT`), or "" for a zone the runtime lacks. */
 export function zoneOffset(zone: string, locale: string, at: Date = new Date()): string {
   try {
-    const parts = new Intl.DateTimeFormat(locale, {
+    const parts = new Intl.DateTimeFormat(intlTag(locale), {
       timeZone: zone,
       timeZoneName: "shortOffset",
     }).formatToParts(at);

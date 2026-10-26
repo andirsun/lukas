@@ -1,6 +1,6 @@
 import { type RefObject, useEffect, useId, useRef } from "react";
 import { useTranslations } from "use-intl";
-import type { Locale } from "../../i18n/format.ts";
+import { intlTag, type Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { type CurrencyNote, type ImportDto, type ImportState, newRows } from "./import-state.ts";
@@ -36,7 +36,7 @@ const REASONS = [
 ] as const;
 
 function formatDate(iso: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlTag(locale), {
     day: "numeric",
     month: "short",
     year: "numeric",

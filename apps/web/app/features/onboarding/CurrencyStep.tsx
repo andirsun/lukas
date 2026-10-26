@@ -1,5 +1,6 @@
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@lukas/core";
 import { useTranslations } from "use-intl";
+import { intlTag } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { StepFrame, type StepNavProps, useStepActions } from "./StepFrame.tsx";
 
@@ -11,7 +12,7 @@ export interface CurrencyStepProps extends StepNavProps {
 
 /** "Peso colombiano": the currency's name in the person's language, capitalized. */
 export function currencyName(code: string, locale: string): string {
-  const name = new Intl.DisplayNames([locale], { type: "currency" }).of(code) ?? code;
+  const name = new Intl.DisplayNames([intlTag(locale)], { type: "currency" }).of(code) ?? code;
   return name.charAt(0).toLocaleUpperCase(locale) + name.slice(1);
 }
 

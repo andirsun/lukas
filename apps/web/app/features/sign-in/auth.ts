@@ -8,7 +8,7 @@ import {
   rememberPasskeyUsed,
   shouldOfferPasskey,
 } from "../../auth/passkey.ts";
-import { detectLocale, type Locale } from "../../i18n/format.ts";
+import { detectLocale, isLocale, type Locale } from "../../i18n/format.ts";
 
 /** Good enough to catch typos; the server has the final word. */
 export const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -152,7 +152,7 @@ export function destinationAfterSignIn(
 
 /** `?lang=` as set by the landing's call to action: only a language the app speaks. */
 export function langFrom(value: string | null): Locale | null {
-  return value === "es" || value === "en" ? value : null;
+  return isLocale(value) ? value : null;
 }
 
 /**

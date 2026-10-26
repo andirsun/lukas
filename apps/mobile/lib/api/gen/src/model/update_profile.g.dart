@@ -8,6 +8,8 @@ part of 'update_profile.dart';
 
 const UpdateProfileLocaleEnum _$updateProfileLocaleEnum_es = const UpdateProfileLocaleEnum._('es');
 const UpdateProfileLocaleEnum _$updateProfileLocaleEnum_en = const UpdateProfileLocaleEnum._('en');
+const UpdateProfileLocaleEnum _$updateProfileLocaleEnum_it = const UpdateProfileLocaleEnum._('it');
+const UpdateProfileLocaleEnum _$updateProfileLocaleEnum_pt = const UpdateProfileLocaleEnum._('pt');
 
 UpdateProfileLocaleEnum _$updateProfileLocaleEnumValueOf(String name) {
   switch (name) {
@@ -15,6 +17,10 @@ UpdateProfileLocaleEnum _$updateProfileLocaleEnumValueOf(String name) {
       return _$updateProfileLocaleEnum_es;
     case 'en':
       return _$updateProfileLocaleEnum_en;
+    case 'it':
+      return _$updateProfileLocaleEnum_it;
+    case 'pt':
+      return _$updateProfileLocaleEnum_pt;
     default:
       throw ArgumentError(name);
   }
@@ -24,6 +30,8 @@ final BuiltSet<UpdateProfileLocaleEnum> _$updateProfileLocaleEnumValues =
     BuiltSet<UpdateProfileLocaleEnum>(const <UpdateProfileLocaleEnum>[
       _$updateProfileLocaleEnum_es,
       _$updateProfileLocaleEnum_en,
+      _$updateProfileLocaleEnum_it,
+      _$updateProfileLocaleEnum_pt,
     ]);
 
 const UpdateProfileCurrencyEnum _$updateProfileCurrencyEnum_COP = const UpdateProfileCurrencyEnum._(
@@ -81,8 +89,18 @@ Serializer<UpdateProfileOnboardingCompletedEnum> _$updateProfileOnboardingComple
     _$UpdateProfileOnboardingCompletedEnumSerializer();
 
 class _$UpdateProfileLocaleEnumSerializer implements PrimitiveSerializer<UpdateProfileLocaleEnum> {
-  static const Map<String, Object> _toWire = const <String, Object>{'es': 'es', 'en': 'en'};
-  static const Map<Object, String> _fromWire = const <Object, String>{'es': 'es', 'en': 'en'};
+  static const Map<String, Object> _toWire = const <String, Object>{
+    'es': 'es',
+    'en': 'en',
+    'it': 'it',
+    'pt': 'pt',
+  };
+  static const Map<Object, String> _fromWire = const <Object, String>{
+    'es': 'es',
+    'en': 'en',
+    'it': 'it',
+    'pt': 'pt',
+  };
 
   @override
   final Iterable<Type> types = const <Type>[UpdateProfileLocaleEnum];

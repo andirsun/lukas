@@ -27,7 +27,7 @@ interface Draft {
 interface Case {
   id: string;
   input: string;
-  locale: "es" | "en";
+  locale: "es" | "en" | "it" | "pt";
   currency: "COP" | "EUR" | "USD";
   today: string;
   timeZone: string;
@@ -102,6 +102,8 @@ describe("quick-capture cases file", () => {
     expect(bad((c) => delete draft(c).categoryId)).toBe(false);
     expect(bad((c) => (c.currency = "MXN"))).toBe(false);
     expect(bad((c) => (c.locale = "fr"))).toBe(false);
+    expect(bad((c) => (c.locale = "it"))).toBe(true);
+    expect(bad((c) => (c.locale = "pt"))).toBe(true);
     expect(bad((c) => (c.extra = 1))).toBe(false);
     expect(bad((c) => delete c.usual)).toBe(false);
     expect(bad((c) => (c.id = "Spike S01"))).toBe(false);

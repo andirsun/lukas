@@ -252,4 +252,5 @@ const EN: DemoSeed = {
 };
 
 /** The demo's seed per language: the page's language picks the person (and her currency). */
-export const DEMO_SEED: Record<Locale, DemoSeed> = { es: ES, en: EN };
+// Italian and Portuguese use the Spanish seed until they have their own.
+export const DEMO_SEED: Record<Locale, DemoSeed> = { es: ES, en: EN, it: ES, pt: ES };

@@ -13,4 +13,7 @@ import es from "./messages/es.json" with { type: "json" };
 export const CATALOGS = {
   es: { ...es, ...appEs },
   en: { ...en, ...appEn },
+  // Italian and Portuguese read Spanish until their catalogs land (spec §2.2).
+  it: { ...es, ...appEs },
+  pt: { ...es, ...appEs },
 } as const;

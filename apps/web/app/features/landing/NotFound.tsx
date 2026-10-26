@@ -10,7 +10,8 @@ import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
 import "./landing.css";
 
-const CATALOGS = { es, en } as const;
+// Italian and Portuguese read Spanish until their catalogs land (spec §2.2).
+const CATALOGS = { es, en, it: es, pt: es } as const;
 
 /** The page's tags: titled in both languages and kept out of search results. */
 export const notFoundMeta = () => [

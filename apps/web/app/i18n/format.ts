@@ -1,19 +1,41 @@
 import { InvalidAmountError, type IsoDate, type Month, parseDecimalToMinor } from "@lukas/core";
 
-export type Locale = "es" | "en";
+export type Locale = "es" | "en" | "it" | "pt";
 
 export const DEFAULT_LOCALE: Locale = "es";
 
-const MINUS = "−";
+/** Every locale, Spanish (the default) first. */
+export const LOCALES: readonly Locale[] = ["es", "en", "it", "pt"];
 
-/** `es*` maps to Spanish, anything else (or nothing) to English. */
-export function detectLocale(navigatorLanguage: string | undefined): Locale {
-  return navigatorLanguage?.toLowerCase().startsWith("es") ? "es" : "en";
+/** Whether a value is one of the app's locales. */
+export const isLocale = (value: unknown): value is Locale =>
+  typeof value === "string" && (LOCALES as readonly string[]).includes(value);
+
+/** Languages that write the decimal comma (and so group with a point or a space). */
+const decimalComma = (locale: Locale) => locale !== "en";
+
+/**
+ * The tag `Intl` formats with. A bare `pt` is Brazilian in CLDR (`€ 1.234,50`); Lukitas writes
+ * European Portuguese (`1234,50 €`), and `it` is Italy's Italian.
+ */
+export function intlTag(locale: string): string {
+  return locale === "it" ? "it-IT" : locale === "pt" ? "pt-PT" : locale;
 }
 
-/** Public pages: `/en` and `/en/...` are English, everything else is Spanish. */
+const MINUS = "−";
+
+/** `es*` maps to Spanish, `it*` to Italian, `pt*` (Brazil too) to Portuguese, the rest to English. */
+export function detectLocale(navigatorLanguage: string | undefined): Locale {
+  const language = navigatorLanguage?.toLowerCase().split(/[-_]/)[0];
+  return language === "es" || language === "it" || language === "pt" ? language : "en";
+}
+
+/** Public pages: `/en`, `/it` and `/pt` (and below) have their language, everything else is Spanish. */
 export function localeFromPathname(pathname: string): Locale {
-  return pathname === "/en" || pathname.startsWith("/en/") ? "en" : "es";
+  for (const locale of ["en", "it", "pt"] as const) {
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) return locale;
+  }
+  return "es";
 }
 
 /**
@@ -43,7 +65,7 @@ function moneyFormat(
   // other currencies keep the plain `es` conventions (EUR stays "562,92 €"). In English the COP
   // code stays, because "$50,000" would read as dollars.
   const colombian = currency === "COP" && locale === "es";
-  const format = new Intl.NumberFormat(colombian ? "es-CO" : locale, {
+  const format = new Intl.NumberFormat(colombian ? "es-CO" : intlTag(locale), {
     style: "currency",
     currency,
     ...(colombian ? { currencyDisplay: "narrowSymbol" as const } : {}),
@@ -81,7 +103,7 @@ export function formatMoney(
  * and the decimals stay exactly as typed, a trailing separator or zero included. Empty is 0.
  */
 export function formatAmountInput(raw: string, currency: string, locale: Locale): string {
-  const separator = locale === "es" ? "," : ".";
+  const separator = decimalComma(locale) ? "," : ".";
   const [whole = "", decimals] = raw.split(separator);
   const { format, colombian } = moneyFormat(currency, locale, {
     minimumFractionDigits: 0,
@@ -110,7 +132,8 @@ export function formatAmountInput(raw: string, currency: string, locale: Locale)
  * threshold applies after rounding, so 999.990 pesos is "1 palo". The sign is ignored.
  */
 export function lukasHint(cents: number, currency: string, locale: Locale): string | null {
-  if (currency !== "COP") return null;
+  // The slang is Colombian Spanish (and its k/M in English); Italian and Portuguese have none.
+  if (currency !== "COP" || locale === "it" || locale === "pt") return null;
   const abs = Math.abs(cents);
   if (abs < 1000 * MINOR_UNIT) return null;
 
@@ -136,25 +159,26 @@ function utcDate(iso: string): Date {
 /** Short weekday plus day of month: es `mié 21`, en `Wed 21`. */
 export function formatDay(date: IsoDate, locale: Locale): string {
   const d = utcDate(date);
-  const weekday = new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" })
+  const tag = intlTag(locale);
+  const weekday = new Intl.DateTimeFormat(tag, { weekday: "short", timeZone: "UTC" })
     .format(d)
     .replace(/\.$/, "");
-  const day = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" }).format(d);
+  const day = new Intl.DateTimeFormat(tag, { day: "numeric", timeZone: "UTC" }).format(d);
   return `${weekday} ${day}`;
 }
 
 /** Full month name, capitalized: es `Octubre`, en `October`. */
 export function formatMonth(month: Month, locale: Locale): string {
-  const name = new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(
+  const name = new Intl.DateTimeFormat(intlTag(locale), { month: "long", timeZone: "UTC" }).format(
     utcDate(`${month}-01`),
   );
   return name.charAt(0).toLocaleUpperCase(locale) + name.slice(1);
 }
 
-/** A month's name mid-sentence: lowercase in Spanish (`desde octubre`), as is in English. */
+/** A month's name mid-sentence: lowercase in Spanish, Italian and Portuguese (`desde octubre`), as is in English. */
 export function monthInSentence(month: Month, locale: Locale): string {
   const name = formatMonth(month, locale);
-  return locale === "es" ? name.toLocaleLowerCase(locale) : name;
+  return locale === "en" ? name : name.toLocaleLowerCase(locale);
 }
 
 /**
@@ -163,7 +187,7 @@ export function monthInSentence(month: Month, locale: Locale): string {
  */
 export function parseAmountInput(text: string, locale: Locale): number {
   const trimmed = text.trim();
-  const [decimal, other] = locale === "es" ? [",", "."] : [".", ","];
+  const [decimal, other] = decimalComma(locale) ? [",", "."] : [".", ","];
   if (trimmed.includes(other)) throw new InvalidAmountError(text);
   return parseDecimalToMinor(trimmed.replace(decimal, "."));
 }

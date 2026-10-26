@@ -14,9 +14,12 @@ class InvalidAmountException implements Exception {
 }
 
 /// Whole numbers grouped by thousands, with optional decimals: es `1.250.000,50`, en `1,250,000.50`.
+final _groupedComma = RegExp(r'^\d{1,3}(\.\d{3})+(,\d{1,2})?$');
 final _grouped = {
-  'es': RegExp(r'^\d{1,3}(\.\d{3})+(,\d{1,2})?$'),
+  'es': _groupedComma,
   'en': RegExp(r'^\d{1,3}(,\d{3})+(\.\d{1,2})?$'),
+  'it': _groupedComma,
+  'pt': _groupedComma,
 };
 
 /// JavaScript's `Number.MAX_SAFE_INTEGER`: the web's amounts never pass it.
@@ -26,8 +29,8 @@ final _maxSafe = BigInt.from(9007199254740991);
 /// only, at most two decimals, in hundredths.
 int _parseAmount(String text, String locale) {
   final trimmed = text.trim();
-  final decimal = locale == 'es' ? ',' : '.';
-  final other = locale == 'es' ? '.' : ',';
+  final decimal = locale == 'en' ? '.' : ',';
+  final other = locale == 'en' ? ',' : '.';
   if (trimmed.contains(other)) throw InvalidAmountException(text);
   final match = RegExp(r'^(-?)(\d+)(?:\.(\d{1,2}))?$')
       .firstMatch(trimmed.replaceFirst(decimal, '.'));
@@ -46,7 +49,7 @@ int _parseAmount(String text, String locale) {
 int? parseBudgetInput(String text, String locale) {
   final bare = text.replaceAll(RegExp(r'[\s$€]'), '');
   if (bare.isEmpty) return null;
-  final grouping = locale == 'es' ? '.' : ',';
+  final grouping = locale == 'en' ? ',' : '.';
   final ungrouped = _grouped[locale]!.hasMatch(bare) ? bare.replaceAll(grouping, '') : bare;
   if (ungrouped.startsWith('-')) throw InvalidAmountException(text);
   return _parseAmount(ungrouped, locale);
@@ -58,14 +61,14 @@ const _thousands = {'COP', 'CLP', 'ARS'};
 /// A valid example for the "type just the number" hint, in the way people write that currency.
 String budgetExample(String currency, String locale) {
   if (!_thousands.contains(currency)) return '300';
-  return locale == 'es' ? '300.000' : '300,000';
+  return locale == 'en' ? '300,000' : '300.000';
 }
 
 /// A stored amount as the field shows it: `300.000`, `35,89` (es) or `300,000`, `35.89` (en).
-/// Grouped as the browser's `Intl.NumberFormat` does: Spanish leaves four digits together
-/// (`1234`), English groups them (`1,234`).
+/// Grouped as the browser's `Intl.NumberFormat` does: Spanish, Italian and Portuguese leave four
+/// digits together (`1234`), English groups them (`1,234`).
 String draftFromCents(int cents, String locale) {
-  final spanish = locale == 'es';
+  final spanish = locale != 'en';
   final whole = cents % 100 == 0;
   final units = (cents ~/ 100).toString();
   final digits = units.length <= 3 || (spanish && units.length == 4)
@@ -73,7 +76,7 @@ String draftFromCents(int cents, String locale) {
       : [
           if (units.length % 3 != 0) units.substring(0, units.length % 3),
           for (var i = units.length % 3; i < units.length; i += 3) units.substring(i, i + 3),
-        ].join(spanish ? '.' : ',');
+        ].join(locale == 'pt' ? '\u00a0' : (spanish ? '.' : ','));
   if (whole) return digits;
   return '$digits${spanish ? ',' : '.'}${(cents % 100).toString().padLeft(2, '0')}';
 }
@@ -133,7 +136,7 @@ Typed formatBudgetTyping(String text, int caret, BudgetFormat format) {
     raw,
     format.currency,
     format.locale,
-  ).replaceAll(RegExp(r'[^\d.,]'), '');
+  ).replaceAll(RegExp(r'[^\d.,\u00a0]'), '').trim();
 
   // The caret goes after as many digits as were before it (and after the decimal separator if it
   // was right after it).

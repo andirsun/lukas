@@ -32,7 +32,7 @@ export interface AmountFormat {
 }
 
 export function decimalSeparator(locale: Locale): string {
-  return locale === "es" ? "," : ".";
+  return locale === "en" ? "." : ",";
 }
 
 /** Whether this amount takes decimals (and the keypad shows its decimal key). */

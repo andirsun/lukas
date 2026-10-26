@@ -3,7 +3,7 @@ import { useId, useState } from "react";
 import { useTranslations } from "use-intl";
 import { ApiProblem, problemMessage, type Translator } from "../../api/errors.ts";
 import { useAllCategories, useDeleteRecurrence, useMe, useRecurrences } from "../../api/queries.ts";
-import { formatMoney, type Locale, monthInSentence } from "../../i18n/format.ts";
+import { formatMoney, intlTag, type Locale, monthInSentence } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { ConfirmSheet } from "../../ui/ConfirmSheet.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
@@ -18,7 +18,7 @@ import { nextOccurrence } from "./recurring-model.ts";
 
 /** A date as `23 oct 2026` (es) or `Oct 23, 2026` (en). */
 function formatDate(date: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" })
+  return new Intl.DateTimeFormat(intlTag(locale), { dateStyle: "medium", timeZone: "UTC" })
     .format(new Date(`${date}T00:00:00Z`))
     .replace(/\./g, "");
 }

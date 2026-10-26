@@ -58,7 +58,7 @@ int livingWindow(List<({int income, int expenses})> months) {
 String monthLabel(String month, String current, String locale) {
   final year = month.substring(0, 4);
   final sameYear = year == current.substring(0, 4);
-  if (locale == 'es') {
+  if (locale == 'es' || locale == 'pt') {
     return sameYear ? monthInSentence(month, locale) : '${monthInSentence(month, locale)} de $year';
   }
   return sameYear ? formatMonthName(month, locale) : '${formatMonthName(month, locale)} $year';
@@ -67,7 +67,7 @@ String monthLabel(String month, String current, String locale) {
 /// A share of the total (0.5944) as a percentage with at most one decimal: `59,4 %`, `59.4%`
 /// (`formatShare`).
 String formatShare(double share, String locale) {
-  final format = NumberFormat.percentPattern(locale)
+  final format = NumberFormat.percentPattern(dateTag(locale))
     ..minimumFractionDigits = 0
     ..maximumFractionDigits = 1;
   return format.format(share);
@@ -76,7 +76,9 @@ String formatShare(double share, String locale) {
 /// A month's short name for an axis: `oct`, `Oct` (`shortMonth`).
 String shortMonth(String month, String locale) {
   final p = month.split('-').map(int.parse).toList();
-  return DateFormat.MMM(locale).format(DateTime.utc(p[0], p[1])).replaceFirst(RegExp(r'\.$'), '');
+  return DateFormat.MMM(dateTag(locale))
+      .format(DateTime.utc(p[0], p[1]))
+      .replaceFirst(RegExp(r'\.$'), '');
 }
 
 /// The part of a whole that [value] is, for bars: between 0 and 1, and 0 when there is no whole
@@ -114,7 +116,7 @@ List<double> sharesOf(List<int> totals) {
 /// `1,2 M` (es); `6k`, `1.2M` (en). No currency: the axis sits next to full amounts
 /// (`compactAmount`).
 String compactAmount(int cents, String locale) {
-  final format = NumberFormat.compact(locale: locale)..maximumFractionDigits = 1;
+  final format = NumberFormat.compact(locale: dateTag(locale))..maximumFractionDigits = 1;
   final text = format.format(cents / 100);
   return locale == 'en' ? text.replaceFirst(RegExp(r'K$'), 'k') : text;
 }

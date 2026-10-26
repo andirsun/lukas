@@ -14,6 +14,11 @@ const _wholeUnitCurrencies = {'COP', 'CLP'};
 const _minus = '−';
 const _nbsp = ' ';
 
+/// Whether [locale] writes the decimal comma, the symbol after the figure and groups four digits
+/// only from five (CLDR's minimum grouping digits of 2): Spanish, Italian and Portuguese. English
+/// is the other way round.
+bool _commaLocale(String locale) => locale != 'en';
+
 /// Whether a currency is counted in whole units only (no cents to type or show): COP, CLP.
 bool isWholeUnit(String currency) => _wholeUnitCurrencies.contains(currency);
 
@@ -38,23 +43,28 @@ class _Style {
 }
 
 _Style _style(String currency, String locale) {
-  final spanish = locale == 'es';
+  final spanish = _commaLocale(locale);
   switch (currency) {
     // Colombians write pesos as "$50.000". In English the code stays: "$50,000" would read as
     // dollars.
     case 'COP':
-      return spanish ? const _Style(r'$', attached: true) : const _Style('COP', attached: false);
+      return locale == 'es'
+          ? const _Style(r'$', attached: true)
+          : const _Style('COP', attached: false);
     case 'EUR':
       return _Style('€', attached: !spanish);
     case 'USD':
+      // CLDR writes Italian dollars as the code ("1234,00 USD"), Spanish and Portuguese as "US$".
+      if (locale == 'it') return const _Style('USD', attached: false);
       return spanish ? const _Style(r'US$', attached: false) : const _Style(r'$', attached: true);
     default:
       return _Style(currency, attached: false);
   }
 }
 
-/// [digits] (a run of 0-9) with [separator] between groups of three. Spanish (outside pesos) does
-/// not group four-digit numbers (CLDR's minimum grouping digits is 2): `1234,56 €`, `12.345,00 €`.
+/// [digits] (a run of 0-9) with [separator] between groups of three. Spanish, Italian and
+/// Portuguese (outside Colombian pesos) do not group four-digit numbers (CLDR's minimum grouping
+/// digits is 2): `1234,56 €`, `12.345,00 €`.
 String _grouped(String digits, String separator, {required bool minTwo}) {
   if (digits.length <= 3 || (minTwo && digits.length == 4)) return digits;
   final out = StringBuffer();
@@ -70,17 +80,17 @@ String _grouped(String digits, String separator, {required bool minTwo}) {
 /// Formats integer minor units (hundredths). Negatives use the real minus sign (U+2212) rather
 /// than a hyphen, so "−6,08 €" never breaks or reads as a dash.
 String formatMoney(int cents, String currency, String locale, {MoneySign sign = MoneySign.auto}) {
-  final spanish = locale == 'es';
+  final spanish = _commaLocale(locale);
   final style = _style(currency, locale);
   final whole = isWholeUnit(currency);
   final abs = cents.abs();
   // Whole currencies round half away from zero, as Intl does.
   final units = whole ? (abs + _minorUnit ~/ 2) ~/ _minorUnit : abs ~/ _minorUnit;
   final fraction = (abs % _minorUnit).toString().padLeft(2, '0');
-  final colombian = currency == 'COP' && spanish;
-  final figure = StringBuffer(
-    _grouped(units.toString(), spanish ? '.' : ',', minTwo: spanish && !colombian),
-  );
+  final colombian = currency == 'COP' && locale == 'es';
+  // Italian groups with a point, Portuguese (Portugal) with a no-break space, as `Intl` does.
+  final group = locale == 'pt' ? _nbsp : (spanish ? '.' : ',');
+  final figure = StringBuffer(_grouped(units.toString(), group, minTwo: spanish && !colombian));
   if (!whole) figure.write('${spanish ? ',' : '.'}$fraction');
 
   final zero = whole ? units == 0 : abs == 0;
@@ -91,7 +101,8 @@ String formatMoney(int cents, String currency, String locale, {MoneySign sign = 
       : sign == MoneySign.always
       ? '+'
       : '';
-  // Spanish puts the symbol after the figure, except the Colombian peso's "$".
+  // Spanish, Italian and Portuguese put the symbol after the figure, except the Colombian peso's
+  // "$".
   if (spanish && !colombian) return '$prefix$figure$_nbsp${style.symbol}';
   return '$prefix${style.symbol}${style.attached ? '' : _nbsp}$figure';
 }
@@ -101,7 +112,7 @@ String formatMoney(int cents, String currency, String locale, {MoneySign sign = 
 /// grouped and the decimals stay exactly as typed, a trailing separator or zero included. Empty is
 /// 0. Whole-unit currencies show no decimals (a separator there only ended the amount).
 String formatAmountInput(String raw, String currency, String locale) {
-  final separator = locale == 'es' ? ',' : '.';
+  final separator = _commaLocale(locale) ? ',' : '.';
   final parts = raw.split(separator);
   final whole = int.tryParse(parts.first.isEmpty ? '0' : parts.first) ?? 0;
   final money = formatMoney(whole * _minorUnit, currency, locale);
@@ -115,7 +126,7 @@ String _number(double value, String locale) {
   // At most two decimals, none when whole: 15,5 / 15.5, 1,25 / 1.25, 50.
   var text = value.toStringAsFixed(2);
   text = text.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
-  return locale == 'es' ? text.replaceFirst('.', ',') : text;
+  return _commaLocale(locale) ? text.replaceFirst('.', ',') : text;
 }
 
 /// The "lukas hint" for COP: 1 luka = $1.000 and 1 palo = $1.000.000 (es), "k" and "M" (en),
@@ -124,7 +135,8 @@ String _number(double value, String locale) {
 /// 1.000 pesos. Lukas show at most one decimal, palos at most two; the palos threshold applies
 /// after rounding, so 999.990 pesos is "1 palo". The sign is ignored.
 String? lukasHint(int cents, String locale, {String currency = 'COP'}) {
-  if (currency != 'COP') return null;
+  // The slang is Colombian Spanish (and its k/M in English); Italian and Portuguese have none.
+  if (currency != 'COP' || locale == 'it' || locale == 'pt') return null;
   final abs = cents.abs();
   if (abs < 1000 * _minorUnit) return null;
 

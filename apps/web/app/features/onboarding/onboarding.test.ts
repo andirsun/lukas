@@ -24,6 +24,12 @@ describe("defaultCurrency", () => {
     [["en-US"], "America/Bogota", "COP"],
     [["es-ES"], "Europe/Madrid", "EUR"],
     [["pt-PT"], "Europe/Lisbon", "EUR"],
+    [["it-IT"], "America/New_York", "EUR"],
+    [["it"], "America/New_York", "EUR"],
+    [["pt"], "America/New_York", "EUR"],
+    [["pt-PT"], "America/New_York", "EUR"],
+    [["pt-BR"], "America/Sao_Paulo", "USD"],
+    [["it", "es-CO"], "America/New_York", "COP"],
     [["en-GB"], "Europe/London", "EUR"],
     [["de-CH"], "Europe/Zurich", "EUR"],
     [["es"], "Europe/Madrid", "EUR"],
@@ -44,6 +50,25 @@ describe("defaultCurrency", () => {
       expect(defaultCurrency(languages, timeZone)).toBe(expected);
     });
   }
+});
+
+describe("budgets in Italian and Portuguese", () => {
+  it("read the decimal comma, with a point or a space for thousands", () => {
+    expect(parseBudgetInput("300", "it")).toBe(30000);
+    expect(parseBudgetInput("35,89", "pt")).toBe(3589);
+    expect(parseBudgetInput("1.250.000,50", "it")).toBe(125000050);
+    expect(parseBudgetInput("1.250.000,50", "pt")).toBe(125000050);
+    expect(parseBudgetInput("1\u00a0250\u00a0000,50 €", "pt")).toBe(125000050);
+    expect(() => parseBudgetInput("35.89", "it")).toThrow();
+  });
+  it("show a stored amount and an example the same way", () => {
+    expect(draftFromCents(30000, "it")).toBe("300");
+    expect(draftFromCents(3589, "pt")).toBe("35,89");
+    expect(draftFromCents(123456700, "it")).toBe("1.234.567");
+    expect(draftFromCents(123456700, "pt")).toBe("1\u00a0234\u00a0567");
+    expect(budgetExample("COP", "it")).toBe("300.000");
+    expect(budgetExample("COP", "pt")).toBe("300.000");
+  });
 });
 
 describe("parseBudgetInput", () => {

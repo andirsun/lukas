@@ -120,6 +120,38 @@ describe("guests", () => {
     expect(await me(t, g.headers)).toMatchObject({ locale: "es", currency: "COP" });
   });
 
+  test("Italian and Portuguese guests get EUR, wherever their phone is", async () => {
+    const cases: [
+      locale: string,
+      timezone: string,
+      expected: { locale: string; currency: string },
+    ][] = [
+      ["it-IT", "Europe/Rome", { locale: "it", currency: "EUR" }],
+      ["it", "America/New_York", { locale: "it", currency: "EUR" }],
+      ["pt-PT", "Europe/Lisbon", { locale: "pt", currency: "EUR" }],
+      ["pt", "America/New_York", { locale: "pt", currency: "EUR" }],
+      // Brazil has no supported currency of its own: the region rule applies as before.
+      ["pt-BR", "America/Sao_Paulo", { locale: "pt", currency: "USD" }],
+      // Colombia still wins.
+      ["it-IT", "America/Bogota", { locale: "it", currency: "COP" }],
+    ];
+    for (const [locale, timezone, expected] of cases) {
+      const g = await guest(t, { "x-lukas-timezone": timezone, "x-lukas-locale": locale });
+      expect(await me(t, g.headers)).toMatchObject(expected);
+    }
+  });
+
+  test("the profile's language can be set to it or pt, and stays", async () => {
+    const g = await guest(t, { "x-lukas-timezone": "Europe/Rome", "x-lukas-locale": "es" });
+    for (const locale of ["it", "pt"]) {
+      const res = await t.request("PATCH", "/v1/me", { headers: g.headers, body: { locale } });
+      expect(res.status).toBe(200);
+      expect((await me(t, g.headers)).locale).toBe(locale);
+    }
+    const bad = await t.request("PATCH", "/v1/me", { headers: g.headers, body: { locale: "fr" } });
+    expect(bad.status).toBe(422);
+  });
+
   test("a zone that isn't an IANA name is ignored: UTC, and USD", async () => {
     for (const timezone of ["+05:00", "Not/AZone", "Europe/Lisbon; drop table", ""]) {
       const g = await guest(t, { "x-lukas-timezone": timezone });

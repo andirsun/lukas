@@ -1,10 +1,10 @@
-import { detectLocale, type Locale } from "../i18n/format.ts";
+import { detectLocale, isLocale, type Locale } from "../i18n/format.ts";
 
 /** Where the tab remembers the demo's language, so a reload of `/demo/insights` keeps it. */
 export const DEMO_LANG_KEY = "lukas.demo.lang";
 
 const asLocale = (value: string | null | undefined): Locale | null =>
-  value === "es" || value === "en" ? value : null;
+  isLocale(value) ? value : null;
 
 function readStored(storage: Pick<Storage, "getItem"> | undefined): Locale | null {
   try {

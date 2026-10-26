@@ -1,10 +1,20 @@
 import type { Locale } from "../i18n/format.ts";
 
 /** Each locale's landing page. Spanish is the default (and `x-default`). */
-export const LANDING_PATH: Record<Locale, string> = { es: "/", en: "/en" };
+export const LANDING_PATH: Record<Locale, string> = {
+  es: "/",
+  en: "/en",
+  it: "/it",
+  pt: "/pt",
+};
 
 /** Each locale's roadmap page: English URLs, and Spanish has no prefix, like the landing. */
-export const ROADMAP_PATH: Record<Locale, string> = { es: "/roadmap", en: "/en/roadmap" };
+export const ROADMAP_PATH: Record<Locale, string> = {
+  es: "/roadmap",
+  en: "/en/roadmap",
+  it: "/it/roadmap",
+  pt: "/pt/roadmap",
+};
 
 /** The public, prerendered pages of the site. */
 export type SitePage = "landing" | "roadmap";

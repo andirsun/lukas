@@ -12,7 +12,8 @@ export { LANDING_PATH };
 /** The 1200×630 share images rendered by `scripts/og/render.ts`. */
 const OG_IMAGE = { width: 1200, height: 630 };
 
-const CATALOGS = { es, en } as const;
+// Italian and Portuguese read Spanish until their catalogs land (spec §2.2).
+const CATALOGS = { es, en, it: es, pt: es } as const;
 
 /** Absolute URLs use the site's origin (`VITE_SITE_URL`, see `app/site/config.ts`). */
 function absolute(path: string): string {

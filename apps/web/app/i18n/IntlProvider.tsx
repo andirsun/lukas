@@ -23,7 +23,8 @@ import es from "./messages/es.json" with { type: "json" };
  * The app's screens add the rest with `AppMessages` (catalog.ts), so visitors of the landing do
  * not download them.
  */
-const MESSAGES: Record<Locale, AbstractIntlMessages> = { es, en };
+// Italian and Portuguese read Spanish until their catalogs land (spec §2.2).
+const MESSAGES: Record<Locale, AbstractIntlMessages> = { es, en, it: es, pt: es };
 
 interface LocaleContextValue {
   locale: Locale;
