@@ -22,7 +22,7 @@ void main() {
     expect(compactAmount(600000, 'pt'), '6${nbsp}mil');
     expect(compactAmount(120000000, 'it'), '1,2${nbsp}Mln');
     expect(compactAmount(120000000, 'pt'), '1,2${nbsp}M');
-    expect(monthLabel('2025-12', '2026-10', 'it'), 'Dicembre 2025');
+    expect(monthLabel('2025-12', '2026-10', 'it'), 'dicembre 2025');
     expect(monthLabel('2025-12', '2026-10', 'pt'), 'dezembro de 2025');
     expect(monthLabel('2026-10', '2026-10', 'pt'), 'outubro');
   });
