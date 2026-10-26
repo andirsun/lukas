@@ -153,6 +153,14 @@ void main() {
       for (final locale in ['en', 'es']) {
         if (await store.installedPath(locale) == null) await store.download(locale);
       }
+      // Italian and Portuguese are beta voices that may not be released yet: they are kept when a
+      // phone has them (the engine then also serves an it or pt sheet) and never downloaded here,
+      // so a phone without them skips them instead of failing.
+      for (final locale in ['it', 'pt']) {
+        if (await store.installedPath(locale) == null) {
+          debugPrint('no $locale voice installed: skipped');
+        }
+      }
       await _startAsGuest(
         tester,
         overrides: [
@@ -262,73 +270,70 @@ void main() {
     },
   );
 
-  testWidgets(
-    'RefreshWorker updates the snapshot from GET /v1/summary with the stored session, '
-    'and after sign out the widget never shows the previous figure',
-    (tester) async {
-      await _startAsGuest(tester);
-      final token = (await SessionStore().read())!.token;
-      // Home's load writes the snapshot, in the app's currency and language.
-      final first = await _snapshotWhere(tester, (doc) => doc['signedIn'] == true);
-      expect(first['v'], 3);
-      // The profile's zone, which the widget reads "this month" and its midnight in.
-      expect(first['timezone'], isA<String>());
+  testWidgets('RefreshWorker updates the snapshot from GET /v1/summary with the stored session, '
+      'and after sign out the widget never shows the previous figure', (tester) async {
+    await _startAsGuest(tester);
+    final token = (await SessionStore().read())!.token;
+    // Home's load writes the snapshot, in the app's currency and language.
+    final first = await _snapshotWhere(tester, (doc) => doc['signedIn'] == true);
+    expect(first['v'], 3);
+    // The profile's zone, which the widget reads "this month" and its midnight in.
+    expect(first['timezone'], isA<String>());
 
-      // A movement made elsewhere (the web, say): the app does not know of it.
-      final summary = await _http.get<Map<String, dynamic>>(
-        '$_server/api/v1/summary',
-        options: _auth(token),
-      );
-      final month = summary.data!['month'] as String;
-      final category = await _http.post<Map<String, dynamic>>(
-        '$_server/api/v1/categories',
-        data: {
-          'name': 'Widget ${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
-          'kind': 'expense',
-          'icon': '🛒',
-          'color': '#2fd388',
-        },
-        options: _auth(token),
-      );
-      expect(category.statusCode, 201, reason: '${category.data}');
-      final made = await _http.post<Map<String, dynamic>>(
-        '$_server/api/v1/transactions',
-        data: {
-          'name': 'Widget refresh',
-          'amount': -1234500,
-          'categoryId': category.data!['id'],
-          'date': '$month-01',
-        },
-        options: _auth(token),
-      );
-      expect(made.statusCode, 201, reason: '${made.data}');
-      final after = await _http.get<Map<String, dynamic>>(
-        '$_server/api/v1/summary',
-        options: _auth(token),
-      );
+    // A movement made elsewhere (the web, say): the app does not know of it.
+    final summary = await _http.get<Map<String, dynamic>>(
+      '$_server/api/v1/summary',
+      options: _auth(token),
+    );
+    final month = summary.data!['month'] as String;
+    final category = await _http.post<Map<String, dynamic>>(
+      '$_server/api/v1/categories',
+      data: {
+        'name': 'Widget ${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}',
+        'kind': 'expense',
+        'icon': '🛒',
+        'color': '#2fd388',
+      },
+      options: _auth(token),
+    );
+    expect(category.statusCode, 201, reason: '${category.data}');
+    final made = await _http.post<Map<String, dynamic>>(
+      '$_server/api/v1/transactions',
+      data: {
+        'name': 'Widget refresh',
+        'amount': -1234500,
+        'categoryId': category.data!['id'],
+        'date': '$month-01',
+      },
+      options: _auth(token),
+    );
+    expect(made.statusCode, 201, reason: '${made.data}');
+    final after = await _http.get<Map<String, dynamic>>(
+      '$_server/api/v1/summary',
+      options: _auth(token),
+    );
 
-      final outcome = await _test.invokeMethod<String>('refreshWidget');
-      expect(outcome, 'refreshed');
-      final refreshed = (await _snapshot())!;
-      expect(refreshed['signedIn'], true);
-      expect(refreshed['spent'], after.data!['spent']);
-      expect(refreshed['remaining'], after.data!['remaining']);
-      expect(refreshed['currency'], first['currency']);
-      expect(refreshed['hideAmount'], first['hideAmount']);
-      expect(refreshed['timezone'], first['timezone']);
+    final outcome = await _test.invokeMethod<String>('refreshWidget');
+    expect(outcome, 'refreshed');
+    final refreshed = (await _snapshot())!;
+    expect(refreshed['signedIn'], true);
+    expect(refreshed['spent'], after.data!['spent']);
+    expect(refreshed['remaining'], after.data!['remaining']);
+    expect(refreshed['currency'], first['currency']);
+    expect(refreshed['hideAmount'], first['hideAmount']);
+    expect(refreshed['timezone'], first['timezone']);
 
-      // Signing out: at once the widget holds no figure, and the job brings none back.
-      final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
-      await container.read(sessionProvider.notifier).signOut(discardGuest: true);
-      await _pumpUntil(tester, find.byType(EntryScreen));
-      final signedOut = await _snapshotWhere(tester, (doc) => doc['signedIn'] == false);
-      expect(signedOut.containsKey('spent'), isFalse);
-      expect(signedOut.containsKey('remaining'), isFalse);
+    // Signing out: at once the widget holds no figure, and the job brings none back.
+    final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
+    await container.read(sessionProvider.notifier).signOut(discardGuest: true);
+    await _pumpUntil(tester, find.byType(EntryScreen));
+    final signedOut = await _snapshotWhere(tester, (doc) => doc['signedIn'] == false);
+    expect(signedOut.containsKey('spent'), isFalse);
+    expect(signedOut.containsKey('remaining'), isFalse);
 
-      expect(await _test.invokeMethod<String>('refreshWidget'), 'signed out');
-      final still = (await _snapshot())!;
-      expect(still['signedIn'], false);
-      expect(still.containsKey('spent'), isFalse);
-    },
-  );
+    expect(await _test.invokeMethod<String>('refreshWidget'), 'signed out');
+    final still = (await _snapshot())!;
+    expect(still['signedIn'], false);
+    expect(still.containsKey('spent'), isFalse);
+  });
 }

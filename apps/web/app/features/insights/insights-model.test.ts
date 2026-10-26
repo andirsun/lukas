@@ -129,7 +129,8 @@ describe("it and pt strings (pinned to the app's)", () => {
     expect(compactAmount(600000, "pt")).toBe("6\u00a0mil");
     expect(compactAmount(120000000, "it")).toBe("1,2\u00a0Mln");
     expect(compactAmount(120000000, "pt")).toBe("1,2\u00a0M");
-    expect(monthLabel("2025-12", "2026-10", "it")).toBe("Dicembre 2025");
+    expect(monthLabel("2025-12", "2026-10", "it")).toBe("dicembre 2025");
+    expect(monthLabel("2026-10", "2026-10", "it")).toBe("ottobre");
     expect(monthLabel("2025-12", "2026-10", "pt")).toBe("dezembro de 2025");
     expect(monthLabel("2026-10", "2026-10", "pt")).toBe("outubro");
   });

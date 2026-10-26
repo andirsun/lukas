@@ -54,12 +54,15 @@ int livingWindow(List<({int income, int expenses})> months) {
 }
 
 /// A month mid-sentence, with its year when it is not the current one's: `octubre`,
-/// `diciembre de 2025` (`monthLabel`).
+/// `diciembre de 2025`, `ottobre`, `dicembre 2025` (`monthLabel`).
 String monthLabel(String month, String current, String locale) {
   final year = month.substring(0, 4);
   final sameYear = year == current.substring(0, 4);
   if (locale == 'es' || locale == 'pt') {
     return sameYear ? monthInSentence(month, locale) : '${monthInSentence(month, locale)} de $year';
+  }
+  if (locale == 'it') {
+    return sameYear ? monthInSentence(month, locale) : '${monthInSentence(month, locale)} $year';
   }
   return sameYear ? formatMonthName(month, locale) : '${formatMonthName(month, locale)} $year';
 }

@@ -45,7 +45,7 @@ export function livingWindow(months: { income: number; expenses: number }[]): nu
   return first === -1 ? 0 : months.length - first;
 }
 
-/** A month mid-sentence, with its year when it is not the current one's: `octubre`, `diciembre de 2025`. */
+/** A month mid-sentence, with its year when it is not the current one's: `octubre`, `diciembre de 2025`, `ottobre`, `dicembre 2025`. */
 export function monthLabel(month: Month, current: Month, locale: Locale): string {
   const year = month.slice(0, 4);
   const sameYear = year === current.slice(0, 4);
@@ -53,6 +53,8 @@ export function monthLabel(month: Month, current: Month, locale: Locale): string
     return sameYear
       ? monthInSentence(month, locale)
       : `${monthInSentence(month, locale)} de ${year}`;
+  if (locale === "it")
+    return sameYear ? monthInSentence(month, locale) : `${monthInSentence(month, locale)} ${year}`;
   return sameYear ? formatMonth(month, locale) : `${formatMonth(month, locale)} ${year}`;
 }
 
