@@ -57,7 +57,7 @@ const _weekdays = {
   'sunday': 7,
   'lunedi': 1, 'martedi': 2, 'mercoledi': 3, 'giovedi': 4, 'venerdi': 5, 'sabato': 6, //
   'domenica': 7,
-  'segunda': 1, 'terca': 2, 'terça': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5,
+  'segunda': 1, 'terca': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5,
 };
 
 // The date words each language reads. Spanish and English read each other's (as they always
@@ -73,8 +73,12 @@ const _wordsIt = {
 };
 const _wordsPt = {
   'hoje', 'ontem', 'anteontem', //
-  'segunda', 'terca', 'terça', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo',
+  'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo',
 };
+
+// Portuguese weekdays that are also ordinary words (`segunda mão`, `a quinta do lago`).
+const _ptAmbiguousWeekdays = {'segunda', 'terca', 'quarta', 'quinta', 'sexta'};
+const _ptPrepositions = {'na', 'no', 'de', 'a', 'em'};
 
 // Date phrases of several words, folded, and the date word each one means.
 const _phrasesIt = <(List<String>, String)>[
@@ -115,11 +119,30 @@ bool _wordIs(List<Token> tokens, int i, String word) =>
     'pt' => _wordsPt,
     _ => _wordsEsEn,
   };
-  if (!words.contains(t.norm)) return null;
-  if (locale == 'pt' && _weekdays.containsKey(t.norm) && _wordIs(tokens, i + 1, 'feira')) {
-    return (2, t.norm);
+  // `ç` is a letter of its own to `fold`; Portuguese weekdays are compared with it as `c`.
+  final norm = locale == 'pt' ? t.norm.replaceAll('ç', 'c') : t.norm;
+  if (!words.contains(norm)) return null;
+  if (locale == 'pt' && _ptAmbiguousWeekdays.contains(norm)) {
+    if (_wordIs(tokens, i + 1, 'feira')) return (2, norm);
+    // Bare: a date only after a preposition (`na quinta`) and before the end of the fragment, a
+    // verb or an amount, so `segunda mão` and `na quinta do lago` are names.
+    final after = i + 1;
+    final prepositionBefore =
+        i > 0 && !tokens[i - 1].isNumber && _ptPrepositions.contains(tokens[i - 1].norm);
+    final endsHere =
+        after >= tokens.length ||
+        tokens[after].isComma ||
+        tokens[after].isNumber ||
+        connectorsFor(locale).contains(tokens[after].norm) ||
+        verbsFor(locale).any((v) {
+          for (var k = 0; k < v.$1.length; k++) {
+            if (!_wordIs(tokens, after + k, v.$1[k])) return false;
+          }
+          return true;
+        });
+    return prepositionBefore && endsHere ? (1, norm) : null;
   }
-  return (1, t.norm);
+  return (1, norm);
 }
 
 /// The date a date word (folded) means, given [today]. A weekday is the most recent one strictly

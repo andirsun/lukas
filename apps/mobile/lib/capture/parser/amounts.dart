@@ -516,8 +516,7 @@ class _Reader {
       currencyWord = true;
     }
     // Units and cents: `nueve con cincuenta`, `9 euros con 50`, `twelve dollars and fifty cents`.
-    // it, pt: `quindici euro e cinquanta`; the `e` joins only right after the currency word, and
-    // only to a number from 10 to 99 (or with a cent word), so `15 euro e 3 per l'uber` splits.
+    // it, pt: `quindici euro e cinquanta`; the `e` joins only right after the currency word.
     final joiner = word(j);
     final eCents = _eJoins && currencyWord && joiner == 'e';
     if (!scaled &&
@@ -526,7 +525,13 @@ class _Reader {
       final c = small(j + 1);
       if (c != null && !c.ambiguous && c.value.isIntegerIn(1, 99) && scaleAt(c.next) == null) {
         final hasCentWord = _cents.contains(word(c.next));
-        if (!eCents || hasCentWord || c.value.isIntegerIn(10, 99)) {
+        // `e` + digits is cents only when the digits end the fragment: nothing, a comma or a
+        // currency word follows. `15 euro e 20 per il taxi` is two movements. Spelled-out cents
+        // (the voice path) are 10 to 99.
+        final digitsEnd =
+            c.next >= tokens.length || tokens[c.next].isComma || _currency.contains(word(c.next));
+        final eOk = isNumber(j + 1) ? digitsEnd : c.value.isIntegerIn(10, 99);
+        if (!eCents || hasCentWord || eOk) {
           if (joiner == 'con' || hasCentWord || eCents) {
             total = total + Dec.big(c.value.whole, 2);
             j = c.next;

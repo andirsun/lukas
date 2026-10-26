@@ -97,6 +97,7 @@ const WEEKDAYS: Record<string, number> = {
   quinta: 4,
   sexta: 5,
 };
+const PT_AMBIGUOUS = new Set(["segunda", "terca", "quarta", "quinta", "sexta"]);
 // Date phrases of several words count as the one date word they mean.
 const PHRASES: [RegExp, string][] = [
   [/\bl ?altro ieri\b/g, "altroieri"],
@@ -227,6 +228,9 @@ describe("quick-capture cases file", () => {
       const rel = words.filter((w) => w in RELATIVE);
       const wd = words.filter((w) => w in WEEKDAYS);
       if (rel.length + wd.length > 1) continue; // per-clause dates are checked by name below
+      // Portuguese `segunda`, `terça`, `quarta`, `quinta`, `sexta` are dates only after a
+      // preposition or with `feira`; those cases are pinned by name below.
+      if (c.locale === "pt" && words.some((w) => PT_AMBIGUOUS.has(w))) continue;
       let want = c.today;
       if (rel[0] !== undefined) want = addDays(c.today, RELATIVE[rel[0]] as number);
       if (wd[0] !== undefined) {
@@ -248,6 +252,16 @@ describe("quick-capture cases file", () => {
         if (!inUnread) expect(from, c.id).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+
+  test("Portuguese bare weekdays are dates only in a date position", () => {
+    const date = (id: string) => get(id).expected.drafts.map((d) => d.date);
+    expect(date("date-pt-segunda-mao-is-not-a-date")).toEqual(["2026-10-26"]);
+    expect(date("date-pt-quinta-do-lago-is-not-a-date")).toEqual(["2026-10-26"]);
+    expect(date("date-pt-weekday-without-preposition-is-not-a-date")).toEqual(["2026-10-26"]);
+    expect(date("date-pt-weekday-before-verb")).toEqual(["2026-10-22"]);
+    expect(date("date-pt-weekday-before-amount")).toEqual(["2026-10-23"]);
+    expect(date("date-pt-weekday-today-is-last-week")).toEqual(["2026-10-19"]);
   });
 
   test("context carries over: kind and date", () => {
