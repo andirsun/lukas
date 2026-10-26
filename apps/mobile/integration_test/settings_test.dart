@@ -27,6 +27,8 @@ void main() {
     for (final extra in [
       'vosk-model-small-es-0.42',
       'vosk-model-small-en-us-0.15',
+      'vosk-model-small-it-0.22',
+      'vosk-model-small-pt-0.3',
       'vosk-android 0.3.75',
       'JNA 5.18.1',
       'Lukitas feedback sounds',

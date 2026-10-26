@@ -614,6 +614,8 @@ void main() {
         'vosk-android 0.3.75',
         'vosk-model-small-en-us-0.15',
         'vosk-model-small-es-0.42',
+        'vosk-model-small-it-0.22',
+        'vosk-model-small-pt-0.3',
       ]) {
         // From the top each time: the page's order is not alphabetical.
         await tester.fling(list, const Offset(0, 10000), 10000);

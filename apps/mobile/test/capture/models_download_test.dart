@@ -146,6 +146,14 @@ VoiceModel _model(Uint8List bytes) => VoiceModel(
   sha256: sha256.convert(bytes).toString(),
 );
 
+VoiceModel _modelNamed(String locale, String name, Uint8List bytes) => VoiceModel(
+  locale: locale,
+  name: name,
+  bytes: bytes.length,
+  unzippedBytes: bytes.length * 2,
+  sha256: sha256.convert(bytes).toString(),
+);
+
 void main() {
   late _FakeServer server;
   late Directory root;
@@ -177,6 +185,8 @@ void main() {
     );
     expect(voiceModels['es']!.fileName, 'vosk-model-small-es-0.42.zip');
     expect(voiceModels['en']!.fileName, 'vosk-model-small-en-us-0.15.zip');
+    expect(voiceModels['it']!.fileName, 'vosk-model-small-it-0.22.zip');
+    expect(voiceModels['pt']!.fileName, 'vosk-model-small-pt-0.3.zip');
     for (final model in voiceModels.values) {
       expect(model.sha256, matches(RegExp(r'^[0-9a-f]{64}$')));
       expect(model.bytes, greaterThan(30 * 1000 * 1000));
@@ -366,7 +376,7 @@ void main() {
     expect(await s.installedPath('es'), isNull);
   });
 
-  test('Italian and Portuguese have no model yet, and are never given the Spanish one', () async {
+  test('a language with no model is never given the Spanish one', () async {
     final s = ModelStore(
       files: files,
       http: Dio(),
@@ -388,4 +398,64 @@ void main() {
     }
     expect(s.hasModel('es'), isTrue);
   });
+
+  test('the shipped list has the four models, each with the published size and SHA-256', () {
+    expect(voiceModels.keys.toSet(), {'es', 'en', 'it', 'pt'});
+    final it = voiceModels['it']!;
+    expect(it.name, 'vosk-model-small-it-0.22');
+    expect(it.bytes, 49665141);
+    expect(it.unzippedBytes, 91299150);
+    expect(it.sha256, '9ec65e75861d1c6c2e457cccd932705340dcdf233f5b239f00733b4de0bf3267');
+    final pt = voiceModels['pt']!;
+    expect(pt.name, 'vosk-model-small-pt-0.3');
+    expect(pt.bytes, 32453112);
+    expect(pt.unzippedBytes, 53552717);
+    expect(pt.sha256, '6e1ce909032e1afa7a88e68a3d628ecafff302bdf195befab308826c395e93b7');
+    for (final entry in voiceModels.entries) {
+      expect(entry.value.locale, entry.key);
+    }
+    expect({for (final m in voiceModels.values) m.name}, hasLength(4), reason: 'no name twice');
+  });
+
+  test('each language is given its own model, and no other', () {
+    final s = ModelStore(files: files, http: Dio());
+    expect(s.modelFor('es')!.name, 'vosk-model-small-es-0.42');
+    expect(s.modelFor('en')!.name, 'vosk-model-small-en-us-0.15');
+    expect(s.modelFor('it')!.name, 'vosk-model-small-it-0.22');
+    expect(s.modelFor('pt')!.name, 'vosk-model-small-pt-0.3');
+    for (final language in ['es', 'en', 'it', 'pt']) {
+      expect(s.hasModel(language), isTrue, reason: language);
+    }
+    for (final language in ['fr', 'de', 'pt-BR', '']) {
+      expect(s.modelFor(language), isNull, reason: language);
+    }
+  });
+
+  test(
+    'deleteModels also removes the Italian and Portuguese models and their partial files',
+    () async {
+      final it = _modelNamed('it', 'vosk-model-small-it-0.22', _payload);
+      final pt = _modelNamed('pt', 'vosk-model-small-pt-0.3', _payload);
+      final s = ModelStore(
+        files: files,
+        http: Dio(),
+        releaseUrl: server.base,
+        models: {'es': _model(_payload), 'it': it, 'pt': pt},
+      );
+      await s.download('it');
+      await s.download('pt');
+      await File('${root.path}/voice/vosk-model-small-es-0.42.zip.part').writeAsBytes([1, 2, 3]);
+      expect(await s.installedPath('it'), '${root.path}/voice/vosk-model-small-it-0.22');
+      expect(await s.installedPath('pt'), '${root.path}/voice/vosk-model-small-pt-0.3');
+      expect(server.requests.map((r) => r.path), [
+        '/release/vosk-model-small-it-0.22.zip',
+        '/release/vosk-model-small-pt-0.3.zip',
+      ]);
+      await s.deleteModels();
+      expect(await s.installedPath('it'), isNull);
+      expect(await s.installedPath('pt'), isNull);
+      expect(Directory('${root.path}/voice').existsSync(), isFalse);
+      expect(files.released, 1);
+    },
+  );
 }

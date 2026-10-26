@@ -3,7 +3,7 @@ Lukitas è il tuo budget, e ti farà piacere prendertene cura: annota una spesa 
 <b>Cosa puoi fare</b>
 <ul>
 <li>Annotare una spesa con la tastiera numerica: importo, categoria e fatto.</li>
-<li>Scrivere più spese in una frase, come «15 pranzo, 3 uber»: Lukitas le separa in movimenti e li vedi prima di salvare; puoi toglierli o annullare. Il dettato a voce, per ora, c'è in spagnolo e in inglese.</li>
+<li>Scrivere più spese in una frase, come «15 pranzo, 3 uber»: Lukitas le separa in movimenti e li vedi prima di salvare; puoi toglierli o annullare. Il dettato a voce c'è in italiano, spagnolo e inglese, e in portoghese in beta.</li>
 <li>Vedere quanto hai speso questo mese e i tuoi movimenti, raggruppati per giorno.</li>
 <li>Un widget nella schermata iniziale e un riquadro nelle impostazioni rapide, per annotare senza cercare l'app.</li>
 <li>In italiano, portoghese, spagnolo e inglese, di notte o di giorno, con suoni e vibrazione leggeri che puoi spegnere.</li>
@@ -13,7 +13,7 @@ Lukitas è il tuo budget, e ti farà piacere prendertene cura: annota una spesa 
 Provala senza email, come ospite, e aggiungi la tua email dopo senza perdere quello che hai annotato. Con l'email entri con un codice di 6 cifre o con un link, e se vuoi con una passkey (la tua impronta o il blocco del telefono; richiede Android 14 o più recente). Senza email, se perdi il telefono o cancelli l'app, perdi i tuoi dati, e un account senza email viene cancellato dopo 60 giorni senza aprire Lukitas: l'app ti avvisa al 45º giorno.
 
 <b>Privacy</b>
-Niente pubblicità, niente analisi né segnalazioni automatiche di errori, niente Google Play Services né Firebase. Il dettato (per ora in spagnolo e in inglese) funziona sul tuo telefono, senza internet, con i modelli vocali liberi Vosk (Apache-2.0): quello che dici non esce dal telefono. Il modello si scarica una sola volta (circa 40 MB) e puoi eliminarlo nelle Impostazioni. Chiede solo i permessi che usa: internet, microfono (per il dettato), vibrazione, avvisi, e quello che serve al widget per aggiornarsi (sapere se c'è rete e riprogrammarsi al riavvio del telefono).
+Niente pubblicità, niente analisi né segnalazioni automatiche di errori, niente Google Play Services né Firebase. Il dettato (in italiano, spagnolo e inglese, e in portoghese in beta) funziona sul tuo telefono, senza internet, con i modelli vocali liberi Vosk (Apache-2.0): quello che dici non esce dal telefono. Il modello della tua lingua si scarica una sola volta (da 30 a 50 MB circa) e puoi eliminarlo nelle Impostazioni. Chiede solo i permessi che usa: internet, microfono (per il dettato), vibrazione, avvisi, e quello che serve al widget per aggiornarsi (sapere se c'è rete e riprogrammarsi al riavvio del telefono).
 
 Gli avvisi sono solo due, entrambi locali e che puoi spegnere: «Scade oggi…» alle 9:00 con i pagamenti ricorrenti del giorno, e un avviso se passano 45 giorni senza aprire l'app e il tuo account non ha un'email.
 

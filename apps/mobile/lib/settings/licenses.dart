@@ -64,6 +64,8 @@ Stream<LicenseEntry> extraLicenseEntries(AssetBundle bundle, AppLocalizations l1
   for (final (model, language) in [
     ('vosk-model-small-es-0.42', l10n.settingsLanguageEs),
     ('vosk-model-small-en-us-0.15', l10n.settingsLanguageEn),
+    ('vosk-model-small-it-0.22', l10n.settingsLanguageIt),
+    ('vosk-model-small-pt-0.3', l10n.settingsLanguagePt),
   ]) {
     yield LicenseEntryWithLineBreaks([model], '${l10n.licenseNoticeModel(language)}\n\n$apache');
   }

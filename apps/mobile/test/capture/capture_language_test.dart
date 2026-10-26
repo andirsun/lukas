@@ -1,9 +1,12 @@
 // The language quick capture works in (lib/capture/capture_language.dart): the app's own, and the
 // rules that read a sentence in it.
+import 'dart:ui' show Locale;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/capture/capture_language.dart';
 import 'package:lukitas/capture/engine/grammar.dart';
 import 'package:lukitas/capture/models_download.dart';
+import 'package:lukitas/capture/prewarm.dart' show voiceLocale;
 import 'package:lukitas/capture/parser/parse.dart';
 
 void main() {
@@ -16,10 +19,22 @@ void main() {
     expect(captureLanguage(''), 'es');
   });
 
-  test('only Spanish and English have voice models for now', () {
-    expect(voiceModels.keys.toSet(), {'es', 'en'});
-    for (final language in ['it', 'pt']) {
-      expect(voiceModels.containsKey(captureLanguage(language)), isFalse, reason: language);
+  test('each of the app\'s four languages has its own voice model, and Spanish stands in for any other', () {
+    expect(voiceModels.keys.toSet(), {'es', 'en', 'it', 'pt'});
+    for (final language in ['es', 'en', 'it', 'pt']) {
+      expect(voiceModels[captureLanguage(language)]!.locale, language);
+    }
+    // A region never matters: Brazilian Portuguese is read with the Portuguese model.
+    for (final (locale, model) in [
+      (const Locale('pt', 'BR'), 'vosk-model-small-pt-0.3'),
+      (const Locale('pt', 'PT'), 'vosk-model-small-pt-0.3'),
+      (const Locale('pt'), 'vosk-model-small-pt-0.3'),
+      (const Locale('it', 'CH'), 'vosk-model-small-it-0.22'),
+      (const Locale('es', 'CO'), 'vosk-model-small-es-0.42'),
+      (const Locale('en', 'GB'), 'vosk-model-small-en-us-0.15'),
+      (const Locale('fr'), 'vosk-model-small-es-0.42'),
+    ]) {
+      expect(voiceModels[voiceLocale(locale)]!.name, model, reason: '$locale');
     }
   });
 

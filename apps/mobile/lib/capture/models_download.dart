@@ -26,7 +26,7 @@ class VoiceModel {
     required this.sha256,
   });
 
-  /// `es` or `en`.
+  /// `es`, `en`, `it` or `pt`.
   final String locale;
 
   /// The model's name, which is also its zip's name and the one folder inside it.
@@ -59,6 +59,22 @@ const voiceModels = {
     bytes: 41205931,
     unzippedBytes: 70898967,
     sha256: '30f26242c4eb449f948e42cb302dd7a686cb29a3423a8367f99ff41780942498',
+  ),
+  'it': VoiceModel(
+    locale: 'it',
+    name: 'vosk-model-small-it-0.22',
+    bytes: 49665141,
+    unzippedBytes: 91299150,
+    sha256: '9ec65e75861d1c6c2e457cccd932705340dcdf233f5b239f00733b4de0bf3267',
+  ),
+  // Trained mostly on Brazilian speech: European Portuguese is labelled beta until the spike
+  // (docs/superpowers/reports/2026-10-26-it-pt-voice-spike.md) passes.
+  'pt': VoiceModel(
+    locale: 'pt',
+    name: 'vosk-model-small-pt-0.3',
+    bytes: 32453112,
+    unzippedBytes: 53552717,
+    sha256: '6e1ce909032e1afa7a88e68a3d628ecafff302bdf195befab308826c395e93b7',
   ),
 };
 
@@ -112,7 +128,7 @@ class ModelStore {
   final Map<String, VoiceModel> _models;
   final _running = <String, Future<void>>{};
 
-  /// The model for [locale]; null when there is none (Italian and Portuguese have none yet). A
+  /// The model for [locale]; null when there is none (every language the app speaks has one). A
   /// language is never given another language's model: Spanish audio would be read with English
   /// words, and the other way round.
   VoiceModel? modelFor(String locale) => _models[locale];

@@ -160,6 +160,74 @@ void main() {
       expect(mergePasses(free, grammar, 'en'), 'spent twelve dollars on lunch and tree on coffee');
     });
 
+    test('Italian: the grammar pass fixes a mis-heard amount, the free pass keeps the name', () {
+      // "ho speso quindici euro e cinquanta per il pranzo", with "quindici" heard as "quindi chi".
+      final free = [
+        _w('ho', 0, 0.2),
+        _w('speso', 0.2, 0.6),
+        _w('quindi', 0.6, 0.9),
+        _w('chi', 0.9, 1.1),
+        _w('euro', 1.1, 1.5),
+        _w('e', 1.5, 1.6),
+        _w('cinquanta', 1.6, 2.1),
+        _w('per', 2.1, 2.3),
+        _w('il', 2.3, 2.4),
+        _w('pranzo', 2.4, 3.0),
+      ];
+      final grammar = [
+        _w('ho', 0, 0.2),
+        _w('speso', 0.2, 0.6),
+        _w('quindici', 0.6, 1.1),
+        _w('euro', 1.1, 1.5),
+        _w('e', 1.5, 1.6),
+        _w('cinquanta', 1.6, 2.1),
+        _w('[unk]', 2.1, 3.0),
+      ];
+      final merged = mergePasses(free, grammar, 'it');
+      expect(merged, 'ho speso quindici euro e cinquanta per il pranzo');
+      const eur = ParseContext(
+        locale: 'it',
+        currency: 'EUR',
+        today: '2026-10-26',
+        timeZone: 'Europe/Rome',
+      );
+      final draft = parseSentence(merged, eur).drafts.single;
+      expect(draft.amount, 1550);
+      expect(draft.name, 'pranzo');
+    });
+
+    test('Portuguese: a number word always wins, a name that sounds like a verb stays', () {
+      // "gastei vinte e cinco euros em pagamentos", with "vinte" heard as "vindo".
+      final free = [
+        _w('gastei', 0, 0.5),
+        _w('vindo', 0.5, 0.9),
+        _w('e', 0.9, 1.0),
+        _w('cinco', 1.0, 1.4),
+        _w('euros', 1.4, 1.9),
+        _w('em', 1.9, 2.0),
+        _w('pagamentos', 2.0, 2.8),
+      ];
+      final grammar = [
+        _w('gastei', 0, 0.5),
+        _w('vinte', 0.5, 0.9),
+        _w('e', 0.9, 1.0),
+        _w('cinco', 1.0, 1.4),
+        _w('euros', 1.4, 1.9),
+        _w('[unk]', 1.9, 2.8),
+      ];
+      final merged = mergePasses(free, grammar, 'pt');
+      expect(merged, 'gastei vinte e cinco euros em pagamentos');
+      const eur = ParseContext(
+        locale: 'pt',
+        currency: 'EUR',
+        today: '2026-10-26',
+        timeZone: 'Europe/Lisbon',
+      );
+      final draft = parseSentence(merged, eur).drafts.single;
+      expect(draft.amount, 2500);
+      expect(draft.name, 'pagamentos');
+    });
+
     test('no grammar pass at all gives the free text', () {
       expect(
         mergePasses(_words('almuerzo dieciocho mil'), const [], 'es'),

@@ -22,7 +22,12 @@ void main() {
   group('the licences About adds to Flutter\'s', () {
     test('the voice models are listed by name, with the Apache-2.0 text', () async {
       final entries = await _extras();
-      for (final model in ['vosk-model-small-es-0.42', 'vosk-model-small-en-us-0.15']) {
+      for (final model in [
+        'vosk-model-small-es-0.42',
+        'vosk-model-small-en-us-0.15',
+        'vosk-model-small-it-0.22',
+        'vosk-model-small-pt-0.3',
+      ]) {
         final entry = entries.singleWhere((e) => e.packages.contains(model));
         expect(_text(entry), contains('Version 2.0, January 2004'), reason: model);
         expect(_text(entry), contains('alphacephei.com/vosk/models'), reason: model);
@@ -188,6 +193,8 @@ void main() {
       for (final name in [
         'vosk-model-small-es-0.42',
         'vosk-model-small-en-us-0.15',
+        'vosk-model-small-it-0.22',
+        'vosk-model-small-pt-0.3',
         'OpenBLAS 0.3.20',
         'CLAPACK 3.2.1',
         'libffi 3.4.4',

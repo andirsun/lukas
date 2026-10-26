@@ -10,8 +10,8 @@ import 'engine/speech_engine.dart';
 import 'models_download.dart';
 
 /// The language the voice model is for: the app's own language (the one chosen in Settings, else the
-/// phone's), as `CaptureSheetState.locale` decides it. Italian and Portuguese name themselves even
-/// though they have no model yet: the Spanish one is never loaded for them.
+/// phone's), as `CaptureSheetState.locale` decides it. Each of the four has its own model; the
+/// Spanish one is never loaded for another language.
 String voiceLocale(Locale? chosen) =>
     captureLanguage((chosen ?? WidgetsBinding.instance.platformDispatcher.locale).languageCode);
 

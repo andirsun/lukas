@@ -120,7 +120,7 @@ The sign-in email and the claim email (a guest saving their progress, no link).
 
 The app's own words, which the web does not have: the capture sheet, guest accounts, the voice and server settings, the widget and the two notices (Flutter ARB and Android strings), plus the store short description. Keys are ARB keys, `values*/strings.xml` names, or the fastlane file. Notes for the founder:
 
-- Voice dictation and the sentence parser exist only in Spanish and English today. Until they ship in Italian and Portuguese the capture sheet opens on typing, with `captureNoVoiceYet` over it, and the store copy says so.
+- Voice dictation and the sentence parser now exist in all four languages. Portuguese voice is labelled beta (`captureOfferTitle`, `captureOfferBody` and the store copy) until the recorded spike passes (`docs/superpowers/reports/2026-10-26-it-pt-voice-spike.md`). `captureNoVoiceYet` stays for a language without a model, so it no longer names a language.
 - The example sentence («15 pranzo, 3 uber», «15 almoço, 3 uber») is what typing understands now: amount, then name, separated by commas.
 - Store short descriptions say "Libera" / "Livre" (free as in freedom, like the Spanish "Libre").
 

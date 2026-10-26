@@ -135,30 +135,32 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-    'Italian and Portuguese have no model: nothing is loaded, and never the Spanish one',
-    (tester) async {
-      for (final device in [
-        const Locale('it', 'IT'),
-        const Locale('pt', 'PT'),
-        const Locale('pt', 'BR'),
-      ]) {
-        final env = await _start(tester, noteOn: false, device: device);
-        expect(env.engine.warmUps, isEmpty, reason: '$device');
-        expect(env.models.asked, isNot(contains('es')), reason: '$device');
-        expect(tester.takeException(), isNull, reason: '$device');
-      }
-      final chosen = await _start(
-        tester,
-        noteOn: false,
-        device: const Locale('es'),
-        override: 'it',
-      );
-      expect(chosen.engine.warmUps, isEmpty);
-    },
-  );
+  testWidgets('Italian and Portuguese load their own model, never the Spanish one', (tester) async {
+    for (final (device, language) in [
+      (const Locale('it', 'IT'), 'it'),
+      (const Locale('pt', 'PT'), 'pt'),
+      (const Locale('pt', 'BR'), 'pt'),
+    ]) {
+      final env = await _start(tester, noteOn: false, device: device);
+      expect(env.engine.warmUps, [language], reason: '$device');
+      expect(env.models.asked, isNot(contains('es')), reason: '$device');
+      expect(tester.takeException(), isNull, reason: '$device');
+    }
+    final chosen = await _start(tester, noteOn: false, device: const Locale('es'), override: 'it');
+    expect(chosen.engine.warmUps, ['it']);
+  });
 
-  test('voiceLocale names the app\'s own language, even without a model for it', () {
+  testWidgets('Italian and Portuguese load nothing while their model is not downloaded', (
+    tester,
+  ) async {
+    for (final device in [const Locale('it', 'IT'), const Locale('pt', 'PT')]) {
+      final env = await _start(tester, noteOn: false, installed: false, device: device);
+      expect(env.engine.warmUps, isEmpty, reason: '$device');
+      expect(env.models.asked, isNot(contains('es')), reason: '$device');
+    }
+  });
+
+  test('voiceLocale names the app\'s own language', () {
     expect(voiceLocale(const Locale('es', 'CO')), 'es');
     expect(voiceLocale(const Locale('en', 'GB')), 'en');
     expect(voiceLocale(const Locale('it', 'IT')), 'it');

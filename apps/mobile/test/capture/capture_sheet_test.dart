@@ -303,30 +303,48 @@ void main() {
     expect(find.byKey(const Key('capture.listen')), findsNothing);
   });
 
-  for (final (language, why, save) in [
-    ('it', 'Per ora non ti ascolto in italiano, quindi scrivilo qui.', 'SALVA 2'),
-    ('pt', 'Por agora não te ouço em português, por isso escreve aqui.', 'GUARDAR 2'),
+  for (final (language, sentence, save, offer) in [
+    ('it', 'ho speso quindici euro per il pranzo', 'SALVA 1', 'SCARICA'),
+    ('pt', 'gastei quinze euros no almoço', 'GUARDAR 1', 'DESCARREGAR'),
   ]) {
-    testWidgets('in $language there is no voice yet: typing works, nothing listens or downloads', (
-      tester,
-    ) async {
-      final env = await _pump(tester, locale: Locale(language));
+    testWidgets('in $language the sheet listens and reads what it hears', (tester) async {
+      final env = await _pump(
+        tester,
+        locale: Locale(language),
+        heard: [
+          [sentence],
+        ],
+      );
       await _open(tester);
-      expect(env.engine.listens, 0);
-      expect(env.models.downloads, 0);
-      expect(find.byKey(const Key('capture.field')), findsOneWidget);
-      expect(find.text(why), findsOneWidget);
-      expect(find.byKey(const Key('capture.listen')), findsNothing);
-      expect(find.byKey(const Key('capture.offer.download')), findsNothing);
-      await tester.enterText(find.byKey(const Key('capture.field')), '15 pranzo, 3 uber');
-      await tester.tap(find.byKey(const Key('capture.read')));
-      await tester.pumpAndSettle();
+      expect(env.engine.listens, 1);
+      expect(env.engine.locales, [language], reason: 'its own voice, never the Spanish one');
       expect(find.text(save), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('in $language the opt-in names its own model\'s size', (tester) async {
+      final env = await _pump(
+        tester,
+        locale: Locale(language),
+        failure: const SpeechFailure(SpeechFailureKind.noModel),
+      );
+      await _open(tester);
+      final mb = (voiceModels[language]!.bytes / 1e6).round();
+      expect(find.text('$offer $mb MB'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('capture.offer.download')));
+      await tester.pumpAndSettle();
+      expect(env.models.downloads, 1);
+      expect(env.models.downloaded, [language], reason: 'never the Spanish model');
+      expect(env.engine.listens, 2);
+    });
+  }
+
+  for (final (language, why) in [
+    ('it', 'Per ora non ti ascolto in questa lingua, quindi scrivilo qui.'),
+    ('pt', 'Por agora não te ouço neste idioma, por isso escreve aqui.'),
+  ]) {
     testWidgets(
-      'in $language a late "no model" from the engine types, and never offers a download',
+      'in $language a late "no model" (a language that has none) types, and never offers a download',
       (tester) async {
         // The language has a model when listening starts (so listen() goes ahead), and none by the
         // time the engine says noModel: the late branch must still end on the typing field.
