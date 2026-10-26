@@ -9,7 +9,6 @@ import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/ui/toast.dart';
 
 import '../add/fakes.dart';
-import '../home/fakes.dart';
 import '../home/home_harness.dart';
 import '../settings/harness.dart';
 
