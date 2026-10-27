@@ -13,6 +13,7 @@ import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
 import 'package:lukitas/recurring/recurring_repository.dart';
 import 'package:lukitas/router.dart';
+import 'package:lukitas/settings/server_status.dart';
 import 'package:lukitas/settings/settings_store.dart';
 import 'package:lukitas/settings/url_opener.dart';
 
@@ -114,6 +115,11 @@ Future<SettingsEnv> pumpSettingsApp(
   final defaults = <Override>[
     // The tests settle the frames: a running time bar would wait the toast's life out.
     toastBarAnimatesProvider.overrideWithValue(false),
+    // The server answers, with a version; its green dot holds still so the frames settle.
+    serverHealthCheckProvider.overrideWithValue(
+      (server) async => const ServerHealth(online: true, version: '0.0.0-dev.abc1234'),
+    ),
+    serverDotPulsesProvider.overrideWithValue(false),
     authApiProvider.overrideWithValue(fakeAuth),
     passkeysProvider.overrideWithValue(passkeys),
     settingsStoreProvider.overrideWithValue(fakeSettings),
@@ -162,7 +168,13 @@ Future<SettingsEnv> pumpSettingsApp(
   );
   if (location != null) {
     container.read(routerProvider).go(location);
-    await tester.pumpAndSettle();
+    if (settle) {
+      await tester.pumpAndSettle();
+    } else {
+      for (var i = 0; i < 20; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
   }
   return env;
 }

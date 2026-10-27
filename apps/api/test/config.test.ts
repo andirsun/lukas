@@ -175,3 +175,22 @@ describe("GUEST_SIGNUP", () => {
     expect(() => loadConfig({ ...prod, GUEST_SIGNUP: "no" })).toThrow(/GUEST_SIGNUP/);
   });
 });
+
+describe("LUKITAS_VERSION", () => {
+  test("is the version the build was given, and unset (or blank) when it was given none", () => {
+    expect(
+      loadConfig({ ...base, CLIENT_IP_HEADER: "fly-client-ip" }).LUKITAS_VERSION,
+    ).toBeUndefined();
+    expect(
+      loadConfig({ ...base, CLIENT_IP_HEADER: "fly-client-ip", LUKITAS_VERSION: " " })
+        .LUKITAS_VERSION,
+    ).toBeUndefined();
+    expect(
+      loadConfig({
+        ...base,
+        CLIENT_IP_HEADER: "fly-client-ip",
+        LUKITAS_VERSION: "0.0.0-dev.abc1234",
+      }).LUKITAS_VERSION,
+    ).toBe("0.0.0-dev.abc1234");
+  });
+});

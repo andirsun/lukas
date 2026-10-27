@@ -42,9 +42,14 @@ export function createApp(deps: AppDeps) {
   app.onError(onError);
   app.notFound(notFound);
 
-  // A pinned clock (E2E_NOW) is reported, so the e2e suite can check the stack it runs against.
+  // The build's version, when it was given one (Settings in the app shows it). A pinned clock
+  // (E2E_NOW) is reported, so the e2e suite can check the stack it runs against.
   app.get("/health", (c) =>
-    c.json(deps.now ? { status: "ok", now: deps.now().toISOString() } : { status: "ok" }),
+    c.json({
+      status: "ok",
+      ...(deps.config.LUKITAS_VERSION ? { version: deps.config.LUKITAS_VERSION } : {}),
+      ...(deps.now ? { now: deps.now().toISOString() } : {}),
+    }),
   );
   app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
   app.get("/.well-known/oauth-authorization-server", (c) =>

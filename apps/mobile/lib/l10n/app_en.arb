@@ -887,6 +887,10 @@
       }
     }
   },
+  "settingsServerChecking": "Checking…",
+  "settingsServerOnline": "Online",
+  "settingsServerOffline": "Not responding",
+  "settingsServerVersion": "Version {version}",
   "settingsAbout": "About",
   "settingsWeb": "More on the web",
   "settingsWebHint": "Lukitas' home page and what's coming.",

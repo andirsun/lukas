@@ -40,6 +40,9 @@ services:
     build:
       context: ../..
       dockerfile: apps/api/Dockerfile.prod
+      # The version /health reports: up.sh sets it from the commit being built.
+      args:
+        LUKITAS_VERSION: ${LUKITAS_VERSION:-}
     image: lukitas-api:personal
     command: ["node", "dist/bootstrap.js"]
     restart: "no"

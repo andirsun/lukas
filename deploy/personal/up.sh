@@ -61,6 +61,11 @@ fi
 ensure_volume
 
 say "Building the images"
+# The API reports this as its version (Settings in the app shows it): the name the APK of the same
+# commit has, with -dirty when the build has changes that are not committed.
+LUKITAS_VERSION="0.0.0-dev.$(git -C "$REPO_DIR" rev-parse --short=7 HEAD)"
+[ -z "$(git -C "$REPO_DIR" status --porcelain --untracked-files=no)" ] || LUKITAS_VERSION="$LUKITAS_VERSION-dirty"
+export LUKITAS_VERSION
 compose build
 
 say "Starting the database"

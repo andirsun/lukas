@@ -1263,6 +1263,27 @@
       }
     }
   },
+  "settingsServerChecking": "Comprobando…",
+  "@settingsServerChecking": {
+    "description": "Settings, the server card: the app is asking the server whether it answers."
+  },
+  "settingsServerOnline": "En línea",
+  "@settingsServerOnline": {
+    "description": "Settings, the server card: the server answered (beside a blinking green dot)."
+  },
+  "settingsServerOffline": "No responde",
+  "@settingsServerOffline": {
+    "description": "Settings, the server card: the server did not answer (beside a red dot)."
+  },
+  "settingsServerVersion": "Versión {version}",
+  "@settingsServerVersion": {
+    "description": "Settings, the server card: the version the server runs, after Online.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "settingsAbout": "Acerca de",
   "settingsWeb": "Más en la web",
   "settingsWebHint": "La página de Lukitas y lo que viene.",

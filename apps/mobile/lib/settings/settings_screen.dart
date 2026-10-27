@@ -38,6 +38,7 @@ import 'delete_account.dart';
 import 'export_settings.dart';
 import 'feedback.dart';
 import 'passkeys_section.dart';
+import 'server_status.dart';
 import 'locale_resolution.dart';
 import 'preferences.dart';
 import 'profile_settings.dart';
@@ -378,6 +379,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.settingsServer,
             lead: server.toString(),
             children: [
+              const ServerStatus(),
               _SelfStart(
                 child: PressButton.text(
                   l10n.settingsServerChange,
