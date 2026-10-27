@@ -8,6 +8,7 @@ import {
   formatMonth,
   localeFromPathname,
   lukasHint,
+  monthInSentence,
   parseAmountInput,
 } from "./format.ts";
 
@@ -21,6 +22,88 @@ describe("detectLocale", () => {
     expect(detectLocale("en-US")).toBe("en");
     expect(detectLocale("fr")).toBe("en");
     expect(detectLocale(undefined)).toBe("en");
+  });
+});
+
+describe("detectLocale (Italian and Portuguese)", () => {
+  it("maps it-* to it, pt-* (Brazil included) to pt, and the rest as before", () => {
+    expect(detectLocale("it")).toBe("it");
+    expect(detectLocale("it-IT")).toBe("it");
+    expect(detectLocale("IT-ch")).toBe("it");
+    expect(detectLocale("pt")).toBe("pt");
+    expect(detectLocale("pt-PT")).toBe("pt");
+    expect(detectLocale("pt-BR")).toBe("pt");
+    expect(detectLocale("fr")).toBe("en");
+  });
+});
+
+describe("localeFromPathname (Italian and Portuguese)", () => {
+  it("reads the /it and /pt prefixes", () => {
+    expect(localeFromPathname("/it")).toBe("it");
+    expect(localeFromPathname("/it/")).toBe("it");
+    expect(localeFromPathname("/it/roadmap")).toBe("it");
+    expect(localeFromPathname("/pt")).toBe("pt");
+    expect(localeFromPathname("/pt/privacidade")).toBe("pt");
+    expect(localeFromPathname("/italia")).toBe("es");
+    expect(localeFromPathname("/ptolomeo")).toBe("es");
+  });
+});
+
+describe("it and pt formats match Intl (it-IT, pt-PT)", () => {
+  const intl = (tag: string, cents: number, currency = "EUR") =>
+    new Intl.NumberFormat(tag, { style: "currency", currency }).format(cents / 100);
+
+  it("writes euros with the symbol after, a comma, and the locale's grouping", () => {
+    expect(formatMoney(123450, "EUR", "it")).toBe(`1234,50${NBSP}€`);
+    expect(formatMoney(1234500, "EUR", "it")).toBe(`12.345,00${NBSP}€`);
+    expect(formatMoney(123450, "EUR", "pt")).toBe(`1234,50${NBSP}€`);
+    expect(formatMoney(1234500, "EUR", "pt")).toBe(`12${NBSP}345,00${NBSP}€`);
+    expect(formatMoney(430_000_000, "EUR", "pt")).toBe(`4${NBSP}300${NBSP}000,00${NBSP}€`);
+    expect(formatMoney(56292, "EUR", "it")).toBe(`562,92${NBSP}€`);
+  });
+
+  it("agrees with Intl for it-IT and pt-PT", () => {
+    for (const cents of [0, 5, 56292, 123450, 1234500, 12345678, 430_000_000]) {
+      expect(formatMoney(cents, "EUR", "it")).toBe(intl("it-IT", cents));
+      expect(formatMoney(cents, "EUR", "pt")).toBe(intl("pt-PT", cents));
+    }
+  });
+
+  it("uses the real minus sign and the explicit plus", () => {
+    expect(formatMoney(-608, "EUR", "it")).toBe(`−6,08${NBSP}€`);
+    expect(formatMoney(-608, "EUR", "pt")).toBe(`−6,08${NBSP}€`);
+    expect(formatMoney(1500, "EUR", "pt", { sign: "always" })).toBe(`+15,00${NBSP}€`);
+  });
+
+  it("keeps the other currencies' codes after the figure", () => {
+    expect(formatMoney(123400, "USD", "it")).toBe(`1234,00${NBSP}USD`);
+    expect(formatMoney(123400, "USD", "pt")).toBe(`1234,00${NBSP}US$`);
+    expect(formatMoney(5_000_000, "COP", "it")).toBe(`50.000${NBSP}COP`);
+    expect(formatMoney(5_000_000, "COP", "pt")).toBe(`50${NBSP}000${NBSP}COP`);
+  });
+
+  it("formats days and months in the language", () => {
+    expect(formatDay("2026-10-21", "it")).toBe("mer 21");
+    expect(formatDay("2026-10-21", "pt")).toBe("quarta 21");
+    expect(formatMonth("2026-10", "it")).toBe("Ottobre");
+    expect(formatMonth("2026-03", "pt")).toBe("Março");
+    expect(monthInSentence("2026-10", "it")).toBe("ottobre");
+    expect(monthInSentence("2026-03", "pt")).toBe("março");
+  });
+
+  it("has no lukas or palos hint", () => {
+    expect(lukasHint(pesos(50000), "COP", "it")).toBeNull();
+    expect(lukasHint(pesos(50000), "COP", "pt")).toBeNull();
+  });
+
+  it("types amounts with a decimal comma", () => {
+    expect(parseAmountInput("6,08", "it")).toBe(608);
+    expect(parseAmountInput("6,08", "pt")).toBe(608);
+    expect(() => parseAmountInput("6.08", "it")).toThrow(InvalidAmountError);
+    expect(() => parseAmountInput("6.08", "pt")).toThrow(InvalidAmountError);
+    expect(formatAmountInput("6,5", "EUR", "it")).toBe(`6,5${NBSP}€`);
+    expect(formatAmountInput("12345,6", "EUR", "it")).toBe(`12.345,6${NBSP}€`);
+    expect(formatAmountInput("12345,6", "EUR", "pt")).toBe(`12${NBSP}345,6${NBSP}€`);
   });
 });
 

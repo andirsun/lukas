@@ -78,6 +78,8 @@ Future<void> main() async {
       expect(monthLabel('2025-12', '2026-10', 'es'), 'diciembre de 2025');
       expect(monthLabel('2026-10', '2026-10', 'en'), 'October');
       expect(monthLabel('2025-12', '2026-10', 'en'), 'December 2025');
+      expect(monthLabel('2026-10', '2026-10', 'it'), 'ottobre');
+      expect(monthLabel('2025-12', '2026-10', 'it'), 'dicembre 2025');
     });
 
     test('shortens months for the axis', () {

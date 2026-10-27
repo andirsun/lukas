@@ -9,6 +9,7 @@ import 'launch/launch_links.dart';
 import 'l10n/app_localizations.dart';
 import 'notices/notice_sync.dart';
 import 'router.dart';
+import 'settings/locale_resolution.dart';
 import 'settings/preferences.dart';
 import 'theme/theme.dart';
 import 'ui/toast.dart';
@@ -52,10 +53,7 @@ class LukitasApp extends ConsumerWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       // Spanish unless the phone asks for a language the app has.
-      localeResolutionCallback: (locale, supported) => supported.firstWhere(
-        (candidate) => candidate.languageCode == locale?.languageCode,
-        orElse: () => const Locale('es'),
-      ),
+      localeResolutionCallback: resolveAppLocale,
       // The web's `Celebration` and `ToastProvider`, above every screen and sheet: the toasts under
       // the party (it keeps clear of them).
       builder: (context, child) =>

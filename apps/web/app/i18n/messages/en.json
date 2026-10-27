@@ -13,7 +13,9 @@
   "language": {
     "label": "Language",
     "es": "Español",
-    "en": "English"
+    "en": "English",
+    "it": "Italiano",
+    "pt": "Português"
   },
   "mascot": {
     "happy": "Lukitas, happy",
@@ -23,7 +25,7 @@
   "roadmap": {
     "meta": {
       "title": "Lukitas · What's next",
-      "description": "What we have planned for Lukitas: the web app, the Android widget with a microphone, several expenses in one sentence, your AI connected and more. No dates, and it may change."
+      "description": "What we have planned for Lukitas: the Android app, the widget with a microphone that logs several expenses in one sentence, your AI connected, the iPhone app and more. No dates, and it may change."
     },
     "title": "What's next",
     "intro": "This is what we have planned. It may change over time.",
@@ -42,29 +44,33 @@
         "title": "Web app",
         "body": "Budgets per category, transactions, analysis and what living really costs you."
       },
-      "import_budge": {
-        "title": "Import your history from Budge",
-        "body": "Upload your CSV file and see a preview before anything comes in."
-      },
       "demo": {
         "title": "Try it without an account",
         "body": "A demo with made-up data, to use the app before you sign up."
       },
-      "widget_mic": {
-        "title": "Android: widget with a microphone",
-        "body": "Say what you spent and it's logged."
+      "android_app": {
+        "title": "Android app",
+        "body": "Your budget on your phone: log in two taps and see what's left."
       },
-      "multi_expense": {
-        "title": "Several expenses in one sentence",
-        "body": "“Spent 15k on lunch and 3k on Uber” and both are logged."
+      "android_widget": {
+        "title": "Android: widget with a microphone",
+        "body": "Say “Spent 15k on lunch and 3k on Uber” and both are logged."
+      },
+      "import_budge": {
+        "title": "Import your history from Budge",
+        "body": "Upload your CSV file and see a preview before anything comes in."
+      },
+      "iphone_app": {
+        "title": "iPhone app",
+        "body": "The same app, on iOS too."
       },
       "connect_ai": {
         "title": "Connect your AI",
         "body": "Use Claude or ChatGPT to check and log your expenses."
       },
-      "iphone_app": {
-        "title": "iPhone app",
-        "body": "The same app, on iOS too."
+      "e2e_encryption": {
+        "title": "End-to-end encryption",
+        "body": "Your data is encrypted on your device: not even the server will be able to read it."
       },
       "bank_alerts": {
         "title": "Automatic capture of your bank's alerts",
@@ -73,6 +79,10 @@
       "import_others": {
         "title": "Import from Buddy and other apps",
         "body": "More ways to bring your history."
+      },
+      "no_central_server": {
+        "title": "No central server",
+        "body": "Your data syncs between your devices without depending on a server of ours."
       }
     }
   },
@@ -180,7 +190,7 @@
       },
       "languages": {
         "q": "Which languages is it in?",
-        "a": "Spanish and English. Switch whenever you like in Settings, and amounts and dates follow your language's format."
+        "a": "Spanish, English, Italian and Portuguese. Switch whenever you like in Settings, and amounts and dates follow your language's format."
       }
     },
     "closing": {

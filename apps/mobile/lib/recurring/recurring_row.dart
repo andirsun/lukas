@@ -22,7 +22,7 @@ import 'recurring_model.dart';
 String formatRecurringDate(String date, String locale) {
   final p = date.split('-').map(int.parse).toList();
   return _dateFormats
-      .putIfAbsent(locale, () => DateFormat.yMMMd(locale))
+      .putIfAbsent(locale, () => DateFormat.yMMMd(dateTag(locale)))
       .format(DateTime.utc(p[0], p[1], p[2]))
       .replaceAll('.', '');
 }

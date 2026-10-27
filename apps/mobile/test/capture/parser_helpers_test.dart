@@ -18,6 +18,103 @@ List<String> movements(String text, [String locale = 'es']) => [
 ];
 
 void main() {
+  group('number words, it', () {
+    final values = {
+      'uno': 1,
+      'quindici': 15,
+      'ventitré': 23,
+      'ventuno': 21,
+      'ventotto': 28,
+      'trentacinque': 35,
+      'cento': 100,
+      'centottanta': 180,
+      'centoventi': 120,
+      'cento venti': 120,
+      'duecentocinquanta': 250,
+      'mille': 1000,
+      'mille duecento': 1200,
+      'mille e duecento': 1200,
+      'tremila': 3000,
+      'duemilacinquecento': 2500,
+      'quindicimila': 15000,
+      'centomila': 100000,
+      'novecentonovantanovemila': 999000,
+      'un milione': 1000000,
+      'due milioni': 2000000,
+      'un milione e duecentomila': 1200000,
+      'un milione e mezzo': 1500000,
+      'mezzo milione': 500000,
+      'quindici mila': 15000,
+      'mille e mezzo': 1500,
+    };
+    values.forEach((text, units) {
+      test(text, () => expect(cents(text, 'it'), units * 100));
+    });
+
+    test('words that only look like numbers stay words', () {
+      for (final text in ['treno', 'camilla', 'unico', 'seicentesco', 'mila', 'milione']) {
+        expect(cents(text, 'it'), isNull, reason: text);
+      }
+    });
+
+    test('a number word keeps the digits and the e of the sentence apart', () {
+      expect(movements('mille e 3 per il taxi', 'it'), ['mille', '3 per il taxi']);
+      expect(cents('quindici euro e cinquanta', 'it'), 1550);
+      expect(readAmount(tokenize('quindici euro e cinque', 'it'), 0, 'it')!.cents, 1500);
+      expect(cents('quindici e cinquanta', 'it'), isNull);
+      expect(cents('12 virgola 05', 'it'), 1205);
+    });
+
+    test('Spanish words are plain names to the Italian rules', () {
+      expect(cents('quince', 'it'), isNull);
+      expect(cents('15 mil', 'it'), isNull);
+      expect(cents('15 lukas', 'it'), isNull);
+    });
+  });
+
+  group('number words, pt', () {
+    final values = {
+      'um': null,
+      'quinze': 15,
+      'vinte e um': 21,
+      'vinte e cinco': 25,
+      'noventa e nove': 99,
+      'dezasseis': 16,
+      'cem': 100,
+      'cento': 100,
+      'cento e vinte': 120,
+      'duzentos e cinquenta': 250,
+      'duzentos': 200,
+      'mil': 1000,
+      'mil e quinhentos': 1500,
+      'mil quinhentos': 1500,
+      'dois mil': 2000,
+      'dois mil e quinhentos': 2500,
+      'vinte mil': 20000,
+      'um milhão': 1000000,
+      'dois milhões': 2000000,
+      'um milhão e duzentos mil': 1200000,
+      'um milhão e meio': 1500000,
+      'meio milhão': 500000,
+      'mil e meio': 1500,
+    };
+    values.forEach((text, units) {
+      test(text, () => expect(cents(text, 'pt'), units == null ? null : units * 100));
+    });
+
+    test('e joins a number only where Portuguese does', () {
+      expect(cents('cem e cinquenta', 'pt'), isNull);
+      expect(cents('quinze e cinquenta', 'pt'), isNull);
+      expect(cents('quinze euros e cinquenta', 'pt'), 1550);
+      expect(movements('mil e 3 no uber', 'pt'), ['mil', '3 no uber']);
+    });
+
+    test('Spanish words are plain names to the Portuguese rules', () {
+      expect(cents('quince', 'pt'), isNull);
+      expect(cents('15 millones', 'pt'), isNull);
+    });
+  });
+
   group('number words, es', () {
     final values = {
       'uno': 1,
@@ -336,6 +433,10 @@ void main() {
         'mil', 'millones', 'palos', 'lukas', 'y', 'medio', 'con', 'coma', 'point', 'hundred', //
         'un', 'una', 'a', 'and', 'gasté', 'me', 'pagaron', 'ayer', 'lunes', 'el', 'en', 'D1', //
         'twelve', 'fifty', 'noventa', 'treinta', 'cien', 'ñandú', 'e\u0301', '\u0303', 'x',
+        'mila', 'mille', 'milione', 'quindicimila', 'duemilacinquecento', 'virgola', 'mezzo', //
+        'e', 'ed', 'ho', 'speso', "l'altro", 'ieri', 'euro', 'cento', 'ventitré', 'tremilamila', //
+        'milhão', 'meio', 'vírgula', 'cento e', 'cem', 'sexta-feira', 'antes de', 'ontem', 'um', //
+        'pagaram-me', 'quinze', 'dezasseis', 'mil e',
       ];
       for (var n = 0; n < 200; n++) {
         final text = StringBuffer();
@@ -348,14 +449,15 @@ void main() {
         }
         for (final context in [
           ctx,
-          const ParseContext(
-            locale: 'en',
-            currency: 'EUR',
-            today: '2028-02-29',
-            timeZone: 'Europe/Lisbon',
-            categories: [Category(id: 'c', name: 'D1', kind: Kind.expense)],
-            usual: [Usual(name: 'x', categoryId: 'missing')],
-          ),
+          for (final locale in ['en', 'it', 'pt'])
+            ParseContext(
+              locale: locale,
+              currency: 'EUR',
+              today: '2028-02-29',
+              timeZone: 'Europe/Lisbon',
+              categories: const [Category(id: 'c', name: 'D1', kind: Kind.expense)],
+              usual: const [Usual(name: 'x', categoryId: 'missing')],
+            ),
         ]) {
           final input = text.toString();
           final result = parseSentence(input, context);

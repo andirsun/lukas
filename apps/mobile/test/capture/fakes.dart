@@ -23,6 +23,9 @@ class FakeSpeechEngine implements SpeechEngine {
   var listens = 0;
   var stops = 0;
 
+  /// The locale each [listen] was asked for.
+  final locales = <String>[];
+
   /// When set, listen keeps its stream open and silent: the test drives it through [held].
   var hold = false;
   StreamController<String>? held;
@@ -41,6 +44,7 @@ class FakeSpeechEngine implements SpeechEngine {
 
   @override
   Stream<String> listen({required String locale}) {
+    locales.add(locale);
     if (hold) {
       listens++;
       final controller = held = StreamController<String>(onCancel: () => cancels++);
@@ -162,6 +166,9 @@ class FakeModelStore extends ModelStore {
   FakeModelStore() : super(files: _NoFiles(), http: Dio());
 
   var downloads = 0;
+
+  /// The locales [download] was asked for.
+  final downloaded = <String>[];
   ModelDownloadFailure? failure;
 
   /// Something else the next download throws (then cleared): a file error, say.
@@ -177,7 +184,8 @@ class FakeModelStore extends ModelStore {
     CancelToken? cancel,
   }) async {
     downloads++;
-    final total = modelFor(locale).bytes;
+    downloaded.add(locale);
+    final total = modelFor(locale)?.bytes ?? 0;
     onProgress?.call(total ~/ 2, total);
     await Future<void>.delayed(const Duration(milliseconds: 10));
     final failed = failure;

@@ -24,6 +24,12 @@ describe("defaultCurrency", () => {
     [["en-US"], "America/Bogota", "COP"],
     [["es-ES"], "Europe/Madrid", "EUR"],
     [["pt-PT"], "Europe/Lisbon", "EUR"],
+    [["it-IT"], "America/New_York", "EUR"],
+    [["it"], "America/New_York", "EUR"],
+    [["pt"], "America/New_York", "EUR"],
+    [["pt-PT"], "America/New_York", "EUR"],
+    [["pt-BR"], "America/Sao_Paulo", "USD"],
+    [["it", "es-CO"], "America/New_York", "COP"],
     [["en-GB"], "Europe/London", "EUR"],
     [["de-CH"], "Europe/Zurich", "EUR"],
     [["es"], "Europe/Madrid", "EUR"],
@@ -44,6 +50,25 @@ describe("defaultCurrency", () => {
       expect(defaultCurrency(languages, timeZone)).toBe(expected);
     });
   }
+});
+
+describe("budgets in Italian and Portuguese", () => {
+  it("read the decimal comma, with a point or a space for thousands", () => {
+    expect(parseBudgetInput("300", "it")).toBe(30000);
+    expect(parseBudgetInput("35,89", "pt")).toBe(3589);
+    expect(parseBudgetInput("1.250.000,50", "it")).toBe(125000050);
+    expect(parseBudgetInput("1.250.000,50", "pt")).toBe(125000050);
+    expect(parseBudgetInput("1\u00a0250\u00a0000,50 €", "pt")).toBe(125000050);
+    expect(() => parseBudgetInput("35.89", "it")).toThrow();
+  });
+  it("show a stored amount and an example the same way", () => {
+    expect(draftFromCents(30000, "it")).toBe("300");
+    expect(draftFromCents(3589, "pt")).toBe("35,89");
+    expect(draftFromCents(123456700, "it")).toBe("1.234.567");
+    expect(draftFromCents(123456700, "pt")).toBe("1\u00a0234\u00a0567");
+    expect(budgetExample("COP", "it")).toBe("300.000");
+    expect(budgetExample("COP", "pt")).toBe("300.000");
+  });
 });
 
 describe("parseBudgetInput", () => {
@@ -75,7 +100,7 @@ describe("parseBudgetInput", () => {
 
   it("gives an example that parses", () => {
     for (const currency of ["COP", "EUR", "CLP", "USD"]) {
-      for (const locale of ["es", "en"] as const) {
+      for (const locale of ["es", "en", "it", "pt"] as const) {
         expect(parseBudgetInput(budgetExample(currency, locale), locale)).toBeGreaterThan(0);
       }
     }
@@ -190,7 +215,7 @@ describe("SUGGESTED_CATEGORIES", () => {
     expect(new Set(SUGGESTED_CATEGORIES.map((c) => c.key)).size).toBe(8);
   });
 
-  it("finds the suggestion behind a name, in either language, ignoring case and accents", () => {
+  it("finds the suggestion behind a name, in any language, ignoring case and accents", () => {
     expect(suggestionFor("supermercado")?.key).toBe("groceries");
     expect(suggestionFor("Eating out")?.key).toBe("eating_out");
     expect(suggestionFor("Salário")?.key).toBe("salary");
@@ -204,7 +229,7 @@ describe("draftFromCents", () => {
     expect(draftFromCents(30_000_000, "es")).toBe("300.000");
     expect(draftFromCents(30_000_000, "en")).toBe("300,000");
     for (const cents of [3589, 30_000_000, 102_050, 125_000_050]) {
-      for (const locale of ["es", "en"] as const) {
+      for (const locale of ["es", "en", "it", "pt"] as const) {
         expect(parseBudgetInput(draftFromCents(cents, locale), locale)).toBe(cents);
       }
     }
@@ -219,6 +244,46 @@ describe("categoryChips", () => {
     icon: "cart",
     color: "orange",
     archived,
+  });
+
+  it("names the suggestions in each language, none of them left in Spanish", () => {
+    const names = (locale: "es" | "en" | "it" | "pt") =>
+      categoryChips([], locale).map((chip) => chip.name);
+    expect(names("it")).toEqual([
+      "Supermercato",
+      "Ristorante",
+      "Casa",
+      "Trasporti",
+      "Tempo libero",
+      "Abbonamenti",
+      "Salute",
+      "Stipendio",
+    ]);
+    expect(names("pt")).toEqual([
+      "Supermercado",
+      "Restaurante",
+      "Casa",
+      "Transportes",
+      "Lazer",
+      "Subscrições",
+      "Saúde",
+      "Salário",
+    ]);
+    // An imported "Stipendio" or "Salário" covers the salary suggestion in any language.
+    const covered = categoryChips(
+      [
+        {
+          id: "1",
+          name: "Stipendio",
+          kind: "income",
+          icon: "cash",
+          color: "green",
+          archived: false,
+        },
+      ],
+      "pt",
+    );
+    expect(covered.filter((chip) => chip.suggestionKey === "salary")).toEqual([]);
   });
 
   it("is the suggestions, in order, when the person has no categories", () => {

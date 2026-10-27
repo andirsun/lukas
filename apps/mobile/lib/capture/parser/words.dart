@@ -74,11 +74,20 @@ const gluedScaleWords = {
   'mil', 'millon', 'millones', 'palo', 'palos', 'luca', 'lucas', 'luka', 'lukas', //
   'thousand', 'million', 'millions', 'k',
 };
+const _gluedScaleWordsIt = {'mila', 'mille', 'milione', 'milioni', 'k'};
+const _gluedScaleWordsPt = {'mil', 'milhao', 'milhoes', 'k'};
+
+Set<String> _gluedScalesFor(String locale) => switch (locale) {
+  'it' => _gluedScaleWordsIt,
+  'pt' => _gluedScaleWordsPt,
+  _ => gluedScaleWords,
+};
 
 /// Splits [text] into words, numbers and commas. Everything else (spaces, dots ending a sentence,
 /// other punctuation) separates tokens and is dropped.
 List<Token> tokenize(String text, String locale) {
   final number = locale == 'en' ? _numberEn : _numberEs;
+  final glued = _gluedScalesFor(locale);
   final tokens = <Token>[];
   var i = 0;
   while (i < text.length) {
@@ -97,10 +106,17 @@ List<Token> tokenize(String text, String locale) {
     final w = _word.matchAsPrefix(text, i);
     if (w != null) {
       final letters = _letters.matchAsPrefix(text, i)!;
-      final end = letters.end < w.end && gluedScaleWords.contains(fold(letters[0]!))
-          ? letters.end
-          : w.end;
-      tokens.add(Token(text.substring(i, end), i, end));
+      final end = letters.end < w.end && glued.contains(fold(letters[0]!)) ? letters.end : w.end;
+      final word = text.substring(i, end);
+      // Italian writes a number as one word (`quindicimila`): read it as the words it is made of.
+      final parts = locale == 'it' && letters.end == end ? italianNumberParts(fold(word)) : null;
+      if (parts != null) {
+        for (final part in parts) {
+          tokens.add(Token(part, i, end));
+        }
+      } else {
+        tokens.add(Token(word, i, end));
+      }
       i = end;
       continue;
     }
@@ -112,12 +128,39 @@ List<Token> tokenize(String text, String locale) {
 /// Words that join movements (a comma joins too). They split only where both sides have an
 /// amount (split.dart); otherwise they stay in the name (`pan y leche`).
 const connectorWords = {'y', 'and', 'tambien', 'also'};
+const _connectorWordsIt = {'e', 'ed', 'anche'};
+const _connectorWordsPt = {'e', 'tambem'};
+
+/// The connector words [locale] reads. Spanish and English read each other's.
+Set<String> connectorsFor(String locale) => switch (locale) {
+  'it' => _connectorWordsIt,
+  'pt' => _connectorWordsPt,
+  _ => connectorWords,
+};
 
 /// Function words and articles, dropped from names. `un` and `una` are numbers before a scale
 /// word (amounts.dart reads them first).
 const droppedWords = {
   'en', 'de', 'para', 'por', 'on', 'for', //
   'el', 'la', 'los', 'las', 'un', 'una', 'the', 'a', 'an', //
+};
+
+const _droppedWordsIt = {
+  'in', 'per', 'al', 'alla', 'allo', 'ai', 'alle', 'all', 'di', 'del', 'della', 'dello', 'dei', //
+  'delle', 'dell', 'd', 'da', 'a', 'il', 'lo', 'la', 'i', 'gli', 'le', 'l', 'un', 'uno', 'una', //
+  'nel', 'nella', 'nello', 'nei', 'nelle', 'nell', 'sul', 'sulla', 'sullo', 'sui', 'sulle', //
+  'sugli', 'sull', 'dal', 'dalla', 'dallo', 'dai', 'dalle', 'dagli', 'dall',
+};
+const _droppedWordsPt = {
+  'em', 'no', 'na', 'nos', 'nas', 'para', 'pra', 'de', 'do', 'da', 'dos', 'das', 'por', 'pelo', //
+  'pela', 'pelos', 'pelas', 'ao', 'aos', 'a', 'as', 'o', 'os', 'um', 'uma', 'uns', 'umas',
+};
+
+/// The function words and articles [locale] drops from names.
+Set<String> droppedFor(String locale) => switch (locale) {
+  'it' => _droppedWordsIt,
+  'pt' => _droppedWordsPt,
+  _ => droppedWords,
 };
 
 /// The verbs of spec 5.2, folded, as word sequences, longest first.
@@ -135,3 +178,96 @@ const verbs = <(List<String>, bool)>[
   (['spent'], false),
   (['paid'], false),
 ];
+
+const _verbsIt = <(List<String>, bool)>[
+  (['mi', 'hanno', 'pagato'], true),
+  (['ho', 'ricevuto'], true),
+  (['ho', 'guadagnato'], true),
+  (['ho', 'incassato'], true),
+  (['ricevuto'], true),
+  (['guadagnato'], true),
+  (['incassato'], true),
+  (['ho', 'speso'], false),
+  (['ho', 'pagato'], false),
+  (['ho', 'comprato'], false),
+  (['speso'], false),
+  (['pagato'], false),
+  (['comprato'], false),
+];
+const _verbsPt = <(List<String>, bool)>[
+  (['me', 'pagaram'], true),
+  (['pagaram', 'me'], true),
+  (['recebi'], true),
+  (['ganhei'], true),
+  (['gastei'], false),
+  (['paguei'], false),
+  (['comprei'], false),
+];
+
+/// The verbs [locale] reads, longest first.
+List<(List<String>, bool)> verbsFor(String locale) => switch (locale) {
+  'it' => _verbsIt,
+  'pt' => _verbsPt,
+  _ => verbs,
+};
+
+// Italian writes a number as one word: `trentacinque`, `centoventi`, `duemilacinquecento`.
+// italianNumberParts splits such a word into the words amounts.dart reads.
+
+const _itUnits = {
+  'uno': 1, 'due': 2, 'tre': 3, 'quattro': 4, 'cinque': 5, 'sei': 6, 'sette': 7, 'otto': 8, //
+  'nove': 9,
+};
+const _itTeens = {
+  'dieci': 10, 'undici': 11, 'dodici': 12, 'tredici': 13, 'quattordici': 14, 'quindici': 15, //
+  'sedici': 16, 'diciassette': 17, 'diciotto': 18, 'diciannove': 19,
+};
+const _itTens = {
+  'venti': 20, 'trenta': 30, 'quaranta': 40, 'cinquanta': 50, 'sessanta': 60, 'settanta': 70, //
+  'ottanta': 80, 'novanta': 90,
+};
+
+/// Italian number words (folded) from 1 to 999, with the glued and the elided forms.
+final Map<String, int> italianNumbers = _buildItalianNumbers();
+
+Map<String, int> _buildItalianNumbers() {
+  final below100 = <String, int>{..._itUnits, ..._itTeens, ..._itTens};
+  _itTens.forEach((ten, tv) {
+    // `venti` + `uno` is `ventuno`; the final vowel drops before `uno` and `otto`.
+    final stem = ten.substring(0, ten.length - 1);
+    _itUnits.forEach((unit, uv) {
+      below100['${unit == 'uno' || unit == 'otto' ? stem : ten}$unit'] = tv + uv;
+    });
+  });
+  final all = <String, int>{...below100};
+  final hundreds = <String, int>{'cento': 100};
+  _itUnits.forEach((unit, uv) {
+    if (uv > 1) hundreds['${unit}cento'] = uv * 100;
+  });
+  hundreds.forEach((hundred, hv) {
+    all[hundred] = hv;
+    below100.forEach((rest, rv) {
+      all['$hundred$rest'] = hv + rv;
+      // `cento` + `ottanta` is `centottanta`.
+      if (rest.startsWith('o')) all['${hundred.substring(0, hundred.length - 1)}$rest'] = hv + rv;
+    });
+  });
+  return all;
+}
+
+/// The words an Italian number word [folded] is made of, when it is one number written as a
+/// single word with a thousand in it (`quindicimila` is `quindici`, `mila`; `milleduecento` is
+/// `mille`, `duecento`), else null.
+List<String>? italianNumberParts(String folded) {
+  for (final scale in const ['mila', 'mille']) {
+    final at = folded.indexOf(scale);
+    if (at < 0) continue;
+    final head = folded.substring(0, at);
+    final tail = folded.substring(at + scale.length);
+    if (scale == 'mille' ? head.isNotEmpty : !italianNumbers.containsKey(head)) continue;
+    if (tail.isNotEmpty && !italianNumbers.containsKey(tail)) continue;
+    if (head.isEmpty && tail.isEmpty) return null;
+    return [if (head.isNotEmpty) head, scale, if (tail.isNotEmpty) tail];
+  }
+  return null;
+}

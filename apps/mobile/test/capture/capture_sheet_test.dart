@@ -25,6 +25,26 @@ import 'fakes.dart';
 
 const _sentence = 'gasté 15 mil en almuerzo y 3 lukas en uber';
 
+/// A store that has a model until the engine is first asked to listen.
+class _FlippingModels extends FakeModelStore {
+  var has = true;
+
+  @override
+  bool hasModel(String locale) => has;
+}
+
+class _FlippingEngine extends FakeSpeechEngine {
+  _FlippingEngine(this.models, {super.failure});
+
+  final _FlippingModels models;
+
+  @override
+  Stream<String> listen({required String locale}) {
+    models.has = false;
+    return super.listen(locale: locale);
+  }
+}
+
 class _Env {
   _Env(this.server, this.capture, this.engine, this.models, this.harness, this.celebrated);
   final FakeHomeRepository server;
@@ -282,6 +302,80 @@ void main() {
     );
     expect(find.byKey(const Key('capture.listen')), findsNothing);
   });
+
+  for (final (language, sentence, save, offer) in [
+    ('it', 'ho speso quindici euro per il pranzo', 'SALVA 1', 'SCARICA'),
+    ('pt', 'gastei quinze euros no almoço', 'GUARDAR 1', 'DESCARREGAR'),
+  ]) {
+    testWidgets('in $language the sheet listens and reads what it hears', (tester) async {
+      final env = await _pump(
+        tester,
+        locale: Locale(language),
+        heard: [
+          [sentence],
+        ],
+      );
+      await _open(tester);
+      expect(env.engine.listens, 1);
+      expect(env.engine.locales, [language], reason: 'its own voice, never the Spanish one');
+      expect(find.text(save), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('in $language the opt-in names its own model\'s size', (tester) async {
+      final env = await _pump(
+        tester,
+        locale: Locale(language),
+        failure: const SpeechFailure(SpeechFailureKind.noModel),
+      );
+      await _open(tester);
+      final mb = (voiceModels[language]!.bytes / 1e6).round();
+      expect(find.text('$offer $mb MB'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('capture.offer.download')));
+      await tester.pumpAndSettle();
+      expect(env.models.downloads, 1);
+      expect(env.models.downloaded, [language], reason: 'never the Spanish model');
+      expect(env.engine.listens, 2);
+    });
+  }
+
+  for (final (language, why) in [
+    ('it', 'Per ora non ti ascolto in questa lingua, quindi scrivilo qui.'),
+    ('pt', 'Por agora não te ouço neste idioma, por isso escreve aqui.'),
+  ]) {
+    testWidgets(
+      'in $language a late "no model" (a language that has none) types, and never offers a download',
+      (tester) async {
+        // The language has a model when listening starts (so listen() goes ahead), and none by the
+        // time the engine says noModel: the late branch must still end on the typing field.
+        final models = _FlippingModels();
+        final engine = _FlippingEngine(
+          models,
+          failure: const SpeechFailure(SpeechFailureKind.noModel),
+        );
+        final server = FakeHomeRepository(
+          categoryList: [category('cat-food', 'Comida', icon: '🍽️')],
+          items: [tx('coffee', '2026-10-20', -450000, name: 'Café', categoryId: 'cat-food')],
+        );
+        await pumpHome(
+          tester,
+          server,
+          locale: Locale(language),
+          overrides: [
+            captureRepositoryProvider.overrideWithValue(FakeCaptureRepository(server)),
+            speechEngineProvider.overrideWithValue(engine),
+            modelStoreProvider.overrideWithValue(models),
+          ],
+        );
+        await _open(tester);
+        expect(engine.listens, 1, reason: 'listening started, then the engine said noModel');
+        expect(find.byKey(const Key('capture.offer.download')), findsNothing);
+        expect(find.byKey(const Key('capture.field')), findsOneWidget);
+        expect(find.text(why), findsOneWidget);
+        expect(models.downloads, 0);
+      },
+    );
+  }
 
   testWidgets('without the model, an opt-in shows its size; declining leaves the typing field', (
     tester,

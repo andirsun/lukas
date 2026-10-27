@@ -26,6 +26,9 @@ const _cop = ParseContext(
   timeZone: 'America/Bogota',
 );
 
+ParseContext _eur(String locale) =>
+    ParseContext(locale: locale, currency: 'EUR', today: '2026-10-26', timeZone: 'Europe/Rome');
+
 void main() {
   group('overlap', () {
     test('two words overlap when their shared time covers half of either', () {
@@ -158,6 +161,170 @@ void main() {
         _w('[unk]', 2.4, 3.6),
       ];
       expect(mergePasses(free, grammar, 'en'), 'spent twelve dollars on lunch and tree on coffee');
+    });
+
+    test('Italian: the grammar pass fixes a mis-heard amount, the free pass keeps the name', () {
+      // "ho speso quindici euro e cinquanta per il pranzo", with "quindici" heard as "quindi chi".
+      final free = [
+        _w('ho', 0, 0.2),
+        _w('speso', 0.2, 0.6),
+        _w('quindi', 0.6, 0.9),
+        _w('chi', 0.9, 1.1),
+        _w('euro', 1.1, 1.5),
+        _w('e', 1.5, 1.6),
+        _w('cinquanta', 1.6, 2.1),
+        _w('per', 2.1, 2.3),
+        _w('il', 2.3, 2.4),
+        _w('pranzo', 2.4, 3.0),
+      ];
+      final grammar = [
+        _w('ho', 0, 0.2),
+        _w('speso', 0.2, 0.6),
+        _w('quindici', 0.6, 1.1),
+        _w('euro', 1.1, 1.5),
+        _w('e', 1.5, 1.6),
+        _w('cinquanta', 1.6, 2.1),
+        _w('[unk]', 2.1, 3.0),
+      ];
+      final merged = mergePasses(free, grammar, 'it');
+      expect(merged, 'ho speso quindici euro e cinquanta per il pranzo');
+      const eur = ParseContext(
+        locale: 'it',
+        currency: 'EUR',
+        today: '2026-10-26',
+        timeZone: 'Europe/Rome',
+      );
+      final draft = parseSentence(merged, eur).drafts.single;
+      expect(draft.amount, 1550);
+      expect(draft.name, 'pranzo');
+    });
+
+    test('Portuguese: a number word always wins, a name that sounds like a verb stays', () {
+      // "gastei vinte e cinco euros em pagamentos", with "vinte" heard as "vindo".
+      final free = [
+        _w('gastei', 0, 0.5),
+        _w('vindo', 0.5, 0.9),
+        _w('e', 0.9, 1.0),
+        _w('cinco', 1.0, 1.4),
+        _w('euros', 1.4, 1.9),
+        _w('em', 1.9, 2.0),
+        _w('pagamentos', 2.0, 2.8),
+      ];
+      final grammar = [
+        _w('gastei', 0, 0.5),
+        _w('vinte', 0.5, 0.9),
+        _w('e', 0.9, 1.0),
+        _w('cinco', 1.0, 1.4),
+        _w('euros', 1.4, 1.9),
+        _w('[unk]', 1.9, 2.8),
+      ];
+      final merged = mergePasses(free, grammar, 'pt');
+      expect(merged, 'gastei vinte e cinco euros em pagamentos');
+      const eur = ParseContext(
+        locale: 'pt',
+        currency: 'EUR',
+        today: '2026-10-26',
+        timeZone: 'Europe/Lisbon',
+      );
+      final draft = parseSentence(merged, eur).drafts.single;
+      expect(draft.amount, 2500);
+      expect(draft.name, 'pagamentos');
+    });
+
+    group('Italian gate: a doubtful grammar number word does not replace a name', () {
+      // Timings and conf are those of the saved synthetic run (macOS voice Alice).
+      HeardWord c(String w, double a, double b, double conf) => HeardWord(w, a, b, conf: conf);
+
+      test('"benzina" stays when the grammar pass hears "ventinove" at conf 0.55', () {
+        final free = [
+          c('benzina', 0, 0.45, 1),
+          c('quaranta', 0.45, 0.9, 1),
+          c('euro', 0.9, 1.14, 1),
+          c('e', 1.14, 1.2, 0.47),
+          c('farmacie', 1.2, 1.74, 0.63),
+          c('dodici', 1.74, 2.19, 1),
+          c('euro', 2.19, 2.52, 1),
+        ];
+        final grammar = [
+          c('ventinove', 0, 0.45, 0.55),
+          c('quaranta', 0.45, 0.9, 1),
+          c('euro', 0.9, 1.14, 1),
+          c('dodici', 1.74, 2.19, 1),
+          c('euro', 2.19, 2.52, 1),
+        ];
+        expect(mergePasses(free, grammar, 'it'), 'benzina quaranta euro e farmacie dodici euro');
+      });
+
+      test('"l\'affitto" stays when the grammar pass hears "otto" at conf 0.54', () {
+        final free = [
+          c("l'aereo", 0, 0.35, 0.67),
+          c('pagato', 0.37, 0.78, 1),
+          c("l'affitto", 0.78, 1.44, 1),
+          c('ottocento', 1.59, 2.19, 1),
+          c('euro', 2.19, 2.58, 1),
+        ];
+        final grammar = [
+          c('dollari', 0, 0.3, 0.51),
+          c('pagato', 0.39, 0.78, 1),
+          c('otto', 1.11, 1.44, 0.54),
+          c('ottocento', 1.59, 2.19, 1),
+          c('euro', 2.19, 2.55, 1),
+        ];
+        final merged = mergePasses(free, grammar, 'it');
+        expect(merged, "l'aereo pagato l'affitto ottocento euro");
+        expect(parseSentence(merged, _eur('it')).drafts.single.amount, 80000);
+      });
+
+      test('"duemila" at conf 0.58 still wins over the number word "due"', () {
+        final free = [
+          c('ho', 0, 0.12, 1),
+          c('speso', 0.12, 0.48, 1),
+          c('due', 0.48, 0.65, 1),
+          c('cinquecento', 0.85, 1.53, 1),
+          c('euro', 1.53, 1.8, 1),
+          c('per', 1.8, 1.95, 1),
+          c('vacanze', 2.04, 2.73, 1),
+        ];
+        final grammar = [
+          c('speso', 0, 0.48, 1),
+          c('duemila', 0.48, 0.84, 0.58),
+          c('cinquecento', 0.86, 1.53, 1),
+          c('euro', 1.53, 1.8, 1),
+        ];
+        final merged = mergePasses(free, grammar, 'it');
+        expect(merged, 'speso duemila cinquecento euro per vacanze');
+        expect(parseSentence(merged, _eur('it')).drafts.single.amount, 250000);
+      });
+
+      test('a doubtful number word fills a gap, and a sure one still wins over a name', () {
+        final gap = mergePasses(
+          [c('euro', 1, 1.4, 1)],
+          [c('quindici', 0.2, 0.9, 0.5), c('euro', 1, 1.4, 1)],
+          'it',
+        );
+        expect(gap, 'quindici euro');
+        final sure = mergePasses([c('quindi', 0, 0.4, 0.6)], [c('quindici', 0, 0.4, 0.9)], 'it');
+        expect(sure, 'quindici');
+      });
+
+      test('Spanish, English and Portuguese merge as before, whatever the conf', () {
+        final free = [_w('gaste', 0, 0.4), _w('almuerzo', 0.4, 0.9)];
+        final low = [c('gasté', 0, 0.4, 0.1), c('doce', 0.4, 0.9, 0.1)];
+        final sure = [_w('gasté', 0, 0.4), _w('doce', 0.4, 0.9)];
+        for (final l in ['es', 'en', 'pt']) {
+          expect(mergePasses(free, low, l), mergePasses(free, sure, l), reason: l);
+        }
+        expect(mergePasses(free, low, 'es'), 'gasté doce');
+      });
+
+      test('a result without conf reads as sure, and conf is not part of equality', () {
+        expect(wordsOfResult('{"result":[{"word":"a","start":0,"end":1}]}').single.conf, 1);
+        expect(
+          wordsOfResult('{"result":[{"word":"a","start":0,"end":1,"conf":0.4}]}').single.conf,
+          0.4,
+        );
+        expect(HeardWord('a', 0, 1, conf: 0.2), HeardWord('a', 0, 1));
+      });
     });
 
     test('no grammar pass at all gives the free text', () {

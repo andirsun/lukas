@@ -40,6 +40,9 @@ services:
     build:
       context: ../..
       dockerfile: apps/api/Dockerfile.prod
+      # The version /health reports: up.sh sets it from the commit being built.
+      args:
+        LUKITAS_VERSION: ${LUKITAS_VERSION:-}
     image: lukitas-api:personal
     command: ["node", "dist/bootstrap.js"]
     restart: "no"
@@ -107,7 +110,7 @@ services:
     restart: unless-stopped
     logging: *logging
     environment:
-      # Where `/`, `/en` and the roadmap redirect: the public landing site.
+      # Where `/`, `/en`, `/it`, `/pt` and the roadmaps redirect: the public landing site.
       LANDING_URL: ${LANDING_URL:-https://lukitas.andersonlaverde.com}
       # The SHA-256 fingerprints (comma-separated) of the certificates the Android app is signed with,
       # written into /.well-known/assetlinks.json at start. Empty: the file is `[]`.

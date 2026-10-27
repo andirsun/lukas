@@ -1384,8 +1384,10 @@
     "storyId": "manage-settings--app-sections",
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
+    "maxInk": 2.3,
     "knownDifferences": [
-      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye",
+      "The web shot was retaken on a newer macOS, whose Chrome smooths the text a little differently and draws a wider ＋ (the system's PingFang): 2.00% of the ink, all glyph edges"
     ]
   },
   {
@@ -1393,8 +1395,10 @@
     "storyId": "manage-settings--app-sections-day-english",
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
+    "maxInk": 2.3,
     "knownDifferences": [
-      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye",
+      "The web shot was retaken on a newer macOS, whose Chrome smooths the text a little differently and draws a wider ＋ (the system's PingFang): 2.09% of the ink, all glyph edges"
     ]
   },
   {
@@ -1998,5 +2002,47 @@
     "storyId": "onboarding-welcome--budgets-without-categories",
     "theme": "day",
     "appTest": "test/parity/welcome_parity_test.dart"
+  },
+  {
+    "id": "home-transactions-italian",
+    "storyId": "home-home--transactions-italian",
+    "theme": "night",
+    "appTest": "test/parity/it_pt_parity_test.dart"
+  },
+  {
+    "id": "add-sheet-more-options-italian",
+    "storyId": "home-home--more-options-italian",
+    "theme": "night",
+    "appTest": "test/parity/it_pt_parity_test.dart"
+  },
+  {
+    "id": "settings-app-sections-italian",
+    "storyId": "manage-settings--app-sections-italian",
+    "theme": "night",
+    "appTest": "test/parity/it_pt_parity_test.dart",
+    "knownDifferences": [
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+    ]
+  },
+  {
+    "id": "home-transactions-portuguese",
+    "storyId": "home-home--transactions-portuguese",
+    "theme": "night",
+    "appTest": "test/parity/it_pt_parity_test.dart"
+  },
+  {
+    "id": "add-sheet-more-options-portuguese",
+    "storyId": "home-home--more-options-portuguese",
+    "theme": "night",
+    "appTest": "test/parity/it_pt_parity_test.dart"
+  },
+  {
+    "id": "settings-app-sections-portuguese",
+    "storyId": "manage-settings--app-sections-portuguese",
+    "theme": "night",
+    "appTest": "test/parity/it_pt_parity_test.dart",
+    "knownDifferences": [
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+    ]
   }
 ]

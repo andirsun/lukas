@@ -795,6 +795,7 @@
   "captureChangeSentence": "Change sentence",
   "captureMicDenied": "Without the microphone permission I can't hear you, so type it here.",
   "captureNoEngine": "This phone can't listen with Lukitas, so type it here.",
+  "captureNoVoiceYet": "I can't listen in this language yet, so type it here.",
   "captureListenFailed": "I couldn't listen. Type it here.",
   "captureNothingHeard": "I didn't hear anything. Type it here or try again.",
   "captureNothingRead": "I found no movements. Try an amount, like “15 on lunch”.",
@@ -843,6 +844,8 @@
   "settingsLanguageAuto": "Automatic",
   "settingsLanguageEs": "Español",
   "settingsLanguageEn": "English",
+  "settingsLanguageIt": "Italiano",
+  "settingsLanguagePt": "Português",
   "settingsLanguageHint": "Automatic uses your phone's language.",
   "settingsSound": "Sounds",
   "settingsSoundHint": "They play when you add and celebrate. Vibration stays on.",
@@ -884,6 +887,10 @@
       }
     }
   },
+  "settingsServerChecking": "Checking…",
+  "settingsServerOnline": "Online",
+  "settingsServerOffline": "Not responding",
+  "settingsServerVersion": "Version {version}",
   "settingsAbout": "About",
   "settingsWeb": "More on the web",
   "settingsWebHint": "Lukitas' home page and what's coming.",
@@ -952,8 +959,8 @@
   },
   "licenseNoticeFontRoleDisplay": "titles and amounts",
   "licenseNoticeFontRoleText": "the rest of the text",
-  "licenseNoticeSounds": "The sounds Lukitas plays when you add, pay, undo, or come near a limit are original work made for Lukitas: a few plain tones, with no third-party samples. They are released under the licence of the app itself, the GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
-  "licenseNoticeApp": "Lukitas is free software, under the GNU Affero General Public License 3.0. Its source code is at https://github.com/andirsun/lukas.",
+  "licenseNoticeSounds": "The sounds Lukitas plays when you add, pay, undo, or come near a limit are original work made for Lukitas: a few plain tones, with no third-party samples. They are released under the licence of the app itself, the GNU Affero General Public License 3.0 (https://github.com/slinqer/lukitas).",
+  "licenseNoticeApp": "Lukitas is free software, under the GNU Affero General Public License 3.0. Its source code is at https://github.com/slinqer/lukitas.",
   "aboutLegalese": "Free software, AGPL-3.0",
   "close": "Close",
   "@close": {

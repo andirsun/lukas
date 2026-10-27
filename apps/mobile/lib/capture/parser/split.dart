@@ -52,7 +52,7 @@ List<Item> readItems(String text, String locale) {
       i = amount.end;
       continue;
     }
-    final verb = _verbAt(tokens, i);
+    final verb = _verbAt(tokens, i, locale);
     if (verb != null) {
       final (length, income) = verb;
       final last = tokens[i + length - 1];
@@ -68,11 +68,16 @@ List<Item> readItems(String text, String locale) {
       i += length;
       continue;
     }
-    final type = isDateWord(t.norm)
-        ? ItemType.date
-        : connectorWords.contains(t.norm)
+    final date = dateAt(tokens, i, locale);
+    if (date != null) {
+      final (length, key) = date;
+      items.add(Item(ItemType.date, t.start, tokens[i + length - 1].end, key));
+      i += length;
+      continue;
+    }
+    final type = connectorsFor(locale).contains(t.norm)
         ? ItemType.connector
-        : droppedWords.contains(t.norm)
+        : droppedFor(locale).contains(t.norm)
         ? ItemType.dropped
         : ItemType.name;
     items.add(Item(type, t.start, t.end, t.lower));
@@ -81,8 +86,8 @@ List<Item> readItems(String text, String locale) {
   return items;
 }
 
-(int, bool)? _verbAt(List<Token> tokens, int i) {
-  for (final (words, income) in verbs) {
+(int, bool)? _verbAt(List<Token> tokens, int i, String locale) {
+  for (final (words, income) in verbsFor(locale)) {
     if (i + words.length > tokens.length) continue;
     var all = true;
     for (var k = 0; k < words.length; k++) {

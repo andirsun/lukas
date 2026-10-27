@@ -129,6 +129,30 @@ const _enTens = {
   'sixty': 60, 'seventy': 70, 'eighty': 80, 'ninety': 90,
 };
 
+// Italian and Portuguese words, folded.
+const _ptUnits = {
+  'um': 1, 'uma': 1, 'dois': 2, 'duas': 2, 'tres': 3, 'quatro': 4, 'cinco': 5, 'seis': 6, //
+  'sete': 7, 'oito': 8, 'nove': 9,
+};
+const _ptTeens = {
+  'dez': 10, 'onze': 11, 'doze': 12, 'treze': 13, 'catorze': 14, 'quatorze': 14, 'quinze': 15, //
+  'dezasseis': 16, 'dezassete': 17, 'dezoito': 18, 'dezanove': 19, //
+  // The voice model is trained on Brazilian speech, so its spellings are read too.
+  'dezesseis': 16, 'dezessete': 17, 'dezenove': 19,
+};
+const _ptTens = {
+  'vinte': 20, 'trinta': 30, 'quarenta': 40, 'cinquenta': 50, //
+  'sessenta': 60, 'setenta': 70, 'oitenta': 80, 'noventa': 90,
+};
+const _ptHundreds = {
+  'cem': 100, 'cento': 100, 'duzentos': 200, 'duzentas': 200, 'trezentos': 300, //
+  'trezentas': 300, 'quatrocentos': 400, 'quatrocentas': 400, 'quinhentos': 500, //
+  'quinhentas': 500, 'seiscentos': 600, 'seiscentas': 600, 'setecentos': 700, //
+  'setecentas': 700, 'oitocentos': 800, 'oitocentas': 800, 'novecentos': 900, 'novecentas': 900,
+};
+const _scalesIt = {'mila': 1000, 'mille': 1000, 'milione': 1000000, 'milioni': 1000000, 'k': 1000};
+const _scalesPt = {'mil': 1000, 'milhao': 1000000, 'milhoes': 1000000, 'k': 1000};
+
 /// Scale words, in every locale. The COP slang units are read everywhere (so `15 lukas` is never
 /// taken as a plain 15) and flagged; parse.dart refuses them outside COP.
 const _scales = {
@@ -142,12 +166,30 @@ const _slangScales = {'luca', 'lucas', 'luka', 'lukas', 'palo', 'palos'};
 
 /// Scale words that are an amount on their own (`gasté mil en chicle`).
 const _bareScales = {'mil', 'thousand'};
+const _bareScalesIt = {'mille'};
+const _bareScalesPt = {'mil'};
 
 /// Words that are 1 only right before a scale word (`un millón`, `una luca`, `a thousand`);
 /// elsewhere they are articles.
 const _oneBeforeScale = {
   'es': {'un', 'una'},
   'en': {'a'},
+  'it': {'un', 'una'},
+  'pt': {'um', 'uma'},
+};
+
+/// `medio palo`: half, right before a scale word.
+const _halfBeforeScale = {
+  'es': {'medio'},
+  'it': {'mezzo'},
+  'pt': {'meio'},
+};
+
+/// After a scale word, a joiner and a word that add half of it (`un palo y medio`).
+const _halfAfterScale = {
+  'es': ('y', {'medio', 'media'}),
+  'it': ('e', {'mezzo', 'mezza'}),
+  'pt': ('e', {'meio', 'meia'}),
 };
 
 /// Currency words, dropped with their amount (`nueve euros con cincuenta`, `twelve dollars`).
@@ -155,6 +197,10 @@ const _currencyWords = {
   'peso', 'pesos', 'euro', 'euros', 'dolar', 'dolares', 'dollar', 'dollars', 'bucks', //
 };
 const _centWords = {'centavo', 'centavos', 'centimo', 'centimos', 'cent', 'cents'};
+const _currencyWordsIt = {'euro', 'dollaro', 'dollari'};
+const _centWordsIt = {'centesimo', 'centesimi', 'cent'};
+const _currencyWordsPt = {'euro', 'euros', 'dolar', 'dolares'};
+const _centWordsPt = {'centimo', 'centimos', 'centavo', 'centavos', 'cent'};
 
 const _bigScale = 1 << 62;
 
@@ -165,6 +211,38 @@ class _Reader {
   final String locale;
 
   bool get _en => locale == 'en';
+  bool get _it => locale == 'it';
+  bool get _pt => locale == 'pt';
+
+  /// Italian and Portuguese let a spelled-out number follow `e` after a scale (`mil e quinhentos`).
+  bool get _eJoins => _it || _pt;
+
+  Map<String, int> get _scaleWords => switch (locale) {
+    'it' => _scalesIt,
+    'pt' => _scalesPt,
+    _ => _scales,
+  };
+  Set<String> get _bare => switch (locale) {
+    'it' => _bareScalesIt,
+    'pt' => _bareScalesPt,
+    _ => _bareScales,
+  };
+  Set<String> get _currency => switch (locale) {
+    'it' => _currencyWordsIt,
+    'pt' => _currencyWordsPt,
+    _ => _currencyWords,
+  };
+  Set<String> get _cents => switch (locale) {
+    'it' => _centWordsIt,
+    'pt' => _centWordsPt,
+    _ => _centWords,
+  };
+  String get _decimalWord => switch (locale) {
+    'en' => 'point',
+    'it' => 'virgola',
+    'pt' => 'virgula',
+    _ => 'coma',
+  };
 
   /// The folded word at [i], or null past the end or on a number or a comma.
   String? word(int i) {
@@ -175,7 +253,7 @@ class _Reader {
 
   bool isNumber(int i) => i < tokens.length && tokens[i].isNumber;
 
-  int? scaleAt(int i) => _scales[word(i)];
+  int? scaleAt(int i) => _scaleWords[word(i)];
 
   /// A unit 1–9 at [i]; `un`/`una` count only before a scale word (`treinta y un mil`).
   int? _esUnitAt(int i) {
@@ -253,6 +331,59 @@ class _Reader {
     return any ? (v, j) : null;
   }
 
+  /// 1–999 in Italian words, each written as one word (`trentacinque`, `centoventi`), or a round
+  /// hundred followed by its tens (`cento venti`).
+  (int, int)? _smallIt(int i) {
+    final v = italianNumbers[word(i)];
+    if (v == null) return null;
+    if (v % 100 == 0) {
+      final rest = italianNumbers[word(i + 1)];
+      if (rest != null && rest < 100) return (v + rest, i + 2);
+    }
+    return (v, i + 1);
+  }
+
+  /// A unit 1–9 in Portuguese at [i]; `um`/`uma` count right after `e`, or before a scale word.
+  int? _ptUnitAt(int i, {bool afterE = false}) {
+    final w = word(i);
+    if (w == null) return null;
+    final u = _ptUnits[w];
+    if (u == null) return null;
+    if (w == 'um' || w == 'uma') return afterE || scaleAt(i + 1) != null ? 1 : null;
+    return u;
+  }
+
+  /// 1–99 in Portuguese words: `tens [e unit] | 10–19 | unit`.
+  (int, int)? _belowHundredPt(int j) {
+    if (_ptTens[word(j)] case final t?) {
+      if (word(j + 1) == 'e') {
+        if (_ptUnitAt(j + 2, afterE: true) case final u?) return (t + u, j + 3);
+      }
+      return (t, j + 1);
+    }
+    if (_ptTeens[word(j)] case final t?) return (t, j + 1);
+    if (_ptUnitAt(j) case final u?) return (u, j + 1);
+    return null;
+  }
+
+  /// 1–999 in Portuguese words: `[hundreds [e 1–99]] | 1–99` (`cento e vinte`; `cem` stands alone).
+  (int, int)? _smallPt(int i) {
+    if (_ptHundreds[word(i)] case final h?) {
+      if (word(i) != 'cem' && word(i + 1) == 'e') {
+        if (_belowHundredPt(i + 2) case (final rest, final next)) return (h + rest, next);
+      }
+      return (h, i + 1);
+    }
+    return _belowHundredPt(i);
+  }
+
+  (int, int)? _words(int i) => switch (locale) {
+    'en' => _smallEn(i),
+    'it' => _smallIt(i),
+    'pt' => _smallPt(i),
+    _ => _smallEs(i),
+  };
+
   /// A number with no scale word: digits, or words, with an optional decimal in words
   /// (`cuatro coma tres`, `10 coma 05`, `four point five`). `grouped` says the digits carry a
   /// thousands separator.
@@ -268,18 +399,18 @@ class _Reader {
       ambiguous = d.ambiguous;
       j = i + 1;
     } else {
-      final r = _en ? _smallEn(i) : _smallEs(i);
+      final r = _words(i);
       if (r == null) return null;
       v = Dec(r.$1);
       j = r.$2;
     }
-    if (v.isInteger && word(j) == (_en ? 'point' : 'coma')) {
+    if (v.isInteger && word(j) == _decimalWord) {
       // The decimals keep their written length: `05` is five hundredths.
       String? frac;
       var next = j + 2;
       if (isNumber(j + 1) && RegExp(r'^\d{1,3}$').hasMatch(tokens[j + 1].text)) {
         frac = tokens[j + 1].text;
-      } else if ((_en ? _smallEn(j + 1) : _smallEs(j + 1)) case (final f, final n)) {
+      } else if (_words(j + 1) case (final f, final n)) {
         frac = '$f';
         next = n;
       }
@@ -298,12 +429,15 @@ class _Reader {
     var any = false;
     var slang = false;
     var ambiguous = false;
+    var currencyWord = false;
 
     // After a scale word: es `y medio`/`y media` adds half of it (`un palo y medio`).
     void halfMore(int scale) {
-      if (!_en && word(j) == 'y' && (word(j + 1) == 'medio' || word(j + 1) == 'media')) {
-        total = total + Dec.half.times(scale);
-        j += 2;
+      if (_halfAfterScale[locale] case (final joiner, final halves)) {
+        if (word(j) == joiner && halves.contains(word(j + 1))) {
+          total = total + Dec.half.times(scale);
+          j += 2;
+        }
       }
     }
 
@@ -317,18 +451,22 @@ class _Reader {
         j++;
         continue;
       }
+      // it, pt: after a scale, a spelled-out number may follow an `e` (`mil e quinhentos`). Digits
+      // do not: `mille e 3 per l'uber` is two movements.
+      var p = j;
+      if (_eJoins && any && lastScale != _bigScale && word(j) == 'e' && !isNumber(j + 1)) p = j + 1;
       Dec? s;
-      var k = j;
+      var k = p;
       var grouped = false;
       var sAmbiguous = false;
-      final w = word(j);
-      if ((_oneBeforeScale[locale] ?? const {}).contains(w) && scaleAt(j + 1) != null) {
+      final w = word(p);
+      if ((_oneBeforeScale[locale] ?? const {}).contains(w) && scaleAt(p + 1) != null) {
         s = Dec(1);
-        k = j + 1;
-      } else if (!_en && w == 'medio' && scaleAt(j + 1) != null) {
+        k = p + 1;
+      } else if ((_halfBeforeScale[locale] ?? const {}).contains(w) && scaleAt(p + 1) != null) {
         s = Dec.half;
-        k = j + 1;
-      } else if (small(j) case final r?) {
+        k = p + 1;
+      } else if (small(p) case final r?) {
         s = r.value;
         k = r.next;
         grouped = r.grouped;
@@ -345,10 +483,10 @@ class _Reader {
         halfMore(scale);
         continue;
       }
-      if (s == null && _bareScales.contains(w) && _scales[w]! < lastScale) {
-        total = total + Dec(_scales[w]!);
-        lastScale = _scales[w]!;
-        j++;
+      if (s == null && _bare.contains(w) && _scaleWords[w]! < lastScale) {
+        total = total + Dec(_scaleWords[w]!);
+        lastScale = _scaleWords[w]!;
+        j = p + 1;
         any = true;
         halfMore(lastScale);
         continue;
@@ -373,18 +511,33 @@ class _Reader {
     }
     if (!any) return null;
     final scaled = lastScale != _bigScale;
-    if (_currencyWords.contains(word(j))) j++;
+    if (_currency.contains(word(j))) {
+      j++;
+      currencyWord = true;
+    }
     // Units and cents: `nueve con cincuenta`, `9 euros con 50`, `twelve dollars and fifty cents`.
+    // it, pt: `quindici euro e cinquanta`; the `e` joins only right after the currency word.
     final joiner = word(j);
-    if (!scaled && total.isInteger && (joiner == 'con' || (_en && joiner == 'and'))) {
+    final eCents = _eJoins && currencyWord && joiner == 'e';
+    if (!scaled &&
+        total.isInteger &&
+        (joiner == 'con' && !_eJoins || (_en && joiner == 'and') || eCents)) {
       final c = small(j + 1);
       if (c != null && !c.ambiguous && c.value.isIntegerIn(1, 99) && scaleAt(c.next) == null) {
-        final hasCentWord = _centWords.contains(word(c.next));
-        if (joiner == 'con' || hasCentWord) {
-          total = total + Dec.big(c.value.whole, 2);
-          j = c.next;
-          if (hasCentWord) j++;
-          if (_currencyWords.contains(word(j))) j++;
+        final hasCentWord = _cents.contains(word(c.next));
+        // `e` + digits is cents only when the digits end the fragment: nothing, a comma or a
+        // currency word follows. `15 euro e 20 per il taxi` is two movements. Spelled-out cents
+        // (the voice path) are 10 to 99.
+        final digitsEnd =
+            c.next >= tokens.length || tokens[c.next].isComma || _currency.contains(word(c.next));
+        final eOk = isNumber(j + 1) ? digitsEnd : c.value.isIntegerIn(10, 99);
+        if (!eCents || hasCentWord || eOk) {
+          if (joiner == 'con' || hasCentWord || eCents) {
+            total = total + Dec.big(c.value.whole, 2);
+            j = c.next;
+            if (hasCentWord) j++;
+            if (_currency.contains(word(j))) j++;
+          }
         }
       }
     }

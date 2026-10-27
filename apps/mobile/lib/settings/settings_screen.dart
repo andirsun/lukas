@@ -38,6 +38,8 @@ import 'delete_account.dart';
 import 'export_settings.dart';
 import 'feedback.dart';
 import 'passkeys_section.dart';
+import 'server_status.dart';
+import 'locale_resolution.dart';
 import 'preferences.dart';
 import 'profile_settings.dart';
 import 'settings_parts.dart';
@@ -132,19 +134,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   // -- the rest ------------------------------------------------------------------------------
 
   /// Opens one of the web's public pages in the browser: the landing, or the roadmap. They are
-  /// prerendered per language, Spanish with no prefix and English under `/en` (the web's
-  /// `LANDING_PATH` and `ROADMAP_PATH`).
+  /// prerendered per language, Spanish with no prefix and the others under `/en`, `/it` and `/pt`
+  /// (the web's `LANDING_PATH` and `ROADMAP_PATH`).
   Future<void> _openWeb({bool roadmap = false}) async {
     final toasts = ToastHost.of(context);
     final l10n = AppLocalizations.of(context);
     final server = ref.read(serverUrlProvider);
-    final english = l10n.localeName == 'en';
-    final page = switch ((english, roadmap)) {
-      (false, false) => server,
-      (true, false) => server.resolve('/en'),
-      (false, true) => server.resolve('/roadmap'),
-      (true, true) => server.resolve('/en/roadmap'),
-    };
+    final path = webPagePath(l10n.localeName, roadmap: roadmap);
+    // The Spanish landing is the server's own address, as it always was.
+    final page = path == '/' ? server : server.resolve(path);
     final opened = await ref.read(urlOpenerProvider).open(page);
     if (!opened && mounted) toasts.say(l10n.settingsWebFailed, error: true);
   }
@@ -257,6 +255,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 Choice('es', l10n.settingsLanguageEs, key: const Key('settings.language.es')),
                 Choice('en', l10n.settingsLanguageEn, key: const Key('settings.language.en')),
+                Choice('it', l10n.settingsLanguageIt, key: const Key('settings.language.it')),
+                Choice('pt', l10n.settingsLanguagePt, key: const Key('settings.language.pt')),
               ],
               onChanged: (code) => unawaited(
                 ref.read(localeOverrideProvider.notifier).set(code == 'auto' ? null : Locale(code)),
@@ -379,6 +379,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             title: l10n.settingsServer,
             lead: server.toString(),
             children: [
+              const ServerStatus(),
               _SelfStart(
                 child: PressButton.text(
                   l10n.settingsServerChange,

@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { useApi, useClearSession } from "../../api/ApiProvider.tsx";
 import { queryKeys } from "../../api/queries.ts";
 import type { paths } from "../../api/schema";
-import type { Locale } from "../../i18n/format.ts";
+import { isLocale, type Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { type AuthUser, destinationAfterSignIn, type SignInAuth } from "./auth.ts";
 
@@ -55,7 +55,7 @@ export function useFinishSignIn(auth: Pick<SignInAuth, "shouldOfferPasskey">) {
       } catch {
         // The profile is a nicety here: the person is signed in either way.
       }
-      if (profile?.locale === "es" || profile?.locale === "en") setLocale(profile.locale);
+      if (isLocale(profile?.locale)) setLocale(profile.locale);
       const destination = destinationAfterSignIn(profile ?? user, next);
       // Asking is a nicety too: a failure just means no offer.
       const offer =

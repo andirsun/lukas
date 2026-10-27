@@ -5,12 +5,20 @@ import type { LukasMessageKey } from "@lukas/core";
 import { createTranslator } from "use-intl/core";
 import { describe, expect, it } from "vitest";
 import { CATALOGS } from "./catalog.ts";
+import { intlTag } from "./format.ts";
 import appEn from "./messages/app.en.json" with { type: "json" };
 import appEs from "./messages/app.es.json" with { type: "json" };
+import appIt from "./messages/app.it.json" with { type: "json" };
+import appPt from "./messages/app.pt.json" with { type: "json" };
 import siteEn from "./messages/en.json" with { type: "json" };
 import siteEs from "./messages/es.json" with { type: "json" };
+import siteIt from "./messages/it.json" with { type: "json" };
+import sitePt from "./messages/pt.json" with { type: "json" };
 
 const { es, en } = CATALOGS;
+const LANGUAGES = ["es", "en", "it", "pt"] as const;
+const SITES = { es: siteEs, en: siteEn, it: siteIt, pt: sitePt } as const;
+const APPS = { es: appEs, en: appEn, it: appIt, pt: appPt } as const;
 
 type Tree = { [key: string]: string | Tree };
 
@@ -24,7 +32,12 @@ function flatten(tree: Tree, prefix = ""): Record<string, string> {
   return out;
 }
 
-const catalogs = { es: flatten(es), en: flatten(en) } as const;
+const catalogs = {
+  es: flatten(es),
+  en: flatten(en),
+  it: flatten(CATALOGS.it),
+  pt: flatten(CATALOGS.pt),
+} as const;
 
 /** Exhaustive by construction: adding or removing a LukasMessageKey fails the type check. */
 const LUKAS_KEYS = {
@@ -44,6 +57,22 @@ function icuArguments(message: string): string[] {
   for (const match of message.matchAll(/\{\s*([A-Za-z_]\w*)\s*[,}]/g))
     names.add(match[1] as string);
   return [...names].sort();
+}
+
+/**
+ * The plural/select shape of a message: each `{name, plural|select` and each branch key (`one`,
+ * `other`, `=0`...), sorted. A translation that drops a branch or swaps plural for select differs.
+ */
+function icuShape(message: string): string[] {
+  const parts = [
+    ...[...message.matchAll(/\{\s*\w+\s*,\s*(plural|select|selectordinal)\s*,/g)].map(
+      (m) => m[1] as string,
+    ),
+    ...[...message.matchAll(/(?:^|[\s,}])(zero|one|two|few|many|other|=\d+)\s*\{/g)].map(
+      (m) => `branch:${m[1]}`,
+    ),
+  ];
+  return parts.sort();
 }
 
 /** Sorted rich-text tag names of a message (`<mark>lukas</mark>` → `mark`), for `t.rich`. */
@@ -75,33 +104,111 @@ describe("message catalogs", () => {
     // What the landing and roadmap render (Landing, Roadmap, SiteHeader, Footer, ThemeToggle,
     // HeroMascot): the root's IntlProvider holds only these, so the landing ships nothing else.
     const site = ["app", "landing", "language", "mascot", "roadmap", "theme"];
-    expect(Object.keys(siteEs).sort()).toEqual(site);
-    expect(Object.keys(siteEn).sort()).toEqual(site);
-    expect(Object.keys(appEn).sort()).toEqual(Object.keys(appEs).sort());
+    for (const language of LANGUAGES) {
+      expect(Object.keys(SITES[language]).sort(), language).toEqual(site);
+      expect(Object.keys(APPS[language]).sort(), language).toEqual(Object.keys(appEs).sort());
+      expect(Object.keys(CATALOGS[language]).sort(), language).toEqual(
+        [...site, ...Object.keys(appEs)].sort(),
+      );
+    }
     expect(Object.keys(appEs).filter((namespace) => site.includes(namespace))).toEqual([]);
-    expect(Object.keys(es).sort()).toEqual([...site, ...Object.keys(appEs)].sort());
   });
 
-  it("es and en have identical key sets", () => {
-    expect(Object.keys(catalogs.es).sort()).toEqual(Object.keys(catalogs.en).sort());
-  });
-
-  it("uses the same ICU argument names in es and en for every key", () => {
-    for (const key of Object.keys(catalogs.es)) {
-      expect(icuArguments(catalogs.en[key] ?? ""), key).toEqual(
-        icuArguments(catalogs.es[key] ?? ""),
+  it("every language has identical key sets: the same keys as es, none missing, none extra", () => {
+    for (const language of LANGUAGES) {
+      expect(Object.keys(catalogs[language]).sort(), language).toEqual(
+        Object.keys(catalogs.es).sort(),
       );
     }
   });
 
-  it("uses the same rich-text tags in es and en for every key", () => {
-    for (const key of Object.keys(catalogs.es)) {
-      expect(richTags(catalogs.en[key] ?? ""), key).toEqual(richTags(catalogs.es[key] ?? ""));
+  it("each catalog's own page parts are the same trees as the merged catalog", () => {
+    for (const language of LANGUAGES) {
+      expect(
+        { ...flatten(SITES[language] as Tree), ...flatten(APPS[language] as Tree) },
+        language,
+      ).toEqual(catalogs[language]);
+    }
+  });
+
+  it("uses the same ICU argument names as es for every key, in every language", () => {
+    for (const language of LANGUAGES) {
+      for (const key of Object.keys(catalogs.es)) {
+        expect(icuArguments(catalogs[language][key] ?? ""), `${language}:${key}`).toEqual(
+          icuArguments(catalogs.es[key] ?? ""),
+        );
+      }
+    }
+  });
+
+  it("has the same plural and select branches as es for every key, in every language", () => {
+    expect(icuShape("{n, plural, one {# día} other {# días}}")).toEqual([
+      "branch:one",
+      "branch:other",
+      "plural",
+    ]);
+    let plurals = 0;
+    for (const language of LANGUAGES) {
+      for (const key of Object.keys(catalogs.es)) {
+        const shape = icuShape(catalogs.es[key] ?? "");
+        if (shape.length > 0 && language === "es") plurals++;
+        expect(icuShape(catalogs[language][key] ?? ""), `${language}:${key}`).toEqual(shape);
+      }
+    }
+    expect(plurals).toBeGreaterThan(10);
+  });
+
+  it("uses the same rich-text tags as es for every key, in every language", () => {
+    for (const language of LANGUAGES) {
+      for (const key of Object.keys(catalogs.es)) {
+        expect(richTags(catalogs[language][key] ?? ""), `${language}:${key}`).toEqual(
+          richTags(catalogs.es[key] ?? ""),
+        );
+      }
+    }
+  });
+
+  it("keeps the line breaks of the one multi-line message (the feedback mail body)", () => {
+    for (const language of LANGUAGES) {
+      expect(catalogs[language]["settings.feedback.mail_body"]?.split("\n").length, language).toBe(
+        2,
+      );
+    }
+  });
+
+  it("lists the four languages, each in its own name", () => {
+    for (const language of LANGUAGES) {
+      expect(catalogs[language]["language.es"], language).toBe("Español");
+      expect(catalogs[language]["language.en"], language).toBe("English");
+      expect(catalogs[language]["language.it"], language).toBe("Italiano");
+      expect(catalogs[language]["language.pt"], language).toBe("Português");
+    }
+  });
+
+  it("keeps the brand untranslated and the Colombian slang out of Italian and Portuguese", () => {
+    for (const language of ["it", "pt"] as const) {
+      expect(catalogs[language]["app.name"]).toBe("Lukitas");
+      for (const [key, value] of Object.entries(catalogs[language])) {
+        expect(value, `${language}:${key}`).not.toMatch(/\blukas?\b|\bpalos?\b/i);
+      }
+    }
+  });
+
+  it("writes Portuguese as in Portugal: no Brazilian words", () => {
+    // Unicode-aware boundaries: `\b` never matches next to an accented letter (você, ônibus).
+    const brazilian =
+      /(?<![\p{L}])(celular|tela|usuário|registrar|você|gastando|salvar|arquivo|deletar|baixar|aplicativo|cadastro|conta corrente|ônibus)(?![\p{L}])/iu;
+    expect("obrigado, você sabe").toMatch(brazilian);
+    expect("apanha o ônibus").toMatch(brazilian);
+    expect("o teu telemóvel").not.toMatch(brazilian);
+    expect("o Usuário").toMatch(brazilian);
+    for (const [key, value] of Object.entries(catalogs.pt)) {
+      expect(value, `pt:${key}`).not.toMatch(brazilian);
     }
   });
 
   it("never names the product or the mascot Lukas (it is Lukitas; the slang word is lowercase)", () => {
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of LANGUAGES) {
       for (const [key, value] of Object.entries(catalogs[locale])) {
         expect(value, `${locale}:${key}`).not.toMatch(/\bLukas\b/);
       }
@@ -109,14 +216,14 @@ describe("message catalogs", () => {
   });
 
   it("has no empty messages", () => {
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of LANGUAGES) {
       for (const [key, value] of Object.entries(catalogs[locale])) {
         expect(value.trim(), `${locale}:${key}`).not.toBe("");
       }
     }
   });
 
-  for (const locale of ["es", "en"] as const) {
+  for (const locale of LANGUAGES) {
     describe(locale, () => {
       for (const [key, params] of Object.entries(LUKAS_KEYS)) {
         it(`has 3+ variants for lukas.${key} that all format`, () => {
@@ -126,8 +233,8 @@ describe("message catalogs", () => {
           expect(variants.length).toBeGreaterThanOrEqual(3);
           // A bad ICU string or a missing param must fail the test, not fall back to the key path.
           const t = createTranslator({
-            locale,
-            messages: locale === "es" ? es : en,
+            locale: intlTag(locale),
+            messages: CATALOGS[locale],
             onError: (error) => {
               throw error;
             },
@@ -167,8 +274,9 @@ describe("message catalogs", () => {
     const codes = apiErrorCodes();
     expect(codes.length).toBeGreaterThan(10);
     for (const code of [...codes, "generic"]) {
-      expect(catalogs.es, `es errors.${code}`).toHaveProperty([`errors.${code}`]);
-      expect(catalogs.en, `en errors.${code}`).toHaveProperty([`errors.${code}`]);
+      for (const language of LANGUAGES) {
+        expect(catalogs[language], `${language} errors.${code}`).toHaveProperty([`errors.${code}`]);
+      }
     }
   });
 });
@@ -177,9 +285,11 @@ describe("deleting an account promises what is true (backups keep it up to 14 da
   const DELETION = {
     es: "Borramos tu cuenta y todos tus movimientos de inmediato. Las copias de seguridad que los incluyan se borran solas en 14 días.",
     en: "We delete your account and all your entries right away. Backups that include them delete themselves within 14 days.",
+    it: "Cancelliamo subito il tuo account e tutti i tuoi movimenti. Le copie di sicurezza che li includono si cancellano da sole entro 14 giorni.",
+    pt: "Apagamos a tua conta e todos os teus movimentos de imediato. As cópias de segurança que os incluem apagam-se sozinhas em 14 dias.",
   } as const;
 
-  for (const locale of ["es", "en"] as const) {
+  for (const locale of LANGUAGES) {
     it(`${locale}: says when the backups go, and never "forever"`, () => {
       const lines = Object.entries(catalogs[locale]).filter(([key]) =>
         key.startsWith("settings.delete."),
@@ -187,7 +297,7 @@ describe("deleting an account promises what is true (backups keep it up to 14 da
       expect(catalogs[locale]["settings.delete.lead"]).toBe(DELETION[locale]);
       for (const [key, line] of lines) {
         expect(line, key).not.toMatch(
-          /para siempre|recuperarlos|no se puede deshacer|forever|for good|get them back|can't be undone/i,
+          /para siempre|recuperarlos|no se puede deshacer|forever|for good|get them back|can't be undone|per sempre|irreversibil|non si può annullare|para sempre|irrevers|não se pode desfazer/i,
         );
       }
     });
@@ -195,18 +305,25 @@ describe("deleting an account promises what is true (backups keep it up to 14 da
 });
 
 describe("the privacy answer claims only what open code shows", () => {
-  const site = { es: flatten(siteEs as Tree), en: flatten(siteEn as Tree) } as const;
+  const site = {
+    es: flatten(siteEs as Tree),
+    en: flatten(siteEn as Tree),
+    it: flatten(siteIt as Tree),
+    pt: flatten(sitePt as Tree),
+  } as const;
   const ANSWER = {
     es: "El código es abierto: cualquiera puede leer el código que los maneja.",
     en: "The code is open source: anyone can read the code that handles it.",
+    it: "Il codice è open source: chiunque può leggere il codice che li gestisce.",
+    pt: "O código é aberto: qualquer pessoa pode ler o código que os trata.",
   } as const;
 
-  for (const locale of ["es", "en"] as const) {
+  for (const locale of LANGUAGES) {
     it(`${locale}: open code shows what the code does, not what a server does`, () => {
       expect(site[locale]["landing.faq.privacy.a"]).toContain(ANSWER[locale]);
       for (const [key, line] of Object.entries(site[locale])) {
         expect(line, key).not.toMatch(
-          /comprobar qué hacemos|qué hacemos con ellos|check what we do|what we do with it/i,
+          /comprobar qué hacemos|qué hacemos con ellos|check what we do|what we do with it|controllare cosa facciamo|verificare cosa facciamo|verificar o que fazemos|conferir o que fazemos/i,
         );
       }
     });

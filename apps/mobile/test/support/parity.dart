@@ -52,8 +52,15 @@ const _sanFrancisco = '/System/Library/Fonts/SFNS.ttf';
 /// whose face 11 is `PingFangSC-Semibold` ([ttcFace]). On a phone, Android's fallback font draws it.
 const parityCjkFamily = 'Parity PingFang SC';
 
-/// Where macOS keeps PingFang (the asset's folder is named by a hash).
+/// Where macOS keeps PingFang (the asset's folder is named by a hash). Newer macOS ships a
+/// different PingFang in the system instead, whose ＋ is wider, so on those Macs `PARITY_PINGFANG`
+/// names a copy of the asset's PingFang.ttc (from Apple's font catalog, `com_apple_MobileAsset_Font8`).
 String _pingFang() {
+  final override = Platform.environment['PARITY_PINGFANG'];
+  if (override != null) {
+    if (!File(override).existsSync()) fail('PARITY_PINGFANG names $override: not found');
+    return override;
+  }
   final found = Directory('/System/Library/AssetsV2')
       .listSync()
       .whereType<Directory>()
@@ -61,7 +68,9 @@ String _pingFang() {
       .expand((d) => d.listSync().whereType<Directory>())
       .map((d) => File('${d.path}/AssetData/PingFang.ttc'))
       .where((f) => f.existsSync());
-  if (found.isEmpty) fail('Parity draws ＋ with PingFang, a macOS font asset: not found');
+  if (found.isEmpty) {
+    fail('Parity draws ＋ with PingFang, a macOS font asset: not found (set PARITY_PINGFANG)');
+  }
   return found.first.path;
 }
 

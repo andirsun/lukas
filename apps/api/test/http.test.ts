@@ -13,6 +13,16 @@ test("GET /health", async () => {
   expect(await res.json()).toEqual({ status: "ok" });
 });
 
+test("GET /health says which version is running, when the build named one", async () => {
+  const versioned = await createTestApp({ LUKITAS_VERSION: "0.0.0-dev.abc1234" });
+  try {
+    const res = await versioned.request("GET", "/health");
+    expect(await res.json()).toEqual({ status: "ok", version: "0.0.0-dev.abc1234" });
+  } finally {
+    await versioned.stop();
+  }
+});
+
 test("protected routes return a problem+json 401 without a session", async () => {
   const res = await t.request("GET", "/v1/me");
   expect(res.status).toBe(401);

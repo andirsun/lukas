@@ -1,9 +1,10 @@
 import { createHash, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { passkey } from "@better-auth/passkey";
-import { defaultCurrencyFor, isValidTimeZone } from "@lukas/core";
+import { defaultCurrencyFor, isValidTimeZone, SUGGESTED_CATEGORIES } from "@lukas/core";
 import {
   accounts,
+  categories,
   emailThrottle,
   schema,
   user as userTable,
@@ -181,7 +182,7 @@ export async function sendClaimCode(
   await deps.mailer.send({ to: input.email, ...mail });
 }
 
-type Locale = "es" | "en";
+type Locale = "es" | "en" | "it" | "pt";
 
 /** Headers the web app sends with a code request: the page's language and where to go after. */
 export const LOCALE_HINT_HEADER = "x-lukas-locale";
@@ -205,7 +206,7 @@ export const CLIENT_ANDROID = "android";
 export const BACKGROUND_HEADER = "x-lukas-background";
 
 const asLocale = (value: string | null | undefined): Locale | null =>
-  value === "es" || value === "en" ? value : null;
+  value === "es" || value === "en" || value === "it" || value === "pt" ? value : null;
 
 /**
  * The language and region of a BCP 47 tag as phones and browsers send it: `en-US`, `es-CO`, `EN-gb`,
@@ -223,7 +224,7 @@ export function parseLanguageTag(tag: string | null | undefined): {
   }
 }
 
-/** The first of es/en in an Accept-Language header, by quality; null if it names neither. */
+/** The first of es/en/it/pt in an Accept-Language header, by quality; null if it names none. */
 export function localeFromAcceptLanguage(header: string | null | undefined): Locale | null {
   const ranked = (header ?? "")
     .split(",")
@@ -246,9 +247,11 @@ const canonicalTimeZone = (zone: string) =>
 
 /**
  * A new guest's profile defaults, from the device's headers: the time zone from `x-lukas-timezone`
- * (a named IANA zone in its canonical spelling, else UTC); the language from `x-lukas-locale` (es
- * or en, as a bare language or a tag like `es-CO`), else Accept-Language, else Spanish; and the
- * region that tag names, which the currency rule reads as the web reads the browser's languages.
+ * (a named IANA zone in its canonical spelling, else UTC); the language from `x-lukas-locale` (es,
+ * en, it or pt, as a bare language or a tag like `es-CO`; `pt-BR` is `pt`), else Accept-Language,
+ * else Spanish; and the region that tag names, which the currency rule reads as the web reads the
+ * browser's languages. An Italian or Portuguese tag with no region reads as Italy or Portugal, so
+ * a bare `it` or `pt` starts in EUR.
  */
 export function guestDefaults(headers: Headers | undefined): {
   timezone: string;
@@ -257,10 +260,12 @@ export function guestDefaults(headers: Headers | undefined): {
 } {
   const zone = headers?.get(TIMEZONE_HINT_HEADER)?.trim() ?? "";
   const { language, region } = parseLanguageTag(headers?.get(LOCALE_HINT_HEADER));
+  const locale =
+    asLocale(language) ?? localeFromAcceptLanguage(headers?.get("accept-language")) ?? "es";
   return {
     timezone: isValidTimeZone(zone) ? canonicalTimeZone(zone) : "UTC",
-    locale: asLocale(language) ?? localeFromAcceptLanguage(headers?.get("accept-language")) ?? "es",
-    region,
+    locale,
+    region: region ?? (locale === "it" ? "IT" : locale === "pt" ? "PT" : undefined),
   };
 }
 
@@ -269,7 +274,7 @@ const fromDevice = (headers: Headers | undefined) => headers?.has(TIMEZONE_HINT_
 
 /**
  * The language of a sign-in email: the profile's for an existing user; for a new address, the
- * language of `x-lukas-locale` (the web sends `es` or `en`, the app the phone's tag, such as
+ * language of `x-lukas-locale` (the web sends `es`, `en`, `it` or `pt`, the app the phone's tag, such as
  * `en-US`), else the browser's Accept-Language, else Spanish.
  */
 async function localeFor(deps: AppDeps, email: string, headers: Headers | undefined) {
@@ -430,14 +435,28 @@ export function createAuth(deps: AppDeps) {
                     guestDefaults(headers).region,
                   )
                 : "EUR";
-            await withUser(deps.db, created.id, (tx) =>
-              tx.insert(accounts).values({
+            // Every account starts with the suggested categories, named in the sign-up's language
+            // (`x-lukas-locale`, else the browser's), so a person who leaves the welcome halfway
+            // still has them. The welcome then shows them as the person's own.
+            const { locale } = guestDefaults(headers);
+            await withUser(deps.db, created.id, async (tx) => {
+              await tx.insert(accounts).values({
                 userId: created.id,
                 name: "Main",
                 currency,
                 isDefault: true,
-              }),
-            );
+              });
+              await tx.insert(categories).values(
+                SUGGESTED_CATEGORIES.map((suggestion, sortOrder) => ({
+                  userId: created.id,
+                  name: suggestion.names[locale],
+                  kind: suggestion.kind,
+                  icon: suggestion.glyph,
+                  color: suggestion.tint,
+                  sortOrder,
+                })),
+              );
+            });
           },
         },
       },

@@ -8,6 +8,8 @@ type Session = { userId: string; headers: { authorization: string } };
 const ALLOWED = [
   "keep@lukas.test",
   "english@lukas.test",
+  "italiano@lukas.test",
+  "portugues@lukas.test",
   "taken@lukas.test",
   "race@lukas.test",
   "owner@lukas.test",
@@ -133,6 +135,19 @@ describe("a guest claims an email in place", () => {
     const mail = t.mailer.lastTo("english@lukas.test");
     expect(mail?.subject).toBe(`Your code to save your progress: ${code}`);
     expect(mail?.text).toContain("Your code to save your progress");
+  });
+
+  test("the claim email is in Italian or Portuguese for those guests", async () => {
+    const it = await guest(t, { "x-lukas-locale": "it-IT" });
+    const itCode = await sendAndRead(t, it, "italiano@lukas.test");
+    expect(t.mailer.lastTo("italiano@lukas.test")?.subject).toBe(
+      `Il tuo codice per salvare i tuoi progressi: ${itCode}`,
+    );
+    const pt = await guest(t, { "x-lukas-locale": "pt-PT" });
+    const ptCode = await sendAndRead(t, pt, "portugues@lukas.test");
+    expect(t.mailer.lastTo("portugues@lukas.test")?.subject).toBe(
+      `O teu código para guardares o teu progresso: ${ptCode}`,
+    );
   });
 
   test("a non-allowlisted email gets sign_in_not_allowed and no mail is sent", async () => {

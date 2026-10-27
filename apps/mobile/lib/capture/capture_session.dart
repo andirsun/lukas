@@ -15,6 +15,7 @@ import '../home/saved_feedback.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
 import '../ui/toast.dart';
+import 'capture_language.dart';
 import 'capture_note.dart';
 import 'capture_repository.dart';
 import 'capture_save.dart';
@@ -52,7 +53,7 @@ final openCaptureSheetsProvider = Provider<OpenCaptureSheets>((ref) => OpenCaptu
 enum CaptureStage { starting, offer, downloading, listening, typing, preview }
 
 /// Why the typing field shows instead of listening: one sentence over it.
-enum CaptureWhy { micDenied, noEngine, listenFailed, nothingHeard, nothingRead }
+enum CaptureWhy { micDenied, noEngine, noVoiceYet, listenFailed, nothingHeard, nothingRead }
 
 /// What the capture sheet's parts (the listening, the typing field, the voice download, the preview
 /// and the footer under them) share while it is open: the stage, the engine, the preview and the
@@ -185,8 +186,13 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
   /// The microphone's level, live, while listening.
   Stream<double> get levels => engine.levels;
 
-  /// The voice model of the app's language: its size is shown before it is downloaded.
-  VoiceModel get model => ref.read(modelStoreProvider).modelFor(locale);
+  /// The voice model of the app's language: its size is shown before it is downloaded. Null when the
+  /// language has none ([hasVoice]); never another language's.
+  VoiceModel? get model => ref.read(modelStoreProvider).modelFor(locale);
+
+  /// Whether the app's language has a voice model at all. Italian and Portuguese have none yet:
+  /// the sheet then opens on the typing field, as it does when the phone cannot listen.
+  bool get hasVoice => ref.read(modelStoreProvider).hasModel(locale);
 
   void cancelDownload() => _download?.cancel();
 
@@ -220,7 +226,8 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
     if (stage == CaptureStage.typing && canListen) listen();
   }
 
-  String get locale => AppLocalizations.of(context).localeName == 'en' ? 'en' : 'es';
+  /// The app's language, which is also the voice's (one of [appLanguages]).
+  String get locale => captureLanguage(AppLocalizations.of(context).localeName);
 
   /// The names already used and their usual categories: the parser's first choice of category.
   Future<void> _fetchUsual() async {
@@ -236,12 +243,14 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
     // Both at once: nothing waits for the other.
     final (available, warm) = await (engine.available(), engine.isWarm(locale: locale)).wait;
     if (!mounted) return;
-    canListen = available;
-    _warm = available && warm;
+    canListen = available && hasVoice;
+    _warm = canListen && warm;
     if (!widget.listen) {
       type(null);
     } else if (!available) {
       type(CaptureWhy.noEngine);
+    } else if (!hasVoice) {
+      type(CaptureWhy.noVoiceYet);
     } else {
       listen();
     }
@@ -255,6 +264,10 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
   };
 
   void listen() {
+    if (!hasVoice) {
+      type(CaptureWhy.noVoiceYet);
+      return;
+    }
     if (_inBackground) {
       _set(() {
         stage = CaptureStage.starting;
@@ -283,6 +296,9 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
             _listening = null;
             final kind = error is SpeechFailure ? error.kind : SpeechFailureKind.failed;
             switch (kind) {
+              case SpeechFailureKind.noModel when !hasVoice:
+                // A language with no model has nothing to offer: typing, with the note why.
+                type(CaptureWhy.noVoiceYet);
               case SpeechFailureKind.noModel:
                 _set(() {
                   stage = CaptureStage.offer;
@@ -382,7 +398,7 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
     final result = p.parseSentence(
       sentence,
       p.ParseContext(
-        locale: locale,
+        locale: parserLanguage(locale),
         currency: data.currency,
         today: today,
         timeZone: data.timezone,

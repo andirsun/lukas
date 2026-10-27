@@ -87,11 +87,12 @@ export function HomeHeader({ month, onMonth, max, signOut: request }: HomeHeader
       >
         <span aria-hidden="true">🙂</span>
       </button>
+      {/* Above home's sticky tabs (z-20, later in the page), which once hid its lower half. */}
       <div
         ref={panel}
         id={menuId}
         hidden={!open}
-        className="lk-menu absolute top-full right-0 z-20 mt-(--space-2) w-60"
+        className="lk-menu absolute top-full right-0 z-30 mt-(--space-2) w-60"
       >
         <div className="flex items-center justify-between gap-(--space-2)">
           <span className="text-[14px] font-bold text-ink">{t("theme.label")}</span>

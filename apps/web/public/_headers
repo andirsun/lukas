@@ -22,6 +22,22 @@
   Cache-Control: public, max-age=300, must-revalidate
 /en/roadmap/
   Cache-Control: public, max-age=300, must-revalidate
+/it
+  Cache-Control: public, max-age=300, must-revalidate
+/it/
+  Cache-Control: public, max-age=300, must-revalidate
+/pt
+  Cache-Control: public, max-age=300, must-revalidate
+/pt/
+  Cache-Control: public, max-age=300, must-revalidate
+/it/roadmap
+  Cache-Control: public, max-age=300, must-revalidate
+/it/roadmap/
+  Cache-Control: public, max-age=300, must-revalidate
+/pt/roadmap
+  Cache-Control: public, max-age=300, must-revalidate
+/pt/roadmap/
+  Cache-Control: public, max-age=300, must-revalidate
 /404.html
   Cache-Control: public, max-age=300, must-revalidate
 

@@ -122,6 +122,16 @@ const configSchema = z
       )
       .refine((list) => list.every(isCidr), "TRUSTED_PROXIES must be IPs or CIDR ranges"),
     /**
+     * The version this build is, as /health reports it (the personal install's up.sh passes
+     * `0.0.0-dev.<commit>`, the name the APK of that commit has). Blank or unset: none is reported.
+     */
+    LUKITAS_VERSION: z
+      .preprocess(
+        (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+        z.string().trim().optional(),
+      )
+      .optional(),
+    /**
      * End-to-end tests only: pins the API's clock (the "current month" every route works out) to
      * this ISO instant, so tests that read seeded months do not depend on the real date. Refused
      * in production. Blank or unset: the real clock.

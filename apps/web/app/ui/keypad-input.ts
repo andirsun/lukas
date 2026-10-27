@@ -32,7 +32,7 @@ export interface AmountFormat {
 }
 
 export function decimalSeparator(locale: Locale): string {
-  return locale === "es" ? "," : ".";
+  return locale === "en" ? "." : ",";
 }
 
 /** Whether this amount takes decimals (and the keypad shows its decimal key). */
@@ -143,7 +143,7 @@ export function keypadText(cents: number, locale: Locale, currency?: string): st
   const rest = abs % 100;
   return rest === 0
     ? String(whole)
-    : `${whole}${locale === "es" ? "," : "."}${String(rest).padStart(2, "0")}`;
+    : `${whole}${decimalSeparator(locale)}${String(rest).padStart(2, "0")}`;
 }
 
 /** The typed amount in cents, or 0 while it is empty or not a number yet. */

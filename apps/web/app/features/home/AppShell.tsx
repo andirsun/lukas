@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect } from "react";
 import { useLocation } from "react-router";
 import { useMe } from "../../api/queries.ts";
+import { isLocale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { BottomBar } from "../../ui/BottomBar.tsx";
 import { Sidebar } from "../../ui/Sidebar.tsx";
@@ -52,7 +53,7 @@ export function AppShell({ banner, children }: { banner?: ReactNode; children: R
   const { locale, setLocale } = useLocale();
   const profileLocale = me.data?.locale;
   useEffect(() => {
-    if ((profileLocale === "es" || profileLocale === "en") && profileLocale !== locale) {
+    if (isLocale(profileLocale) && profileLocale !== locale) {
       setLocale(profileLocale);
     }
   }, [profileLocale, locale, setLocale]);

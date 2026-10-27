@@ -86,17 +86,43 @@ describe("the demo's invented user", () => {
     expect(DEMO_SEED.es.profile.name).toBe("Valentina (demo)");
   });
 
+  it("speaks Italian and Portuguese, in euros, in their own cities", async () => {
+    const { api: it } = demo("it");
+    const { api: pt } = demo("pt");
+    expect((await it.GET("/v1/me")).data).toMatchObject({
+      locale: "it",
+      timezone: "Europe/Rome",
+      currency: "EUR",
+    });
+    expect((await pt.GET("/v1/me")).data).toMatchObject({
+      locale: "pt",
+      timezone: "Europe/Lisbon",
+      currency: "EUR",
+    });
+    const names = async (api: typeof it) =>
+      new Set(((await list(api, "2026-10")) ?? []).map((t) => t.name));
+    expect(await names(it)).toContain("Caffè e cornetto");
+    expect(await names(pt)).toContain("Café e pastel de nata");
+    // Not the Spanish seed: no pesos, no Colombian purchases.
+    expect(await names(it)).not.toContain("Tinto y pandebono");
+    expect(await names(pt)).not.toContain("Tinto y pandebono");
+  });
+
   it("has 8 spending categories and a salary, with budgets, and rent, Spotify and salary recurring", async () => {
-    for (const locale of ["es", "en"] as const) {
+    const names = {
+      es: ["Arriendo", "Spotify", "Salario"],
+      en: ["Rent", "Spotify", "Salary"],
+      it: ["Affitto", "Spotify", "Stipendio"],
+      pt: ["Renda", "Spotify", "Salário"],
+    } as const;
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       const { api } = demo(locale);
       const categories = (await api.GET("/v1/categories")).data ?? [];
       expect(categories.filter((c) => c.kind === "expense")).toHaveLength(8);
       expect(categories.filter((c) => c.kind === "income")).toHaveLength(1);
       expect(categories.filter((c) => c.currentBudget !== null).length).toBeGreaterThan(0);
       const recurrences = (await api.GET("/v1/recurrences")).data ?? [];
-      expect(recurrences.map((r) => r.name)).toEqual(
-        locale === "es" ? ["Arriendo", "Spotify", "Salario"] : ["Rent", "Spotify", "Salary"],
-      );
+      expect(recurrences.map((r) => r.name)).toEqual(names[locale]);
     }
   });
 
@@ -123,7 +149,7 @@ describe("the demo's invented user", () => {
 
 describe("GET /api/v1/summary", () => {
   it("has a category over its budget and one near it this month, whatever the day", async () => {
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       for (const at of ["2026-10-01T15:00:00Z", OCT_21.toISOString(), "2026-12-31T15:00:00Z"]) {
         const { api } = demo(locale, new Date(at));
         const s = await summary(api);
@@ -224,7 +250,7 @@ describe("writes", () => {
   });
 
   it("is deterministic: two backends from the same seed and clock answer the same", async () => {
-    for (const locale of ["es", "en"] as const) {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
       const one = demo(locale);
       const two = demo(locale);
       expect(await snapshot(two.api, "2026-10")).toEqual(await snapshot(one.api, "2026-10"));

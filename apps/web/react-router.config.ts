@@ -1,6 +1,7 @@
 import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import type { Config } from "@react-router/dev/config";
+import { LOCALES } from "./app/i18n/format.ts";
 import { readBuildEnv } from "./app/site/build-env.ts";
 import { isLandingOnly, resolveAppOrigin, resolveSiteOrigin } from "./app/site/origin.ts";
 import { PAGE_PATH, SITE_PAGES } from "./app/site/paths.ts";
@@ -20,8 +21,8 @@ const landingOnly = isLandingOnly(env.landingOnly);
 // Not used here, but a typo should stop the build before it prerenders broken links.
 resolveAppOrigin(env.appUrl);
 
-/** The public pages, in both languages (the landing and the roadmap). */
-const PUBLIC_PAGES = SITE_PAGES.flatMap((page) => [PAGE_PATH[page].es, PAGE_PATH[page].en]);
+/** The public pages, in every language (the landing and the roadmap). */
+const PUBLIC_PAGES = SITE_PAGES.flatMap((page) => LOCALES.map((locale) => PAGE_PATH[page][locale]));
 
 /**
  * Where the build goes: `build` (apps/web/build) unless LUKAS_BUILD_DIR says otherwise. The

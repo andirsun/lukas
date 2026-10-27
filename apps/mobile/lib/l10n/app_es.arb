@@ -1029,6 +1029,10 @@
   "@captureNoEngine": {
     "description": "Quick capture: the one sentence over the typing field when the phone cannot run the speech engine."
   },
+  "captureNoVoiceYet": "Todavía no te escucho en este idioma, así que escríbelo aquí.",
+  "@captureNoVoiceYet": {
+    "description": "Quick capture: the one sentence over the typing field when the app's language has no voice model yet (Italian and Portuguese until theirs ships)."
+  },
   "captureListenFailed": "No pude escucharte. Escríbelo aquí.",
   "@captureListenFailed": {
     "description": "Quick capture: the microphone or the engine failed."
@@ -1204,11 +1208,19 @@
   "settingsLanguageAuto": "Automático",
   "settingsLanguageEs": "Español",
   "@settingsLanguageEs": {
-    "description": "The language's own name: the same in both catalogs."
+    "description": "The language's own name: the same in every catalog."
   },
   "settingsLanguageEn": "English",
   "@settingsLanguageEn": {
-    "description": "The language's own name: the same in both catalogs."
+    "description": "The language's own name: the same in every catalog."
+  },
+  "settingsLanguageIt": "Italiano",
+  "@settingsLanguageIt": {
+    "description": "The language's own name: the same in every catalog."
+  },
+  "settingsLanguagePt": "Português",
+  "@settingsLanguagePt": {
+    "description": "The language's own name: the same in every catalog."
   },
   "settingsLanguageHint": "Automático usa el idioma de tu teléfono.",
   "settingsSound": "Sonidos",
@@ -1247,6 +1259,27 @@
   "@settingsServerChanged": {
     "placeholders": {
       "server": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsServerChecking": "Comprobando…",
+  "@settingsServerChecking": {
+    "description": "Settings, the server card: the app is asking the server whether it answers."
+  },
+  "settingsServerOnline": "En línea",
+  "@settingsServerOnline": {
+    "description": "Settings, the server card: the server answered (beside a blinking green dot)."
+  },
+  "settingsServerOffline": "No responde",
+  "@settingsServerOffline": {
+    "description": "Settings, the server card: the server did not answer (beside a red dot)."
+  },
+  "settingsServerVersion": "Versión {version}",
+  "@settingsServerVersion": {
+    "description": "Settings, the server card: the version the server runs, after Online.",
+    "placeholders": {
+      "version": {
         "type": "String"
       }
     }
@@ -1325,8 +1358,8 @@
   },
   "licenseNoticeFontRoleDisplay": "los títulos y las cifras",
   "licenseNoticeFontRoleText": "el resto del texto",
-  "licenseNoticeSounds": "Los sonidos de Lukitas al anotar, pagar, deshacer o acercarte a un límite son obra original hecha para Lukitas: unos pocos tonos simples, sin muestras de terceros. Se publican con la licencia de la propia app, la GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
-  "licenseNoticeApp": "Lukitas es software libre, bajo la GNU Affero General Public License 3.0. Su código está en https://github.com/andirsun/lukas.",
+  "licenseNoticeSounds": "Los sonidos de Lukitas al anotar, pagar, deshacer o acercarte a un límite son obra original hecha para Lukitas: unos pocos tonos simples, sin muestras de terceros. Se publican con la licencia de la propia app, la GNU Affero General Public License 3.0 (https://github.com/slinqer/lukitas).",
+  "licenseNoticeApp": "Lukitas es software libre, bajo la GNU Affero General Public License 3.0. Su código está en https://github.com/slinqer/lukitas.",
   "aboutLegalese": "Software libre, AGPL-3.0",
   "close": "Cerrar",
   "@close": {

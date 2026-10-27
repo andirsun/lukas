@@ -113,6 +113,14 @@ void main() {
       for (final locale in ['en', 'es']) {
         if (await store.installedPath(locale) == null) await store.download(locale);
       }
+      // Italian and Portuguese are beta voices that may not be released yet: they are kept when a
+      // phone has them (the engine then also serves an it or pt sheet) and never downloaded here,
+      // so a phone without them skips them instead of failing.
+      for (final locale in ['it', 'pt']) {
+        if (await store.installedPath(locale) == null) {
+          debugPrint('no $locale voice installed: skipped');
+        }
+      }
       // The note's flag (lib/capture/capture_sheet.dart): off once the person has captured.
       await const FlutterSecureStorage().write(
         key: 'setting.capture.note',

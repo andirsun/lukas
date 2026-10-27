@@ -168,6 +168,35 @@ class _ChoicesState<T> extends State<Choices<T>> {
     return KeyEventResult.handled;
   }
 
+  /// How many choices go on a line: all of them, as on the web, unless a label's longest word would
+  /// then spill past its box's border (the app's five languages on a 360 px phone with the font at 130%).
+  /// Then as few lines as fit, evenly filled (five in two lines: three and two).
+  int _perRow(BuildContext context, double width) {
+    final options = widget.options;
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    final style = DefaultTextStyle.of(context).style.merge(LkText.bodySm);
+    var longest = 0.0;
+    for (final option in options) {
+      for (final word in option.label.split(' ')) {
+        final painter = TextPainter(
+          text: TextSpan(text: word, style: style),
+          textDirection: direction,
+          textScaler: scaler,
+        )..layout();
+        if (painter.width > longest) longest = painter.width;
+        painter.dispose();
+      }
+    }
+    // A word may run into the option's padding, as on the web ([_WholeWords]); not past its border.
+    final cell = longest + 4;
+    const gap = LukitasTokens.space2;
+    final fit = ((width + gap) / (cell + gap)).floor().clamp(1, options.length);
+    if (fit >= options.length) return options.length;
+    final lines = (options.length / fit).ceil();
+    return (options.length / lines).ceil();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = context.lkColors;
@@ -186,20 +215,35 @@ class _ChoicesState<T> extends State<Choices<T>> {
           spacing: LukitasTokens.space2,
           children: [
             ExcludeSemantics(child: SettingLabel(label: widget.legend)),
-            Row(
-              spacing: LukitasTokens.space2,
-              children: [
-                for (final option in widget.options)
-                  Expanded(
-                    child: _Option(
-                      label: option.label,
-                      labelKey: option.key,
-                      selected: option.value == widget.value,
-                      focusNode: _node(option.value)..skipTraversal = option.value != widget.value,
-                      onPressed: () => _select(option.value),
-                    ),
-                  ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final options = widget.options;
+                final perRow = _perRow(context, constraints.maxWidth);
+                Widget option(Choice<T> option) => _Option(
+                  label: option.label,
+                  labelKey: option.key,
+                  selected: option.value == widget.value,
+                  focusNode: _node(option.value)..skipTraversal = option.value != widget.value,
+                  onPressed: () => _select(option.value),
+                );
+                return Column(
+                  spacing: LukitasTokens.space2,
+                  children: [
+                    for (var start = 0; start < options.length; start += perRow)
+                      Row(
+                        spacing: LukitasTokens.space2,
+                        children: [
+                          for (var i = start; i < start + perRow; i++)
+                            Expanded(
+                              child: i < options.length
+                                  ? option(options[i])
+                                  : const SizedBox.shrink(),
+                            ),
+                        ],
+                      ),
+                  ],
+                );
+              },
             ),
             if (hint != null) CssParagraph(hint, style: hintStyle),
           ],

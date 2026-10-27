@@ -385,7 +385,7 @@ export interface components {
         UpdateProfile: {
             timezone?: string;
             /** @enum {string} */
-            locale?: "es" | "en";
+            locale?: "es" | "en" | "it" | "pt";
             /** @enum {string} */
             currency?: "COP" | "USD" | "EUR";
             /** @enum {boolean} */

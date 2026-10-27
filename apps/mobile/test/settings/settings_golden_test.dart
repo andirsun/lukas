@@ -17,6 +17,7 @@ import 'package:lukitas/feedback/stored_flag.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
 import 'package:lukitas/settings/settings_screen.dart';
+import 'package:lukitas/settings/server_status.dart';
 
 import '../entry/fakes.dart';
 import '../home/fakes.dart';
@@ -43,6 +44,10 @@ List<Override> _overrides({required bool guest}) {
   final auth = FakeAuthApi()..guests[token] = guest;
   return [
     toastBarAnimatesProvider.overrideWithValue(false),
+    serverHealthCheckProvider.overrideWithValue(
+      (server) async => const ServerHealth(online: true, version: '0.0.0-dev.abc1234'),
+    ),
+    serverDotPulsesProvider.overrideWithValue(false),
     authApiProvider.overrideWithValue(auth),
     homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
     flagStoreProvider.overrideWith((ref, key) => FakeFlagStore()),

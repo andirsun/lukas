@@ -1,0 +1,7 @@
+Prima versione.
+- Annota le spese con la tastiera numerica, o dille in una frase, in spagnolo o in inglese: «spent 12 on lunch and 3 on coffee».
+- Dettato sul telefono, senza internet (modello vocale di circa 40 MB, una sola volta).
+- Quanto hai speso questo mese e i tuoi movimenti per giorno.
+- Widget e riquadro delle impostazioni rapide.
+- Prova senza email e aggiungila dopo.
+- In spagnolo e in inglese, di notte o di giorno.

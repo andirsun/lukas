@@ -1,5 +1,5 @@
 import { addMonths, type Month } from "@lukas/core";
-import { formatMonth, type Locale, monthInSentence } from "../../i18n/format.ts";
+import { formatMonth, intlTag, type Locale, monthInSentence } from "../../i18n/format.ts";
 
 /** How many months the insights look at, ending at the month on screen. */
 export const SPANS = [1, 3, 6, 12] as const;
@@ -45,27 +45,30 @@ export function livingWindow(months: { income: number; expenses: number }[]): nu
   return first === -1 ? 0 : months.length - first;
 }
 
-/** A month mid-sentence, with its year when it is not the current one's: `octubre`, `diciembre de 2025`. */
+/** A month mid-sentence, with its year when it is not the current one's: `octubre`, `diciembre de 2025`, `ottobre`, `dicembre 2025`. */
 export function monthLabel(month: Month, current: Month, locale: Locale): string {
   const year = month.slice(0, 4);
   const sameYear = year === current.slice(0, 4);
-  if (locale === "es")
+  if (locale === "es" || locale === "pt")
     return sameYear
       ? monthInSentence(month, locale)
       : `${monthInSentence(month, locale)} de ${year}`;
+  if (locale === "it")
+    return sameYear ? monthInSentence(month, locale) : `${monthInSentence(month, locale)} ${year}`;
   return sameYear ? formatMonth(month, locale) : `${formatMonth(month, locale)} ${year}`;
 }
 
 /** A share of the total (0.5944) as a percentage with at most one decimal: `59,4 %`, `59.4%`. */
 export function formatShare(share: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 }).format(
-    share,
-  );
+  return new Intl.NumberFormat(intlTag(locale), {
+    style: "percent",
+    maximumFractionDigits: 1,
+  }).format(share);
 }
 
 /** A month's short name for an axis: `oct`, `Oct`. */
 export function shortMonth(month: Month, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" })
+  return new Intl.DateTimeFormat(intlTag(locale), { month: "short", timeZone: "UTC" })
     .format(new Date(`${month}-01T00:00:00Z`))
     .replace(/\.$/, "");
 }
@@ -104,7 +107,7 @@ export function sharesOf(totals: number[]): number[] {
  * `1,2 M` (es); `6k`, `1.2M` (en). No currency: the axis sits next to full amounts.
  */
 export function compactAmount(cents: number, locale: Locale): string {
-  const text = new Intl.NumberFormat(locale, {
+  const text = new Intl.NumberFormat(intlTag(locale), {
     notation: "compact",
     maximumFractionDigits: 1,
   }).format(cents / 100);

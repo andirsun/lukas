@@ -8,6 +8,14 @@ function regionOf(tag: string): string | undefined {
   }
 }
 
+function languageOf(tag: string): string | undefined {
+  try {
+    return new Intl.Locale(tag).language;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * The currency a new account starts with, from the browser's languages (`navigator.languages`) and
  * time zone. The rule itself is `defaultCurrencyFor` in @lukas/core (the API's guest sign-up uses
@@ -20,7 +28,10 @@ export function defaultCurrency(
   timeZone: string | undefined,
 ): SupportedCurrency {
   const regions = languages.map(regionOf).filter((r): r is string => r !== undefined);
-  const region = regions.includes("CO") ? "CO" : regions[0];
+  // A bare Italian or Portuguese language reads as Italy or Portugal: euros (spec §2.3).
+  const first = languages[0] ? languageOf(languages[0]) : undefined;
+  const home = first === "it" ? "IT" : first === "pt" ? "PT" : undefined;
+  const region = regions.includes("CO") ? "CO" : (regions[0] ?? home);
   return defaultCurrencyFor(timeZone ?? "", region);
 }
 

@@ -1,11 +1,9 @@
 import { Link } from "react-router";
 import { useTranslations } from "use-intl";
-import type { Locale } from "../../i18n/format.ts";
+import { LOCALES } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { LANDING_PATH, PAGE_PATH, ROADMAP_PATH, type SitePage } from "../../site/paths.ts";
 import { COPYRIGHT_YEAR, PRIVACY_HREF } from "./links.ts";
-
-const LOCALES: Locale[] = ["es", "en"];
 
 /**
  * Language switch (the same page in the other language), the roadmap and privacy links and the

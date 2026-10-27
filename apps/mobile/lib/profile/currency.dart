@@ -49,15 +49,20 @@ String? regionOf(String tag) => _tag.firstMatch(tag)?.group(1)?.toUpperCase();
 /// language -> EUR, and a bare `es` in an America/* zone -> USD.
 String defaultCurrency(List<String> languages, String? timeZone) {
   final regions = [for (final tag in languages) ?regionOf(tag)];
-  final region = regions.contains('CO') ? 'CO' : regions.firstOrNull;
+  // A bare Italian or Portuguese language reads as Italy or Portugal: euros (spec section 2.3).
+  final first = languages.firstOrNull?.split(RegExp('[-_]')).first.toLowerCase();
+  final home = first == 'it' ? 'IT' : (first == 'pt' ? 'PT' : null);
+  final region = regions.contains('CO') ? 'CO' : (regions.firstOrNull ?? home);
   return defaultCurrencyFor(timeZone ?? '', region);
 }
 
 const _names = {
   'es': {'COP': 'Peso colombiano', 'USD': 'Dólar estadounidense', 'EUR': 'Euro'},
   'en': {'COP': 'Colombian Peso', 'USD': 'US Dollar', 'EUR': 'Euro'},
+  'it': {'COP': 'Peso colombiano', 'USD': 'Dollaro statunitense', 'EUR': 'Euro'},
+  'pt': {'COP': 'Peso colombiano', 'USD': 'Dólar dos Estados Unidos', 'EUR': 'Euro'},
 };
 
 /// "Peso colombiano": the currency's name in the person's language, capitalized (the web asks
-/// `Intl.DisplayNames`; the three currencies' names are the CLDR's).
+/// `Intl.DisplayNames`; the three currencies' names are the CLDR's, Portuguese from Portugal's).
 String currencyName(String code, String locale) => _names[locale]?[code] ?? code;

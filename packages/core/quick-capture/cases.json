@@ -4724,5 +4724,4596 @@
     "categories": [],
     "usual": [],
     "expected": { "drafts": [], "unread": ["gasté 12,5000 en pan"] }
+  },
+  {
+    "id": "amount-it-words-cents",
+    "input": "ho speso quindici euro e cinquanta per il pranzo",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-decimal-comma",
+    "input": "ho speso 15,50 per il pranzo",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-thousands-and-decimal",
+    "input": "ho speso 1.234,50 per l'affitto",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 123450,
+          "kind": "expense",
+          "name": "affitto",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-tens-word",
+    "input": "speso venti euro in benzina",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "benzina",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-cento",
+    "input": "pagato cento euro per la bolletta",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 10000,
+          "kind": "expense",
+          "name": "bolletta",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-mille",
+    "input": "pagato mille euro di affitto",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 100000,
+          "kind": "expense",
+          "name": "affitto",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-digits-mila",
+    "input": "ho pagato 2 mila di affitto",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000,
+          "kind": "expense",
+          "name": "affitto",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-glued-thousands",
+    "input": "ho speso quindicimila euro per l'auto",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500000,
+          "kind": "expense",
+          "name": "auto",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-glued-thousands-hundreds",
+    "input": "ho speso duemilacinquecento per la vacanza",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 250000,
+          "kind": "expense",
+          "name": "vacanza",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-spaced-mila",
+    "input": "ho speso quindici mila euro per il matrimonio",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500000,
+          "kind": "expense",
+          "name": "matrimonio",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-milione-e-mila",
+    "input": "ho pagato un milione e duecentomila per la casa",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 120000000,
+          "kind": "expense",
+          "name": "casa",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-milioni",
+    "input": "ho speso due milioni per la macchina",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000000,
+          "kind": "expense",
+          "name": "macchina",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-mezzo-milione",
+    "input": "ho speso mezzo milione per la casa",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 50000000,
+          "kind": "expense",
+          "name": "casa",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-milione-e-mezzo",
+    "input": "ho pagato un milione e mezzo per la casa",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 150000000,
+          "kind": "expense",
+          "name": "casa",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-compound-word",
+    "input": "ho speso trentacinque euro per la cena",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 3500,
+          "kind": "expense",
+          "name": "cena",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-elided-compound",
+    "input": "ho speso ventotto euro per la cena",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2800,
+          "kind": "expense",
+          "name": "cena",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-hundreds-compound",
+    "input": "ho speso centoventi euro per il dentista",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 12000,
+          "kind": "expense",
+          "name": "dentista",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-hundreds-spaced",
+    "input": "ho speso cento venti euro per il dentista",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 12000,
+          "kind": "expense",
+          "name": "dentista",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-k-suffix",
+    "input": "ho speso 15k per l'auto",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500000,
+          "kind": "expense",
+          "name": "auto",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-virgola-word",
+    "input": "ho speso 12 virgola 50 per il caffè",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1250,
+          "kind": "expense",
+          "name": "caffè",
+          "categoryId": "cat-caffe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-cents-word",
+    "input": "ho speso 15 euro e 50 centesimi per il pranzo",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-euro-sign",
+    "input": "ho speso 15€ per il pranzo",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-space-thousands",
+    "input": "ho speso 120 000 per l'auto",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 12000000,
+          "kind": "expense",
+          "name": "auto",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-euro-e-only",
+    "input": "ho speso quindici euro e cinquanta",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-over-cap",
+    "input": "ho speso 1000000000 euro per la casa",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": { "drafts": [], "unread": ["ho speso 1000000000 euro per la casa"] }
+  },
+  {
+    "id": "amount-it-mille-bare-and-hundreds",
+    "input": "ho speso mille duecento per il corso",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 120000,
+          "kind": "expense",
+          "name": "corso",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-mille-e-hundreds",
+    "input": "ho speso mille e duecento per il corso",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 120000,
+          "kind": "expense",
+          "name": "corso",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-e-is-cents-or-separator",
+    "input": "ho speso 15 euro e 3 per l'uber",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-trasporti",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-pane-e-latte-before",
+    "input": "pane e latte 8 euro",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 800,
+          "kind": "expense",
+          "name": "pane e latte",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-pane-e-latte-after",
+    "input": "ho speso 8 euro in pane e latte",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 800,
+          "kind": "expense",
+          "name": "pane e latte",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-comma",
+    "input": "15 pranzo, 3 uber",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-trasporti",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-e",
+    "input": "15 pranzo e 3 uber",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-trasporti",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-ed",
+    "input": "ho speso 15 per il pranzo ed 8 per l'uber",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 800,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-trasporti",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-anche",
+    "input": "ho speso 15 per il pranzo anche 3 per l'uber",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-trasporti",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-no-connector",
+    "input": "ho speso 12 per il taxi 40 per il mercato",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 4000,
+          "kind": "expense",
+          "name": "mercato",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-decimal-comma-not-connector",
+    "input": "ho speso 9,50 per il pranzo, 3 per il caffè",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 950,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "caffè",
+          "categoryId": "cat-caffe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-no-name-two-amounts",
+    "input": "ho speso 12 mila 40 mila",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": { "drafts": [], "unread": ["ho speso 12 mila 40 mila"] }
+  },
+  {
+    "id": "kind-it-ricevuto",
+    "input": "ho ricevuto 1000 di stipendio",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 100000,
+          "kind": "income",
+          "name": "stipendio",
+          "categoryId": "cat-stipendio",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-it-ricevuto-short",
+    "input": "ricevuto 50 euro di regalo",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 5000,
+          "kind": "income",
+          "name": "regalo",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-it-guadagnato",
+    "input": "guadagnato 200 euro di mance",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 20000,
+          "kind": "income",
+          "name": "mance",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-it-hanno-pagato",
+    "input": "mi hanno pagato 300 euro",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 30000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-it-incassato",
+    "input": "ho incassato 500 euro",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 50000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-it-mixed-carry",
+    "input": "ho ricevuto 2000 di stipendio e ho speso 50 per la spesa",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000,
+          "kind": "income",
+          "name": "stipendio",
+          "categoryId": "cat-stipendio",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 5000,
+          "kind": "expense",
+          "name": "spesa",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-it-pagato",
+    "input": "pagato 30 euro per il taxi",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 3000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-it-comprato",
+    "input": "ho comprato il pane 3 euro",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "pane",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "category-it-name-ignores-accent",
+    "input": "ho speso 2 per il caffe",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200,
+          "kind": "expense",
+          "name": "caffe",
+          "categoryId": "cat-caffe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-it-ieri",
+    "input": "ieri ho speso 20 euro per la cena",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "cena",
+          "categoryId": null,
+          "date": "2026-10-25"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-it-oggi",
+    "input": "oggi ho speso 5 per il caffè",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 500,
+          "kind": "expense",
+          "name": "caffè",
+          "categoryId": "cat-caffe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-it-altro-ieri",
+    "input": "l'altro ieri ho speso 18 per il cinema",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1800,
+          "kind": "expense",
+          "name": "cinema",
+          "categoryId": null,
+          "date": "2026-10-24"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-it-altroieri",
+    "input": "altroieri ho speso 7 per il bus",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 700,
+          "kind": "expense",
+          "name": "bus",
+          "categoryId": null,
+          "date": "2026-10-24"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-it-avantieri",
+    "input": "avantieri ho speso 9 per il pranzo",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 900,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-24"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-it-weekday",
+    "input": "ho speso 40 per la spesa venerdì",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 4000,
+          "kind": "expense",
+          "name": "spesa",
+          "categoryId": null,
+          "date": "2026-10-23"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-it-weekday-today-is-last-week",
+    "input": "ho speso 10 per la pizza lunedì",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1000,
+          "kind": "expense",
+          "name": "pizza",
+          "categoryId": null,
+          "date": "2026-10-19"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-it-carries-over",
+    "input": "ieri ho speso 5 per il pane e 3 per il latte",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 500,
+          "kind": "expense",
+          "name": "pane",
+          "categoryId": null,
+          "date": "2026-10-25"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "latte",
+          "categoryId": null,
+          "date": "2026-10-25"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "unread-it-no-amount",
+    "input": "ho comprato il pane",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": { "drafts": [], "unread": ["ho comprato il pane"] }
+  },
+  {
+    "id": "unread-it-date-only",
+    "input": "ieri sono andato al cinema",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": { "drafts": [], "unread": ["ieri sono andato al cinema"] }
+  },
+  {
+    "id": "focus-it-spanish-words-no-digits",
+    "input": "gasté quince mil en almuerzo",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": { "drafts": [], "unread": ["gasté quince mil en almuerzo"] }
+  },
+  {
+    "id": "focus-it-spanish-words-with-digits",
+    "input": "gasté 15 mil en almuerzo",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "gasté mil en almuerzo",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-spanish-income",
+    "input": "recibí 2 millones de prima",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200,
+          "kind": "expense",
+          "name": "recibí millones de prima",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-spanish-slang-unread",
+    "input": "me pagaron cuatro coma tres palos",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": { "drafts": [], "unread": ["me pagaron cuatro coma tres palos"] }
+  },
+  {
+    "id": "focus-it-portuguese-no-digits",
+    "input": "gastei quinze euros e cinquenta no almoço",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": { "drafts": [], "unread": ["gastei quinze euros e cinquenta no almoço"] }
+  },
+  {
+    "id": "focus-it-portuguese-with-digits",
+    "input": "gastei 15 euros no almoço",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "gastei euros no almoço",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-never-throws-emoji",
+    "input": "😀😀 ,,, 15,,, 😀",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-words-cents",
+    "input": "gastei quinze euros e cinquenta no almoço",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-decimal-comma",
+    "input": "gastei 15,50 no almoço",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-thousands-and-decimal",
+    "input": "gastei 1.234,50 na renda",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 123450,
+          "kind": "expense",
+          "name": "renda",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-tens-word",
+    "input": "gastei vinte euros em gasolina",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "gasolina",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-cem",
+    "input": "paguei cem euros pela eletricidade",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 10000,
+          "kind": "expense",
+          "name": "eletricidade",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-cento-e",
+    "input": "paguei cento e vinte euros ao dentista",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 12000,
+          "kind": "expense",
+          "name": "dentista",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-cento-e-cinquenta",
+    "input": "paguei cento e cinquenta pelo seguro",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 15000,
+          "kind": "expense",
+          "name": "seguro",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-mil",
+    "input": "paguei mil euros de renda",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 100000,
+          "kind": "expense",
+          "name": "renda",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-digits-mil",
+    "input": "paguei 2 mil de renda",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000,
+          "kind": "expense",
+          "name": "renda",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-dois-mil-e",
+    "input": "paguei dois mil e quinhentos pela viagem",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 250000,
+          "kind": "expense",
+          "name": "viagem",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-mil-e",
+    "input": "paguei mil e quinhentos de renda",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 150000,
+          "kind": "expense",
+          "name": "renda",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-mil-without-e",
+    "input": "paguei mil quinhentos de renda",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 150000,
+          "kind": "expense",
+          "name": "renda",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-milhao-e-mil",
+    "input": "paguei um milhão e duzentos mil pela casa",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 120000000,
+          "kind": "expense",
+          "name": "casa",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-milhoes",
+    "input": "paguei dois milhões pelo carro",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000000,
+          "kind": "expense",
+          "name": "carro",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-meio-milhao",
+    "input": "paguei meio milhão pela casa",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 50000000,
+          "kind": "expense",
+          "name": "casa",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-milhao-e-meio",
+    "input": "paguei um milhão e meio pela casa",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 150000000,
+          "kind": "expense",
+          "name": "casa",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-tens-and-units",
+    "input": "gastei trinta e cinco euros no jantar",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 3500,
+          "kind": "expense",
+          "name": "jantar",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-tens-and-um",
+    "input": "gastei vinte e um euros no jantar",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2100,
+          "kind": "expense",
+          "name": "jantar",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-hundreds-and-tens",
+    "input": "gastei duzentos e cinquenta euros no dentista",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 25000,
+          "kind": "expense",
+          "name": "dentista",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-k-suffix",
+    "input": "gastei 15k no carro",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500000,
+          "kind": "expense",
+          "name": "carro",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-virgula-word",
+    "input": "gastei 12 vírgula 50 no café",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1250,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": "cat-cafe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-cents-word",
+    "input": "gastei 15 euros e 50 cêntimos no almoço",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-euro-sign",
+    "input": "gastei 15€ no almoço",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-space-thousands",
+    "input": "gastei 120 000 no carro",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 12000000,
+          "kind": "expense",
+          "name": "carro",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-euros-e-only",
+    "input": "gastei quinze euros e cinquenta",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-over-cap",
+    "input": "gastei 1000000000 euros na casa",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": { "drafts": [], "unread": ["gastei 1000000000 euros na casa"] }
+  },
+  {
+    "id": "split-pt-e-is-cents-or-separator",
+    "input": "gastei 15 euros e 3 no uber",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-transportes",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-pao-e-leite-before",
+    "input": "pão e leite 8 euros",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 800,
+          "kind": "expense",
+          "name": "pão e leite",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-pao-e-leite-after",
+    "input": "gastei 8 euros em pão e leite",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 800,
+          "kind": "expense",
+          "name": "pão e leite",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-comma",
+    "input": "15 almoço, 3 uber",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-transportes",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-e",
+    "input": "15 almoço e 3 uber",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-transportes",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-tambem",
+    "input": "gastei 15 no almoço também 3 no uber",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-transportes",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-e-after-number-word",
+    "input": "gastei vinte e cinco no almoço e dez no uber",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2500,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 1000,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-transportes",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-no-connector",
+    "input": "gastei 12 no táxi 40 no mercado",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200,
+          "kind": "expense",
+          "name": "táxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 4000,
+          "kind": "expense",
+          "name": "mercado",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-decimal-comma-not-connector",
+    "input": "gastei 9,50 no almoço, 3 no café",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 950,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": "cat-cafe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-no-name-two-amounts",
+    "input": "gastei 12 mil 40 mil",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": { "drafts": [], "unread": ["gastei 12 mil 40 mil"] }
+  },
+  {
+    "id": "kind-pt-recebi",
+    "input": "recebi 1000 de salário",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 100000,
+          "kind": "income",
+          "name": "salário",
+          "categoryId": "cat-salario",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-pt-ganhei",
+    "input": "ganhei 200 euros de gorjetas",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 20000,
+          "kind": "income",
+          "name": "gorjetas",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-pt-me-pagaram",
+    "input": "me pagaram 300 euros",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 30000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-pt-pagaram-me",
+    "input": "pagaram-me 300 euros",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 30000,
+          "kind": "income",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-pt-paguei",
+    "input": "paguei 30 euros pelo táxi",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 3000,
+          "kind": "expense",
+          "name": "táxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-pt-comprei",
+    "input": "comprei o pão 3 euros",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "pão",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "kind-pt-mixed-carry",
+    "input": "recebi 2000 de salário e gastei 50 nas compras",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200000,
+          "kind": "income",
+          "name": "salário",
+          "categoryId": "cat-salario",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 5000,
+          "kind": "expense",
+          "name": "compras",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "category-pt-name-ignores-accent",
+    "input": "gastei 2 no cafe",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200,
+          "kind": "expense",
+          "name": "cafe",
+          "categoryId": "cat-cafe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-ontem",
+    "input": "ontem gastei 20 euros no jantar",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "jantar",
+          "categoryId": null,
+          "date": "2026-10-25"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-hoje",
+    "input": "hoje gastei 5 no café",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 500,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": "cat-cafe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-anteontem",
+    "input": "anteontem gastei 18 no cinema",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1800,
+          "kind": "expense",
+          "name": "cinema",
+          "categoryId": null,
+          "date": "2026-10-24"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-antes-de-ontem",
+    "input": "antes de ontem gastei 7 no autocarro",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 700,
+          "kind": "expense",
+          "name": "autocarro",
+          "categoryId": null,
+          "date": "2026-10-24"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-weekday-feira",
+    "input": "gastei 40 nas compras na sexta-feira",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 4000,
+          "kind": "expense",
+          "name": "compras",
+          "categoryId": null,
+          "date": "2026-10-23"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-weekday-bare",
+    "input": "gastei 25 no jantar no sábado",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2500,
+          "kind": "expense",
+          "name": "jantar",
+          "categoryId": null,
+          "date": "2026-10-24"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-weekday-today-is-last-week",
+    "input": "gastei 10 na pizza na segunda",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1000,
+          "kind": "expense",
+          "name": "pizza",
+          "categoryId": null,
+          "date": "2026-10-19"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-terca",
+    "input": "gastei 6 no café na terça-feira",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 600,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": "cat-cafe",
+          "date": "2026-10-20"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-carries-over",
+    "input": "ontem gastei 5 no pão e 3 no leite",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 500,
+          "kind": "expense",
+          "name": "pão",
+          "categoryId": null,
+          "date": "2026-10-25"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "leite",
+          "categoryId": null,
+          "date": "2026-10-25"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "unread-pt-no-amount",
+    "input": "comprei o pão",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": { "drafts": [], "unread": ["comprei o pão"] }
+  },
+  {
+    "id": "unread-pt-date-only",
+    "input": "ontem fui ao cinema",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": { "drafts": [], "unread": ["ontem fui ao cinema"] }
+  },
+  {
+    "id": "focus-pt-spanish-words-no-digits",
+    "input": "compré pan y leche",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": { "drafts": [], "unread": ["compré pan y leche"] }
+  },
+  {
+    "id": "focus-pt-spanish-words-with-digits",
+    "input": "gasté 15 mil en almuerzo",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500000,
+          "kind": "expense",
+          "name": "gasté en almuerzo",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-pt-spanish-income",
+    "input": "recibí 2 millones de prima",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 200,
+          "kind": "expense",
+          "name": "recibí millones prima",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-pt-spanish-verb-only",
+    "input": "gasté en almuerzo",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": { "drafts": [], "unread": ["gasté en almuerzo"] }
+  },
+  {
+    "id": "focus-pt-italian-no-digits",
+    "input": "ho speso quindici euro e cinquanta per il pranzo",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": { "drafts": [], "unread": ["ho speso quindici euro e cinquanta per il pranzo"] }
+  },
+  {
+    "id": "focus-pt-italian-with-digits",
+    "input": "ho speso 15 euro per il pranzo",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "ho speso per il pranzo",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-pt-never-throws-emoji",
+    "input": "😀😀 ,,, 15,,, 😀",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-digit-cents-at-end",
+    "input": "ho speso 15 euro e 50",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-digit-cents-below-ten-at-end",
+    "input": "ho speso 15 euro e 3",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1503,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-digit-cents-before-comma",
+    "input": "ho speso 15 euro e 20, 3 uber",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1520,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-trasporti",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-words-cents-before-name",
+    "input": "quindici euro e venti per il taxi",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1520,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-digit-e-name-after",
+    "input": "ho speso 15 euro e 20 per il taxi",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-it-digit-e-name-keeps-first-name",
+    "input": "pranzo 15 euro e 20 taxi",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "pranzo",
+          "categoryId": "cat-cibo",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "taxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-it-sei-is-six",
+    "input": "ho speso sei euro per il caffè",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 600,
+          "kind": "expense",
+          "name": "caffè",
+          "categoryId": "cat-caffe",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "unread-it-sei-persone",
+    "input": "ho speso 40 euro per sei persone",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": { "drafts": [], "unread": ["ho speso 40 euro per sei persone"] }
+  },
+  {
+    "id": "amount-pt-digit-cents-at-end",
+    "input": "gastei 15 euros e 50",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1550,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-digit-cents-below-ten-at-end",
+    "input": "gastei 15 euros e 5",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1505,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-digit-cents-before-comma",
+    "input": "gastei 15 euros e 20, 3 no uber",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1520,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 300,
+          "kind": "expense",
+          "name": "uber",
+          "categoryId": "cat-transportes",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "amount-pt-words-cents-before-name",
+    "input": "quinze euros e vinte no táxi",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1520,
+          "kind": "expense",
+          "name": "táxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-digit-e-name-after",
+    "input": "gastei 15 euros e 50 no almoço",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "",
+          "categoryId": null,
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 5000,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "split-pt-digit-e-name-keeps-first-name",
+    "input": "almoço 15 euros e 20 táxi",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1500,
+          "kind": "expense",
+          "name": "almoço",
+          "categoryId": "cat-comida",
+          "date": "2026-10-26"
+        },
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "táxi",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-segunda-mao-is-not-a-date",
+    "input": "comprei um carro em segunda mão 500 euros",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 50000,
+          "kind": "expense",
+          "name": "carro segunda mão",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-quinta-do-lago-is-not-a-date",
+    "input": "gastei 20 euros na quinta do lago",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "quinta lago",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-weekday-before-verb",
+    "input": "na quinta gastei 20 euros no café",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": "cat-cafe",
+          "date": "2026-10-22"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-weekday-before-amount",
+    "input": "na sexta 20 euros no café",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "café",
+          "categoryId": "cat-cafe",
+          "date": "2026-10-23"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "date-pt-weekday-without-preposition-is-not-a-date",
+    "input": "gastei 20 euros quinta café",
+    "locale": "pt",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Lisbon",
+    "categories": [
+      { "id": "cat-comida", "name": "Comida", "kind": "expense" },
+      { "id": "cat-transportes", "name": "Transportes", "kind": "expense" },
+      { "id": "cat-cafe", "name": "Café", "kind": "expense" },
+      { "id": "cat-salario", "name": "Salário", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "almoço", "categoryId": "cat-comida" },
+      { "name": "uber", "categoryId": "cat-transportes" },
+      { "name": "salário", "categoryId": "cat-salario" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 2000,
+          "kind": "expense",
+          "name": "quinta café",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-name-dal-is-dropped",
+    "input": "oggi ho ricevuto 350 euro dal cliente",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 35000,
+          "kind": "income",
+          "name": "cliente",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-name-dalla-is-dropped",
+    "input": "ho speso 12 euro dalla parrucchiera",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 1200,
+          "kind": "expense",
+          "name": "parrucchiera",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-name-sui-is-dropped",
+    "input": "ho speso 9 euro sui libri",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 900,
+          "kind": "expense",
+          "name": "libri",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
+  },
+  {
+    "id": "focus-it-name-dall-elided-is-dropped",
+    "input": "ho speso 30 euro dall'idraulico",
+    "locale": "it",
+    "currency": "EUR",
+    "today": "2026-10-26",
+    "timeZone": "Europe/Rome",
+    "categories": [
+      { "id": "cat-cibo", "name": "Cibo", "kind": "expense" },
+      { "id": "cat-trasporti", "name": "Trasporti", "kind": "expense" },
+      { "id": "cat-caffe", "name": "Caffè", "kind": "expense" },
+      { "id": "cat-stipendio", "name": "Stipendio", "kind": "income" }
+    ],
+    "usual": [
+      { "name": "pranzo", "categoryId": "cat-cibo" },
+      { "name": "uber", "categoryId": "cat-trasporti" },
+      { "name": "stipendio", "categoryId": "cat-stipendio" }
+    ],
+    "expected": {
+      "drafts": [
+        {
+          "amount": 3000,
+          "kind": "expense",
+          "name": "idraulico",
+          "categoryId": null,
+          "date": "2026-10-26"
+        }
+      ],
+      "unread": []
+    }
   }
 ]

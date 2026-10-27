@@ -6,14 +6,14 @@ Lukitas es tu presupuesto, y te va a dar gusto cuidarlo: anota un gasto en segun
 <li>Decirlo o escribirlo en una frase, como «15 mil en almuerzo y 3 lukas en uber». Lukitas la separa en movimientos y los ves antes de guardar; puedes quitarlos o deshacer.</li>
 <li>Ver cuánto llevas gastado este mes y tus movimientos, agrupados por día.</li>
 <li>Un widget en la pantalla de inicio con ＋ y 🎤, y un mosaico en los ajustes rápidos, para anotar sin buscar la app.</li>
-<li>En español y en inglés, de noche o de día, con sonidos y vibración suaves que puedes apagar.</li>
+<li>En español, inglés, italiano y portugués, de noche o de día, con sonidos y vibración suaves que puedes apagar.</li>
 </ul>
 
 <b>Sin correo y sin contraseñas</b>
 Pruébala sin correo, como invitado, y agrega tu correo después sin perder lo que anotaste. Con correo entras con un código de 6 dígitos o un enlace, y si quieres con una passkey (tu huella o el bloqueo del teléfono; pide Android 14 o más reciente). Sin correo, si pierdes el teléfono o borras la app, pierdes tus datos, y una cuenta sin correo se borra tras 60 días sin abrir Lukitas: la app avisa a los 45.
 
 <b>Privacidad</b>
-Sin anuncios, sin analíticas ni reportes automáticos de fallos, sin Google Play Services ni Firebase. Dictar funciona en tu teléfono, sin internet, con los modelos de voz libres Vosk (Apache-2.0): lo que dices no sale de él. El modelo se descarga una sola vez (unos 40 MB) y puedes borrarlo en Ajustes. Pide solo los permisos que usa: internet, micrófono (para dictar), vibración, avisos, y lo que el widget necesita para actualizarse (saber si hay red y volver a programarse al reiniciar el teléfono).
+Sin anuncios, sin analíticas ni reportes automáticos de fallos, sin Google Play Services ni Firebase. Dictar (en español e inglés, y en beta en italiano y portugués) funciona en tu teléfono, sin internet, con los modelos de voz libres Vosk (Apache-2.0): lo que dices no sale de él. El modelo de tu idioma se descarga una sola vez (de 30 a 50 MB) y puedes borrarlo en Ajustes. Pide solo los permisos que usa: internet, micrófono (para dictar), vibración, avisos, y lo que el widget necesita para actualizarse (saber si hay red y volver a programarse al reiniciar el teléfono).
 
 Los avisos son solo dos, ambos locales y que puedes apagar: «Hoy vence…» a las 9:00 con los pagos recurrentes del día, y un aviso si pasan 45 días sin abrir la app y tu cuenta no tiene correo.
 
@@ -23,4 +23,4 @@ La app guarda tus datos en un servidor de Lukitas. Por defecto usa el del autor 
 <b>Lo que sigue en la web</b>
 Categorías, pagos recurrentes, informes, importar y descargar tus datos están en la web; la app te lleva hasta allí.
 
-Software libre bajo la licencia AGPL-3.0. El código está en https://github.com/andirsun/lukas
+Software libre bajo la licencia AGPL-3.0. El código está en https://github.com/slinqer/lukitas

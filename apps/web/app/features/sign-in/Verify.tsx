@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import { useTranslations } from "use-intl";
 import { safeNext } from "../../auth/next.ts";
+import type { Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { cx } from "../../ui/cx.ts";
 import { PressButton } from "../../ui/PressButton.tsx";
@@ -36,7 +37,7 @@ type Status =
 interface MagicLink {
   email: string;
   code: string;
-  lang: "es" | "en";
+  lang: Locale;
   next: string | null;
   /** Sign-in started in the Android app and opened in an Android browser: offer the app first. */
   appUrl: string | null;
@@ -106,7 +107,7 @@ export function Verify({
   async function signIn() {
     if (status.kind === "checking") return;
     setStatus({ kind: "checking" });
-    const result = await auth.verifyCode(link.email, link.code);
+    const result = await auth.verifyCode(link.email, link.code, { locale: link.lang });
     if (result.error) {
       const error = verifyErrorKey(result.error);
       const wait =

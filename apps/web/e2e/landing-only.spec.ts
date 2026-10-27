@@ -10,7 +10,7 @@ import { expect, type Page, test } from "@playwright/test";
  */
 
 const ORIGIN = process.env.VITE_SITE_URL ?? "https://landing-only.example.test";
-const GITHUB = "https://github.com/andirsun/lukas";
+const GITHUB = "https://github.com/slinqer/lukitas";
 const CLIENT = fileURLToPath(new URL("../build/client/", import.meta.url));
 /** Anything that would lead to the app: sign-in, the app itself, the welcome flow, the demo. */
 const APP_PATH = /(^|\/)(sign-in|app|welcome|demo)(\/|\?|#|$)/;
@@ -494,17 +494,23 @@ test.describe("landing-only build output", () => {
         "email",
         "en",
         "index.html",
+        "it",
         "lukas",
         "og-en.png",
         "og-es.png",
+        "og-it.png",
+        "og-pt.png",
+        "pt",
         "robots.txt",
         "roadmap",
         "sitemap.xml",
       ].sort(),
     );
-    expect(readdirSync(`${CLIENT}en`).sort()).toEqual(["index.html", "roadmap"]);
+    for (const language of ["en", "it", "pt"]) {
+      expect(readdirSync(`${CLIENT}${language}`).sort()).toEqual(["index.html", "roadmap"]);
+      expect(readdirSync(`${CLIENT}${language}/roadmap`)).toEqual(["index.html"]);
+    }
     expect(readdirSync(`${CLIENT}roadmap`)).toEqual(["index.html"]);
-    expect(readdirSync(`${CLIENT}en/roadmap`)).toEqual(["index.html"]);
     expect(existsSync(`${CLIENT}__spa-fallback.html`)).toBe(false);
   });
 
@@ -518,6 +524,9 @@ test.describe("landing-only build output", () => {
     expect(sitemap).toContain(`<loc>${ORIGIN}/en</loc>`);
     expect(sitemap).toContain(`<loc>${ORIGIN}/roadmap</loc>`);
     expect(sitemap).toContain(`<loc>${ORIGIN}/en/roadmap</loc>`);
+    for (const path of ["/it", "/pt", "/it/roadmap", "/pt/roadmap"]) {
+      expect(sitemap).toContain(`<loc>${ORIGIN}${path}</loc>`);
+    }
     expect(sitemap).toContain(`hreflang="en" href="${ORIGIN}/en/roadmap"`);
     expect(sitemap).not.toContain("lukas.app");
   });
@@ -525,6 +534,11 @@ test.describe("landing-only build output", () => {
   test("_headers caches assets for good, HTML briefly, and sets the security headers", () => {
     const headers = readFileSync(`${CLIENT}_headers`, "utf8");
     expect(headers).toMatch(/\/assets\/\*\s+Cache-Control: public, max-age=31536000, immutable/);
+    for (const path of ["/en", "/it", "/pt", "/it/roadmap", "/pt/roadmap/"]) {
+      expect(headers, path).toMatch(
+        new RegExp(`^${path}\\n\\s+Cache-Control: public, max-age=300, must-revalidate`, "m"),
+      );
+    }
     expect(headers).toMatch(/X-Content-Type-Options: nosniff/);
     expect(headers).toMatch(/Referrer-Policy: strict-origin-when-cross-origin/);
     expect(headers).toMatch(/Permissions-Policy: .*camera=\(\)/);
@@ -540,15 +554,26 @@ test.describe("landing-only build output", () => {
     });
   }
 
-  test("the 404 page speaks both languages and links home in each", async ({ page }) => {
+  test("the 404 page speaks the four languages and links home in each", async ({ page }) => {
     await page.goto("/nowhere");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Esta página no existe");
-    await expect(page.getByRole("heading", { level: 2 })).toHaveText("This page doesn't exist");
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText([
+      "This page doesn't exist",
+      "Questa pagina non esiste",
+      "Esta página não existe",
+    ]);
     const es = page.getByRole("link", { name: "Volver al inicio" });
     await expect(es).toHaveAttribute("href", "/");
     await expect(es).toHaveClass(/lk-btn-primary/);
-    const en = page.getByRole("link", { name: "Back to home" });
-    await expect(en).toHaveAttribute("href", "/en");
+    await expect(page.getByRole("link", { name: "Back to home" })).toHaveAttribute("href", "/en");
+    await expect(page.getByRole("link", { name: "Torna alla home" })).toHaveAttribute(
+      "href",
+      "/it",
+    );
+    await expect(page.getByRole("link", { name: "Voltar ao início" })).toHaveAttribute(
+      "href",
+      "/pt",
+    );
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex");
     await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
     expect(

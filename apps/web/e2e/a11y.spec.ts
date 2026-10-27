@@ -13,7 +13,7 @@ import {
 
 /**
  * Accessibility (axe) on every screen, at both viewports (the phone and desktop projects), against
- * the dev stack: the landing and roadmap in both languages, sign-in and its magic link, the
+ * the dev stack: the landing and roadmap in all four languages, sign-in and its magic link, the
  * passkey offer, each welcome step, every /app screen signed in (home's two tabs, the add sheet
  * open, categories and a category, recurring, insights, settings, import) and the demo.
  *
@@ -31,7 +31,7 @@ test.use({
 const h1 = (page: Page, name: string | RegExp) => page.getByRole("heading", { level: 1, name });
 const isPhone = (page: Page) => (page.viewportSize()?.width ?? 0) < 1024;
 
-test("the landing and the roadmap, in Spanish and English", async ({ page }) => {
+test("the landing and the roadmap, in every language", async ({ page }) => {
   // The landing's own run (landing.spec.ts) adds axe's best practices; so does this one.
   const tags = [...WCAG_TAGS, "best-practice"];
   for (const [path, heading] of [
@@ -39,6 +39,10 @@ test("the landing and the roadmap, in Spanish and English", async ({ page }) => 
     ["/en", /Your money/],
     ["/roadmap", /.+/],
     ["/en/roadmap", /.+/],
+    ["/it", /I tuoi soldi/],
+    ["/pt", /O teu dinheiro/],
+    ["/it/roadmap", /.+/],
+    ["/pt/roadmap", /.+/],
   ] as const) {
     await page.goto(path);
     await expect(h1(page, heading)).toBeVisible();

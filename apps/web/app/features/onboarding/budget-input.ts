@@ -1,5 +1,5 @@
 import { InvalidAmountError } from "@lukas/core";
-import { formatAmountInput, type Locale, parseAmountInput } from "../../i18n/format.ts";
+import { formatAmountInput, intlTag, type Locale, parseAmountInput } from "../../i18n/format.ts";
 import {
   type AmountFormat,
   decimalSeparator,
@@ -8,9 +8,13 @@ import {
 } from "../../ui/keypad-input.ts";
 
 /** Whole numbers grouped by thousands, with optional decimals: es `1.250.000,50`, en `1,250,000.50`. */
+const GROUPED_COMMA = /^\d{1,3}(\.\d{3})+(,\d{1,2})?$/;
+const GROUPED_POINT = /^\d{1,3}(,\d{3})+(\.\d{1,2})?$/;
 const GROUPED: Record<Locale, RegExp> = {
-  es: /^\d{1,3}(\.\d{3})+(,\d{1,2})?$/,
-  en: /^\d{1,3}(,\d{3})+(\.\d{1,2})?$/,
+  es: GROUPED_COMMA,
+  en: GROUPED_POINT,
+  it: GROUPED_COMMA,
+  pt: GROUPED_COMMA,
 };
 
 /**
@@ -22,7 +26,7 @@ const GROUPED: Record<Locale, RegExp> = {
 export function parseBudgetInput(text: string, locale: Locale): number | null {
   const bare = text.replace(/[\s$€]/g, "");
   if (bare === "") return null;
-  const grouping = locale === "es" ? "." : ",";
+  const grouping = locale === "en" ? "," : ".";
   const ungrouped = GROUPED[locale].test(bare) ? bare.replaceAll(grouping, "") : bare;
   if (ungrouped.startsWith("-")) throw new InvalidAmountError(text);
   return parseAmountInput(ungrouped, locale);
@@ -34,13 +38,13 @@ const THOUSANDS = new Set(["COP", "CLP", "ARS"]);
 /** A valid example for the "type just the number" hint, in the way people write that currency. */
 export function budgetExample(currency: string, locale: Locale): string {
   if (!THOUSANDS.has(currency)) return "300";
-  return locale === "es" ? "300.000" : "300,000";
+  return locale === "en" ? "300,000" : "300.000";
 }
 
 /** A stored amount as the field shows it: `300.000`, `35,89` (es) or `300,000`, `35.89` (en). */
 export function draftFromCents(cents: number, locale: Locale): string {
   const whole = cents % 100 === 0;
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat(intlTag(locale), {
     minimumFractionDigits: whole ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(cents / 100);
@@ -71,7 +75,9 @@ export function formatBudgetTyping(
   const decimals = decimal ? digitsOf(text.slice(cut + 1)).slice(0, 2) : undefined;
   const raw = decimals === undefined ? wholeDigits : `${wholeDigits || "0"}${separator}${decimals}`;
   // The keypad's own formatting, without the currency sign and spaces.
-  const formatted = formatAmountInput(raw, format.currency, format.locale).replace(/[^\d.,]/g, "");
+  const formatted = formatAmountInput(raw, format.currency, format.locale)
+    .replace(/[^\d.,\u00a0]/g, "")
+    .trim();
 
   // The caret goes after as many digits as were before it (and after the decimal separator if
   // it was right after it).

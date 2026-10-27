@@ -23,7 +23,7 @@ abstract class UpdateProfile implements Built<UpdateProfile, UpdateProfileBuilde
 
   @BuiltValueField(wireName: r'locale')
   UpdateProfileLocaleEnum? get locale;
-  // enum localeEnum {  es,  en,  };
+  // enum localeEnum {  es,  en,  it,  pt,  };
 
   @BuiltValueField(wireName: r'currency')
   UpdateProfileCurrencyEnum? get currency;
@@ -170,6 +170,10 @@ class UpdateProfileLocaleEnum extends EnumClass {
   static const UpdateProfileLocaleEnum es = _$updateProfileLocaleEnum_es;
   @BuiltValueEnumConst(wireName: r'en')
   static const UpdateProfileLocaleEnum en = _$updateProfileLocaleEnum_en;
+  @BuiltValueEnumConst(wireName: r'it')
+  static const UpdateProfileLocaleEnum it = _$updateProfileLocaleEnum_it;
+  @BuiltValueEnumConst(wireName: r'pt')
+  static const UpdateProfileLocaleEnum pt = _$updateProfileLocaleEnum_pt;
 
   static Serializer<UpdateProfileLocaleEnum> get serializer => _$updateProfileLocaleEnumSerializer;
 

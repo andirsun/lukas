@@ -93,8 +93,10 @@ describe("langFrom", () => {
   it("accepts only the languages the app speaks", () => {
     expect(langFrom("en")).toBe("en");
     expect(langFrom("es")).toBe("es");
-    expect(langFrom("EN")).toBeNull();
+    expect(langFrom("it")).toBe("it");
+    expect(langFrom("pt")).toBe("pt");
     expect(langFrom("fr")).toBeNull();
+    expect(langFrom("EN")).toBeNull();
     expect(langFrom(null)).toBeNull();
   });
 });

@@ -7,9 +7,12 @@ import androidx.glance.appwidget.testing.unit.isLinearProgressIndicator
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasContentDescription
 import androidx.glance.testing.unit.hasText
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import com.andersonlaverde.lukitas.launch.LaunchLinks
 import es.antonborri.home_widget.HomeWidgetGlanceState
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -74,6 +77,41 @@ class WidgetContentTest {
             onNode(hasContentDescription("Decir o escribir un gasto"))
                 .assertHasStartActivityClickAction(LaunchLinks.intent(context, LaunchLinks.CAPTURE))
         }
+
+    @Test
+    fun `a 4×2 box draws the medium layout, whichever widget it is`() =
+        runGlanceAppWidgetUnitTest {
+            setContext(context)
+            setAppWidgetSize(DpSize(250.dp, 110.dp))
+            provideComposable { SizedWidgetContent(model(snapshot())) }
+            onNode(hasContentDescription("Lukitas")).assertExists()
+            onNode(hasContentDescription("Decir o escribir un gasto")).assertExists()
+        }
+
+    @Test
+    fun `a 2×1 box draws the small layout, whichever widget it is`() =
+        runGlanceAppWidgetUnitTest {
+            setContext(context)
+            setAppWidgetSize(DpSize(110.dp, 40.dp))
+            provideComposable { SizedWidgetContent(model(snapshot())) }
+            onNode(hasText("Te quedan")).assertExists()
+            onNode(hasContentDescription("Decir o escribir un gasto")).assertDoesNotExist()
+        }
+
+    @Test
+    fun `the layout follows the box - a launcher's rounding still gets the medium one`() {
+        assertEquals(WidgetSize.SMALL, widgetSizeFor(DpSize(110.dp, 40.dp)))
+        assertEquals(WidgetSize.SMALL, widgetSizeFor(DpSize(180.dp, 110.dp)))
+        assertEquals(WidgetSize.SMALL, widgetSizeFor(DpSize(250.dp, 50.dp)))
+        assertEquals(WidgetSize.MEDIUM, widgetSizeFor(DpSize(230.dp, 104.dp)))
+        assertEquals(WidgetSize.MEDIUM, widgetSizeFor(DpSize(320.dp, 180.dp)))
+    }
+
+    @Test
+    fun `both widgets use the responsive size mode`() {
+        assertEquals(widgetSizeMode, LukitasSmallWidget().sizeMode)
+        assertEquals(widgetSizeMode, LukitasMediumWidget().sizeMode)
+    }
 
     @Test
     fun `a tap on the widget itself, on any of its figures, opens home`() {
@@ -186,11 +224,12 @@ class WidgetContentTest {
     fun `after sign out the widget never shows the previous figure`() {
         val prefs = WidgetSnapshot.preferences(context)
         prefs.edit().putString(WidgetSnapshot.KEY, snapshot().copy(updatedAt = Instant.now()).toJson()).commit()
-        for (size in WidgetSize.entries) {
+        for (box in listOf(DpSize(110.dp, 40.dp), DpSize(250.dp, 110.dp))) {
             runGlanceAppWidgetUnitTest {
                 setContext(context)
+                setAppWidgetSize(box)
                 setState(HomeWidgetGlanceState(prefs))
-                provideComposable { StoredWidgetContent(size) }
+                provideComposable { StoredWidgetContent() }
                 onNode(hasText("$1.500.000")).assertExists()
             }
         }
@@ -199,11 +238,12 @@ class WidgetContentTest {
         prefs.edit()
             .putString(WidgetSnapshot.KEY, """{"v":3,"signedIn":false,"hideAmount":false,"theme":"dark","locale":"es"}""")
             .commit()
-        for (size in WidgetSize.entries) {
+        for (box in listOf(DpSize(110.dp, 40.dp), DpSize(250.dp, 110.dp))) {
             runGlanceAppWidgetUnitTest {
                 setContext(context)
+                setAppWidgetSize(box)
                 setState(HomeWidgetGlanceState(prefs))
-                provideComposable { StoredWidgetContent(size) }
+                provideComposable { StoredWidgetContent() }
                 onNode(hasText("Abre Lukitas para empezar")).assertExists()
                 onNode(hasText("$1.500.000")).assertDoesNotExist()
                 onNode(hasText("$")).assertDoesNotExist()
@@ -214,11 +254,12 @@ class WidgetContentTest {
         prefs.edit()
             .putString(WidgetSnapshot.KEY, """{"v":1,"kind":"remaining","amount":"$1.500.000","month":"2026-10"}""")
             .commit()
-        for (size in WidgetSize.entries) {
+        for (box in listOf(DpSize(110.dp, 40.dp), DpSize(250.dp, 110.dp))) {
             runGlanceAppWidgetUnitTest {
                 setContext(context)
+                setAppWidgetSize(box)
                 setState(HomeWidgetGlanceState(prefs))
-                provideComposable { StoredWidgetContent(size) }
+                provideComposable { StoredWidgetContent() }
                 onNode(hasText("Abre Lukitas para empezar")).assertExists()
                 onNode(hasText("$1.500.000")).assertDoesNotExist()
             }

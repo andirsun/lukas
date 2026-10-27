@@ -1,0 +1,7 @@
+Primeira versão.
+- Regista despesas com o teclado numérico, ou diz numa frase, em espanhol ou em inglês: «spent 12 on lunch and 3 on coffee».
+- Ditado no teu telemóvel, sem internet (modelo de voz de cerca de 40 MB, uma só vez).
+- Quanto gastaste este mês e os teus movimentos por dia.
+- Widget e mosaico das definições rápidas.
+- Experimenta sem email e adiciona-o depois.
+- Em espanhol e em inglês, de noite ou de dia.

@@ -7,6 +7,7 @@ import { useApi } from "../../api/ApiProvider.tsx";
 import { ApiProblem, problemMessage, type Translator } from "../../api/errors.ts";
 import { queryKeys, useCategories, useMe } from "../../api/queries.ts";
 import { feedback } from "../../feedback/feedback.ts";
+import { isLocale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { categoryLook } from "../../ui/category-look.ts";
 import { BudgetsStep, readDraft } from "./BudgetsStep.tsx";
@@ -92,8 +93,7 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
     if (first) setCurrency(first);
   }
   // Seeded in the profile's language, so `300,50` is never read back as an English 30050.
-  const localeSettled =
-    (me.data?.locale !== "es" && me.data?.locale !== "en") || me.data.locale === locale;
+  const localeSettled = !isLocale(me.data?.locale) || me.data.locale === locale;
   if (drafts === null && categoriesQuery.data && me.data && localeSettled) {
     const seeded: Record<string, string> = {};
     for (const c of categoriesQuery.data) {
@@ -105,7 +105,7 @@ export function Welcome({ languages, timeZone }: WelcomeProps) {
   // The app speaks the profile's language (after a reload, the URL alone says Spanish).
   const profileLocale = me.data?.locale;
   useEffect(() => {
-    if ((profileLocale === "es" || profileLocale === "en") && profileLocale !== locale) {
+    if (isLocale(profileLocale) && profileLocale !== locale) {
       setLocale(profileLocale);
     }
   }, [profileLocale, locale, setLocale]);

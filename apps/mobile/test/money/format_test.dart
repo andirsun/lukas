@@ -58,6 +58,52 @@ void main() {
     });
   });
 
+  group('formatMoney in Italian and Portuguese matches Intl (it-IT, pt-PT)', () {
+    // Vectors from `new Intl.NumberFormat(tag, { style: 'currency', ... })`, the web's.
+    test('euros: the symbol after, a comma, and four digits left together', () {
+      expect(formatMoney(123450, 'EUR', 'it'), '1234,50$nbsp€');
+      expect(formatMoney(123450, 'EUR', 'pt'), '1234,50$nbsp€');
+      expect(formatMoney(56292, 'EUR', 'it'), '562,92$nbsp€');
+      expect(formatMoney(56292, 'EUR', 'pt'), '562,92$nbsp€');
+      expect(formatMoney(0, 'EUR', 'it'), '0,00$nbsp€');
+    });
+
+    test('Italian groups with a point, Portuguese with a no-break space', () {
+      expect(formatMoney(1234500, 'EUR', 'it'), '12.345,00$nbsp€');
+      expect(formatMoney(12345678, 'EUR', 'it'), '123.456,78$nbsp€');
+      expect(formatMoney(430000000, 'EUR', 'it'), '4.300.000,00$nbsp€');
+      expect(formatMoney(1234500, 'EUR', 'pt'), '12${nbsp}345,00$nbsp€');
+      expect(formatMoney(12345678, 'EUR', 'pt'), '123${nbsp}456,78$nbsp€');
+      expect(formatMoney(430000000, 'EUR', 'pt'), '4${nbsp}300${nbsp}000,00$nbsp€');
+    });
+
+    test('the real minus sign and the explicit plus', () {
+      expect(formatMoney(-608, 'EUR', 'it'), '−6,08$nbsp€');
+      expect(formatMoney(-608, 'EUR', 'pt'), '−6,08$nbsp€');
+      expect(formatMoney(1500, 'EUR', 'pt', sign: MoneySign.always), '+15,00$nbsp€');
+      expect(formatMoney(0, 'EUR', 'it', sign: MoneySign.always), '0,00$nbsp€');
+    });
+
+    test('other currencies keep their code after the figure', () {
+      expect(formatMoney(123400, 'USD', 'it'), '1234,00${nbsp}USD');
+      expect(formatMoney(123400, 'USD', 'pt'), '1234,00${nbsp}US\$');
+      expect(formatMoney(5000000, 'COP', 'it'), '50.000${nbsp}COP');
+      expect(formatMoney(5000000, 'COP', 'pt'), '50${nbsp}000${nbsp}COP');
+      expect(formatMoney(5000000, 'CLP', 'it'), '50.000${nbsp}CLP');
+    });
+
+    test('typing: a decimal comma, grouped like the money', () {
+      expect(formatAmountInput('6,5', 'EUR', 'it'), '6,5$nbsp€');
+      expect(formatAmountInput('12345,6', 'EUR', 'it'), '12.345,6$nbsp€');
+      expect(formatAmountInput('12345,6', 'EUR', 'pt'), '12${nbsp}345,6$nbsp€');
+    });
+
+    test('there is no lukas or palos hint', () {
+      expect(lukasHint(pesos(50000), 'it'), isNull);
+      expect(lukasHint(pesos(50000), 'pt'), isNull);
+    });
+  });
+
   group('lukasHint matches the web', () {
     test('counts lukas (1.000 pesos) in Spanish, in parentheses', () {
       expect(lukasHint(5000000, 'es'), '(50 lukas)');

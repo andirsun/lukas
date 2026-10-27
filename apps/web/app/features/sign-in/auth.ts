@@ -8,7 +8,7 @@ import {
   rememberPasskeyUsed,
   shouldOfferPasskey,
 } from "../../auth/passkey.ts";
-import { detectLocale, type Locale } from "../../i18n/format.ts";
+import { detectLocale, isLocale, type Locale } from "../../i18n/format.ts";
 
 /** Good enough to catch typos; the server has the final word. */
 export const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,8 +44,11 @@ export interface CodeHints {
 export interface SignInAuth {
   /** Emails a 6-digit code and a magic link (one email carries both). */
   sendCode(email: string, hints: CodeHints): Promise<AuthResult<true>>;
-  /** Signs in (or up) with the code; sets the session cookie. */
-  verifyCode(email: string, code: string): Promise<AuthResult<AuthUser>>;
+  /**
+   * Signs in (or up) with the code; sets the session cookie. The page's language names a new
+   * account's starter categories (apps/api/src/auth.ts).
+   */
+  verifyCode(email: string, code: string, hints: CodeHints): Promise<AuthResult<AuthUser>>;
   /** Whether this browser can use passkeys at all (WebAuthn). */
   passkeysAvailable(): boolean;
   /**
@@ -152,7 +155,7 @@ export function destinationAfterSignIn(
 
 /** `?lang=` as set by the landing's call to action: only a language the app speaks. */
 export function langFrom(value: string | null): Locale | null {
-  return value === "es" || value === "en" ? value : null;
+  return isLocale(value) ? value : null;
 }
 
 /**
@@ -208,7 +211,7 @@ async function settle<T, R>(
   }
 }
 
-/** The headers the API reads to write the email (see apps/api/src/auth.ts). */
+/** The headers the API reads to write the email and to name a new account's categories (apps/api/src/auth.ts). */
 function hintHeaders({ locale, next }: CodeHints): Record<string, string> {
   return { "x-lukas-locale": locale, ...(next ? { "x-lukas-next": safeNext(next) } : {}) };
 }
@@ -222,10 +225,11 @@ export const liveSignInAuth: SignInAuth = {
       () => true as const,
       hintHeaders(hints),
     ),
-  verifyCode: (email, code) =>
+  verifyCode: (email, code, hints) =>
     settle(
       (fetchOptions) => authClient.signIn.emailOtp({ email, otp: code, fetchOptions }),
       (data) => data.user as AuthUser,
+      hintHeaders(hints),
     ),
   passkeysAvailable: passkeysSupported,
   passkeyUsedHere: () => hasUsedPasskey(),

@@ -5,6 +5,26 @@ import 'package:lukitas/import/budget_input.dart';
 /// `parseBudgetInput`, `formatBudgetTyping`), one for one, plus `draftFromCents`, which the import
 /// page uses to fill the fields.
 void main() {
+  group('budgets in Italian and Portuguese (the web\'s vectors)', () {
+    test('read the decimal comma, with a point or a space for thousands', () {
+      expect(parseBudgetInput('300', 'it'), 30000);
+      expect(parseBudgetInput('35,89', 'pt'), 3589);
+      expect(parseBudgetInput('1.250.000,50', 'it'), 125000050);
+      expect(parseBudgetInput('1.250.000,50', 'pt'), 125000050);
+      expect(parseBudgetInput('1\u00a0250\u00a0000,50 €', 'pt'), 125000050);
+      expect(() => parseBudgetInput('35.89', 'it'), throwsA(isA<InvalidAmountException>()));
+    });
+
+    test('show a stored amount and an example the same way', () {
+      expect(draftFromCents(30000, 'it'), '300');
+      expect(draftFromCents(3589, 'pt'), '35,89');
+      expect(draftFromCents(123456700, 'it'), '1.234.567');
+      expect(draftFromCents(123456700, 'pt'), '1\u00a0234\u00a0567');
+      expect(budgetExample('COP', 'it'), '300.000');
+      expect(budgetExample('COP', 'pt'), '300.000');
+    });
+  });
+
   group('parseBudgetInput', () {
     test("reads amounts in hundredths, with the locale's decimal separator", () {
       expect(parseBudgetInput('300', 'es'), 30000);

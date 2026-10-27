@@ -25,6 +25,7 @@ class CaptureTypingBody extends StatelessWidget {
     final message = switch (why) {
       CaptureWhy.micDenied => l10n.captureMicDenied,
       CaptureWhy.noEngine => l10n.captureNoEngine,
+      CaptureWhy.noVoiceYet => l10n.captureNoVoiceYet,
       CaptureWhy.listenFailed => l10n.captureListenFailed,
       CaptureWhy.nothingHeard => l10n.captureNothingHeard,
       CaptureWhy.nothingRead => l10n.captureNothingRead,

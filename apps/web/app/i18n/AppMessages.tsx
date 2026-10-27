@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { IntlProvider as UseIntlProvider } from "use-intl";
 import { CATALOGS } from "./catalog.ts";
+import { intlTag } from "./format.ts";
 import { reportIntlError, useLocale } from "./IntlProvider.tsx";
 
 /**
@@ -11,7 +12,7 @@ import { reportIntlError, useLocale } from "./IntlProvider.tsx";
 export function AppMessages({ children }: { children: ReactNode }) {
   const { locale } = useLocale();
   return (
-    <UseIntlProvider locale={locale} messages={CATALOGS[locale]} onError={reportIntlError}>
+    <UseIntlProvider locale={intlTag(locale)} messages={CATALOGS[locale]} onError={reportIntlError}>
       {children}
     </UseIntlProvider>
   );

@@ -74,7 +74,7 @@ class HomeWidgetStore implements WidgetStore {
 ///   "spent": 50000000,         // cents spent this month
 ///   "budgetTotal": 200000000,  // cents; 0 means no budgets ("Gastado este mes")
 ///   "currency": "COP",
-///   "locale": "es",            // "es" | "en": the widget's words and how the amount is written
+///   "locale": "es",            // "es" | "en" | "it" | "pt": the widget's words and how the amount is written
 ///   "month": "2026-10",        // the month of the figures
 ///   "mood": "happy",           // Lukitas' face: "happy" | "worried" (a category near or over)
 ///   "updatedAt": "2026-10-22T15:30:00.000Z",  // UTC, when these figures came from the server

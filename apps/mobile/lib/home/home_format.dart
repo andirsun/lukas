@@ -1,15 +1,28 @@
+import 'dart:async';
+
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/app_localizations.dart';
 import 'day_groups.dart';
 import 'lukas_line.dart';
 
+/// The tag `intl` writes dates with for the app's [locale]. A bare `pt` is Brazilian in CLDR; the
+/// web writes European Portuguese (`Intl` with `pt-PT`), so the app does too. Its data is loaded
+/// here (the Material localizations only load the bare `pt`); the call is synchronous in effect
+/// and does nothing the second time.
+String dateTag(String locale) {
+  if (locale != 'pt') return locale;
+  unawaited(initializeDateFormatting('pt_PT'));
+  return 'pt_PT';
+}
+
 /// Short weekday plus day of month: es `mié 21`, en `Wed 21` (the web's `formatDay`). [date] is
 /// `YYYY-MM-DD`.
 String formatDay(String date, String locale) {
   final p = date.split('-').map(int.parse).toList();
   final d = DateTime.utc(p[0], p[1], p[2]);
-  final weekday = DateFormat.E(locale).format(d).replaceFirst(RegExp(r'\.$'), '');
+  final weekday = DateFormat.E(dateTag(locale)).format(d).replaceFirst(RegExp(r'\.$'), '');
   return '$weekday ${d.day}';
 }
 
@@ -17,7 +30,7 @@ String formatDay(String date, String locale) {
 /// `YYYY-MM`.
 String formatMonthName(String month, String locale) {
   final p = month.split('-').map(int.parse).toList();
-  final name = DateFormat.MMMM(locale).format(DateTime.utc(p[0], p[1]));
+  final name = DateFormat.MMMM(dateTag(locale)).format(DateTime.utc(p[0], p[1]));
   return name.isEmpty ? name : name[0].toUpperCase() + name.substring(1);
 }
 
@@ -25,7 +38,7 @@ String formatMonthName(String month, String locale) {
 /// English (`showing October`) (the web's `monthInSentence`).
 String monthInSentence(String month, String locale) {
   final name = formatMonthName(month, locale);
-  return locale == 'es' ? name.toLowerCase() : name;
+  return locale == 'en' ? name : name.toLowerCase();
 }
 
 /// The words of [line], from the catalog: one of its three [variant]s (1 to 3) when it has them.

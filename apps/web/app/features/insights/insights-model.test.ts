@@ -118,3 +118,20 @@ describe("axis amounts", () => {
     expect(compactAmount(0, "es")).toBe("0");
   });
 });
+
+describe("it and pt strings (pinned to the app's)", () => {
+  it("writes shares, months and axis amounts", () => {
+    expect(formatShare(0.5944, "it")).toBe("59,4%");
+    expect(formatShare(0.5944, "pt")).toBe("59,4%");
+    expect(shortMonth("2026-10", "it")).toBe("ott");
+    expect(shortMonth("2026-10", "pt")).toBe("out");
+    expect(compactAmount(600000, "it")).toBe("6K");
+    expect(compactAmount(600000, "pt")).toBe("6\u00a0mil");
+    expect(compactAmount(120000000, "it")).toBe("1,2\u00a0Mln");
+    expect(compactAmount(120000000, "pt")).toBe("1,2\u00a0M");
+    expect(monthLabel("2025-12", "2026-10", "it")).toBe("dicembre 2025");
+    expect(monthLabel("2026-10", "2026-10", "it")).toBe("ottobre");
+    expect(monthLabel("2025-12", "2026-10", "pt")).toBe("dezembro de 2025");
+    expect(monthLabel("2026-10", "2026-10", "pt")).toBe("outubro");
+  });
+});

@@ -4,7 +4,7 @@ import { useTranslations } from "use-intl";
 import type { Translator } from "../../api/errors.ts";
 import { queryKeys } from "../../api/queries.ts";
 import { feedback, setSoundEnabled, soundEnabled } from "../../feedback/feedback.ts";
-import type { Locale } from "../../i18n/format.ts";
+import { LOCALES, type Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { useTheme } from "../../theme/ThemeProvider.tsx";
 import type { ThemePref } from "../../theme/theme-bootstrap.ts";
@@ -13,7 +13,6 @@ import type { Profile } from "../onboarding/onboarding-api.ts";
 import { Choices, SettingSwitch, SettingsSection } from "./parts.tsx";
 import { failureMessage, useSaveProfile } from "./use-profile.ts";
 
-const LOCALES: readonly Locale[] = ["es", "en"];
 const THEMES: readonly ThemePref[] = ["auto", "night", "day"];
 
 /**

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_remaining">Restam-te</string>
+    <string name="widget_over">Passaste do limite</string>
+    <string name="widget_spent">Gasto este mês</string>
+    <string name="widget_remaining_past">Sobraram-te em %1$s</string>
+    <string name="widget_over_past">Passaste do limite em %1$s</string>
+    <string name="widget_spent_past">Gasto em %1$s</string>
+    <string name="widget_signed_out">Abre Lukitas para começar</string>
+    <string name="widget_stale">há algum tempo</string>
+    <string name="widget_add">Adicionar despesa</string>
+    <string name="widget_capture">Dizer ou escrever uma despesa</string>
+    <string name="widget_lukitas">Lukitas</string>
+    <string name="widget_small_description">O que te resta este mês, e ＋ para registar uma despesa.</string>
+    <string name="widget_medium_description">Lukitas, o que te resta este mês, ＋ e 🎤 para registar.</string>
+    <string name="tile_capture">Registar uma despesa</string>
+    <!-- With the amount hidden: a neutral label (nothing about how the month goes), and what
+         TalkBack reads in place of the dots. -->
+    <string name="widget_hidden_label">Este mês</string>
+    <string name="widget_amount_hidden">Valor oculto</string>
+    <!-- The progress bar, read aloud. -->
+    <string name="widget_progress">%1$d%% do orçamento gasto</string>
+    <string name="notice_due_one">Hoje vence %1$s</string>
+    <string name="notice_due_many">Hoje vencem %1$s</string>
+    <string name="notice_and">e</string>
+    <string name="notice_and_i">e</string>
+    <string name="notice_guest">Os teus dados serão apagados dentro de 15 dias se não adicionares o teu email</string>
+    <string name="notice_channel_due">Pagamentos que vencem hoje</string>
+    <string name="notice_channel_due_description">Às 9:00, um aviso com os pagamentos recorrentes que vencem nesse dia.</string>
+    <string name="notice_channel_guest">Aviso se não tiveres email</string>
+    <string name="notice_channel_guest_description">Um aviso se passarem 45 dias sem abrires Lukitas e a tua conta não tiver email.</string>
+</resources>

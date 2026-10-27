@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useRef, useState } from "react";
 import { useTranslations } from "use-intl";
-import type { Locale } from "../../i18n/format.ts";
+import { intlTag, type Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
 import { ConfirmSheet } from "../../ui/ConfirmSheet.tsx";
 import { FingerprintIcon } from "../../ui/FingerprintIcon.tsx";
@@ -15,7 +15,7 @@ const PASSKEYS_KEY = ["passkeys"] as const;
 /** A day as `2 oct 2026` (es) or `Oct 2, 2026` (en), in the person's time zone. */
 function formatDay(iso: string, locale: Locale, timeZone: string): string {
   try {
-    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone })
+    return new Intl.DateTimeFormat(intlTag(locale), { dateStyle: "medium", timeZone })
       .format(new Date(iso))
       .replace(/\./g, "");
   } catch {

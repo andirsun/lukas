@@ -13,9 +13,10 @@ import es.antonborri.home_widget.HomeWidgetGlanceWidgetReceiver
  */
 class LukitasSmallWidget : GlanceAppWidget() {
     override val stateDefinition = HomeWidgetGlanceStateDefinition()
+    override val sizeMode = widgetSizeMode
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        provideContent { StoredWidgetContent(WidgetSize.SMALL) }
+        provideContent { StoredWidgetContent() }
     }
 }
 

@@ -106,11 +106,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     // Categorías (Categories), "Nueva categoría": a name and an emoji, Guardar.
-    await tester.tap(
-      find
-          .byWidgetPredicate((w) => w is Text && (w.data == 'Categorías' || w.data == 'Categories'))
-          .first,
-    );
+    // The tab by its key: the account menu's own Categorías link is also in the tree.
+    await _tap(tester, 'home.tab.budgets');
     await _tap(tester, 'categories.add');
     await _pumpUntil(tester, find.byKey(const Key('category.name')));
     await tester.enterText(find.byKey(const Key('category.name')), name);

@@ -2,6 +2,7 @@ package com.andersonlaverde.lukitas.widget
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.andersonlaverde.lukitas.AppLanguages
 import org.json.JSONException
 import org.json.JSONObject
 import java.time.DateTimeException
@@ -23,7 +24,7 @@ data class WidgetSnapshot(
     val spent: Long = 0,
     val budgetTotal: Long = 0,
     val currency: String = "",
-    /** "es" or "en": the widget's words and how amounts are written. Null: the phone's. */
+    /** "es", "en", "it" or "pt": the widget's words and how amounts are written. Null: the phone's. */
     val locale: String? = null,
     /** `YYYY-MM`. */
     val month: String = "",
@@ -91,7 +92,7 @@ data class WidgetSnapshot(
             if (doc.optInt("v", -1) != VERSION) return null
             val hideAmount = doc.optBoolean("hideAmount", false)
             val theme = doc.optString("theme", "dark")
-            val locale = doc.optString("locale", "").takeIf { it == "es" || it == "en" }
+            val locale = doc.optString("locale", "").takeIf { it in AppLanguages.ALL }
             val signedOut = WidgetSnapshot(
                 signedIn = false,
                 locale = locale,

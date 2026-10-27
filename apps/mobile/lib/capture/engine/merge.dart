@@ -9,9 +9,13 @@ import 'grammar.dart';
 
 /// A word one pass heard, with its time in seconds from the start of the audio.
 class HeardWord {
-  const HeardWord(this.word, this.start, this.end);
+  const HeardWord(this.word, this.start, this.end, {this.conf = 1});
 
   final String word;
+
+  /// How sure the recognizer was, 0 to 1 (Vosk's `conf`; 1 when the result has none). Only the
+  /// Italian gate in [mergePasses] reads it, so it is not part of equality.
+  final double conf;
   final double start;
   final double end;
 
@@ -41,12 +45,19 @@ List<HeardWord> wordsOfResult(String json) {
             w['word'] as String,
             (w['start'] as num).toDouble(),
             (w['end'] as num).toDouble(),
+            conf: w['conf'] is num ? (w['conf'] as num).toDouble() : 1,
           ),
     ];
   } on FormatException {
     return const [];
   }
 }
+
+/// Below this `conf`, an Italian grammar-pass number word does not replace a free word that is
+/// not grammar vocabulary (measured on synthetic speech: the false ones were 0.51-0.55, the good
+/// ones 1.0 apart from one correct "duemila" at 0.58 over a number word). To re-check on the
+/// recorded run (docs/superpowers/reports/2026-10-26-it-pt-voice-spike.md).
+const italianNumberConf = 0.7;
 
 /// Whether [a] and [b] overlap: their shared time covers at least half of either word.
 bool overlaps(HeardWord a, HeardWord b) {
@@ -102,8 +113,15 @@ String mergePasses(List<HeardWord> free, List<HeardWord> grammar, String locale)
       if (grammarClass(g.word, locale) case final cls?) (word: g, cls: cls),
   ];
 
-  // Number words first: they always win.
+  // Number words first: they always win. Italian has about a thousand of them in its grammar, so
+  // the pass sometimes hears one in a plain name ("benzina" as "ventinove", conf 0.55): there a
+  // doubtful one (conf under [italianNumberConf]) that would replace a word that is not grammar
+  // vocabulary does not win. Over a number word it still does ("due" fixed to "duemila").
   for (final g in heard.where((h) => h.cls == GrammarClass.number)) {
+    if (locale == 'it' && g.word.conf < italianNumberConf) {
+      final overName = free.any((f) => overlaps(f, g.word) && grammarClass(f.word, locale) == null);
+      if (overName) continue;
+    }
     for (var i = 0; i < free.length; i++) {
       if (overlaps(free[i], g.word)) keptFree[i] = false;
     }

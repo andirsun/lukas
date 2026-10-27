@@ -49,4 +49,30 @@ class MoneyTest {
         assertEquals("50.000${nbsp}CLP", formatMoney(5000000, "CLP", "es"))
         assertEquals("CLP${nbsp}50,000", formatMoney(5000000, "CLP", "en"))
     }
+
+    @Test
+    fun `Italian and Portuguese write the comma, the symbol after, and four digits together`() {
+        assertEquals("1234,50$nbsp€", formatMoney(123450, "EUR", "it"))
+        assertEquals("1234,50$nbsp€", formatMoney(123450, "EUR", "pt"))
+        assertEquals("562,92$nbsp€", formatMoney(56292, "EUR", "pt"))
+        assertEquals("0,00$nbsp€", formatMoney(0, "EUR", "it"))
+    }
+
+    @Test
+    fun `Italian groups with a point, Portuguese with a no-break space`() {
+        assertEquals("12.345,00$nbsp€", formatMoney(1234500, "EUR", "it"))
+        assertEquals("4.300.000,00$nbsp€", formatMoney(430000000, "EUR", "it"))
+        assertEquals("12${nbsp}345,00$nbsp€", formatMoney(1234500, "EUR", "pt"))
+        assertEquals("4${nbsp}300${nbsp}000,00$nbsp€", formatMoney(430000000, "EUR", "pt"))
+        assertEquals("−6,08$nbsp€", formatMoney(-608, "EUR", "pt"))
+    }
+
+    @Test
+    fun `other currencies keep their code after the figure in Italian and Portuguese`() {
+        assertEquals("1234,00${nbsp}USD", formatMoney(123400, "USD", "it"))
+        assertEquals("1234,00${nbsp}US$", formatMoney(123400, "USD", "pt"))
+        assertEquals("50.000${nbsp}COP", formatMoney(5000000, "COP", "it"))
+        assertEquals("50${nbsp}000${nbsp}COP", formatMoney(5000000, "COP", "pt"))
+        assertEquals("50.000${nbsp}CLP", formatMoney(5000000, "CLP", "it"))
+    }
 }

@@ -51,7 +51,7 @@ class AmountFormat {
   final String? currency;
 }
 
-String decimalSeparator(String locale) => locale == 'es' ? ',' : '.';
+String decimalSeparator(String locale) => locale == 'en' ? '.' : ',';
 
 /// Whether this amount takes decimals (and the keypad shows its decimal key).
 bool takesDecimals(String? currency) => !(currency != null && isWholeUnit(currency));
@@ -169,7 +169,7 @@ int centsOf(String raw, String locale) {
   final text = raw.trim();
   if (text.isEmpty) return 0;
   final decimal = decimalSeparator(locale);
-  final other = locale == 'es' ? '.' : ',';
+  final other = locale == 'en' ? ',' : '.';
   if (text.contains(other)) return 0;
   final match = RegExp(r'^(\d+)(?:\.(\d{1,2}))?$').firstMatch(text.replaceFirst(decimal, '.'));
   if (match == null) return 0;

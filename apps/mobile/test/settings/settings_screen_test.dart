@@ -329,6 +329,52 @@ void main() {
     });
   });
 
+  group('the four languages', () {
+    testWidgets('the picker lists Español, English, Italiano and Português by their own names', (
+      tester,
+    ) async {
+      await pumpSettingsApp(tester, location: '/settings');
+      for (final (key, name) in [
+        ('es', 'Español'),
+        ('en', 'English'),
+        ('it', 'Italiano'),
+        ('pt', 'Português'),
+      ]) {
+        await _scrollTo(tester, 'settings.language.$key');
+        expect(find.text(name), findsOneWidget);
+      }
+    });
+
+    for (final (code, settings, web) in [
+      ('it', 'Impostazioni', '/it'),
+      ('pt', 'Definições', '/pt'),
+    ]) {
+      testWidgets('picking $code changes every word at once and is kept', (tester) async {
+        final env = await pumpSettingsApp(tester, location: '/settings');
+        await _scrollTo(tester, 'settings.language.$code');
+        await tester.tap(find.byKey(Key('settings.language.$code')));
+        await tester.pumpAndSettle();
+        expect(find.text(settings), findsWidgets);
+        expect(find.text('Ajustes'), findsNothing);
+        expect(env.settings.values['setting.locale'], code);
+        expect(tester.widget<MaterialApp>(find.byType(MaterialApp)).locale, Locale(code));
+      });
+
+      testWidgets('in $code the web links are the $web landing and roadmap', (tester) async {
+        final env = await pumpSettingsApp(tester, location: '/settings');
+        await _scrollTo(tester, 'settings.language.$code');
+        await tester.tap(find.byKey(Key('settings.language.$code')));
+        await tester.pumpAndSettle();
+        await _tap(tester, 'settings.web');
+        await _tap(tester, 'settings.roadmap');
+        expect(env.opener.opened, [
+          defaultServerUrl.resolve(web),
+          defaultServerUrl.resolve('$web/roadmap'),
+        ]);
+      });
+    }
+  });
+
   group('sign out', () {
     testWidgets('someone with an email signs out at once and lands on the first screen', (
       tester,
@@ -568,6 +614,8 @@ void main() {
         'vosk-android 0.3.75',
         'vosk-model-small-en-us-0.15',
         'vosk-model-small-es-0.42',
+        'vosk-model-small-it-0.22',
+        'vosk-model-small-pt-0.3',
       ]) {
         // From the top each time: the page's order is not alphabetical.
         await tester.fling(list, const Offset(0, 10000), 10000);

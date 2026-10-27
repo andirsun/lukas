@@ -68,6 +68,27 @@ test("switching to English re-renders at once, and home speaks it after a reload
   await expect(page.getByRole("region", { name: "Left this month" })).toBeVisible();
 });
 
+test("the language picker lists the four languages, and Italian and Portuguese re-render at once", async ({
+  page,
+}) => {
+  await openSettings(page);
+  for (const name of ["Español", "English", "Italiano", "Português"]) {
+    await expect(page.getByRole("radio", { name })).toBeVisible();
+  }
+  await page.getByRole("radio", { name: "Italiano" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Impostazioni" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "it");
+  await page.getByRole("radio", { name: "Português" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Definições" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "pt");
+  await expect
+    .poll(
+      async () =>
+        ((await (await page.request.get("/api/v1/me")).json()) as { locale: string }).locale,
+    )
+    .toBe("pt");
+});
+
 test("the day theme applies at once and stays after a reload", async ({ page }) => {
   await openSettings(page);
   await expect(page.locator("html")).toHaveAttribute("data-theme", "night");

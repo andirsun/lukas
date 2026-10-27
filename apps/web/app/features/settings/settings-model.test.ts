@@ -115,6 +115,23 @@ describe("finding zones by country", () => {
     expect(find("mexico")).toContain("America/Mexico_City");
   });
 
+  it("finds Italy and Portugal by the names in their own placeholders, in any language", () => {
+    // The placeholders of settings.timezone.placeholder (it and pt): each example finds its zone.
+    for (const query of ["Roma", "Italia", "Italy", "Milano"]) {
+      expect(find(query), query).toContain("Europe/Rome");
+    }
+    for (const query of ["Lisboa", "Portugal", "Porto"]) {
+      expect(find(query), query).toContain("Europe/Lisbon");
+    }
+    expect(find("Portugal")).toEqual(
+      expect.arrayContaining(["Atlantic/Madeira", "Atlantic/Azores"]),
+    );
+    expect(find("Brasil")).toContain("America/Sao_Paulo");
+    // The place people mean comes before cities that merely start with the same letters.
+    expect(find("Porto")[0]).toBe("Europe/Lisbon");
+    expect(find("Roma")[0]).toBe("Europe/Rome");
+  });
+
   it("still finds by city first, and is built once per list", () => {
     expect(find("bogo")).toEqual(["America/Bogota"]);
     expect(zoneSearchIndex(zones)).toBe(index);

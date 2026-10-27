@@ -21,7 +21,7 @@ with `docker compose up` in the root (ports 5433, 3000, 5173, 8025, 1026), so bo
   `/api`), so the session cookie is first-party and secure. No CORS.
 - **Allowlist.** Only the emails in `SIGN_IN_ALLOWLIST` can ask for a sign-in code. Anyone else
   gets "Lukitas todavía no está abierto al público" and no email is sent.
-- **The landing lives elsewhere.** `/`, `/en` and the roadmap redirect (302, same path and query)
+- **The landing lives elsewhere.** `/`, `/en`, `/it`, `/pt` and the roadmaps redirect (302, same path and query)
   to the public landing at `LANDING_URL` (default `https://lukitas.andersonlaverde.com`), whose
   buttons come back here to `/sign-in` and `/demo`. The web build gets the same value
   (`VITE_LANDING_URL`), so the sign-in screen's logo and the end of "delete my account" leave

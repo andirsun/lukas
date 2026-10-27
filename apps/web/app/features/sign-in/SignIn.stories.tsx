@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { expectTarget } from "../../../.storybook/story-utils.ts";
 import { detectLocale } from "../../i18n/format.ts";
+import type { CodeHints } from "./auth.ts";
 import { fail, fakeAuth, GOOD_CODE, ONBOARDED_USER, ok, SignInStage } from "./story-harness.tsx";
 
 const meta = {
@@ -124,7 +125,9 @@ export const WrongCode: Story = {
     const canvas = within(canvasElement);
     const boxes = digits(canvas);
     await userEvent.type(boxes[0] as HTMLElement, "123456");
-    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", "123456");
+    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", "123456", {
+      locale: "es",
+    });
     await expect(await canvas.findByRole("alert")).toHaveTextContent(
       "Ese código no es correcto. Revísalo e inténtalo otra vez.",
     );
@@ -179,7 +182,9 @@ export const PasteCode: Story = {
     const canvas = within(canvasElement);
     await userEvent.click(digits(canvas)[0] as HTMLElement);
     await userEvent.paste("42 42 42");
-    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", GOOD_CODE);
+    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", GOOD_CODE, {
+      locale: "es",
+    });
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
   },
 };
@@ -408,10 +413,10 @@ export const OfflineKeepsCode: Story = {
 };
 
 /** The first check is rate limited (retry after 2 s); the next one goes through. */
-const rateLimitedOnce = fn(async (email: string, code: string) =>
+const rateLimitedOnce = fn(async (email: string, code: string, hints: CodeHints) =>
   rateLimitedOnce.mock.calls.length === 1
     ? fail({ status: 429, retryAfter: 2 })
-    : fakeAuth().verifyCode(email, code),
+    : fakeAuth().verifyCode(email, code, hints),
 );
 
 /** Too many sign-ins in a row: wait the seconds the server asked for, then the same code works. */

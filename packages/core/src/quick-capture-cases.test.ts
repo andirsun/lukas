@@ -27,7 +27,7 @@ interface Draft {
 interface Case {
   id: string;
   input: string;
-  locale: "es" | "en";
+  locale: "es" | "en" | "it" | "pt";
   currency: "COP" | "EUR" | "USD";
   today: string;
   timeZone: string;
@@ -61,6 +61,13 @@ const RELATIVE: Record<string, number> = {
   yesterday: -1,
   antier: -2,
   anteayer: -2,
+  oggi: 0,
+  ieri: -1,
+  altroieri: -2,
+  avantieri: -2,
+  hoje: 0,
+  ontem: -1,
+  anteontem: -2,
 };
 const WEEKDAYS: Record<string, number> = {
   domingo: 0,
@@ -77,8 +84,31 @@ const WEEKDAYS: Record<string, number> = {
   friday: 5,
   sabado: 6,
   saturday: 6,
+  lunedi: 1,
+  martedi: 2,
+  mercoledi: 3,
+  giovedi: 4,
+  venerdi: 5,
+  sabato: 6,
+  domenica: 0,
+  segunda: 1,
+  terca: 2,
+  quarta: 3,
+  quinta: 4,
+  sexta: 5,
 };
-const wordsOf = (input: string) => plain(input).match(/[a-z]+/g) ?? [];
+const PT_AMBIGUOUS = new Set(["segunda", "terca", "quarta", "quinta", "sexta"]);
+// Date phrases of several words count as the one date word they mean.
+const PHRASES: [RegExp, string][] = [
+  [/\bl ?altro ieri\b/g, "altroieri"],
+  [/\bavant ieri\b/g, "avantieri"],
+  [/\bantes de ontem\b/g, "anteontem"],
+];
+const wordsOf = (input: string) => {
+  let text = plain(input).replace(/['\u2019]/g, " ");
+  for (const [phrase, word] of PHRASES) text = text.replace(phrase, word);
+  return text.match(/[a-z]+/g) ?? [];
+};
 
 describe("quick-capture cases file", () => {
   test("validates against cases.schema.json", () => {
@@ -102,6 +132,8 @@ describe("quick-capture cases file", () => {
     expect(bad((c) => delete draft(c).categoryId)).toBe(false);
     expect(bad((c) => (c.currency = "MXN"))).toBe(false);
     expect(bad((c) => (c.locale = "fr"))).toBe(false);
+    expect(bad((c) => (c.locale = "it"))).toBe(true);
+    expect(bad((c) => (c.locale = "pt"))).toBe(true);
     expect(bad((c) => (c.extra = 1))).toBe(false);
     expect(bad((c) => delete c.usual)).toBe(false);
     expect(bad((c) => (c.id = "Spike S01"))).toBe(false);
@@ -110,9 +142,17 @@ describe("quick-capture cases file", () => {
 
   test("has the volume and spread the brief asks for", () => {
     expect(cases.length).toBeGreaterThanOrEqual(60);
-    // Most of them are Colombian: es, COP.
+    // Most of the es and en ones are Colombian: es, COP.
     const colombian = cases.filter((c) => c.locale === "es" && c.currency === "COP");
-    expect(colombian.length).toBeGreaterThan(cases.length / 2);
+    const esEn = cases.filter((c) => c.locale === "es" || c.locale === "en");
+    expect(colombian.length).toBeGreaterThan(esEn.length / 2);
+    // Italian and Portuguese have at least 40 each, and at least 3 sentences typed in the other
+    // languages' words (Review Focus 4).
+    for (const locale of ["it", "pt"]) {
+      const own = cases.filter((c) => c.locale === locale);
+      expect(own.length, locale).toBeGreaterThanOrEqual(40);
+      expect(own.filter((c) => c.id.startsWith("focus-")).length, locale).toBeGreaterThanOrEqual(3);
+    }
     const prefixes = new Set(cases.map((c) => c.id.split("-")[0]));
     expect([...prefixes].sort()).toEqual(
       ["amount", "category", "date", "focus", "kind", "real", "spike", "split", "unread"].sort(),
@@ -188,6 +228,9 @@ describe("quick-capture cases file", () => {
       const rel = words.filter((w) => w in RELATIVE);
       const wd = words.filter((w) => w in WEEKDAYS);
       if (rel.length + wd.length > 1) continue; // per-clause dates are checked by name below
+      // Portuguese `segunda`, `terça`, `quarta`, `quinta`, `sexta` are dates only after a
+      // preposition or with `feira`; those cases are pinned by name below.
+      if (c.locale === "pt" && words.some((w) => PT_AMBIGUOUS.has(w))) continue;
       let want = c.today;
       if (rel[0] !== undefined) want = addDays(c.today, RELATIVE[rel[0]] as number);
       if (wd[0] !== undefined) {
@@ -209,6 +252,16 @@ describe("quick-capture cases file", () => {
         if (!inUnread) expect(from, c.id).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+
+  test("Portuguese bare weekdays are dates only in a date position", () => {
+    const date = (id: string) => get(id).expected.drafts.map((d) => d.date);
+    expect(date("date-pt-segunda-mao-is-not-a-date")).toEqual(["2026-10-26"]);
+    expect(date("date-pt-quinta-do-lago-is-not-a-date")).toEqual(["2026-10-26"]);
+    expect(date("date-pt-weekday-without-preposition-is-not-a-date")).toEqual(["2026-10-26"]);
+    expect(date("date-pt-weekday-before-verb")).toEqual(["2026-10-22"]);
+    expect(date("date-pt-weekday-before-amount")).toEqual(["2026-10-23"]);
+    expect(date("date-pt-weekday-today-is-last-week")).toEqual(["2026-10-19"]);
   });
 
   test("context carries over: kind and date", () => {

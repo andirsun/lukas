@@ -13,7 +13,7 @@ import 'engine/voice_channel.dart';
 
 /// Where the models are downloaded from: this repo's release, one zip per model.
 final voiceModelsReleaseUrl = Uri.parse(
-  'https://github.com/andirsun/lukas/releases/download/voice-models-v1',
+  'https://github.com/slinqer/lukitas/releases/download/voice-models-v1',
 );
 
 /// One language's Vosk model (Apache-2.0, https://alphacephei.com/vosk/models).
@@ -26,7 +26,7 @@ class VoiceModel {
     required this.sha256,
   });
 
-  /// `es` or `en`.
+  /// `es`, `en`, `it` or `pt`.
   final String locale;
 
   /// The model's name, which is also its zip's name and the one folder inside it.
@@ -59,6 +59,22 @@ const voiceModels = {
     bytes: 41205931,
     unzippedBytes: 70898967,
     sha256: '30f26242c4eb449f948e42cb302dd7a686cb29a3423a8367f99ff41780942498',
+  ),
+  'it': VoiceModel(
+    locale: 'it',
+    name: 'vosk-model-small-it-0.22',
+    bytes: 49665141,
+    unzippedBytes: 91299150,
+    sha256: '9ec65e75861d1c6c2e457cccd932705340dcdf233f5b239f00733b4de0bf3267',
+  ),
+  // Trained mostly on Brazilian speech: European Portuguese is labelled beta until the spike
+  // (docs/superpowers/reports/2026-10-26-it-pt-voice-spike.md) passes.
+  'pt': VoiceModel(
+    locale: 'pt',
+    name: 'vosk-model-small-pt-0.3',
+    bytes: 32453112,
+    unzippedBytes: 53552717,
+    sha256: '6e1ce909032e1afa7a88e68a3d628ecafff302bdf195befab308826c395e93b7',
   ),
 };
 
@@ -112,14 +128,20 @@ class ModelStore {
   final Map<String, VoiceModel> _models;
   final _running = <String, Future<void>>{};
 
-  /// The model for [locale]: English for `en`, Spanish otherwise (as the app's language).
-  VoiceModel modelFor(String locale) => _models[locale] ?? _models['es']!;
+  /// The model for [locale]; null when there is none (every language the app speaks has one). A
+  /// language is never given another language's model: Spanish audio would be read with English
+  /// words, and the other way round.
+  VoiceModel? modelFor(String locale) => _models[locale];
+
+  /// Whether [locale] has a voice model to download at all.
+  bool hasModel(String locale) => _models.containsKey(locale);
 
   Future<String> _voiceDir() async => '${await _files.modelsDirectory()}/voice';
 
   /// The model's folder, when it is downloaded, verified and unzipped; otherwise null.
   Future<String?> installedPath(String locale) async {
     final model = modelFor(locale);
+    if (model == null) return null;
     final dir = await _voiceDir();
     final ready = File('$dir/${model.name}.ready');
     if (!ready.existsSync() || (await ready.readAsString()).trim() != model.sha256) return null;
@@ -136,6 +158,8 @@ class ModelStore {
     CancelToken? cancel,
   }) {
     final model = modelFor(locale);
+    // No model for this language: the same failure as a download that did not work.
+    if (model == null) return Future.error(const ModelDownloadFailure());
     return _running[model.name] ??= _download(model, onProgress, cancel).whenComplete(() {
       // A block, not `=>`: remove returns this very future, which whenComplete would wait for.
       _running.remove(model.name);
