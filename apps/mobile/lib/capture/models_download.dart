@@ -13,7 +13,7 @@ import 'engine/voice_channel.dart';
 
 /// Where the models are downloaded from: this repo's release, one zip per model.
 final voiceModelsReleaseUrl = Uri.parse(
-  'https://github.com/andirsun/lukas/releases/download/voice-models-v1',
+  'https://github.com/slinqer/lukitas/releases/download/voice-models-v1',
 );
 
 /// One language's Vosk model (Apache-2.0, https://alphacephei.com/vosk/models).

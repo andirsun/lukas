@@ -8,7 +8,7 @@ import { expect, type Page, test } from "@playwright/test";
  */
 
 const ORIGIN = "https://lukas.app";
-const GITHUB = "https://github.com/andirsun/lukas";
+const GITHUB = "https://github.com/slinqer/lukitas";
 
 const LOCALES = [
   {

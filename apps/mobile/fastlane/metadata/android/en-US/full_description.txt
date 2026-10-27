@@ -23,4 +23,4 @@ The app keeps your data on a Lukitas server. By default it uses the author's (ap
 <b>What stays on the web</b>
 Categories, recurring payments, reports, import and downloading your data are on the web; the app links you there.
 
-Free software under the AGPL-3.0. The code is at https://github.com/andirsun/lukas
+Free software under the AGPL-3.0. The code is at https://github.com/slinqer/lukitas

@@ -955,8 +955,8 @@
   },
   "licenseNoticeFontRoleDisplay": "titles and amounts",
   "licenseNoticeFontRoleText": "the rest of the text",
-  "licenseNoticeSounds": "The sounds Lukitas plays when you add, pay, undo, or come near a limit are original work made for Lukitas: a few plain tones, with no third-party samples. They are released under the licence of the app itself, the GNU Affero General Public License 3.0 (https://github.com/andirsun/lukas).",
-  "licenseNoticeApp": "Lukitas is free software, under the GNU Affero General Public License 3.0. Its source code is at https://github.com/andirsun/lukas.",
+  "licenseNoticeSounds": "The sounds Lukitas plays when you add, pay, undo, or come near a limit are original work made for Lukitas: a few plain tones, with no third-party samples. They are released under the licence of the app itself, the GNU Affero General Public License 3.0 (https://github.com/slinqer/lukitas).",
+  "licenseNoticeApp": "Lukitas is free software, under the GNU Affero General Public License 3.0. Its source code is at https://github.com/slinqer/lukitas.",
   "aboutLegalese": "Free software, AGPL-3.0",
   "close": "Close",
   "@close": {

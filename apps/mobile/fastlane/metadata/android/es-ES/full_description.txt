@@ -23,4 +23,4 @@ La app guarda tus datos en un servidor de Lukitas. Por defecto usa el del autor 
 <b>Lo que sigue en la web</b>
 Categorías, pagos recurrentes, informes, importar y descargar tus datos están en la web; la app te lleva hasta allí.
 
-Software libre bajo la licencia AGPL-3.0. El código está en https://github.com/andirsun/lukas
+Software libre bajo la licencia AGPL-3.0. El código está en https://github.com/slinqer/lukitas

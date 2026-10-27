@@ -181,7 +181,7 @@ void main() {
   test('the constants name this repo\'s release, one official zip per language', () {
     expect(
       voiceModelsReleaseUrl.toString(),
-      'https://github.com/andirsun/lukas/releases/download/voice-models-v1',
+      'https://github.com/slinqer/lukitas/releases/download/voice-models-v1',
     );
     expect(voiceModels['es']!.fileName, 'vosk-model-small-es-0.42.zip');
     expect(voiceModels['en']!.fileName, 'vosk-model-small-en-us-0.15.zip');

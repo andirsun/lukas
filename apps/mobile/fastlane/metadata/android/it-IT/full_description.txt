@@ -23,4 +23,4 @@ L'app salva i tuoi dati su un server di Lukitas. Di default usa quello dell'auto
 <b>Cosa resta sul web</b>
 Categorie, pagamenti ricorrenti, report, importazione e download dei tuoi dati sono sul web; l'app ti ci porta.
 
-Software libero con licenza AGPL-3.0. Il codice è su https://github.com/andirsun/lukas
+Software libero con licenza AGPL-3.0. Il codice è su https://github.com/slinqer/lukitas

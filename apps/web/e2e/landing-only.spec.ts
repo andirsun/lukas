@@ -10,7 +10,7 @@ import { expect, type Page, test } from "@playwright/test";
  */
 
 const ORIGIN = process.env.VITE_SITE_URL ?? "https://landing-only.example.test";
-const GITHUB = "https://github.com/andirsun/lukas";
+const GITHUB = "https://github.com/slinqer/lukitas";
 const CLIENT = fileURLToPath(new URL("../build/client/", import.meta.url));
 /** Anything that would lead to the app: sign-in, the app itself, the welcome flow, the demo. */
 const APP_PATH = /(^|\/)(sign-in|app|welcome|demo)(\/|\?|#|$)/;
