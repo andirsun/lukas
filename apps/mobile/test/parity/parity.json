@@ -1384,8 +1384,10 @@
     "storyId": "manage-settings--app-sections",
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
+    "maxInk": 2.3,
     "knownDifferences": [
-      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye",
+      "The web shot was retaken on a newer macOS, whose Chrome smooths the text a little differently and draws a wider ＋ (the system's PingFang): 2.00% of the ink, all glyph edges"
     ]
   },
   {
@@ -1393,8 +1395,10 @@
     "storyId": "manage-settings--app-sections-day-english",
     "theme": "day",
     "appTest": "test/parity/settings_parity_test.dart",
+    "maxInk": 2.3,
     "knownDifferences": [
-      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye"
+      "The app's pair leaves out its own cards (SettingsScreen.webSectionsOnly) and the language's 'Automático'. test/settings/goldens has the app's own cards to review by eye",
+      "The web shot was retaken on a newer macOS, whose Chrome smooths the text a little differently and draws a wider ＋ (the system's PingFang): 2.09% of the ink, all glyph edges"
     ]
   },
   {
