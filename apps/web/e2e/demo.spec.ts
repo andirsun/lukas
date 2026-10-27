@@ -229,6 +229,25 @@ test("es: every demo screen keeps its links in /demo, and settings turns off wha
   expect(api).toEqual([]);
 });
 
+test("es: the avatar menu is drawn over the home's tabs, all of it", async ({ page }) => {
+  test.skip(!isPhone(page), "the menu sits over the tabs at phone width");
+  const l = LANG.es;
+  await page.goto("/demo?lang=es");
+  await page.getByRole("button", { name: l.account }).click();
+  // Every item of the menu is what a tap at its middle reaches: nothing (the sticky tabs, once)
+  // is painted over its lower part.
+  const covered = await page.evaluate(() => {
+    const menu = document.querySelector(".lk-menu");
+    if (!menu) return ["no menu"];
+    return [...menu.querySelectorAll("a, button")].flatMap((item) => {
+      const box = item.getBoundingClientRect();
+      const top = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
+      return top && menu.contains(top) ? [] : [item.textContent?.trim() ?? "?"];
+    });
+  });
+  expect(covered).toEqual([]);
+});
+
 test("en: reloading a deep link keeps the demo in English and in euros", async ({ page }) => {
   const l = LANG.en;
   const api = watchApi(page);
