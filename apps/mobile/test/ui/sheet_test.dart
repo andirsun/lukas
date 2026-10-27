@@ -14,9 +14,12 @@ import '../support/ui_app.dart';
 /// `LkSheet`'s behaviour, as apps/web/app/ui/Sheet.tsx and its stories define it. How it looks is
 /// test/parity/sheet_parity_test.dart's job.
 class _Opener extends StatelessWidget {
-  const _Opener({this.footer, this.onSave, this.pinned = const []});
+  const _Opener({this.footer, this.onSave, this.pinned = const [], this.rows = 0});
 
   final List<Widget>? footer;
+
+  /// Lines under the buttons, to make the content taller than the sheet.
+  final int rows;
   final List<Widget> pinned;
   final VoidCallback? onSave;
 
@@ -38,6 +41,7 @@ class _Opener extends StatelessWidget {
             Expanded(child: PressButton.text('Guardar', onPressed: onSave)),
           ],
         ),
+        for (var i = 0; i < rows; i++) SizedBox(height: 48, child: Text('Fila $i')),
       ],
     ),
   );
@@ -230,6 +234,28 @@ void main() {
     // The footer is under the middle, at the bottom of the sheet.
     expect(t.getTopLeft(find.text('PIE')).dy, greaterThan(t.getTopLeft(find.text('GUARDAR')).dy));
     expect(t.getTopLeft(find.text('FIJO')).dy, lessThan(t.getTopLeft(find.text('GUARDAR')).dy));
+  });
+
+  testWidgets('with a footer, a drag up on content taller than the sheet scrolls it', (t) async {
+    await _open(t, opener: const _Opener(rows: 40, footer: [Text('PIE')]));
+    final top = _top(t);
+    final before = t.getTopLeft(find.text('Fila 3')).dy;
+    await t.drag(find.text('Fila 3'), const Offset(0, -300));
+    await t.pumpAndSettle();
+    expect(
+      t.getTopLeft(find.text('Fila 3')).dy,
+      lessThan(before - 200),
+      reason: 'the middle scrolls',
+    );
+    expect(_top(t), top, reason: 'the sheet stays where it is');
+  });
+
+  testWidgets('without a footer, a drag up on content taller than the sheet scrolls it', (t) async {
+    await _open(t, opener: const _Opener(rows: 40));
+    final before = t.getTopLeft(find.text('Fila 3')).dy;
+    await t.drag(find.text('Fila 3'), const Offset(0, -300));
+    await t.pumpAndSettle();
+    expect(t.getTopLeft(find.text('Fila 3')).dy, lessThan(before - 200));
   });
 
   testWidgets('it hosts the toasts while it is open and gives them back when it closes', (t) async {

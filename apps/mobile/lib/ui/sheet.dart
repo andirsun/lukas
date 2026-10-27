@@ -273,6 +273,7 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
   late final AnimationController _dragY = AnimationController.unbounded(vsync: this);
   final _scroll = ScrollController();
   final _panelKey = GlobalKey();
+  final _bodyKey = GlobalKey();
 
   bool _reduceMotion = false;
   bool _dragging = false;
@@ -576,6 +577,9 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     final colors = context.lkColors;
     const side = LukitasTokens.space3;
     Widget scroll = SingleChildScrollView(
+      // Kept by its key when the fade below wraps it: rebuilt instead, under the finger, it dropped
+      // the drag that had just started the scroll, and the content never scrolled.
+      key: _bodyKey,
       controller: _scroll,
       physics: physics,
       padding: const EdgeInsets.fromLTRB(side, 0, side, LukitasTokens.space1),
