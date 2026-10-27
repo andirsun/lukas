@@ -158,12 +158,11 @@ test.describe("from Colombia, in Bogotá", () => {
     expect(october.items.length).toBeGreaterThan(0);
     expect(new Set(october.items.map((t) => t.currency))).toEqual(new Set(["EUR"]));
 
-    // The categories start from the file's: its lower-case "suscripciones" covers the suggestion,
-    // so there is one chip, not two.
+    // The account started with the suggested categories, and the file's lower-case
+    // "suscripciones" went into the starter "Suscripciones": one chip, not two.
     await next(page).click();
     await expect(heading(page, "¿En qué se te va el dinero?")).toBeFocused();
-    await expect(page.getByRole("button", { name: "suscripciones", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Suscripciones", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^suscripciones$/i })).toHaveCount(1);
 
     // Budgets come last, prefilled in euros from the file's recent months (the API picks the
     // window from today's date), with no lukas hint.

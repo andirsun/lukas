@@ -44,8 +44,11 @@ export interface CodeHints {
 export interface SignInAuth {
   /** Emails a 6-digit code and a magic link (one email carries both). */
   sendCode(email: string, hints: CodeHints): Promise<AuthResult<true>>;
-  /** Signs in (or up) with the code; sets the session cookie. */
-  verifyCode(email: string, code: string): Promise<AuthResult<AuthUser>>;
+  /**
+   * Signs in (or up) with the code; sets the session cookie. The page's language names a new
+   * account's starter categories (apps/api/src/auth.ts).
+   */
+  verifyCode(email: string, code: string, hints: CodeHints): Promise<AuthResult<AuthUser>>;
   /** Whether this browser can use passkeys at all (WebAuthn). */
   passkeysAvailable(): boolean;
   /**
@@ -208,7 +211,7 @@ async function settle<T, R>(
   }
 }
 
-/** The headers the API reads to write the email (see apps/api/src/auth.ts). */
+/** The headers the API reads to write the email and to name a new account's categories (apps/api/src/auth.ts). */
 function hintHeaders({ locale, next }: CodeHints): Record<string, string> {
   return { "x-lukas-locale": locale, ...(next ? { "x-lukas-next": safeNext(next) } : {}) };
 }
@@ -222,10 +225,11 @@ export const liveSignInAuth: SignInAuth = {
       () => true as const,
       hintHeaders(hints),
     ),
-  verifyCode: (email, code) =>
+  verifyCode: (email, code, hints) =>
     settle(
       (fetchOptions) => authClient.signIn.emailOtp({ email, otp: code, fetchOptions }),
       (data) => data.user as AuthUser,
+      hintHeaders(hints),
     ),
   passkeysAvailable: passkeysSupported,
   passkeyUsedHere: () => hasUsedPasskey(),

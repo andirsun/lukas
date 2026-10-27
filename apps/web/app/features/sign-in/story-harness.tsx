@@ -38,7 +38,7 @@ export function fakeAuth(overrides: Partial<SignInAuth> & { user?: AuthUser } = 
   const { user = NEW_USER, ...rest } = overrides;
   return {
     sendCode: fn(async (_email: string, _hints: CodeHints) => ok(true as const)),
-    verifyCode: fn(async (_email: string, code: string) =>
+    verifyCode: fn(async (_email: string, code: string, _hints: CodeHints) =>
       code === GOOD_CODE ? ok(user) : fail({ code: "INVALID_OTP", status: 400 }),
     ),
     passkeysAvailable: () => false,

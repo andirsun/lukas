@@ -107,7 +107,7 @@ export function Verify({
   async function signIn() {
     if (status.kind === "checking") return;
     setStatus({ kind: "checking" });
-    const result = await auth.verifyCode(link.email, link.code);
+    const result = await auth.verifyCode(link.email, link.code, { locale: link.lang });
     if (result.error) {
       const error = verifyErrorKey(result.error);
       const wait =

@@ -1,4 +1,5 @@
-import { createDb, type Db } from "@lukas/db";
+import { categories, createDb, type Db, user } from "@lukas/db";
+import { eq } from "@lukas/db/orm";
 import { startTestDatabase } from "@lukas/db/testing";
 import { createApp } from "../src/app.ts";
 import type { Config } from "../src/config.ts";
@@ -65,9 +66,17 @@ export async function createTestApp(
     return app.request(path, init);
   }
 
+  /**
+   * Signs `email` in. A new account starts with the suggested categories (auth.ts); this helper
+   * clears them on the account's first sign-in, so a test builds its categories on a blank slate.
+   * Pass `{ starterCategories: true }` to keep them (guests.test.ts tests them directly).
+   */
   async function signIn(
     email: string,
+    { starterCategories = false }: { starterCategories?: boolean } = {},
   ): Promise<{ userId: string; headers: { authorization: string } }> {
+    const existed =
+      (await admin.db.select({ id: user.id }).from(user).where(eq(user.email, email))).length > 0;
     const sent = await request("POST", "/auth/email-otp/send-verification-otp", {
       body: { email, type: "sign-in" },
     });
@@ -81,6 +90,9 @@ export async function createTestApp(
     if (res.status !== 200) throw new Error(`sign-in failed: ${res.status} ${await res.text()}`);
     const token = res.headers.get("set-auth-token");
     const json = (await res.json()) as { user: { id: string } };
+    if (!existed && !starterCategories) {
+      await admin.db.delete(categories).where(eq(categories.userId, json.user.id));
+    }
     return { userId: json.user.id, headers: { authorization: `Bearer ${token}` } };
   }
 

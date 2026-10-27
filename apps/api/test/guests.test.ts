@@ -189,8 +189,11 @@ describe("guests", () => {
 
     const list = await t.request("GET", "/v1/transactions", { headers: b.headers });
     expect(((await list.json()) as { items: unknown[] }).items).toEqual([]);
+    // B has only its own starter categories, never A's "Mercado".
     const cats = await t.request("GET", "/v1/categories", { headers: b.headers });
-    expect(await cats.json()).toEqual([]);
+    const theirCats = (await cats.json()) as { id: string; name: string }[];
+    expect(theirCats).toHaveLength(8);
+    expect(theirCats.map((c) => c.id)).not.toContain(categoryId);
     const theirs = await t.request("PATCH", `/v1/transactions/${transactionId}`, {
       headers: b.headers,
       body: { name: "Mine now" },
@@ -287,6 +290,63 @@ describe("app sign-ups by email (x-lukas-timezone on the creating request)", () 
       locale: "en",
       currency: "COP",
     });
+  });
+
+  async function categoryNames(headers: { authorization: string }) {
+    const res = await t.request("GET", "/v1/categories", { headers });
+    expect(res.status).toBe(200);
+    const rows = (await res.json()) as { name: string; kind: string; icon: string }[];
+    return rows.map((c) => c.name);
+  }
+
+  test("a new account starts with the eight suggested categories, in the sign-up's language", async () => {
+    const web = await signUpByEmail("starter-it@lukas.test", { "x-lukas-locale": "it" });
+    expect(await categoryNames(web)).toEqual([
+      "Supermercato",
+      "Ristorante",
+      "Casa",
+      "Trasporti",
+      "Tempo libero",
+      "Abbonamenti",
+      "Salute",
+      "Stipendio",
+    ]);
+    const phone = await guest(t, {
+      "x-lukas-timezone": "Europe/Lisbon",
+      "x-lukas-locale": "pt-PT",
+    });
+    expect(await categoryNames(phone.headers)).toEqual([
+      "Supermercado",
+      "Restaurante",
+      "Casa",
+      "Transportes",
+      "Lazer",
+      "Subscrições",
+      "Saúde",
+      "Salário",
+    ]);
+  });
+
+  test("without a hint the browser's language names them, else Spanish", async () => {
+    const browser = await signUpByEmail("starter-en@lukas.test", {
+      "accept-language": "en-GB,en;q=0.9",
+    });
+    expect((await categoryNames(browser))[0]).toBe("Groceries");
+    const none = await signUpByEmail("starter-es@lukas.test", {});
+    expect((await categoryNames(none))[0]).toBe("Supermercado");
+  });
+
+  test("signing in again, or claiming an email as a guest, adds none", async () => {
+    await signUpByEmail("again@lukas.test", {});
+    const again = await signUpByEmail("again@lukas.test", {});
+    expect(await categoryNames(again)).toHaveLength(8);
+    const g = await guest(t, { "x-lukas-timezone": "America/Bogota" });
+    const claimed = await t.request("POST", "/auth/email-otp/send-verification-otp", {
+      headers: g.headers,
+      body: { email: "claimer@lukas.test", type: "sign-in" },
+    });
+    expect(claimed.status).toBe(200);
+    expect(await categoryNames(g.headers)).toHaveLength(8);
   });
 
   test("a new email user from the web (no x-lukas-timezone) keeps UTC, Spanish and EUR", async () => {

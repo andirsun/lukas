@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { expectTarget } from "../../../.storybook/story-utils.ts";
+import type { CodeHints } from "./auth.ts";
 import { fail, fakeAuth, GOOD_CODE, ONBOARDED_USER, SignInStage } from "./story-harness.tsx";
 
 /** The magic link as the API writes it: email, code, the email's language, and `next` if any. */
@@ -102,7 +103,9 @@ export const FollowsOnTheWeb: Story = {
     await userEvent.click(await canvas.findByRole("button", { name: "Seguir en la web" }));
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
     await expect(args.auth.verifyCode).toHaveBeenCalledTimes(1);
-    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", GOOD_CODE);
+    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", GOOD_CODE, {
+      locale: "es",
+    });
   },
 };
 
@@ -156,7 +159,9 @@ export const SignsIn: Story = {
     await tapContinue(canvas);
     await waitFor(() => expect(currentPage(canvas)).toHaveTextContent("/welcome"));
     await expect(args.auth.verifyCode).toHaveBeenCalledTimes(1);
-    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", GOOD_CODE);
+    await expect(args.auth.verifyCode).toHaveBeenCalledWith("ana@example.com", GOOD_CODE, {
+      locale: "es",
+    });
   },
 };
 
@@ -290,8 +295,10 @@ export const IncompleteLink: Story = {
 };
 
 /** The first check finds no connection; the next one works. */
-const offlineOnce = fn(async (email: string, code: string) =>
-  offlineOnce.mock.calls.length === 1 ? fail({ status: 0 }) : fakeAuth().verifyCode(email, code),
+const offlineOnce = fn(async (email: string, code: string, hints: CodeHints) =>
+  offlineOnce.mock.calls.length === 1
+    ? fail({ status: 0 })
+    : fakeAuth().verifyCode(email, code, hints),
 );
 
 /** No connection: say so, and offer to try the same link again. */
@@ -310,10 +317,10 @@ export const Offline: Story = {
 };
 
 /** The first check hits the sign-in rate limit (retry after 2 s); the next one works. */
-const rateLimitedOnce = fn(async (email: string, code: string) =>
+const rateLimitedOnce = fn(async (email: string, code: string, hints: CodeHints) =>
   rateLimitedOnce.mock.calls.length === 1
     ? fail({ status: 429, retryAfter: 2 })
-    : fakeAuth().verifyCode(email, code),
+    : fakeAuth().verifyCode(email, code, hints),
 );
 
 /**

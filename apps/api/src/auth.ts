@@ -1,9 +1,10 @@
 import { createHash, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { passkey } from "@better-auth/passkey";
-import { defaultCurrencyFor, isValidTimeZone } from "@lukas/core";
+import { defaultCurrencyFor, isValidTimeZone, SUGGESTED_CATEGORIES } from "@lukas/core";
 import {
   accounts,
+  categories,
   emailThrottle,
   schema,
   user as userTable,
@@ -434,14 +435,28 @@ export function createAuth(deps: AppDeps) {
                     guestDefaults(headers).region,
                   )
                 : "EUR";
-            await withUser(deps.db, created.id, (tx) =>
-              tx.insert(accounts).values({
+            // Every account starts with the suggested categories, named in the sign-up's language
+            // (`x-lukas-locale`, else the browser's), so a person who leaves the welcome halfway
+            // still has them. The welcome then shows them as the person's own.
+            const { locale } = guestDefaults(headers);
+            await withUser(deps.db, created.id, async (tx) => {
+              await tx.insert(accounts).values({
                 userId: created.id,
                 name: "Main",
                 currency,
                 isDefault: true,
-              }),
-            );
+              });
+              await tx.insert(categories).values(
+                SUGGESTED_CATEGORIES.map((suggestion, sortOrder) => ({
+                  userId: created.id,
+                  name: suggestion.names[locale],
+                  kind: suggestion.kind,
+                  icon: suggestion.glyph,
+                  color: suggestion.tint,
+                  sortOrder,
+                })),
+              );
+            });
           },
         },
       },

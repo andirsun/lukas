@@ -7,4 +7,5 @@ export * from "./lukas-message.ts";
 export * from "./money.ts";
 export * from "./recurrence.ts";
 export * from "./schemas.ts";
+export * from "./suggested-categories.ts";
 export * from "./summary.ts";

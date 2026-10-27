@@ -173,7 +173,7 @@ export function SignIn({ auth, resendDelayMs = RESEND_DELAY_MS }: SignInProps) {
     if (candidate.length !== CODE_LENGTH || retryIn > 0) return;
     const result = await run(
       "verify",
-      () => auth.verifyCode(email, candidate),
+      () => auth.verifyCode(email, candidate, { locale: lang }),
       (e) => authErrorKey(e, "sign_in"),
     );
     if (!result) return;
