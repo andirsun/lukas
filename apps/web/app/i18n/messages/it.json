@@ -25,7 +25,7 @@
   "roadmap": {
     "meta": {
       "title": "Lukitas · In arrivo",
-      "description": "Cosa abbiamo in programma per Lukitas: la web app, il widget con microfono per Android, più spese in una frase, la tua IA collegata e altro. Senza date, e può cambiare."
+      "description": "Cosa abbiamo in programma per Lukitas: l'app per Android, il widget con microfono che annota più spese in una frase, la tua IA collegata, l'app per iPhone e altro. Senza date, e può cambiare."
     },
     "title": "In arrivo",
     "intro": "Questo è quello che abbiamo in programma. Può cambiare nel tempo.",
@@ -44,29 +44,33 @@
         "title": "App web",
         "body": "Budget per categoria, movimenti, analisi e quanto ti costa vivere."
       },
-      "import_budge": {
-        "title": "Importa il tuo storico da Budge",
-        "body": "Carica il tuo file CSV e guarda un'anteprima prima di importare qualsiasi cosa."
-      },
       "demo": {
         "title": "Provala senza account",
         "body": "Una demo con dati inventati, per usare l'app prima di registrarti."
       },
-      "widget_mic": {
-        "title": "Android: widget con microfono",
-        "body": "Di' cosa hai speso e resta annotato."
+      "android_app": {
+        "title": "App per Android",
+        "body": "Il tuo budget sul telefono: annota in due tocchi e guarda quanto ti resta."
       },
-      "multi_expense": {
-        "title": "Più spese in una frase",
-        "body": "«Ho speso 15 per il pranzo e 3 per Uber» e restano annotate entrambe."
+      "android_widget": {
+        "title": "Android: widget con microfono",
+        "body": "Di' «Ho speso 15 per il pranzo e 3 per Uber» e restano annotate entrambe."
+      },
+      "import_budge": {
+        "title": "Importa il tuo storico da Budge",
+        "body": "Carica il tuo file CSV e guarda un'anteprima prima di importare qualsiasi cosa."
+      },
+      "iphone_app": {
+        "title": "App per iPhone",
+        "body": "La stessa app, anche su iOS."
       },
       "connect_ai": {
         "title": "Collega la tua IA",
         "body": "Usa Claude o ChatGPT per consultare e annotare le tue spese."
       },
-      "iphone_app": {
-        "title": "App per iPhone",
-        "body": "La stessa app, anche su iOS."
+      "e2e_encryption": {
+        "title": "Crittografia end-to-end",
+        "body": "I tuoi dati vengono cifrati sul tuo dispositivo: nemmeno il server potrà leggerli."
       },
       "bank_alerts": {
         "title": "Cattura automatica degli avvisi della tua banca",

@@ -109,8 +109,8 @@ describe("roadmapColumns", () => {
 });
 
 describe("the landing's what's-next items", () => {
-  it("are the widget microphone, several expenses in one sentence, and connect your AI", () => {
-    expect(LANDING_ROADMAP_IDS).toEqual(["widget_mic", "multi_expense", "connect_ai"]);
+  it("are the Android app, the Android widget, and the iPhone app", () => {
+    expect(LANDING_ROADMAP_IDS).toEqual(["android_app", "android_widget", "iphone_app"]);
     for (const id of LANDING_ROADMAP_IDS) expect(roadmapItem(id).id).toBe(id);
   });
 });

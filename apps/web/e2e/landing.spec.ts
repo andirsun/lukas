@@ -181,22 +181,25 @@ const ROADMAP = {
     titlePart: "Lo que viene",
     intro: "Esto es lo que tenemos planeado. Puede cambiar con el tiempo.",
     columns: [
-      { label: "Ya está", items: ["Pruébalo sin cuenta"] },
-      { label: "En construcción", items: ["App web", "Importa tu historial de Budge"] },
+      { label: "Ya está", items: ["App web", "Pruébalo sin cuenta"] },
       {
-        label: "Próximo",
-        items: ["Android: widget con micrófono", "Varios gastos en una frase", "Conecta tu IA"],
+        label: "En construcción",
+        items: [
+          "App para Android",
+          "Android: widget con micrófono",
+          "Importa tu historial de Budge",
+        ],
       },
+      { label: "Próximo", items: ["App para iPhone", "Conecta tu IA", "Cifrado de punta a punta"] },
       {
         label: "Más adelante",
         items: [
-          "App para iPhone",
           "Captura automática de las alertas de tu banco",
           "Importa desde Buddy y otras apps",
         ],
       },
     ],
-    landingItems: ["Android: widget con micrófono", "Varios gastos en una frase", "Conecta tu IA"],
+    landingItems: ["App para Android", "Android: widget con micrófono", "App para iPhone"],
     cta: "Ver el roadmap",
     navLink: "Lo que viene",
     description: /Lo que tenemos planeado para Lukitas/,
@@ -209,30 +212,22 @@ const ROADMAP = {
     titlePart: "What's next",
     intro: "This is what we have planned. It may change over time.",
     columns: [
-      { label: "Live", items: ["Try it without an account"] },
-      { label: "Being built", items: ["Web app", "Import your history from Budge"] },
+      { label: "Live", items: ["Web app", "Try it without an account"] },
       {
-        label: "Next",
+        label: "Being built",
         items: [
+          "Android app",
           "Android: widget with a microphone",
-          "Several expenses in one sentence",
-          "Connect your AI",
+          "Import your history from Budge",
         ],
       },
+      { label: "Next", items: ["iPhone app", "Connect your AI", "End-to-end encryption"] },
       {
         label: "Later",
-        items: [
-          "iPhone app",
-          "Automatic capture of your bank's alerts",
-          "Import from Buddy and other apps",
-        ],
+        items: ["Automatic capture of your bank's alerts", "Import from Buddy and other apps"],
       },
     ],
-    landingItems: [
-      "Android: widget with a microphone",
-      "Several expenses in one sentence",
-      "Connect your AI",
-    ],
+    landingItems: ["Android app", "Android: widget with a microphone", "iPhone app"],
     cta: "See the roadmap",
     navLink: "What's next",
     description: /What we have planned for Lukitas/,
@@ -245,22 +240,28 @@ const ROADMAP = {
     titlePart: "In arrivo",
     intro: "Questo è quello che abbiamo in programma. Può cambiare nel tempo.",
     columns: [
-      { label: "Fatto", items: ["Provala senza account"] },
-      { label: "In costruzione", items: ["App web", "Importa il tuo storico da Budge"] },
+      { label: "Fatto", items: ["App web", "Provala senza account"] },
+      {
+        label: "In costruzione",
+        items: [
+          "App per Android",
+          "Android: widget con microfono",
+          "Importa il tuo storico da Budge",
+        ],
+      },
       {
         label: "Prossimo",
-        items: ["Android: widget con microfono", "Più spese in una frase", "Collega la tua IA"],
+        items: ["App per iPhone", "Collega la tua IA", "Crittografia end-to-end"],
       },
       {
         label: "Più avanti",
         items: [
-          "App per iPhone",
           "Cattura automatica degli avvisi della tua banca",
           "Importa da Buddy e da altre app",
         ],
       },
     ],
-    landingItems: ["Android: widget con microfono", "Più spese in una frase", "Collega la tua IA"],
+    landingItems: ["App per Android", "Android: widget con microfono", "App per iPhone"],
     cta: "Vedi la roadmap",
     navLink: "In arrivo",
     description: /Cosa abbiamo in programma per Lukitas/,
@@ -273,22 +274,25 @@ const ROADMAP = {
     titlePart: "O que vem aí",
     intro: "Isto é o que temos planeado. Pode mudar com o tempo.",
     columns: [
-      { label: "Já está", items: ["Experimenta sem conta"] },
-      { label: "Em construção", items: ["App web", "Importa o teu histórico do Budge"] },
+      { label: "Já está", items: ["App web", "Experimenta sem conta"] },
+      {
+        label: "Em construção",
+        items: [
+          "App para Android",
+          "Android: widget com microfone",
+          "Importa o teu histórico do Budge",
+        ],
+      },
       {
         label: "A seguir",
-        items: ["Android: widget com microfone", "Várias despesas numa frase", "Liga a tua IA"],
+        items: ["App para iPhone", "Liga a tua IA", "Encriptação ponta a ponta"],
       },
       {
         label: "Mais à frente",
-        items: [
-          "App para iPhone",
-          "Captura automática dos alertas do teu banco",
-          "Importa do Buddy e de outras apps",
-        ],
+        items: ["Captura automática dos alertas do teu banco", "Importa do Buddy e de outras apps"],
       },
     ],
-    landingItems: ["Android: widget com microfone", "Várias despesas numa frase", "Liga a tua IA"],
+    landingItems: ["App para Android", "Android: widget com microfone", "App para iPhone"],
     cta: "Ver o roadmap",
     navLink: "O que vem aí",
     description: /O que temos planeado para Lukitas/,
