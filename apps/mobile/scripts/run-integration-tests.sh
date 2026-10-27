@@ -5,16 +5,19 @@
 #
 #   apps/mobile/scripts/run-integration-tests.sh [-d <device>]      (default: emulator-5554)
 #
-# Each file is its own `flutter test` run, because some need the phone in a state of their own: the
-# two notice tests need the notification permission not given, then given, and the others need it
-# given, or the notification question covers the screen. The emulator reaches
+# Three `flutter test` runs, each one build of the app (a build and install takes longer than most
+# files' tests): integration_test/suites_test.dart, every file that needs the notification permission
+# given (or the notification question covers the screen), and the two notice tests, which need it
+# not given, then given. suites_test.dart starts each file from what a fresh install has, with an
+# address of its own (below). The emulator reaches
 # the host at 10.0.2.2. voice_engine_test.dart is not here: it needs the voice models served by a
 # stand-in (setup.md) and skips itself without them.
 #
 # The API allows 5 code requests per 10 minutes from one address, and the emulator is one address for
 # every file. So each run is a client of its own, as each browser is in the web's e2e suite
-# (apps/web/e2e/helpers.ts): it is given a made-up address (--dart-define=LUKITAS_CLIENT_IP), which a
-# debug build sends as x-forwarded-for and the dev stack counts. A release build never sends it, and
+# (apps/web/e2e/helpers.ts): it is given a made-up address (--dart-define=LUKITAS_CLIENT_IP, and
+# suites_test.dart a new one per file), which a debug build sends as x-forwarded-for and the dev
+# stack counts. A release build never sends it, and
 # the API's limits are as they are. Runs every file even when one fails, and exits 1 if any did.
 set -uo pipefail
 
@@ -71,19 +74,7 @@ run() { # run <granted|revoked> <label> <flutter test args...>
 # Any debug build to start from (the first install); each run builds its own over it.
 [ -f "$apk" ] || flutter build apk --debug
 
-run granted "feedback" integration_test/feedback_test.dart
-run granted "settings" integration_test/settings_test.dart
-run granted "add" integration_test/add_test.dart
-run granted "budgets" integration_test/budgets_test.dart
-run granted "categories" integration_test/categories_test.dart
-run granted "recurring" integration_test/recurring_test.dart
-run granted "import" integration_test/import_test.dart
-run granted "export" integration_test/export_test.dart
-run granted "delete account" integration_test/delete_account_test.dart
-run granted "welcome" integration_test/welcome_test.dart
-run granted "capture" integration_test/capture_test.dart
-run granted "entry" integration_test/entry_test.dart
-run granted "widget" integration_test/widget_test.dart
+run granted "suites" integration_test/suites_test.dart
 # Not given -> asked once; given -> the notice goes out.
 run revoked "notices: asked once" integration_test/notices_test.dart --plain-name "a guest who has not been asked"
 run granted "notices: Hoy vence" integration_test/notices_test.dart --plain-name "Hoy vence"

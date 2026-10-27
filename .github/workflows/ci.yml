@@ -197,6 +197,48 @@ jobs:
             echo "::error::lib/api/gen is stale: run apps/mobile/scripts/gen-api.sh and commit it."
             exit 1
           fi
+      # The release scripts' own tests (version scheme, certificate fingerprint format) and the
+      # F-Droid metadata's limits (title, descriptions, changelogs, screenshots).
+      - run: scripts/test-release.sh
+      - run: scripts/check-fastlane.sh
+
+  # The Android app's builds, beside the quick checks above (each took as long as the other, one
+  # after the other): no Google dependencies, the debug build and the Kotlin tests, and the release
+  # as scripts/release.sh makes it. Same filter, so it is skipped (which counts as passing) when
+  # nothing the app depends on changed.
+  mobile-build:
+    needs: mobile-changes
+    if: needs.mobile-changes.outputs.mobile == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: mobile-build-${{ github.ref }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Read the pinned Flutter version
+        id: flutter-version
+        run: echo "version=$(cat .flutter-version)" >> "$GITHUB_OUTPUT"
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: ${{ steps.flutter-version.outputs.version }}
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-build-${{ runner.os }}-${{ hashFiles('apps/mobile/android/**/*.gradle*', 'apps/mobile/android/gradle/wrapper/gradle-wrapper.properties', 'apps/mobile/pubspec.lock') }}
+          restore-keys: gradle-build-${{ runner.os }}-
       # No Google Play Services, Firebase, ML Kit, Play Core, ARCore… in any variant's resolved
       # dependencies or in the Gradle build files; then the same check, probed end to end on a copy
       # of the app with banned dependencies added.
@@ -214,16 +256,6 @@ jobs:
           name: kotlin-test-reports
           path: apps/mobile/build/app/reports/tests
           retention-days: 7
-      # The release scripts' own tests (version scheme, certificate fingerprint format) and the
-      # F-Droid metadata's limits (title, descriptions, changelogs, screenshots).
-      - run: scripts/test-release.sh
-      - run: scripts/check-fastlane.sh
-      # The release APK (signed with the runner's debug key, only to inspect it) asks for INTERNET
-      # and for no permission nobody chose.
-      - run: flutter build apk --release
-      - run: scripts/check-permissions.sh
-      # About can list a licence for every Dart package (Flutter collects them into NOTICES.Z).
-      - run: scripts/check-licenses.sh
       # scripts/release.sh end to end on this runner, with a key made up for the occasion (the real
       # one lives only on the founder's Mac and never reaches CI): unsigned split build, apksigner,
       # verification, and the fingerprint in the ANDROID_CERT_SHA256 format. Last, because it cleans.
@@ -239,6 +271,13 @@ jobs:
             -dname "CN=Lukitas CI throwaway" -storepass:env LUKITAS_KEYSTORE_PASSWORD
           scripts/release.sh --out "$RUNNER_TEMP/dist"
           rm -f "$LUKITAS_KEYSTORE"
+      # The release APK release.sh just signed asks for INTERNET and for no permission nobody chose,
+      # and About can list a licence for every Dart package (Flutter collects them into NOTICES.Z).
+      - name: The release APK's permissions and licences
+        run: |
+          apk="$(ls "$RUNNER_TEMP"/dist/*/lukitas-*-arm64-v8a.apk)"
+          scripts/check-permissions.sh --apk "$apk"
+          scripts/check-licenses.sh --apk "$apk"
 
   # The Android app on an emulator, against the dev stack (docs/mobile/setup.md, "Integration tests
   # against the dev stack"). A job of its own: it takes longest, and a slow emulator should not hold
