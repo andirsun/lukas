@@ -196,6 +196,7 @@ const ROADMAP = {
         items: [
           "Captura automática de las alertas de tu banco",
           "Importa desde Buddy y otras apps",
+          "Sin servidor central",
         ],
       },
     ],
@@ -224,7 +225,11 @@ const ROADMAP = {
       { label: "Next", items: ["iPhone app", "Connect your AI", "End-to-end encryption"] },
       {
         label: "Later",
-        items: ["Automatic capture of your bank's alerts", "Import from Buddy and other apps"],
+        items: [
+          "Automatic capture of your bank's alerts",
+          "Import from Buddy and other apps",
+          "No central server",
+        ],
       },
     ],
     landingItems: ["Android app", "Android: widget with a microphone", "iPhone app"],
@@ -258,6 +263,7 @@ const ROADMAP = {
         items: [
           "Cattura automatica degli avvisi della tua banca",
           "Importa da Buddy e da altre app",
+          "Senza server centrale",
         ],
       },
     ],
@@ -289,7 +295,11 @@ const ROADMAP = {
       },
       {
         label: "Mais à frente",
-        items: ["Captura automática dos alertas do teu banco", "Importa do Buddy e de outras apps"],
+        items: [
+          "Captura automática dos alertas do teu banco",
+          "Importa do Buddy e de outras apps",
+          "Sem servidor central",
+        ],
       },
     ],
     landingItems: ["App para Android", "Android: widget com microfone", "App para iPhone"],

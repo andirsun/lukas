@@ -79,6 +79,10 @@
       "import_others": {
         "title": "Importa desde Buddy y otras apps",
         "body": "Más formas de traer tu historial."
+      },
+      "no_central_server": {
+        "title": "Sin servidor central",
+        "body": "Tus datos se sincronizan entre tus dispositivos sin depender de un servidor nuestro."
       }
     }
   },
