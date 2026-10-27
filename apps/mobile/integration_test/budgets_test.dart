@@ -45,6 +45,27 @@ Future<void> _pumpUntilGone(
   throw TestFailure('Timed out waiting for $finder to go');
 }
 
+/// Waits for [finder], scrolling the page down while it is not built yet: a new account starts
+/// with the eight suggested categories, so one made by the test comes after them, below the fold.
+Future<void> _scrollUntil(
+  WidgetTester tester,
+  Finder finder, {
+  Duration timeout = const Duration(seconds: 30),
+}) async {
+  final page = find.byWidgetPredicate(
+    (w) => w is Scrollable && w.axisDirection == AxisDirection.down,
+  );
+  final end = DateTime.now().add(timeout);
+  while (DateTime.now().isBefore(end)) {
+    await tester.pump(const Duration(milliseconds: 200));
+    if (finder.evaluate().isNotEmpty) return;
+    if (page.evaluate().isNotEmpty) {
+      await tester.drag(page.first, const Offset(0, -300), warnIfMissed: false);
+    }
+  }
+  throw TestFailure('Timed out waiting for $finder');
+}
+
 Future<void> _reveal(WidgetTester tester, Finder finder) async {
   // On a short phone a row or button can sit under the bottom bar: scroll it well into view first.
   final element = tester.element(finder.first);
@@ -95,7 +116,7 @@ void main() {
           .byWidgetPredicate((w) => w is Text && (w.data == 'Categorías' || w.data == 'Categories'))
           .first,
     );
-    await _pumpUntil(tester, find.text(name));
+    await _scrollUntil(tester, find.text(name));
     await _reveal(tester, find.text(name));
     await tester.tap(find.text(name).first);
     await _tap(tester, 'detail.changeBudget');
