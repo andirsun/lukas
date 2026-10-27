@@ -69,16 +69,15 @@ Future<void> _startAsGuest(WidgetTester tester) async {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('a guest who has not been asked is asked once, with one sentence on why', (tester) async {
+  testWidgets('a guest who has not been asked is asked once, with one sentence on why', (
+    tester,
+  ) async {
     if (await _platform.permission() != NoticePermission.askable) {
       fail('Needs the notification permission not given: adb shell pm revoke … POST_NOTIFICATIONS');
     }
     await _startAsGuest(tester);
     await _pumpUntil(tester, find.byKey(const Key('notices.ask')));
-    expect(
-      tester.widget<Text>(find.byKey(const Key('notices.askWhy'))).data,
-      contains('45'),
-    );
+    expect(tester.widget<Text>(find.byKey(const Key('notices.askWhy'))).data, contains('45'));
     // The question is a sheet: let it finish sliding in before pressing in it.
     await tester.pump(const Duration(milliseconds: 500));
     // "Ahora no": Android's own prompt is not shown, and the question is not asked again.
@@ -91,7 +90,9 @@ void main() {
     await SessionStore().clear();
   });
 
-  testWidgets('Hoy vence… posts one notice for what is due today, and tapping it opens home', (tester) async {
+  testWidgets('Hoy vence… posts one notice for what is due today, and tapping it opens home', (
+    tester,
+  ) async {
     if (await _platform.permission() != NoticePermission.granted) {
       fail('Needs the notification permission: adb shell pm grant … POST_NOTIFICATIONS');
     }
@@ -147,7 +148,9 @@ void main() {
     }
 
     expect(await _test.invokeMethod<String>('runDueNotice'), 'posted');
-    expect(await _test.invokeMethod<List<Object?>>('activeNotices'), ['Hoy vencen Arriendo y Spotify']);
+    expect(await _test.invokeMethod<List<Object?>>('activeNotices'), [
+      'Hoy vencen Arriendo y Spotify',
+    ]);
 
     // Tapping it from anywhere in the app comes back to home.
     final context = tester.element(find.byType(HomeScreen));
@@ -164,7 +167,9 @@ void main() {
     // Signing out takes the notice off the shade: it names this person's payments. (Sent by the
     // test, the tap leaves it there; tapped by hand, the shade already took it.)
     if (!_tapByHand) {
-      expect(await _test.invokeMethod<List<Object?>>('activeNotices'), ['Hoy vencen Arriendo y Spotify']);
+      expect(await _test.invokeMethod<List<Object?>>('activeNotices'), [
+        'Hoy vencen Arriendo y Spotify',
+      ]);
     }
     final container = ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
     await container.read(sessionProvider.notifier).signOut(discardGuest: true);

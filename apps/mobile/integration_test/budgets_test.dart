@@ -111,11 +111,8 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     // Categorías (Categories), the category, its detail.
-    await tester.tap(
-      find
-          .byWidgetPredicate((w) => w is Text && (w.data == 'Categorías' || w.data == 'Categories'))
-          .first,
-    );
+    // The tab by its key: the account menu's own Categorías link is also in the tree.
+    await _tap(tester, 'home.tab.budgets');
     await _scrollUntil(tester, find.text(name));
     await _reveal(tester, find.text(name));
     await tester.tap(find.text(name).first);

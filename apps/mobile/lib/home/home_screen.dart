@@ -496,7 +496,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       position: _thumb,
                       options: [
                         SegmentOption(HomeView.transactions, l10n.homeMovements),
-                        SegmentOption(HomeView.budgets, l10n.homeBudgetsTab),
+                        SegmentOption(
+                          HomeView.budgets,
+                          l10n.homeBudgetsTab,
+                          key: const Key('home.tab.budgets'),
+                        ),
                       ],
                       onChanged: _selectView,
                     ),
