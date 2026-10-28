@@ -354,15 +354,20 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     _from = _dragY.value;
     _height = (_panelKey.currentContext?.size?.height ?? 1).clamp(1, double.infinity);
     _armed = false;
-    setState(() => _dragging = true);
     return true;
   }
 
   /// Upward, where the content under the finger can scroll, it scrolls: the sheet stays.
+  ///
+  /// The content stops scrolling only from here, once the drag is the sheet's: stopped as the
+  /// finger comes down, the scroll view drops its own recognizer on the next frame, before the
+  /// drag has an axis, and an upward drag that is handed back to it finds none (on a phone, where a
+  /// frame is drawn between the finger's moves).
   bool _onLock(double delta) {
     if (delta < 0 && _scroll.hasClients && _scroll.position.maxScrollExtent - _scroll.offset > 1) {
       return false;
     }
+    setState(() => _dragging = true);
     return true;
   }
 

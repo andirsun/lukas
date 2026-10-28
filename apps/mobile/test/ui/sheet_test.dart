@@ -250,6 +250,32 @@ void main() {
     expect(_top(t), top, reason: 'the sheet stays where it is');
   });
 
+  // On a phone frames are drawn between the finger's moves, so whatever the sheet does on the touch
+  // going down is laid out before the drag decides its axis (`t.drag` sends the moves at once).
+  for (final footer in [true, false]) {
+    testWidgets('a drag up scrolls it with frames between the moves, as on a phone '
+        '(${footer ? 'with' : 'without'} a footer)', (t) async {
+      await _open(t, opener: _Opener(rows: 40, footer: footer ? const [Text('PIE')] : null));
+      final top = _top(t);
+      final before = t.getTopLeft(find.text('Fila 3')).dy;
+      final finger = await t.startGesture(t.getCenter(find.text('Fila 3')));
+      await t.pump(const Duration(milliseconds: 16));
+      for (var i = 0; i < 15; i++) {
+        await finger.moveBy(const Offset(0, -20));
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      await finger.up();
+      await t.pumpAndSettle();
+      expect(
+        t.getTopLeft(find.text('Fila 3')).dy,
+        lessThan(before - 200),
+        reason: 'the content scrolls',
+      );
+      // Without a footer the title scrolls with the rest.
+      if (footer) expect(_top(t), top, reason: 'the sheet stays where it is');
+    });
+  }
+
   testWidgets('without a footer, a drag up on content taller than the sheet scrolls it', (t) async {
     await _open(t, opener: const _Opener(rows: 40));
     final before = t.getTopLeft(find.text('Fila 3')).dy;
