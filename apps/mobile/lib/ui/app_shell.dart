@@ -286,6 +286,10 @@ class AppShell extends StatelessWidget {
       child: PageBackground(
         child: Scaffold(
           backgroundColor: Colors.transparent,
+          // The keyboard belongs to the sheet over the page (it lifts itself by the inset): the page
+          // behind keeps its whole height, or its list stays cut off at the keyboard's top once a
+          // save closes the sheet and the keyboard with it.
+          resizeToAvoidBottomInset: false,
           // The content runs under the bar: what scrolls past it is hidden by it, not cut off above.
           extendBody: true,
           // Tight: a short screen is as tall as the page, as `min-h-dvh` makes it.
