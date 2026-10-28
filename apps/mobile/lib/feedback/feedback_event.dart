@@ -51,6 +51,11 @@ enum FeedbackEvent {
 
   /// A sheet slid all the way down and out: it shuts, like a drawer pushed home.
   sheetClosed,
+
+  /// Análisis's charts swept into figures (the first ones, or another period's, month's or kind's):
+  /// a wheel spinning down, one tick per notch as it slows, and a click as it stops where the
+  /// figures settle.
+  wheelSpun,
 }
 
 /// One step of the Android haptic composition: a `PRIMITIVE_CLICK`, `PRIMITIVE_TICK`,
@@ -134,6 +139,28 @@ const hapticPatterns = <FeedbackEvent, HapticPattern>{
     [HapticPrimitive('thud', 0.7), HapticPrimitive('lowTick', 0.35, delayMs: 50)],
   ),
   FeedbackEvent.sheetClosed: HapticPattern([16], [HapticPrimitive('thud', 0.5)]),
+  // The charts' sweep (`durationHop`, 520 ms, easeOut) as a wheel with 12 notches: a tick as it
+  // starts and as each notch passes, further apart as it slows (the times easeOut crosses each
+  // twelfth), and a full click where it stops. Each pause is the gap after an 8 ms tick; the ticks
+  // are firm (it is a heavy wheel) and soften a little as it slows.
+  FeedbackEvent.wheelSpun: HapticPattern(
+    [8, 18, 8, 20, 8, 21, 8, 22, 8, 24, 8, 25, 8, 27, 8, 30, 8, 34, 8, 39, 8, 50, 8, 114, 20],
+    [
+      HapticPrimitive('tick', 0.85),
+      HapticPrimitive('tick', 0.85, delayMs: 18),
+      HapticPrimitive('tick', 0.85, delayMs: 20),
+      HapticPrimitive('tick', 0.8, delayMs: 21),
+      HapticPrimitive('tick', 0.8, delayMs: 22),
+      HapticPrimitive('tick', 0.8, delayMs: 24),
+      HapticPrimitive('tick', 0.75, delayMs: 25),
+      HapticPrimitive('tick', 0.75, delayMs: 27),
+      HapticPrimitive('tick', 0.75, delayMs: 30),
+      HapticPrimitive('tick', 0.7, delayMs: 34),
+      HapticPrimitive('tick', 0.7, delayMs: 39),
+      HapticPrimitive('tick', 0.65, delayMs: 50),
+      HapticPrimitive('click', 1, delayMs: 114),
+    ],
+  ),
 };
 
 /// The web's sound files (assets/sounds, with the licence note in its README).

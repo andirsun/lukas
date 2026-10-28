@@ -43,6 +43,7 @@ class CategoryDonut extends StatelessWidget {
     required this.current,
     required this.currency,
     required this.order,
+    this.onSpin,
   });
 
   /// Totals per category; null while the first one loads.
@@ -61,6 +62,9 @@ class CategoryDonut extends StatelessWidget {
   final String current;
   final String currency;
   final int order;
+
+  /// Called as the donut sweeps into new figures (the screen makes it felt as a wheel).
+  final VoidCallback? onSpin;
 
   @override
   Widget build(BuildContext context) {
@@ -152,6 +156,7 @@ class CategoryDonut extends StatelessWidget {
                             ],
                             animate: !reduce,
                             duration: LukitasTokens.durationHop,
+                            onSweep: onSpin,
                           ),
                           _Centre(
                             label: shownKind == InsightsKind.expense

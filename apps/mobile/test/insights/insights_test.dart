@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lukitas/feedback/feedback.dart';
 import 'package:lukitas/home/home_controller.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
@@ -17,6 +18,7 @@ import 'package:lukitas/theme/theme.dart';
 import 'package:lukitas/ui/month_picker.dart';
 import 'package:lukitas/ui/segmented_control.dart';
 
+import '../feedback/fakes.dart';
 import '../home/fakes.dart';
 import '../home/fixtures.dart';
 import '../home/home_harness.dart' show testNow;
@@ -173,6 +175,57 @@ void main() {
         tester.getSemantics(find.text('Análisis').last).flagsCollection.isSelected.name,
         'isTrue',
       );
+    });
+  });
+
+  group('the charts turn like a wheel', () {
+    Future<(Env, FakeFeedbackPlatform)> pumpFelt(WidgetTester tester, {bool reduce = false}) async {
+      final platform = FakeFeedbackPlatform();
+      final env = await pumpInsights(
+        tester,
+        location: '/insights',
+        reduceMotion: reduce,
+        overrides: [feedbackPlatformProvider.overrideWithValue(platform)],
+      );
+      return (env, platform);
+    }
+
+    List<HapticPattern> spins(FakeFeedbackPlatform platform) => [
+      for (final p in platform.haptics)
+        if (identical(p, hapticPatterns[FeedbackEvent.wheelSpun])) p,
+    ];
+
+    testInsights(
+      'opening Análisis spins the wheel once, though the donut and the trend both move',
+      (tester) async {
+        final (_, platform) = await pumpFelt(tester);
+        expect(spins(platform), hasLength(1));
+      },
+    );
+
+    testInsights('each new span spins it again, once', (tester) async {
+      final (_, platform) = await pumpFelt(tester);
+      for (final span in ['3 meses', '6 meses', '1 mes']) {
+        platform.haptics.clear();
+        await tester.tap(option<int>(span));
+        await tester.pumpAndSettle();
+        expect(spins(platform), hasLength(1), reason: span);
+      }
+    });
+
+    testInsights('the same span again moves nothing, and spins nothing', (tester) async {
+      final (_, platform) = await pumpFelt(tester);
+      platform.haptics.clear();
+      await tester.tap(option<int>('1 mes'));
+      await tester.pumpAndSettle();
+      expect(spins(platform), isEmpty);
+    });
+
+    testInsights('with reduced motion the charts do not sweep, so nothing spins', (tester) async {
+      final (_, platform) = await pumpFelt(tester, reduce: true);
+      await tester.tap(option<int>('3 meses'));
+      await tester.pumpAndSettle();
+      expect(spins(platform), isEmpty);
     });
   });
 

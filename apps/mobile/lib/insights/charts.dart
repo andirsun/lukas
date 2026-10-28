@@ -28,12 +28,17 @@ class DonutChart extends StatefulWidget {
     required this.size,
     required this.animate,
     required this.duration,
+    this.onSweep,
   });
 
   final List<DonutSlice> slices;
   final double size;
   final bool animate;
   final Duration duration;
+
+  /// Called as an animated sweep starts (the first figures, or new ones): not without [animate],
+  /// nor when the figures come back the same.
+  final VoidCallback? onSweep;
 
   @override
   State<DonutChart> createState() => _DonutChartState();
@@ -58,6 +63,7 @@ class _DonutChartState extends State<DonutChart> with SingleTickerProviderStateM
     super.initState();
     if (widget.animate) {
       _controller.forward();
+      widget.onSweep?.call();
     } else {
       _controller.value = 1;
     }
@@ -76,6 +82,7 @@ class _DonutChartState extends State<DonutChart> with SingleTickerProviderStateM
     _geometry = next;
     if (widget.animate) {
       _controller.forward(from: 0);
+      widget.onSweep?.call();
     } else {
       _controller.value = 1;
     }
@@ -186,6 +193,7 @@ class TrendBars extends StatefulWidget {
     required this.animate,
     required this.duration,
     required this.formatTick,
+    this.onSweep,
   });
 
   final List<TrendPoint> points;
@@ -193,6 +201,10 @@ class TrendBars extends StatefulWidget {
   final bool animate;
   final Duration duration;
   final String Function(int cents) formatTick;
+
+  /// Called as the bars start to grow into new figures: not without [animate], nor when the
+  /// figures come back the same.
+  final VoidCallback? onSweep;
 
   @override
   State<TrendBars> createState() => _TrendBarsState();
@@ -215,6 +227,7 @@ class _TrendBarsState extends State<TrendBars> with SingleTickerProviderStateMix
     _controller = AnimationController(vsync: this, duration: _total);
     if (widget.animate) {
       _controller.forward();
+      widget.onSweep?.call();
     } else {
       _controller.value = 1;
     }
@@ -227,6 +240,7 @@ class _TrendBarsState extends State<TrendBars> with SingleTickerProviderStateMix
     _from = _layout;
     if (widget.animate) {
       _controller.forward(from: 0);
+      widget.onSweep?.call();
     } else {
       _controller.value = 1;
     }
