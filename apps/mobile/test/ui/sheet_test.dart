@@ -276,6 +276,64 @@ void main() {
     });
   }
 
+  // Scrolled down, a drag down scrolls back to the top first; the same drag, still going down once
+  // nothing is left above, pulls the sheet, and let go far enough it closes.
+  for (final footer in [true, false]) {
+    final label = footer ? 'with' : 'without';
+
+    Future<TestGesture> scrolledDown(WidgetTester t) async {
+      await _open(t, opener: _Opener(rows: 40, footer: footer ? const [Text('PIE')] : null));
+      await t.drag(find.text('Fila 6'), const Offset(0, -300));
+      await t.pumpAndSettle();
+      final finger = await t.startGesture(t.getCenter(find.text('Fila 9')));
+      await t.pump(const Duration(milliseconds: 16));
+      return finger;
+    }
+
+    testWidgets('a drag down past the content\'s top pulls the sheet and closes it '
+        '($label a footer)', (t) async {
+      final finger = await scrolledDown(t);
+      for (var i = 0; i < 30; i++) {
+        await finger.moveBy(const Offset(0, 20));
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      await finger.up();
+      await t.pumpAndSettle();
+      expect(find.text('Agregar gasto'), findsNothing);
+    });
+
+    testWidgets('a drag down that ends before the content\'s top only scrolls it '
+        '($label a footer)', (t) async {
+      final finger = await scrolledDown(t);
+      final before = t.getTopLeft(find.text('Fila 9')).dy;
+      for (var i = 0; i < 5; i++) {
+        await finger.moveBy(const Offset(0, 20));
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      await finger.up();
+      await t.pumpAndSettle();
+      expect(find.text('Agregar gasto'), findsOneWidget);
+      expect(t.getTopLeft(find.text('Fila 9')).dy, greaterThan(before + 60));
+    });
+
+    testWidgets('pulled from the content\'s top and brought back up, it springs back '
+        '($label a footer)', (t) async {
+      final finger = await scrolledDown(t);
+      for (var i = 0; i < 20; i++) {
+        await finger.moveBy(const Offset(0, 20));
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      for (var i = 0; i < 6; i++) {
+        await finger.moveBy(const Offset(0, -20));
+        await t.pump(const Duration(milliseconds: 16));
+      }
+      await t.pump(const Duration(milliseconds: 300));
+      await finger.up();
+      await t.pumpAndSettle();
+      expect(find.text('Agregar gasto'), findsOneWidget);
+    });
+  }
+
   testWidgets('without a footer, a drag up on content taller than the sheet scrolls it', (t) async {
     await _open(t, opener: const _Opener(rows: 40));
     final before = t.getTopLeft(find.text('Fila 3')).dy;

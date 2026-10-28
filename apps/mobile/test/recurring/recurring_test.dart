@@ -468,6 +468,31 @@ void main() {
     });
   });
 
+  group('the sheet', () {
+    testWidgets('scrolled down, a drag back past its top goes on to pull it closed', (
+      tester,
+    ) async {
+      await pumpRecurring(tester);
+      await openNew(tester);
+      expect(find.text('Nuevo recurrente'), findsOneWidget);
+      final caption = find.text('Categoría');
+      await tester.drag(caption, const Offset(0, -300));
+      await tester.pumpAndSettle();
+      final scrolled = Scrollable.of(tester.element(caption)).position.pixels;
+      expect(scrolled, greaterThan(0));
+
+      // One finger: back up the content, and on past its top, down the screen.
+      final gesture = await tester.startGesture(tester.getCenter(caption));
+      for (var i = 0; i < 40; i++) {
+        await gesture.moveBy(const Offset(0, 20));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.text('Nuevo recurrente'), findsNothing);
+    });
+  });
+
   group('editing one', () {
     testBudgets('opens with what it has, and saves without the category it did not change', (
       tester,
