@@ -3,10 +3,11 @@ import {
   firstDay,
   isIsoDate,
   lastDay,
+  monthOf,
   monthSchema,
   type CreateTransaction as NewTransaction,
 } from "@lukas/core";
-import { type Tx, transactions, withUser } from "@lukas/db";
+import { recurrences, type Tx, transactions, withUser } from "@lukas/db";
 import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, type SQL, sql } from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
 import { idempotent } from "../http/idempotency.ts";
@@ -191,19 +192,47 @@ export function transactionRoutes(deps: AppDeps) {
   // A retried batch would save everything twice, so here the key is mandatory.
   app.use("/v1/transactions/batch", idempotent(deps.db, { required: true }));
 
-  /** The one insert path for single and batch create: category check, account lock, currency. */
+  /**
+   * The one insert path for single and batch create: category check, account lock, currency. One
+   * with `repeat` first makes its recurrence and is saved as that rule's occurrence for its month,
+   * so materializing the month finds it there and adds no pending twin; later months get theirs.
+   */
   async function insertTransactions(tx: Tx, userId: string, inputs: NewTransaction[]) {
     for (const categoryId of new Set(inputs.map((i) => i.categoryId))) {
       await requireActiveCategory(tx, categoryId);
     }
-    // Locked like the import's: the currency cannot change under these inserts.
+    // Locked like the import's (and any recurrence write): the currency cannot change under these
+    // inserts, and a read materializing the month waits for the new rule and its first row.
     const account = await defaultAccount(tx, { lock: true });
-    return (await tx
-      .insert(transactions)
-      .values(
-        inputs.map((i) => ({ ...i, userId, accountId: account.id, currency: account.currency })),
-      )
-      .returning()) as TransactionRow[];
+    const values = [];
+    for (const { repeat, ...i } of inputs) {
+      const row = { ...i, userId, accountId: account.id, currency: account.currency };
+      if (!repeat) {
+        values.push(row);
+        continue;
+      }
+      const [rule] = await tx
+        .insert(recurrences)
+        .values({
+          userId,
+          accountId: account.id,
+          name: i.name,
+          amount: i.amount,
+          categoryId: i.categoryId,
+          frequency: repeat.frequency,
+          dayOfMonth: Number(i.date.slice(8, 10)),
+          monthOfYear: repeat.frequency === "yearly" ? Number(i.date.slice(5, 7)) : null,
+          startDate: i.date,
+          endDate: repeat.endDate ?? null,
+        })
+        .returning({ id: recurrences.id });
+      values.push({
+        ...row,
+        recurrenceId: rule?.id ?? null,
+        occurrenceMonth: firstDay(monthOf(i.date)),
+      });
+    }
+    return (await tx.insert(transactions).values(values).returning()) as TransactionRow[];
   }
 
   app.openapi(
@@ -211,6 +240,8 @@ export function transactionRoutes(deps: AppDeps) {
       method: "post",
       path: "/v1/transactions",
       operationId: "createTransaction",
+      description:
+        "With `repeat`, it also makes a recurrence from it (its name, amount, category; its date gives the day, the month of a yearly one and the start) and is that recurrence's occurrence for its month: the following ones come as pending.",
       request: {
         headers: idempotencyKeyHeader({ required: false }),
         body: jsonBody(CreateTransaction),

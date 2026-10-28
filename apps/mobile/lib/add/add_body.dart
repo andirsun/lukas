@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
-import '../api/gen/lukitas_api.dart' show TransactionSuggestion;
+import '../api/gen/lukitas_api.dart'
+    show CreateTransactionRepeatFrequencyEnum, TransactionSuggestion;
 import '../home/home_format.dart' show formatDay;
 import '../home/home_widgets.dart' show QuietSpinner;
 import '../l10n/app_localizations.dart';
@@ -15,7 +16,7 @@ import 'category_picker.dart';
 import 'more_options.dart';
 
 /// The scrolling middle of the sheet: the name with its recent names, the categories, and "Más
-/// opciones" with the date, pending and the note (apps/web/app/features/add-transaction/
+/// opciones" with the date, pending, Repetir and the note (apps/web/app/features/add-transaction/
 /// AddTransactionSheet.tsx, `flex flex-col gap-(--space-2)`).
 class AddBody extends StatelessWidget {
   const AddBody({super.key});
@@ -73,7 +74,14 @@ class AddBody extends StatelessWidget {
             open: session.moreOpen,
             onToggle: session.toggleMore,
             title: l10n.addMoreOptions,
-            summary: '$dateText · ${form.pending ? l10n.pending : l10n.paid}',
+            summary: [
+              dateText,
+              form.pending ? l10n.pending : l10n.paid,
+              if (form.repeat)
+                form.frequency == CreateTransactionRepeatFrequencyEnum.yearly
+                    ? l10n.recurringFormYearly
+                    : l10n.recurringFormMonthly,
+            ].join(' · '),
           ),
           if (session.moreOpen)
             MoreDetails(
@@ -82,6 +90,7 @@ class AddBody extends StatelessWidget {
               note: session.note,
               noteFocus: session.noteFocus,
               onPickDate: session.pickDate,
+              onPickEndDate: session.pickEndDate,
             ),
         ],
       ),

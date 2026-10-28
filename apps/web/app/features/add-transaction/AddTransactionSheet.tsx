@@ -16,6 +16,7 @@ import { Sheet } from "../../ui/Sheet.tsx";
 import { SHORT_QUERY, useMediaQuery } from "../../ui/use-wide-screen.ts";
 import { useTransactionSheet } from "./TransactionSheetProvider.tsx";
 import {
+  type Frequency,
   type Kind,
   type NameChoice,
   useTransactionForm,
@@ -53,7 +54,8 @@ export interface AddTransactionSheetProps {
  * Add or edit a transaction (spec §2.6): expense or income, the amount first on a big keypad (a
  * physical keyboard types too), the optional name with recent names as shortcuts (a shortcut also
  * picks its usual category), category chips (most used first, "Más" for the rest), and in "Más
- * opciones" the date (today in the person's time zone), pending and a note. In pesos, a small
+ * opciones" the date (today in the person's time zone), pending, "Repetir" (adding only: it also
+ * makes a recurrence from it, monthly or yearly with an optional end) and a note. In pesos, a small
  * muted lukas hint follows the amount (§2.6c).
  *
  * Guardar closes the sheet at once; the save itself (optimistic, with a key made when the sheet
@@ -85,6 +87,7 @@ export function AddTransactionSheet({
   const [nameInput, setNameInput] = useState<HTMLInputElement | null>(null);
   const saving = useRef(false);
   const moreId = useId();
+  const endErrorId = useId();
   const chipsLabelId = useId();
 
   // "Ponerle nombre": once the field exists (after the sheet took focus), move focus to it.
@@ -133,6 +136,7 @@ export function AddTransactionSheet({
   const dateText =
     form.date === form.today ? t("today") : form.date ? formatDay(form.date, locale) : "";
   const statusText = form.pending ? tRoot("common.pending") : tRoot("common.paid");
+  const repeatText = form.repeat ? tRoot(`recurring.form.${form.frequency}`) : null;
 
   return (
     <Sheet
@@ -244,6 +248,7 @@ export function AddTransactionSheet({
           <span>{t("more_options")}</span>
           <span className="text-ink-muted">
             {dateText} · {statusText}
+            {repeatText && ` · ${repeatText}`}
           </span>
           <span aria-hidden="true" className="ml-auto">
             {moreOpen ? "▴" : "▾"}
@@ -269,6 +274,54 @@ export function AddTransactionSheet({
             />
             {t("pending_label")}
           </label>
+          {!editing && (
+            <label className="flex min-h-11 items-center gap-(--space-2) text-[14px] font-bold text-ink">
+              <input
+                type="checkbox"
+                className="size-5 accent-brand"
+                checked={form.repeat}
+                onChange={(event) => form.setRepeat(event.target.checked)}
+              />
+              {t("repeat_label")}
+            </label>
+          )}
+          {form.repeat && (
+            // The recurring form's choices that the sheet does not already have: the day, the
+            // month of a yearly one and the start all come from the date.
+            <div className="flex flex-col gap-(--space-2)">
+              <SegmentedControl<Frequency>
+                label={tRoot("recurring.form.frequency_label")}
+                value={form.frequency}
+                options={[
+                  { value: "monthly", label: tRoot("recurring.form.monthly") },
+                  { value: "yearly", label: tRoot("recurring.form.yearly") },
+                ]}
+                onChange={form.setFrequency}
+              />
+              <label className="flex flex-col gap-(--space-1) text-[13px] font-bold text-ink-muted">
+                {tRoot("recurring.form.end_label")}
+                <input
+                  type="date"
+                  className={cx(
+                    "lk-input min-h-11 font-text text-ink",
+                    form.endBeforeDate && "border-over",
+                  )}
+                  value={form.endDate}
+                  min={form.date}
+                  aria-invalid={form.endBeforeDate || undefined}
+                  aria-describedby={form.endBeforeDate ? endErrorId : undefined}
+                  onChange={(event) => form.setEndDate(event.target.value)}
+                />
+              </label>
+              {form.endBeforeDate ? (
+                <p id={endErrorId} role="alert" className="m-0 text-[13px] font-bold text-over">
+                  {t("repeat_end_before")}
+                </p>
+              ) : (
+                <p className="m-0 text-[13px] font-bold text-ink-muted">{t("repeat_hint")}</p>
+              )}
+            </div>
+          )}
           <label className="flex flex-col gap-(--space-1) text-[13px] font-bold text-ink-muted">
             {t("note_label")}
             <textarea

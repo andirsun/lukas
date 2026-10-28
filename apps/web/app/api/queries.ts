@@ -334,13 +334,17 @@ export function useCreateTransaction() {
   return useMutation(
     mutation(
       qc,
-      async ({ input, idempotencyKey = crypto.randomUUID() }: CreateTransactionVars) =>
-        dataOf(
+      async ({ input, idempotencyKey = crypto.randomUUID() }: CreateTransactionVars) => {
+        const created = dataOf(
           await api.POST("/v1/transactions", {
             body: input,
             headers: { "Idempotency-Key": idempotencyKey },
           }),
-        ),
+        );
+        // With "Repetir" it also made a recurrence, which reaches the months it materializes in.
+        if (input.repeat) void settleRecurrences(qc);
+        return created;
+      },
       ({ input }) => ({
         months: [monthOf(input.date)],
         apply: () => optimisticAdd(qc, draftFrom(qc, input)),

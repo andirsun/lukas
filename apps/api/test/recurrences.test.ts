@@ -535,3 +535,109 @@ describe("materializing and removing recurrences race", () => {
     expect(await pending(userId, { categoryId })).toEqual([]);
   });
 });
+
+describe("a transaction saved with repeat", () => {
+  let headers: { authorization: string };
+  let gym: string;
+  const next = addMonths(month, 1);
+  const date = `${month}-05`;
+  const gymIn = async (m: string) =>
+    (
+      (await (await t.request("GET", `/v1/transactions?month=${m}`, { headers })).json()) as {
+        items: Row[];
+      }
+    ).items.filter((i) => i.name === "Gimnasio");
+
+  beforeAll(async () => {
+    headers = (await t.signIn("repeat@lukas.test")).headers;
+    const res = await t.request("POST", "/v1/categories", {
+      headers,
+      body: { name: "salud", kind: "expense", icon: "star", color: "green" },
+    });
+    gym = ((await res.json()) as { id: string }).id;
+  });
+
+  test("makes the recurrence and is its paid occurrence for the month; the next is pending", async () => {
+    const res = await t.request("POST", "/v1/transactions", {
+      headers,
+      body: {
+        name: "Gimnasio",
+        amount: -4000,
+        categoryId: gym,
+        date,
+        repeat: { frequency: "monthly" },
+      },
+    });
+    expect(res.status).toBe(201);
+    const created = (await res.json()) as Row;
+    expect(created).toMatchObject({ status: "paid", source: "app" });
+    const rules = (await (await t.request("GET", "/v1/recurrences", { headers })).json()) as {
+      id: string;
+    }[];
+    expect(rules).toEqual([
+      {
+        id: created.recurrenceId,
+        name: "Gimnasio",
+        amount: -4000,
+        categoryId: gym,
+        frequency: "monthly",
+        dayOfMonth: 5,
+        monthOfYear: null,
+        startDate: date,
+        endDate: null,
+      },
+    ]);
+    expect(await gymIn(month)).toEqual([
+      expect.objectContaining({ id: created.id, status: "paid" }),
+    ]);
+    expect(await gymIn(next)).toEqual([
+      expect.objectContaining({
+        date: `${next}-05`,
+        status: "pending",
+        source: "recurrence",
+        recurrenceId: created.recurrenceId,
+      }),
+    ]);
+  });
+
+  test("a yearly one takes its month from the date and keeps the end", async () => {
+    const end = `${addMonths(month, 24)}-01`;
+    const res = await t.request("POST", "/v1/transactions", {
+      headers,
+      body: {
+        name: "Seguro",
+        amount: -12000,
+        categoryId: gym,
+        date,
+        repeat: { frequency: "yearly", endDate: end },
+      },
+    });
+    const created = (await res.json()) as Row;
+    const rules = (await (await t.request("GET", "/v1/recurrences", { headers })).json()) as {
+      id: string;
+      monthOfYear: number | null;
+      endDate: string | null;
+    }[];
+    expect(rules.find((r) => r.id === created.recurrenceId)).toMatchObject({
+      monthOfYear: Number(month.slice(5, 7)),
+      endDate: end,
+    });
+  });
+
+  test("an end before the date is refused, and nothing is saved", async () => {
+    const before = (await (await t.request("GET", "/v1/recurrences", { headers })).json()) as [];
+    const res = await t.request("POST", "/v1/transactions", {
+      headers,
+      body: {
+        name: "Mal",
+        amount: -100,
+        categoryId: gym,
+        date,
+        repeat: { frequency: "monthly", endDate: `${month}-01` },
+      },
+    });
+    expect(res.status).toBe(422);
+    const after = (await (await t.request("GET", "/v1/recurrences", { headers })).json()) as [];
+    expect(after).toHaveLength(before.length);
+  });
+});

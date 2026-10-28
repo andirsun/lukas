@@ -20,6 +20,9 @@ class FakeAddRepository implements AddRepository {
   /// The Idempotency-Key of every create.
   final keys = <String>[];
 
+  /// What every create sent.
+  final inputs = <CreateTransaction>[];
+
   final _byKey = <String, Transaction>{};
   var _next = 0;
 
@@ -39,6 +42,7 @@ class FakeAddRepository implements AddRepository {
   Future<Transaction> create(CreateTransaction input, {required String idempotencyKey}) async {
     calls.add('create $idempotencyKey ${input.name} ${input.amount}');
     keys.add(idempotencyKey);
+    inputs.add(input);
     final failure = failures.remove('create');
     if (failure != null) throw failure;
     final known = _byKey[idempotencyKey];

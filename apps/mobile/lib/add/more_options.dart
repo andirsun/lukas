@@ -1,9 +1,10 @@
 // "Más opciones" of the web's add sheet (AddTransactionSheet.tsx): the row that opens it
-// (app.css `.lk-more-row`), then the date, pending and the note.
+// (app.css `.lk-more-row`), then the date, pending, Repetir and the note.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../api/gen/lukitas_api.dart' show CreateTransactionRepeatFrequencyEnum;
 import '../l10n/app_localizations.dart';
 import '../theme/surfaces.dart';
 import '../theme/text_styles.dart';
@@ -11,6 +12,7 @@ import '../theme/tokens.g.dart';
 import '../ui/input_box.dart';
 import '../ui/lk_theme.dart';
 import '../ui/pressable.dart';
+import '../ui/segmented_control.dart';
 import 'add_form.dart';
 
 /// `.lk-more-row`: a 44px button with a 2px `control-edge` border on the row colour, holding
@@ -174,6 +176,56 @@ class DateField extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The end date with a way to take it out again: the browser's own date control clears itself, this
+/// one has no such control, so a small button sits at the end of the field once there is a date.
+class ClearableDate extends StatelessWidget {
+  const ClearableDate({
+    super.key,
+    required this.child,
+    required this.clearLabel,
+    required this.clearKey,
+    required this.onClear,
+  });
+
+  final Widget child;
+  final String clearLabel;
+  final Key clearKey;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lkColors;
+    return Stack(
+      children: [
+        child,
+        if (onClear != null)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Pressable(
+              key: clearKey,
+              onPressed: onClear,
+              label: clearLabel,
+              builder: (context, state) => SizedBox(
+                width: 44,
+                height: 44,
+                child: Center(
+                  child: ExcludeSemantics(
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 18,
+                      color: state.focusVisible ? colors.focus : colors.inkMuted,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -375,7 +427,9 @@ class NoteField extends StatelessWidget {
   }
 }
 
-/// The date, pending and note: what "Más opciones" opens.
+/// The date, pending, "Repetir" and the note: what "Más opciones" opens. Repetir (adding only)
+/// shows the recurring form's choices the sheet does not already have: monthly or yearly and an
+/// optional end; the day, the month of a yearly one and the start come from the date.
 class MoreDetails extends StatelessWidget {
   const MoreDetails({
     super.key,
@@ -384,6 +438,7 @@ class MoreDetails extends StatelessWidget {
     required this.note,
     required this.noteFocus,
     required this.onPickDate,
+    required this.onPickEndDate,
   });
 
   final AddForm form;
@@ -391,31 +446,89 @@ class MoreDetails extends StatelessWidget {
   final TextEditingController note;
   final FocusNode noteFocus;
   final VoidCallback onPickDate;
+  final VoidCallback onPickEndDate;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    spacing: LukitasTokens.space2,
-    children: [
-      DateField(
-        key: const Key('add.date'),
-        label: l10n.addDateLabel,
-        date: form.date,
-        locale: l10n.localeName,
-        onTap: onPickDate,
-      ),
-      PendingCheckbox(
-        key: const Key('add.pending'),
-        label: l10n.addPendingLabel,
-        value: form.pending,
-        onChanged: (value) => form.pending = value,
-      ),
-      NoteField(
-        label: l10n.addNoteLabel,
-        controller: note,
-        focusNode: noteFocus,
-        onChanged: form.setNote,
-      ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final colors = context.lkColors;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: LukitasTokens.space2,
+      children: [
+        DateField(
+          key: const Key('add.date'),
+          label: l10n.addDateLabel,
+          date: form.date,
+          locale: l10n.localeName,
+          onTap: onPickDate,
+        ),
+        PendingCheckbox(
+          key: const Key('add.pending'),
+          label: l10n.addPendingLabel,
+          value: form.pending,
+          onChanged: (value) => form.pending = value,
+        ),
+        if (form.editing == null)
+          PendingCheckbox(
+            key: const Key('add.repeat'),
+            label: l10n.addRepeatLabel,
+            value: form.repeat,
+            onChanged: (value) => form.repeat = value,
+          ),
+        if (form.repeat)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: LukitasTokens.space2,
+            children: [
+              SegmentedControl<CreateTransactionRepeatFrequencyEnum>(
+                label: l10n.recurringFormFrequencyLabel,
+                value: form.frequency,
+                onChanged: form.setFrequency,
+                options: [
+                  SegmentOption(
+                    CreateTransactionRepeatFrequencyEnum.monthly,
+                    l10n.recurringFormMonthly,
+                    key: const Key('add.repeat.monthly'),
+                  ),
+                  SegmentOption(
+                    CreateTransactionRepeatFrequencyEnum.yearly,
+                    l10n.recurringFormYearly,
+                    key: const Key('add.repeat.yearly'),
+                  ),
+                ],
+              ),
+              ClearableDate(
+                clearLabel: l10n.recurringFormClearEnd,
+                clearKey: const Key('add.repeat.end.clear'),
+                onClear: form.endDate.isEmpty ? null : () => form.setEndDate(''),
+                child: DateField(
+                  key: const Key('add.repeat.end'),
+                  label: l10n.recurringFormEndLabel,
+                  date: form.endDate,
+                  locale: l10n.localeName,
+                  invalid: form.endBeforeDate,
+                  onTap: onPickEndDate,
+                ),
+              ),
+              Semantics(
+                liveRegion: form.endBeforeDate,
+                child: Text(
+                  form.endBeforeDate ? l10n.addRepeatEndBefore : l10n.addRepeatHint,
+                  key: const Key('add.repeat.note'),
+                  style: LkText.fieldLabel.copyWith(
+                    color: form.endBeforeDate ? colors.over : colors.inkMuted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        NoteField(
+          label: l10n.addNoteLabel,
+          controller: note,
+          focusNode: noteFocus,
+          onChanged: form.setNote,
+        ),
+      ],
+    );
+  }
 }

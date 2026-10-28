@@ -466,6 +466,40 @@ export const MoreOptionsSent: Story = {
 };
 
 /**
+ * "Más opciones" → "Repetir": every year, and the row says so; the save carries the recurrence
+ * (made by the API from this movement, which stays paid). An end before the date is refused.
+ */
+export const MoreOptionsRepeat: Story = {
+  render: (args) => <HomeStage onRequest={args.onRequest} />,
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await hero(canvas);
+    const sheet = await openAdd(canvas);
+    await typeAmount(sheet, "39,9");
+    await pickCategory(sheet, "Supermercado");
+
+    const more = sheet.getByRole("button", { name: /^Más opciones/ });
+    await userEvent.click(more);
+    await userEvent.click(sheet.getByRole("checkbox", { name: "Repetir" }));
+    await userEvent.click(sheet.getByRole("tab", { name: "Cada año" }));
+    await expect(more).toHaveTextContent("Cada año");
+    await expect(sheet.getByText(/Los siguientes llegan como pendientes/)).toBeVisible();
+
+    const end = sheet.getByLabelText("Hasta (opcional)");
+    await userEvent.type(end, "2000-01-01");
+    await expect(sheet.getByRole("alert")).toHaveTextContent("La fecha final va después");
+    await expect(sheet.getByRole("button", { name: "Guardar" })).toBeDisabled();
+    await userEvent.clear(end);
+
+    await userEvent.click(sheet.getByRole("button", { name: "Guardar" }));
+    await toastSaying("Gasto en Supermercado");
+    const sent = posts(args.onRequest)[0]?.[0] ?? "";
+    await expect(sent).toContain('"status":"paid"');
+    await expect(sent).toContain('"repeat":{"frequency":"yearly","endDate":null}');
+  },
+};
+
+/**
  * The same screens in Italian and European Portuguese, at night: the longer words of the tabs, the
  * bottom bar and the sheet's buttons (spec §3), and the mobile parity picture of each.
  */

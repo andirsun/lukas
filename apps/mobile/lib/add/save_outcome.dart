@@ -9,6 +9,7 @@ import '../home/home_controller.dart';
 import '../home/home_repository.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
+import '../recurring/recurring_repository.dart';
 import '../ui/toast.dart';
 import 'add_form.dart';
 
@@ -77,6 +78,10 @@ Future<void> _undoCreated(
 ) async {
   try {
     await container.read(homeProvider.notifier).remove(created);
+    // Saved with "Repetir": the recurrence it made goes too (the movement is already deleted, so
+    // only the pending ones it made after it go with it).
+    final rule = created.recurrenceId;
+    if (rule != null) await container.read(recurringRepositoryProvider).delete(rule);
   } on HomeFailure catch (failure) {
     toasts.say(failure.offline ? l10n.errorNetwork : l10n.errorGeneric, error: true);
     return;

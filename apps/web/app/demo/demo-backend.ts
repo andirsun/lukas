@@ -592,6 +592,23 @@ export function createDemoBackend(seed: DemoSeed, now: () => Date = () => new Da
     const input = valid(createTransactionSchema, body);
     requireActiveCategory(input.categoryId);
     const at = stamp();
+    // "Repetir": its recurrence first, and this row is that rule's occurrence for its month.
+    let rule: RecurrenceRow | null = null;
+    if (input.repeat) {
+      rule = {
+        id: nextId(),
+        name: input.name,
+        amount: input.amount,
+        categoryId: input.categoryId,
+        frequency: input.repeat.frequency,
+        dayOfMonth: Number(input.date.slice(8, 10)),
+        monthOfYear: input.repeat.frequency === "yearly" ? Number(input.date.slice(5, 7)) : null,
+        startDate: input.date,
+        endDate: input.repeat.endDate ?? null,
+        createdAt: at,
+      };
+      state.recurrences.push(rule);
+    }
     const row: TransactionRow = {
       id: nextId(),
       name: input.name,
@@ -601,13 +618,13 @@ export function createDemoBackend(seed: DemoSeed, now: () => Date = () => new Da
       status: input.status,
       note: input.note ?? null,
       categoryId: input.categoryId,
-      recurrenceId: null,
+      recurrenceId: rule?.id ?? null,
       importId: null,
       source: input.source,
       createdAt: at,
       updatedAt: at,
       deleted: false,
-      occurrenceMonth: null,
+      occurrenceMonth: rule ? monthOf(input.date) : null,
     };
     state.transactions.push(row);
     const payload = toTransactionDto(row);

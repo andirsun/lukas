@@ -150,6 +150,8 @@ class _$CreateTransaction extends CreateTransaction {
   final String? note;
   @override
   final CreateTransactionSource_Enum? source_;
+  @override
+  final CreateTransactionRepeat? repeat;
 
   factory _$CreateTransaction([void Function(CreateTransactionBuilder)? updates]) =>
       (CreateTransactionBuilder()..update(updates))._build();
@@ -162,6 +164,7 @@ class _$CreateTransaction extends CreateTransaction {
     this.status,
     this.note,
     this.source_,
+    this.repeat,
   }) : super._();
   @override
   CreateTransaction rebuild(void Function(CreateTransactionBuilder) updates) =>
@@ -180,7 +183,8 @@ class _$CreateTransaction extends CreateTransaction {
         date == other.date &&
         status == other.status &&
         note == other.note &&
-        source_ == other.source_;
+        source_ == other.source_ &&
+        repeat == other.repeat;
   }
 
   @override
@@ -193,6 +197,7 @@ class _$CreateTransaction extends CreateTransaction {
     _$hash = $jc(_$hash, status.hashCode);
     _$hash = $jc(_$hash, note.hashCode);
     _$hash = $jc(_$hash, source_.hashCode);
+    _$hash = $jc(_$hash, repeat.hashCode);
     _$hash = $jf(_$hash);
     return _$hash;
   }
@@ -206,7 +211,8 @@ class _$CreateTransaction extends CreateTransaction {
           ..add('date', date)
           ..add('status', status)
           ..add('note', note)
-          ..add('source_', source_))
+          ..add('source_', source_)
+          ..add('repeat', repeat))
         .toString();
   }
 }
@@ -242,6 +248,10 @@ class CreateTransactionBuilder implements Builder<CreateTransaction, CreateTrans
   CreateTransactionSource_Enum? get source_ => _$this._source_;
   set source_(CreateTransactionSource_Enum? source_) => _$this._source_ = source_;
 
+  CreateTransactionRepeatBuilder? _repeat;
+  CreateTransactionRepeatBuilder get repeat => _$this._repeat ??= CreateTransactionRepeatBuilder();
+  set repeat(CreateTransactionRepeatBuilder? repeat) => _$this._repeat = repeat;
+
   CreateTransactionBuilder() {
     CreateTransaction._defaults(this);
   }
@@ -256,6 +266,7 @@ class CreateTransactionBuilder implements Builder<CreateTransaction, CreateTrans
       _status = $v.status;
       _note = $v.note;
       _source_ = $v.source_;
+      _repeat = $v.repeat?.toBuilder();
       _$v = null;
     }
     return this;
@@ -275,21 +286,34 @@ class CreateTransactionBuilder implements Builder<CreateTransaction, CreateTrans
   CreateTransaction build() => _build();
 
   _$CreateTransaction _build() {
-    final _$result =
-        _$v ??
-        _$CreateTransaction._(
-          name: BuiltValueNullFieldError.checkNotNull(name, r'CreateTransaction', 'name'),
-          amount: BuiltValueNullFieldError.checkNotNull(amount, r'CreateTransaction', 'amount'),
-          categoryId: BuiltValueNullFieldError.checkNotNull(
-            categoryId,
-            r'CreateTransaction',
-            'categoryId',
-          ),
-          date: BuiltValueNullFieldError.checkNotNull(date, r'CreateTransaction', 'date'),
-          status: status,
-          note: note,
-          source_: source_,
-        );
+    _$CreateTransaction _$result;
+    try {
+      _$result =
+          _$v ??
+          _$CreateTransaction._(
+            name: BuiltValueNullFieldError.checkNotNull(name, r'CreateTransaction', 'name'),
+            amount: BuiltValueNullFieldError.checkNotNull(amount, r'CreateTransaction', 'amount'),
+            categoryId: BuiltValueNullFieldError.checkNotNull(
+              categoryId,
+              r'CreateTransaction',
+              'categoryId',
+            ),
+            date: BuiltValueNullFieldError.checkNotNull(date, r'CreateTransaction', 'date'),
+            status: status,
+            note: note,
+            source_: source_,
+            repeat: _repeat?.build(),
+          );
+    } catch (_) {
+      late String _$failedField;
+      try {
+        _$failedField = 'repeat';
+        _repeat?.build();
+      } catch (e) {
+        throw BuiltValueNestedFieldError(r'CreateTransaction', _$failedField, e.toString());
+      }
+      rethrow;
+    }
     replace(_$result);
     return _$result;
   }

@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../add/keypad_input.dart';
-import '../add/more_options.dart' show DateField, FieldLabel;
+import '../add/more_options.dart' show ClearableDate, DateField, FieldLabel;
 import '../api/gen/lukitas_api.dart';
 import '../home/category_look.dart';
 import '../home/home_format.dart';
@@ -513,7 +513,7 @@ class _FormBodyState extends State<_FormBody> {
                   if (picked != null) form.setStart(picked);
                 },
               ),
-              second: _ClearableDate(
+              second: ClearableDate(
                 clearLabel: l10n.recurringFormClearEnd,
                 clearKey: const Key('recurring.end.clear'),
                 onClear: form.endDate.isEmpty ? null : () => form.setEnd(''),
@@ -579,55 +579,6 @@ class _Grid2 extends StatelessWidget {
       Expanded(child: second ?? const SizedBox.shrink()),
     ],
   );
-}
-
-/// The end date with a way to take it out again: the browser's own date control clears itself, this
-/// one has no such control, so a small button sits at the end of the field once there is a date.
-class _ClearableDate extends StatelessWidget {
-  const _ClearableDate({
-    required this.child,
-    required this.clearLabel,
-    required this.clearKey,
-    required this.onClear,
-  });
-
-  final Widget child;
-  final String clearLabel;
-  final Key clearKey;
-  final VoidCallback? onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.lkColors;
-    return Stack(
-      children: [
-        child,
-        if (onClear != null)
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: Pressable(
-              key: clearKey,
-              onPressed: onClear,
-              label: clearLabel,
-              builder: (context, state) => SizedBox(
-                width: 44,
-                height: 44,
-                child: Center(
-                  child: ExcludeSemantics(
-                    child: Icon(
-                      Icons.close_rounded,
-                      size: 18,
-                      color: state.focusVisible ? colors.focus : colors.inkMuted,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
 }
 
 /// A `<select class="lk-input min-h-11">` closed: the chosen text in the field's box, with the

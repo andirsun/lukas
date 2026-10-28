@@ -4,6 +4,7 @@
 
 // ignore_for_file: unused_element
 import 'package:built_collection/built_collection.dart';
+import 'package:lukitas/api/gen/src/model/create_transaction_repeat.dart';
 import 'package:built_value/built_value.dart';
 import 'package:built_value/serializer.dart';
 
@@ -19,6 +20,7 @@ part 'create_transaction.g.dart';
 /// * [status]
 /// * [note]
 /// * [source_]
+/// * [repeat]
 @BuiltValue()
 abstract class CreateTransaction implements Built<CreateTransaction, CreateTransactionBuilder> {
   @BuiltValueField(wireName: r'name')
@@ -43,6 +45,9 @@ abstract class CreateTransaction implements Built<CreateTransaction, CreateTrans
   @BuiltValueField(wireName: r'source')
   CreateTransactionSource_Enum? get source_;
   // enum source_Enum {  app,  web,  widget,  mcp,  };
+
+  @BuiltValueField(wireName: r'repeat')
+  CreateTransactionRepeat? get repeat;
 
   CreateTransaction._();
 
@@ -93,6 +98,13 @@ class _$CreateTransactionSerializer implements PrimitiveSerializer<CreateTransac
       yield serializers.serialize(
         object.source_,
         specifiedType: const FullType(CreateTransactionSource_Enum),
+      );
+    }
+    if (object.repeat != null) {
+      yield r'repeat';
+      yield serializers.serialize(
+        object.repeat,
+        specifiedType: const FullType(CreateTransactionRepeat),
       );
     }
   }
@@ -161,6 +173,14 @@ class _$CreateTransactionSerializer implements PrimitiveSerializer<CreateTransac
           ) as CreateTransactionSource_Enum?;
           if (valueDes == null) continue;
           result.source_ = valueDes;
+          break;
+        case r'repeat':
+          final valueDes = serializers.deserialize(
+            value,
+            specifiedType: const FullType.nullable(CreateTransactionRepeat),
+          ) as CreateTransactionRepeat?;
+          if (valueDes == null) continue;
+          result.repeat.replace(valueDes);
           break;
         default:
           unhandled.add(key);

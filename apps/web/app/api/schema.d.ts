@@ -125,6 +125,7 @@ export interface paths {
         };
         get: operations["listTransactions"];
         put?: never;
+        /** @description With `repeat`, it also makes a recurrence from it (its name, amount, category; its date gives the day, the month of a yearly one and the start) and is that recurrence's occurrence for its month: the following ones come as pending. */
         post: operations["createTransaction"];
         delete?: never;
         options?: never;
@@ -481,6 +482,11 @@ export interface components {
              * @enum {string}
              */
             source?: "app" | "web" | "widget" | "mcp";
+            repeat?: {
+                /** @enum {string} */
+                frequency: "monthly" | "yearly";
+                endDate?: string | null;
+            };
         };
         TransactionList: {
             items: components["schemas"]["Transaction"][];
