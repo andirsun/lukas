@@ -43,6 +43,7 @@ export const ROADMAP_ITEMS: readonly RoadmapItem[] = [
   item("e2e_encryption", "next", "🔒"),
   item("bank_alerts", "later", "🏦"),
   item("import_others", "later", "📂"),
+  item("offline", "later", "📴"),
   item("no_central_server", "later", "🔗"),
 ];
 

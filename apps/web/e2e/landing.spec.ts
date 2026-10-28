@@ -196,6 +196,7 @@ const ROADMAP = {
         items: [
           "Captura automática de las alertas de tu banco",
           "Importa desde Buddy y otras apps",
+          "Funciona sin conexión",
           "Sin servidor central",
         ],
       },
@@ -228,6 +229,7 @@ const ROADMAP = {
         items: [
           "Automatic capture of your bank's alerts",
           "Import from Buddy and other apps",
+          "Works offline",
           "No central server",
         ],
       },
@@ -263,6 +265,7 @@ const ROADMAP = {
         items: [
           "Cattura automatica degli avvisi della tua banca",
           "Importa da Buddy e da altre app",
+          "Funziona offline",
           "Senza server centrale",
         ],
       },
@@ -298,6 +301,7 @@ const ROADMAP = {
         items: [
           "Captura automática dos alertas do teu banco",
           "Importa do Buddy e de outras apps",
+          "Funciona sem ligação",
           "Sem servidor central",
         ],
       },
