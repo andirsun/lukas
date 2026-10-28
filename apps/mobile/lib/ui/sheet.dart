@@ -26,8 +26,8 @@ import 'toast.dart';
 ///   same path as "Cerrar").
 /// - The drag follows the finger (resisting upward); let go past a quarter of its height, or
 ///   flicked down, it closes, otherwise it springs back. Taps stay taps, sideways swipes stay
-///   sideways, an inner area scrolled away from its top scrolls back first, and a key a drag
-///   starts on never types.
+///   sideways, an inner area scrolled away from its top scrolls back first (and the same drag,
+///   once nothing is left above, pulls the sheet), and a key a drag starts on never types.
 /// - It slides over `--sheet` (260 ms) with the web's deceleration; under the system's "remove
 ///   animations" it only fades.
 /// - While open it hosts the toasts ([ToastSlot]).
@@ -400,6 +400,71 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     _springBack();
   }
 
+  // -- the content's drag, past its top ---------------------------------------------------------
+
+  /// The finger on the sheet, as the content's scroll sees it: a drag the sheet stepped aside for
+  /// (the content was scrolled away from its top) can still pull the sheet once nothing is left
+  /// above.
+  int? _finger;
+  double _fingerY = 0;
+  VelocityTracker? _fingerTracker;
+
+  /// Whether the content's drag, gone past its top, is pulling the sheet now; [_pullOrigin] is
+  /// where the finger would have come down for the sheet to be where it is.
+  bool _pulling = false;
+  double _pullOrigin = 0;
+
+  void _onPointerDown(PointerDownEvent event) {
+    if (_finger != null) return;
+    _finger = event.pointer;
+    _fingerY = event.position.dy;
+    _fingerTracker = VelocityTracker.withKind(event.kind)
+      ..addPosition(event.timeStamp, event.position);
+  }
+
+  void _onPointerMove(PointerMoveEvent event) {
+    if (event.pointer != _finger) return;
+    _fingerY = event.position.dy;
+    _fingerTracker?.addPosition(event.timeStamp, event.position);
+    if (_pulling) _onMove(_fingerY - _pullOrigin);
+  }
+
+  void _onPointerEnd(PointerEvent event) {
+    if (event.pointer != _finger) return;
+    _finger = null;
+    if (!_pulling) return;
+    _pulling = false;
+    final cancelled = event is PointerCancelEvent;
+    final velocity = cancelled ? 0.0 : _fingerTracker?.getVelocity().pixelsPerSecond.dy ?? 0;
+    _onRelease(_fingerY - _pullOrigin, velocity, cancelled);
+  }
+
+  /// The content's own drag, back at its top, keeps going down: from here the finger pulls the
+  /// sheet. The content stops scrolling (its drag is dropped) and the sheet follows the finger
+  /// until it lets go, as a drag the sheet had from the start.
+  bool _onContentScroll(ScrollNotification n) {
+    if (n.depth != 0 || n.metrics.axis != Axis.vertical) return false;
+    if (_pulling || _dragging || !_dismissible || _finger == null) return false;
+    final double past;
+    if (n is OverscrollNotification && n.dragDetails != null) {
+      past = -n.overscroll;
+    } else if (n is ScrollUpdateNotification && n.dragDetails != null) {
+      past = n.metrics.minScrollExtent - n.metrics.pixels;
+    } else {
+      return false;
+    }
+    if (past <= 0 || n.metrics.pixels > n.metrics.minScrollExtent) return false;
+    _dragY.stop();
+    _from = _dragY.value;
+    _height = (_panelKey.currentContext?.size?.height ?? 1).clamp(1, double.infinity);
+    _armed = false;
+    _pulling = true;
+    _pullOrigin = _fingerY - past;
+    setState(() => _dragging = true);
+    _onMove(past);
+    return false;
+  }
+
   Map<Type, GestureRecognizerFactory> get _gestures => !_dismissible
       ? const {}
       : {
@@ -638,7 +703,16 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     Widget panel = RawGestureDetector(
       gestures: _gestures,
       behavior: HitTestBehavior.translucent,
-      child: _panel(context),
+      child: Listener(
+        onPointerDown: _onPointerDown,
+        onPointerMove: _onPointerMove,
+        onPointerUp: _onPointerEnd,
+        onPointerCancel: _onPointerEnd,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: _onContentScroll,
+          child: _panel(context),
+        ),
+      ),
     );
     panel = _reduceMotion
         ? FadeTransition(opacity: slide, child: panel)
