@@ -12,6 +12,7 @@ import 'package:lukitas/capture/models_download.dart';
 import 'package:lukitas/feedback/feedback.dart';
 import 'package:lukitas/home/home_repository.dart' show HomeFailure;
 import 'package:lukitas/home/lukitas_face.dart';
+import 'package:lukitas/ui/press_button.dart';
 
 import '../add/fakes.dart';
 import '../capture/fakes.dart';
@@ -27,6 +28,28 @@ class _Env {
   final HomeHarness harness;
 
   List<List<int>> get waveforms => [for (final p in platform.haptics) p.waveform];
+
+  /// The haptics of what happened (a save, a limit, Deshacer), without the touch of the bar's
+  /// buttons and the sheets' landing and shutting around them.
+  List<List<int>> get outcomes => [
+    for (final p in platform.haptics)
+      if (!_touches.contains(p)) p.waveform,
+  ];
+
+  static final _touches = {
+    for (final event in [
+      FeedbackEvent.addPressed,
+      FeedbackEvent.addReleased,
+      FeedbackEvent.micPressed,
+      FeedbackEvent.micReleased,
+      FeedbackEvent.sheetOpened,
+      FeedbackEvent.sheetClosed,
+    ])
+      hapticPatterns[event]!,
+  };
+
+  /// The pattern of [event], as the platform got it.
+  static HapticPattern of(FeedbackEvent event) => hapticPatterns[event]!;
 }
 
 Future<_Env> _pump(
@@ -190,11 +213,10 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('home.add')));
       await tester.pumpAndSettle();
+      env.platform.haptics.clear();
       await tester.tap(find.byKey(const Key('keypad.5')));
       await tester.pump();
-      expect(env.waveforms, [
-        [8],
-      ]);
+      expect(env.platform.haptics, [_Env.of(FeedbackEvent.keyPressed)]);
       expect(env.platform.sounds, isEmpty);
       expect(framework, isNot(contains('HapticFeedback.vibrate')));
     });
@@ -209,8 +231,10 @@ void main() {
       await tester.tap(find.byKey(const Key('add.save')));
       await tester.pumpAndSettle();
       expect(env.platform.sounds, [FeedbackSound.expenseSaved]);
-      expect(env.waveforms, [
-        [12, 40, 18],
+      // The save's own feel, then the sheet shutting as it slides away.
+      expect(env.platform.haptics, [
+        _Env.of(FeedbackEvent.saved),
+        _Env.of(FeedbackEvent.sheetClosed),
       ]);
 
       await tester.tap(find.text('Deshacer'));
@@ -235,13 +259,81 @@ void main() {
     });
   });
 
+  group('the bar\'s buttons and the sheets feel like real objects', () {
+    testWidgets('the ＋ clicks down as the finger lands and back up as it lets go', (tester) async {
+      final env = await _pump(tester, withAdd: true);
+      final finger = await tester.startGesture(tester.getCenter(find.byKey(const Key('home.add'))));
+      await tester.pump();
+      expect(env.platform.haptics, [
+        _Env.of(FeedbackEvent.addPressed),
+      ], reason: 'before letting go');
+      await finger.up();
+      await tester.pump();
+      expect(env.platform.haptics, [
+        _Env.of(FeedbackEvent.addPressed),
+        _Env.of(FeedbackEvent.addReleased),
+      ]);
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the 🎤 clicks the same way, softer', (tester) async {
+      final env = await _pump(tester, withCapture: true);
+      final finger = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('home.capture'))),
+      );
+      await tester.pump();
+      expect(env.platform.haptics, [_Env.of(FeedbackEvent.micPressed)]);
+      await finger.up();
+      await tester.pump();
+      expect(env.platform.haptics.last, _Env.of(FeedbackEvent.micReleased));
+      await tester.pumpAndSettle();
+      await _endTimers(tester);
+    });
+
+    testWidgets('a sheet lands once it is all the way up, and shuts once it is all the way out', (
+      tester,
+    ) async {
+      final env = await _pump(tester, withAdd: true);
+      await tester.tap(find.byKey(const Key('home.add')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 130));
+      expect(env.platform.haptics, isNot(contains(_Env.of(FeedbackEvent.sheetOpened))));
+      await tester.pumpAndSettle();
+      expect(env.platform.haptics.last, _Env.of(FeedbackEvent.sheetOpened));
+
+      env.platform.haptics.clear();
+      await tester.tap(find.text('CERRAR'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 130));
+      expect(env.platform.haptics, isEmpty, reason: 'still sliding out');
+      await tester.pumpAndSettle();
+      expect(env.platform.haptics, [_Env.of(FeedbackEvent.sheetClosed)]);
+    });
+
+    testWidgets('the backspace held down clears the amount with a firmer feel', (tester) async {
+      final env = await _pump(tester, withAdd: true);
+      await tester.tap(find.byKey(const Key('home.add')));
+      await tester.pumpAndSettle();
+      for (final key in ['5', '6']) {
+        await tester.tap(find.byKey(Key('keypad.$key')));
+        await tester.pump();
+      }
+      env.platform.haptics.clear();
+      await tester.longPress(find.byKey(const Key('keypad.backspace')));
+      await tester.pumpAndSettle();
+      expect(env.platform.haptics, [_Env.of(FeedbackEvent.amountCleared)]);
+      // Nothing left to save.
+      expect(tester.widget<PressButton>(find.byKey(const Key('add.save'))).onPressed, isNull);
+    });
+  });
+
   group('quick capture', () {
     testWidgets('a batch save celebrates: the sound, the haptic and Lukitas', (tester) async {
       final env = await _pump(tester, withCapture: true);
       expect(_mood(tester), isNot(LukitasMood.celebrating));
       await saveBatchOf(tester);
       expect(env.platform.sounds, [FeedbackSound.expenseSaved]);
-      expect(env.waveforms, [
+      expect(env.outcomes, [
         [12, 40, 18],
       ]);
       expect(_mood(tester), LukitasMood.celebrating);
@@ -294,7 +386,7 @@ void main() {
       final env = await _pump(tester, server: server('near'), withAdd: true);
       await addExpense(tester);
       expect(env.platform.sounds, [FeedbackSound.nearLimit]);
-      expect(env.waveforms.last, [30]);
+      expect(env.outcomes.last, [30]);
       await _endTimers(tester);
     });
 
@@ -304,7 +396,7 @@ void main() {
       final env = await _pump(tester, server: server('over'), withAdd: true);
       await addExpense(tester);
       expect(env.platform.sounds, [FeedbackSound.overBudget]);
-      expect(env.waveforms.last, [40, 60, 40]);
+      expect(env.outcomes.last, [40, 60, 40]);
       await _endTimers(tester);
     });
 
@@ -349,7 +441,7 @@ void main() {
       final env = await _pump(tester, server: server('over'), withCapture: true);
       await saveBatchOf(tester);
       expect(env.platform.sounds, [FeedbackSound.overBudget]);
-      expect(env.waveforms, [
+      expect(env.outcomes, [
         [40, 60, 40],
       ]);
       expect(_mood(tester), isNot(LukitasMood.celebrating), reason: 'no party over the limit');

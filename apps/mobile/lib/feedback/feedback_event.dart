@@ -30,14 +30,37 @@ enum FeedbackEvent {
 
   /// A key of the add sheet's keypad.
   keyPressed,
+
+  /// The keypad's backspace, held down, cleared the whole amount.
+  amountCleared,
+
+  /// A finger came down on the ＋ of the bottom bar: it clicks down like a real button.
+  addPressed,
+
+  /// The finger left the ＋: it springs back up, lighter than the press.
+  addReleased,
+
+  /// A finger came down on the 🎤: the ＋'s click, softer (it is the smaller button).
+  micPressed,
+
+  /// The finger left the 🎤.
+  micReleased,
+
+  /// A sheet slid all the way up and came to rest: it lands, with its weight.
+  sheetOpened,
+
+  /// A sheet slid all the way down and out: it shuts, like a drawer pushed home.
+  sheetClosed,
 }
 
-/// One step of the Android 11 haptic composition: a `PRIMITIVE_CLICK` or `PRIMITIVE_TICK` at a
-/// [scale] (0 to 1) after [delayMs] of quiet.
+/// One step of the Android haptic composition: a `PRIMITIVE_CLICK`, `PRIMITIVE_TICK`,
+/// `PRIMITIVE_THUD` or `PRIMITIVE_LOW_TICK` at a [scale] (0 to 1) after [delayMs] of quiet.
 class HapticPrimitive {
   const HapticPrimitive(this.name, this.scale, {this.delayMs = 0});
 
-  /// `click` or `tick`: the only two primitives Android 11 (API 30) has.
+  /// `click` or `tick`, which every phone with primitives has (Android 11, API 30), or `thud` or
+  /// `lowTick` (Android 12): the deep knock of something heavy. A motor without those two plays a
+  /// `click` or a `tick` in their place (HapticsChannel.kt).
   final String name;
   final double scale;
   final int delayMs;
@@ -91,7 +114,26 @@ const hapticPatterns = <FeedbackEvent, HapticPattern>{
   FeedbackEvent.undo: HapticPattern([8], [HapticPrimitive('tick', 0.5)]),
   FeedbackEvent.thresholdCrossed: HapticPattern([10], [HapticPrimitive('tick', 0.7)]),
   FeedbackEvent.pageChanged: HapticPattern([15], [HapticPrimitive('tick', 1)]),
-  FeedbackEvent.keyPressed: HapticPattern([8], [HapticPrimitive('tick', 0.5)]),
+  // A key is a firm little click, under the ＋'s: it is felt on every digit.
+  FeedbackEvent.keyPressed: HapticPattern([14], [HapticPrimitive('click', 0.7)]),
+  // Everything typed goes at once: a full click and a tick after it, like a reset.
+  FeedbackEvent.amountCleared: HapticPattern(
+    [20, 40, 10],
+    [HapticPrimitive('click', 1), HapticPrimitive('tick', 0.6, delayMs: 40)],
+  ),
+  // A physical button: a firm click going down and a lighter one coming back up. The ＋ is the
+  // bar's main button, so it clicks harder than the 🎤 both ways.
+  FeedbackEvent.addPressed: HapticPattern([20], [HapticPrimitive('click', 1)]),
+  FeedbackEvent.addReleased: HapticPattern([10], [HapticPrimitive('tick', 0.7)]),
+  FeedbackEvent.micPressed: HapticPattern([12], [HapticPrimitive('click', 0.55)]),
+  FeedbackEvent.micReleased: HapticPattern([6], [HapticPrimitive('tick', 0.4)]),
+  // A sheet as a real object: it lands with a low knock and a small settle; it shuts with one
+  // short knock, lighter, as it slides out of sight.
+  FeedbackEvent.sheetOpened: HapticPattern(
+    [18, 50, 6],
+    [HapticPrimitive('thud', 0.7), HapticPrimitive('lowTick', 0.35, delayMs: 50)],
+  ),
+  FeedbackEvent.sheetClosed: HapticPattern([16], [HapticPrimitive('thud', 0.5)]),
 };
 
 /// The web's sound files (assets/sounds, with the licence note in its README).

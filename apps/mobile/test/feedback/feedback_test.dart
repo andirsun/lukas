@@ -46,7 +46,15 @@ void main() {
       FeedbackEvent.undo: ([8], FeedbackSound.undo),
       FeedbackEvent.thresholdCrossed: ([10], null),
       FeedbackEvent.pageChanged: ([15], null),
-      FeedbackEvent.keyPressed: ([8], null),
+      FeedbackEvent.keyPressed: ([14], null),
+      FeedbackEvent.amountCleared: ([20, 40, 10], null),
+      // The app's own (the web has no ＋ of this kind, nor sheets that weigh): they only vibrate.
+      FeedbackEvent.addPressed: ([20], null),
+      FeedbackEvent.addReleased: ([10], null),
+      FeedbackEvent.micPressed: ([12], null),
+      FeedbackEvent.micReleased: ([6], null),
+      FeedbackEvent.sheetOpened: ([18, 50, 6], null),
+      FeedbackEvent.sheetClosed: ([16], null),
     };
 
     test('each event maps to its haptic pattern and sound', () async {
@@ -64,16 +72,35 @@ void main() {
       }
     });
 
-    test('every pattern also has Android 11 primitives, each with a scale between 0 and 1', () {
+    test('every pattern also has primitives, each with a scale between 0 and 1', () {
       for (final event in FeedbackEvent.values) {
         final pattern = hapticPatterns[event]!;
         expect(pattern.primitives, isNotEmpty, reason: '$event');
         for (final step in pattern.primitives) {
-          expect(['click', 'tick'], contains(step.name), reason: '$event');
+          expect(['click', 'tick', 'thud', 'lowTick'], contains(step.name), reason: '$event');
           expect(step.scale, inInclusiveRange(0.1, 1.0), reason: '$event');
           expect(step.delayMs, greaterThanOrEqualTo(0), reason: '$event');
         }
       }
+    });
+
+    test('the ＋ clicks like a real button, harder than the 🎤, going down and coming up', () {
+      double strength(FeedbackEvent event) => hapticPatterns[event]!.primitives.single.scale;
+      int length(FeedbackEvent event) => hapticPatterns[event]!.waveform.single;
+      expect(hapticPatterns[FeedbackEvent.addPressed]!.primitives.single.name, 'click');
+      expect(strength(FeedbackEvent.addPressed), greaterThan(strength(FeedbackEvent.addReleased)));
+      expect(strength(FeedbackEvent.addPressed), greaterThan(strength(FeedbackEvent.micPressed)));
+      expect(strength(FeedbackEvent.addReleased), greaterThan(strength(FeedbackEvent.micReleased)));
+      expect(length(FeedbackEvent.addPressed), greaterThan(length(FeedbackEvent.micPressed)));
+      expect(length(FeedbackEvent.addReleased), greaterThan(length(FeedbackEvent.micReleased)));
+    });
+
+    test('a sheet lands with a thud and shuts with a lighter one', () {
+      final opened = hapticPatterns[FeedbackEvent.sheetOpened]!.primitives;
+      final closed = hapticPatterns[FeedbackEvent.sheetClosed]!.primitives;
+      expect(opened.first.name, 'thud');
+      expect(closed.single.name, 'thud');
+      expect(closed.single.scale, lessThan(opened.first.scale));
     });
 
     test('the sound files are the web\'s, in the app\'s assets', () {

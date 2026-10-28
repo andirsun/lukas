@@ -51,6 +51,9 @@ class Pressable extends StatefulWidget {
     this.onFocusChange,
     this.hint,
     this.keepChildSemantics = false,
+    this.onFingerDown,
+    this.onFingerUp,
+    this.onLongPress,
   });
 
   final Widget Function(BuildContext context, PressState state) builder;
@@ -96,6 +99,16 @@ class Pressable extends StatefulWidget {
   /// the web's row-hit button lies under the badge). The content must then leave out what [label]
   /// already says.
   final bool keepChildSemantics;
+
+  /// Called the moment a finger lands on it, and when that finger lets go (a tap, or a finger
+  /// that slid off): a press felt like a physical button's, clicking down and springing back up.
+  /// Not for a key or a reader's activation, which have no finger.
+  final VoidCallback? onFingerDown;
+  final VoidCallback? onFingerUp;
+
+  /// Called when a finger stays on it (the platform's long press) instead of [onPressed], which
+  /// then does not run. Null for a control that has nothing more to do when held.
+  final VoidCallback? onLongPress;
 
   @override
   State<Pressable> createState() => _PressableState();
@@ -197,10 +210,26 @@ class _PressableState extends State<Pressable> {
       },
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTapDown: _enabled ? (_) => _down() : null,
-        onTapUp: _enabled ? (_) => _up() : null,
-        onTapCancel: _enabled ? _up : null,
+        onTapDown: _enabled
+            ? (_) {
+                widget.onFingerDown?.call();
+                _down();
+              }
+            : null,
+        onTapUp: _enabled
+            ? (_) {
+                widget.onFingerUp?.call();
+                _up();
+              }
+            : null,
+        onTapCancel: _enabled
+            ? () {
+                widget.onFingerUp?.call();
+                _up();
+              }
+            : null,
         onTap: widget.onPressed,
+        onLongPress: _enabled ? widget.onLongPress : null,
         child: widget.builder(context, state),
       ),
     );
@@ -222,6 +251,7 @@ class _PressableState extends State<Pressable> {
       liveRegion: widget.liveRegion,
       role: widget.role,
       onTap: widget.onPressed,
+      onLongPress: _enabled ? widget.onLongPress : null,
       // A label is the control's whole name (the web's `aria-label`); without one its content is.
       excludeSemantics: named && !widget.keepChildSemantics,
       container: widget.keepChildSemantics,

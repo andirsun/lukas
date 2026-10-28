@@ -981,6 +981,10 @@
   "@keypadBackspace": {
     "description": "Add sheet: the backspace key (screen readers)."
   },
+  "keypadBackspaceHoldHint": "Mantén presionado para borrar todo",
+  "@keypadBackspaceHoldHint": {
+    "description": "Add sheet: what holding the backspace key does (screen readers): it clears the whole amount."
+  },
   "nameFieldLabel": "Nombre (opcional)",
   "@nameFieldLabel": {
     "description": "Add sheet: the name field."
@@ -996,6 +1000,10 @@
   "captureTitle": "Dilo o escríbelo",
   "@captureTitle": {
     "description": "Quick capture: the sheet's title."
+  },
+  "captureBeta": "Beta",
+  "@captureBeta": {
+    "description": "Quick capture: the tag beside the sheet's title, saying the feature is still experimental."
   },
   "captureListeningPrompt": "¿En qué gastaste?",
   "@captureListeningPrompt": {

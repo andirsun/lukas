@@ -79,6 +79,18 @@ class Celebration extends Notifier<int> {
 
 final celebrationProvider = NotifierProvider<Celebration, int>(Celebration.new);
 
+/// [feedbackProvider] as found from [context] now, for a widget that gives feedback after it may
+/// have left the tree (a sheet that shuts as its route goes). Without a `ProviderScope` (a bare
+/// widget test) it does nothing.
+void Function(FeedbackEvent event) feedbackOf(BuildContext context) {
+  try {
+    final container = ProviderScope.containerOf(context, listen: false);
+    return (event) => container.read(feedbackProvider)(event);
+  } on Object {
+    return (_) {};
+  }
+}
+
 extension FeedbackContext on BuildContext {
   /// [feedbackProvider] for a widget that is not a `ConsumerWidget`. Without a `ProviderScope`
   /// (a bare widget test) it does nothing.

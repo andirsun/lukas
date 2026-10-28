@@ -438,4 +438,39 @@ void main() {
       expect(answers, [null]);
     });
   });
+
+  group('a title tag', () {
+    Widget opener() => Builder(
+      builder: (context) => PressButton.text(
+        'Abrir',
+        onPressed: () => LkSheet.show<void>(
+          context,
+          title: 'Dilo o escríbelo',
+          titleTag: 'Beta',
+          children: const [SizedBox(height: 80)],
+        ),
+      ),
+    );
+
+    testWidgets('sits beside the title, in upper case', (t) async {
+      await _open(t, opener: opener());
+      final title = t.getRect(find.text('Dilo o escríbelo'));
+      final tag = t.getRect(find.text('BETA'));
+      expect(tag.left, greaterThan(title.right));
+      expect(tag.center.dy, closeTo(title.center.dy, 2));
+    });
+
+    testWidgets('is left out where it would push the title onto a second line', (t) async {
+      // A small phone at 130%: the sheet is as wide as the screen.
+      t.view
+        ..physicalSize = const Size(360, 640)
+        ..devicePixelRatio = 1;
+      addTearDown(t.view.reset);
+      await t.pumpWidget(uiApp(opener(), width: 360, textScale: 1.3));
+      await t.tap(find.text('ABRIR'));
+      await t.pumpAndSettle();
+      expect(find.text('BETA'), findsNothing);
+      expect(t.getSize(find.text('Dilo o escríbelo')).height, lessThan(40), reason: 'one line');
+    });
+  });
 }

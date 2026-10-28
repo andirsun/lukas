@@ -15,8 +15,9 @@ import io.flutter.plugin.common.MethodChannel
  * The phone's motor (lib/feedback/feedback_platform.dart), on the `lukitas/haptics` method channel.
  *
  * `vibrate({waveform, primitives})` → Boolean (a motor played it) plays the feel of an event (see [HapticSpec]). On Android 11
- * (API 30) and up, when the motor supports every primitive asked for, it plays a
- * `VibrationEffect.Composition` (a crisp click or tick); otherwise, and on older phones, the
+ * (API 30) and up, when the motor supports every primitive asked for (or its fallback), it plays a
+ * `VibrationEffect.Composition` (a crisp click or tick, or the deeper thud and low tick of
+ * Android 12, played as a click and a tick by a motor without them); otherwise, and on older phones, the
  * waveform: the web's own pattern. A phone with no motor, or with vibration turned off, does
  * nothing, and no call fails because of it. The VIBRATE permission is a normal one, granted at
  * install.
@@ -65,7 +66,15 @@ class HapticsChannel(context: Context, messenger: BinaryMessenger) :
     /** The composition for [spec], or null when this phone cannot play it (API below 30, say). */
     private fun composition(motor: Vibrator, spec: HapticSpec): VibrationEffect? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || spec.primitives.isEmpty()) return null
-        val ids = spec.primitives.map { primitiveId(it.name) }
+        // Each step as itself, or as its fallback (a `thud` as a `click`) where the motor lacks it.
+        val ids = spec.primitives.map { step ->
+            val own = primitiveId(step.name)
+            when {
+                motor.areAllPrimitivesSupported(own) -> own
+                step.fallback != null -> primitiveId(step.fallback!!)
+                else -> return null
+            }
+        }
         if (!motor.areAllPrimitivesSupported(*ids.toIntArray())) return null
         val composition = VibrationEffect.startComposition()
         spec.primitives.forEachIndexed { index, step ->
@@ -74,8 +83,12 @@ class HapticsChannel(context: Context, messenger: BinaryMessenger) :
         return composition.compose()
     }
 
+    // THUD and LOW_TICK are API 31 constants, inlined at compile time: on Android 11 the motor
+    // simply reports them unsupported, and the fallback plays.
     private fun primitiveId(name: String): Int = when (name) {
         "click" -> VibrationEffect.Composition.PRIMITIVE_CLICK
+        "thud" -> VibrationEffect.Composition.PRIMITIVE_THUD
+        "lowTick" -> VibrationEffect.Composition.PRIMITIVE_LOW_TICK
         else -> VibrationEffect.Composition.PRIMITIVE_TICK
     }
 

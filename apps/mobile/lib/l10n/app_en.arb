@@ -786,6 +786,7 @@
   "@keypadBackspace": {
     "description": "Add sheet: the backspace key (screen readers)."
   },
+  "keypadBackspaceHoldHint": "Hold to clear the whole amount",
   "nameFieldLabel": "Name (optional)",
   "@nameFieldLabel": {
     "description": "Add sheet: the name field."
@@ -796,6 +797,7 @@
   },
   "captureFabLabel": "Say or type a movement",
   "captureTitle": "Say it or type it",
+  "captureBeta": "Beta",
   "captureListeningPrompt": "What did you spend on?",
   "captureListeningNote": "I listen right here: what you say never leaves your phone.",
   "captureStop": "Done",

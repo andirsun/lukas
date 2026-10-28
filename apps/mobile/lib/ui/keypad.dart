@@ -18,7 +18,7 @@ import 'pressable.dart';
 ///
 /// Each key sits on a solid edge and sinks into it while pressed (`.lk-key`). A key counts on the
 /// release of a tap: a finger that starts on a key and drags (to pull the sheet down) types
-/// nothing.
+/// nothing. Held down, the backspace clears the whole amount.
 class Keypad extends StatelessWidget {
   const Keypad({
     super.key,
@@ -56,6 +56,13 @@ class Keypad extends StatelessWidget {
     if (next != now) onChange(next);
   }
 
+  /// The backspace held down: the whole amount goes, with a firmer feel than a key's.
+  void _clear(BuildContext context) {
+    context.feedback(FeedbackEvent.amountCleared);
+    final now = currentValue?.call() ?? value;
+    if (now.isNotEmpty) onChange('');
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -75,7 +82,13 @@ class Keypad extends StatelessWidget {
               )
             : null,
         digit('0'),
-        _Spec('keypad.backspace', '⌫', l10n.keypadBackspace, const BackspaceKey()),
+        _Spec(
+          'keypad.backspace',
+          '⌫',
+          l10n.keypadBackspace,
+          const BackspaceKey(),
+          hint: l10n.keypadBackspaceHoldHint,
+        ),
       ],
     ];
     return Semantics(
@@ -109,6 +122,9 @@ class Keypad extends StatelessWidget {
                                 compact: compact,
                                 textShift: track[5 + i],
                                 onPressed: () => _press(context, row[i]!.key),
+                                onLongPress: row[i]!.key is BackspaceKey
+                                    ? () => _clear(context)
+                                    : null,
                               ),
                       ),
                     ],
@@ -123,12 +139,15 @@ class Keypad extends StatelessWidget {
 }
 
 class _Spec {
-  const _Spec(this.id, this.text, this.label, this.key);
+  const _Spec(this.id, this.text, this.label, this.key, {this.hint});
 
   final String id;
   final String text;
   final String? label;
   final KeypadKey key;
+
+  /// What else the key does, for assistive technology: the backspace held clears everything.
+  final String? hint;
 }
 
 class _KeyButton extends StatelessWidget {
@@ -137,6 +156,7 @@ class _KeyButton extends StatelessWidget {
     required this.onPressed,
     required this.compact,
     required this.textShift,
+    this.onLongPress,
   });
 
   final _Spec spec;
@@ -146,6 +166,7 @@ class _KeyButton extends StatelessWidget {
   /// unrounded box puts it.
   final double textShift;
   final VoidCallback onPressed;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +176,9 @@ class _KeyButton extends StatelessWidget {
     return Pressable(
       key: Key(spec.id),
       onPressed: onPressed,
+      onLongPress: onLongPress,
       label: spec.label,
+      hint: spec.hint,
       builder: (context, state) {
         final pressed = state.pressed;
         return PressSurface(
