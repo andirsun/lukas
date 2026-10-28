@@ -158,6 +158,17 @@ class MainActivity : FlutterActivity() {
                         startActivity(intent)
                         result.success(null)
                     }
+                    // Back to the app from what it opened on top of itself (the share sheet), as a
+                    // person does: the test's own activity is on top again, the rest is closed.
+                    // Left open, it would sit between this activity and a link opened later, which
+                    // then starts a second one that the test does not drive.
+                    "returnToApp" -> {
+                        startActivity(
+                            Intent(this, MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                        )
+                        result.success(null)
+                    }
                     // What a browser does with the web page's "Abrir en Lukitas": it parses the
                     // `intent://` address and starts the intent as a browsable view, with no
                     // component of its own, so Android resolves it through the manifest's filters.

@@ -178,5 +178,10 @@ void main() {
     final copy = shared.listSync().whereType<File>().single;
     expect(copy.path, endsWith('.csv'));
     expect(copy.readAsStringSync(), contains('Cafe del export'));
+
+    // The sheet is closed, as a person would: the suites after this one (suites_test.dart) open
+    // links in the app, which must land on this activity, not on top of the sheet.
+    await const MethodChannel('lukitas/test').invokeMethod<void>('returnToApp');
+    await tester.pump(const Duration(seconds: 1));
   });
 }

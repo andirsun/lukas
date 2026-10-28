@@ -91,6 +91,17 @@ void main() {
       expect(await headersOf(development: false), isNot(contains('x-forwarded-for')));
     });
 
+    test('without one of its own it sends the address the suite set while the app runs', () async {
+      final before = debugClientIp;
+      addTearDown(() => debugClientIp = before);
+      debugClientIp = '198.19.8.9';
+      final client = ApiClient.forServer(Uri.parse('https://example.test'), development: true);
+      final adapter = _RecordingAdapter();
+      client.dio.httpClientAdapter = adapter;
+      await client.dio.get<Object>('/v1/me');
+      expect(adapter.last!.headers['x-forwarded-for'], '198.19.8.9');
+    });
+
     test('a debug build without one sends none', () async {
       expect(await headersOf(development: true, ip: ''), isNot(contains('x-forwarded-for')));
     });
