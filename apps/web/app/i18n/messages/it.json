@@ -80,6 +80,10 @@
         "title": "Importa da Buddy e da altre app",
         "body": "Più modi per portare il tuo storico."
       },
+      "offline": {
+        "title": "Funziona offline",
+        "body": "Registra e consulta le tue spese senza essere connesso al server."
+      },
       "no_central_server": {
         "title": "Senza server centrale",
         "body": "I tuoi dati si sincronizzano tra i tuoi dispositivi senza dipendere da un nostro server."
