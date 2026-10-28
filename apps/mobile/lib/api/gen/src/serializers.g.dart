@@ -23,6 +23,8 @@ Serializers _$serializers =
           ..add(CreateRecurrence.serializer)
           ..add(CreateRecurrenceFrequencyEnum.serializer)
           ..add(CreateTransaction.serializer)
+          ..add(CreateTransactionRepeat.serializer)
+          ..add(CreateTransactionRepeatFrequencyEnum.serializer)
           ..add(CreateTransactionSource_Enum.serializer)
           ..add(CreateTransactionStatusEnum.serializer)
           ..add(CreateTransactionsBatch.serializer)

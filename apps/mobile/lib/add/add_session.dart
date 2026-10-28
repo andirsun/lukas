@@ -185,6 +185,25 @@ class AddSheetState extends ConsumerState<AddSheet> {
     );
   }
 
+  /// The end of "Repetir": from the movement's date on.
+  Future<void> pickEndDate() async {
+    final current = form;
+    if (current == null) return;
+    final first = DateTime.tryParse(current.date) ?? DateTime.tryParse(current.today)!;
+    final from = DateTime.tryParse(current.endDate) ?? first;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: from.isBefore(first) ? first : from,
+      firstDate: first,
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) return;
+    String two(int n) => n.toString().padLeft(2, '0');
+    current.setEndDate(
+      '${picked.year.toString().padLeft(4, '0')}-${two(picked.month)}-${two(picked.day)}',
+    );
+  }
+
   void retryLoad() => unawaited(ref.read(homeProvider.notifier).refresh());
 
   // -- saving --------------------------------------------------------------------------------

@@ -14,8 +14,8 @@ const visibleChipsShort = 3;
 
 /// The add sheet's state and the rules behind it, a port of the web's `useTransactionForm`
 /// (apps/web/app/features/add-transaction/use-add-transaction.ts): the kind, the amount (as raw
-/// keypad text), the name and its suggestions, the category, the date, pending and the note; and
-/// what saving would send. With [editing] it starts from that movement and builds a patch of what
+/// keypad text), the name and its suggestions, the category, the date, pending, "Repetir" (adding
+/// only: monthly or yearly, with an optional end) and the note; and what saving would send. With [editing] it starts from that movement and builds a patch of what
 /// changed.
 ///
 /// The Idempotency-Key belongs to one attempt to save one movement: [keyForSave] makes it the
@@ -77,6 +77,11 @@ class AddForm extends ChangeNotifier {
   String _date = '';
   bool _pending = false;
   String _note = '';
+  bool _repeat = false;
+  CreateTransactionRepeatFrequencyEnum _frequency = CreateTransactionRepeatFrequencyEnum.monthly;
+
+  /// `YYYY-MM-DD`; empty for none.
+  String _endDate = '';
 
   /// "Más" was tapped: every category shows.
   bool get allChips => _allChips;
@@ -116,6 +121,14 @@ class AddForm extends ChangeNotifier {
   String get date => _date;
   bool get pending => _pending;
   String get note => _note;
+
+  /// "Repetir" is on (never while editing: a movement already saved does not become a rule here).
+  bool get repeat => _repeat && editing == null;
+  CreateTransactionRepeatFrequencyEnum get frequency => _frequency;
+  String get endDate => _endDate;
+
+  /// The end of the repetition is before the movement's date: nothing is sent.
+  bool get endBeforeDate => repeat && _endDate.isNotEmpty && _endDate.compareTo(_date) < 0;
 
   Category? get _editingCategory {
     final id = editing?.categoryId;
@@ -189,7 +202,7 @@ class AddForm extends ChangeNotifier {
   /// Pesos: a typed separator only ends the amount; what comes before it is the amount.
   int get cents => amountCents(raw, format);
 
-  bool get valid => cents > 0 && selected != null && _date.isNotEmpty;
+  bool get valid => cents > 0 && selected != null && _date.isNotEmpty && !endBeforeDate;
 
   // -- changes -------------------------------------------------------------------------------
 
@@ -251,6 +264,21 @@ class AddForm extends ChangeNotifier {
     _changed();
   }
 
+  set repeat(bool value) {
+    _repeat = value;
+    _changed();
+  }
+
+  void setFrequency(CreateTransactionRepeatFrequencyEnum next) {
+    _frequency = next;
+    _changed();
+  }
+
+  void setEndDate(String next) {
+    _endDate = next;
+    _changed();
+  }
+
   // -- saving --------------------------------------------------------------------------------
 
   /// The key of this attempt to save: made the first time it is asked for, the same until the
@@ -271,7 +299,12 @@ class AddForm extends ChangeNotifier {
         ..date = _date
         ..status = _pending ? CreateTransactionStatusEnum.pending : CreateTransactionStatusEnum.paid
         ..note = trimmedNote.isEmpty ? null : trimmedNote
-        ..source_ = CreateTransactionSource_Enum.app,
+        ..source_ = CreateTransactionSource_Enum.app
+        ..repeat = repeat
+            ? (CreateTransactionRepeatBuilder()
+                ..frequency = _frequency
+                ..endDate = _endDate.isEmpty ? null : _endDate)
+            : null,
     );
   }
 

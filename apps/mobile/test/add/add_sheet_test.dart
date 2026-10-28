@@ -317,6 +317,40 @@ void main() {
     });
   });
 
+  group('Repetir', () {
+    testWidgets('every year: the row says so and the save carries it', (tester) async {
+      final env = await pump(tester);
+      await openSheet(tester);
+      await tester.tap(find.byKey(const Key('add.more')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add.repeat.yearly')), findsNothing);
+      await tester.ensureVisible(find.byKey(const Key('add.repeat')));
+      await tester.tap(find.byKey(const Key('add.repeat')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('add.repeat.yearly')));
+      await tester.tap(find.byKey(const Key('add.repeat.yearly')));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('add.more')),
+          matching: find.textContaining('Cada año'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Los siguientes llegan como pendientes. Lo cambias en Recurrentes.'),
+        findsOneWidget,
+      );
+      await tapKeys(tester, '3000');
+      await tester.tap(find.byKey(const Key('add.save')));
+      await tester.pumpAndSettle();
+      final sent = env.add.inputs.last;
+      expect(sent.repeat!.frequency, CreateTransactionRepeatFrequencyEnum.yearly);
+      expect(sent.repeat!.endDate, isNull);
+      await letTimersEnd(tester);
+    });
+  });
+
   group('a failed save', () {
     testWidgets('keeps the input and Reintentar resends with the same Idempotency-Key', (
       tester,

@@ -680,6 +680,18 @@
   "@addPendingLabel": {
     "description": "Add sheet: marks a movement as scheduled and unpaid."
   },
+  "addRepeatLabel": "Repeat",
+  "@addRepeatLabel": {
+    "description": "Add sheet, M\u00e1s opciones: makes the new movement repeat (a recurrence made from it)."
+  },
+  "addRepeatHint": "The next ones arrive as pending. Change it in Recurring.",
+  "@addRepeatHint": {
+    "description": "Add sheet, under Repetir: what happens to the next occurrences."
+  },
+  "addRepeatEndBefore": "The end date goes after this one’s date.",
+  "@addRepeatEndBefore": {
+    "description": "Add sheet, under Repetir: the end date is before the movement's date."
+  },
   "addNoteLabel": "Note (optional)",
   "@addNoteLabel": {
     "description": "Add sheet: the note field."

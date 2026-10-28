@@ -151,6 +151,33 @@ void main() {
       expect(input.note, 'con Ana');
     });
 
+    test('Repetir sends the frequency and the end; off, nothing of it goes', () {
+      final f = form();
+      type(f, '4000');
+      expect(f.input()!.repeat, isNull);
+      f.repeat = true;
+      expect(f.input()!.repeat!.frequency, CreateTransactionRepeatFrequencyEnum.monthly);
+      expect(f.input()!.repeat!.endDate, isNull);
+      f.setFrequency(CreateTransactionRepeatFrequencyEnum.yearly);
+      f.setEndDate('2027-10-22');
+      final repeat = f.input()!.repeat!;
+      expect(repeat.frequency, CreateTransactionRepeatFrequencyEnum.yearly);
+      expect(repeat.endDate, '2027-10-22');
+      f.repeat = false;
+      expect(f.input()!.repeat, isNull);
+    });
+
+    test('an end before the date cannot be saved', () {
+      final f = form();
+      type(f, '4000');
+      f.repeat = true;
+      f.setEndDate('2026-10-01');
+      expect(f.endBeforeDate, isTrue);
+      expect(f.valid, isFalse);
+      f.setDate('2026-09-30');
+      expect(f.valid, isTrue);
+    });
+
     test('picking a suggestion fills the name, the kind and the category', () {
       final f = form();
       f.pick(

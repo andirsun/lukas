@@ -23,6 +23,7 @@ export 'package:lukitas/api/gen/src/model/cost_of_living_report_categories_inner
 export 'package:lukitas/api/gen/src/model/create_category.dart';
 export 'package:lukitas/api/gen/src/model/create_recurrence.dart';
 export 'package:lukitas/api/gen/src/model/create_transaction.dart';
+export 'package:lukitas/api/gen/src/model/create_transaction_repeat.dart';
 export 'package:lukitas/api/gen/src/model/create_transactions_batch.dart';
 export 'package:lukitas/api/gen/src/model/delete_transactions_batch.dart';
 export 'package:lukitas/api/gen/src/model/file_import.dart';

@@ -542,7 +542,7 @@ class DefaultApi {
   }
 
   /// createTransaction
-  ///
+  /// With &#x60;repeat&#x60;, it also makes a recurrence from it (its name, amount, category; its date gives the day, the month of a yearly one and the start) and is that recurrence&#39;s occurrence for its month: the following ones come as pending.
   ///
   /// Parameters:
   /// * [createTransaction]

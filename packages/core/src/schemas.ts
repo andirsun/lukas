@@ -20,15 +20,36 @@ const noteSchema = z.string().max(1000).nullable();
 const atLeastOne = (value: object) => Object.keys(value).length > 0;
 const AT_LEAST_ONE = "Provide at least one field";
 
-export const createTransactionSchema = z.object({
-  name: nameSchema,
-  amount: amountSchema,
-  categoryId: z.uuid(),
-  date: isoDateSchema,
-  status: statusSchema.default("paid"),
-  note: noteSchema.optional(),
-  source: z.enum(["app", "web", "widget", "mcp"]).default("app"),
+/**
+ * "Repetir" on a new transaction: it becomes the first occurrence of a recurrence made from it
+ * (its name, amount and category; its date gives the day, the month of a yearly one and the start).
+ */
+export const repeatSchema = z.object({
+  frequency: frequencySchema,
+  endDate: isoDateSchema.nullable().optional(),
 });
+export type Repeat = z.infer<typeof repeatSchema>;
+
+export const createTransactionSchema = z
+  .object({
+    name: nameSchema,
+    amount: amountSchema,
+    categoryId: z.uuid(),
+    date: isoDateSchema,
+    status: statusSchema.default("paid"),
+    note: noteSchema.optional(),
+    source: z.enum(["app", "web", "widget", "mcp"]).default("app"),
+    repeat: repeatSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.repeat?.endDate && value.repeat.endDate < value.date) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["repeat", "endDate"],
+        message: "endDate must be on or after date",
+      });
+    }
+  });
 export type CreateTransaction = z.infer<typeof createTransactionSchema>;
 
 /** Several movements saved together (one tap in the app); at most 20, all or nothing. */

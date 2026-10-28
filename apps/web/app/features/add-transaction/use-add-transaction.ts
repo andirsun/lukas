@@ -15,6 +15,7 @@ import {
   type TransactionPatch,
   useAllCategories,
   useCreateTransaction,
+  useDeleteRecurrence,
   useDeleteTransaction,
   useMarkPaid,
   useRestoreTransaction,
@@ -30,6 +31,7 @@ import { useToast } from "../../ui/Toast.tsx";
 import { feedbackForSave, orderByUse } from "../home/home-model.ts";
 
 export type Kind = "expense" | "income";
+export type Frequency = "monthly" | "yearly";
 
 /** Something that just happened on a transaction, for Lukitas's line and mood on home. */
 export interface TransactionEvent {
@@ -96,6 +98,7 @@ export function useTransactionActions({
   const toast = useToast();
   const create = useCreateTransaction();
   const update = useUpdateTransaction();
+  const removeRecurrence = useDeleteRecurrence();
   const remove = useDeleteTransaction();
   const restore = useRestoreTransaction();
   const pay = useMarkPaid();
@@ -107,9 +110,13 @@ export function useTransactionActions({
         problem instanceof ApiProblem ? problemMessage(problem, tRoot) : tRoot("errors.generic"),
     });
 
-  async function undoCreate(created: TransactionDto) {
+  async function undoCreate(created: TransactionDto, repeated: boolean) {
     try {
       await remove.mutateAsync({ id: created.id, month: monthOf(created.date) });
+      // Saved with "Repetir": the recurrence it made goes too (the row is already deleted).
+      if (repeated && created.recurrenceId) {
+        await removeRecurrence.mutateAsync({ id: created.recurrenceId });
+      }
       feedback("undo");
       toast.show({ message: t("undone", { name: created.name }) });
     } catch (problem) {
@@ -166,7 +173,10 @@ export function useTransactionActions({
             )
           : line,
         actions: [
-          { label: tRoot("common.undo"), onClick: () => void undoCreate(created) },
+          {
+            label: tRoot("common.undo"),
+            onClick: () => void undoCreate(created, input.repeat !== undefined),
+          },
           ...(details.unnamed
             ? [{ label: t("name_it"), onClick: () => openEdit(created, { focusName: true }) }]
             : []),
@@ -313,6 +323,10 @@ export function useTransactionForm({
   const [date, setDate] = useState(() => editing?.date ?? today);
   const [pending, setPending] = useState(() => editing?.status === "pending");
   const [note, setNote] = useState(() => editing?.note ?? "");
+  // "Repetir" (adding only): a recurrence made from this one; the end is optional ("" for none).
+  const [repeat, setRepeat] = useState(false);
+  const [frequency, setFrequency] = useState<Frequency>("monthly");
+  const [endDate, setEndDate] = useState("");
   const [allChips, setAllChips] = useState(false);
   // One key per opening of the sheet: any repeat of this save is the same request to the API.
   const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -361,7 +375,9 @@ export function useTransactionForm({
 
   // Pesos: a typed separator only ends the amount; what comes before it is the amount.
   const cents = centsOf(wholeAmount(raw, { locale, currency }), locale);
-  const valid = cents > 0 && selected !== undefined && date !== "";
+  const repeating = repeat && !editing;
+  const endBeforeDate = repeating && endDate !== "" && endDate < date;
+  const valid = cents > 0 && selected !== undefined && date !== "" && !endBeforeDate;
 
   /** What a new transaction would be: unnamed, it takes its category's name. */
   const input = (): NewTransaction | null => {
@@ -375,6 +391,7 @@ export function useTransactionForm({
       status: pending ? "pending" : "paid",
       ...(note.trim() ? { note: note.trim() } : {}),
       source: "web",
+      ...(repeating ? { repeat: { frequency, endDate: endDate || null } } : {}),
     };
   };
 
@@ -415,6 +432,13 @@ export function useTransactionForm({
     setPending,
     note,
     setNote,
+    repeat: repeating,
+    setRepeat,
+    frequency,
+    setFrequency,
+    endDate,
+    setEndDate,
+    endBeforeDate,
     idempotencyKey,
     valid,
     input,
