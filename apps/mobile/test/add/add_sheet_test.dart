@@ -698,13 +698,53 @@ void main() {
         tester.getCenter(find.byKey(const Key('category.cat-fun'))),
       );
       await tester.pump(const Duration(milliseconds: 150));
-      await gesture.moveBy(const Offset(0, 120));
-      await tester.pump();
-      await gesture.moveBy(const Offset(0, 400));
+      // As a phone sends it: a few px per frame. The sheet picks the axis (8px) before the middle's
+      // own scroll would take the drag (18px), so the drag is the sheet's.
+      for (var i = 0; i < 52; i++) {
+        await gesture.moveBy(const Offset(0, 10));
+        await tester.pump(const Duration(milliseconds: 8));
+      }
       await gesture.up();
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('add.sheet')), findsNothing);
       expect(env.add.calls.where((c) => c.startsWith('create')), isEmpty);
+    });
+
+    testWidgets('flicked down from the scrolling middle, at its top, the sheet closes', (
+      tester,
+    ) async {
+      await pump(tester, size: const Size(360, 640));
+      await openSheet(tester);
+      // A quick flick: 16px a frame at 120 Hz, about 2000 px/s.
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.byKey(const Key('category.cat-fun'))),
+      );
+      for (var i = 1; i <= 6; i++) {
+        await gesture.moveBy(const Offset(0, 16), timeStamp: Duration(milliseconds: 8 * i));
+        await tester.pump(const Duration(milliseconds: 8));
+      }
+      await gesture.up(timeStamp: const Duration(milliseconds: 56));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add.sheet')), findsNothing);
+    });
+
+    testWidgets('a drag up on the scrolling middle, at its top, scrolls it, as on a phone', (
+      tester,
+    ) async {
+      await pump(tester, size: const Size(360, 640));
+      await openSheet(tester);
+      final category = find.byKey(const Key('category.cat-fun'));
+      final before = tester.getTopLeft(category).dy;
+      final gesture = await tester.startGesture(tester.getCenter(category));
+      await tester.pump(const Duration(milliseconds: 16));
+      for (var i = 0; i < 10; i++) {
+        await gesture.moveBy(const Offset(0, -12));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('add.sheet')), findsOneWidget);
+      expect(tester.getTopLeft(category).dy, lessThan(before - 30), reason: 'the middle scrolled');
     });
 
     testWidgets('a drag down on the name field closes it too, and picks nothing', (tester) async {
