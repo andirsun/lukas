@@ -36,6 +36,7 @@ class TrendChart extends StatefulWidget {
     required this.current,
     required this.currency,
     required this.order,
+    this.onSpin,
   });
 
   /// One entry per month, oldest first; null while loading.
@@ -50,6 +51,9 @@ class TrendChart extends StatefulWidget {
   final String current;
   final String currency;
   final int order;
+
+  /// Called as the bars grow into new figures (the screen makes it felt as a wheel).
+  final VoidCallback? onSpin;
 
   @override
   State<TrendChart> createState() => _TrendChartState();
@@ -149,6 +153,7 @@ class _TrendChartState extends State<TrendChart> {
                               animate: !reduce,
                               duration: LukitasTokens.durationHop,
                               formatTick: (cents) => compactAmount(cents, locale),
+                              onSweep: widget.onSpin,
                             ),
                           ),
                           // A tap target per month over the plot: tapping one selects it. Touch only

@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../feedback/celebration.dart';
+import '../feedback/feedback.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/surfaces.dart';
 import '../theme/text_styles.dart';
@@ -147,6 +148,8 @@ class BottomBar extends StatelessWidget {
                         style: LkText.plus,
                         label: l10n.navAdd,
                         onPressed: onAdd,
+                        pressedFeel: FeedbackEvent.addPressed,
+                        releasedFeel: FeedbackEvent.addReleased,
                       ),
                     ),
                   ),
@@ -168,6 +171,8 @@ class BottomBar extends StatelessWidget {
                           style: LkText.tabIcon,
                           label: l10n.captureFabLabel,
                           onPressed: onMic,
+                          pressedFeel: FeedbackEvent.micPressed,
+                          releasedFeel: FeedbackEvent.micReleased,
                         ),
                       ),
                     ),
@@ -243,6 +248,9 @@ class _Tab extends StatelessWidget {
 
 /// `.lk-plus`: a square of `brand` on its solid edge and glow, the bar's one raised element; it
 /// sinks 5px into its edge while pressed. The 🎤 is the same, smaller.
+///
+/// It feels like a physical button: [pressedFeel] clicks as the finger lands and [releasedFeel]
+/// as it lets go (the ＋'s firmer than the 🎤's).
 class _RaisedButton extends StatelessWidget {
   const _RaisedButton({
     super.key,
@@ -251,6 +259,8 @@ class _RaisedButton extends StatelessWidget {
     required this.style,
     required this.label,
     required this.onPressed,
+    required this.pressedFeel,
+    required this.releasedFeel,
   });
 
   final double size;
@@ -258,6 +268,8 @@ class _RaisedButton extends StatelessWidget {
   final TextStyle style;
   final String label;
   final VoidCallback onPressed;
+  final FeedbackEvent pressedFeel;
+  final FeedbackEvent releasedFeel;
 
   @override
   Widget build(BuildContext context) {
@@ -267,6 +279,8 @@ class _RaisedButton extends StatelessWidget {
     return Pressable(
       onPressed: onPressed,
       label: label,
+      onFingerDown: () => context.feedback(pressedFeel),
+      onFingerUp: () => context.feedback(releasedFeel),
       builder: (context, state) {
         final pressed = state.pressed;
         return PressSurface(

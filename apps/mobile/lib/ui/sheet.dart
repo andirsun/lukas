@@ -42,7 +42,9 @@ abstract final class LkSheet {
   /// in [wrap]: it gets the whole sheet (its header, parts and backdrop) and returns it inside
   /// whatever holds the state, so every part under it can read it. [titleOf] then names the sheet
   /// from there (the add sheet's title follows the kind), in the header and for assistive
-  /// technology; [title] is what it says without one.
+  /// technology; [title] is what it says without one. [titleTag] is a small tag beside the title
+  /// (quick capture's "Beta"), shown only where it fits there with the title still on one line:
+  /// it never makes the header taller.
   ///
   /// [children] sit under the title, [pinned] and [footer] make the add sheet's layout: with a
   /// [footer] the sheet may take all but a strip of the screen, [pinned] stays under the header,
@@ -72,6 +74,7 @@ abstract final class LkSheet {
     ValueListenable<bool>? locked,
     T Function()? backResult,
     String Function(BuildContext context)? titleOf,
+    String? titleTag,
     Widget Function(Widget sheet)? wrap,
   }) {
     final navigator = Navigator.of(context, rootNavigator: useRootNavigator);
@@ -79,6 +82,7 @@ abstract final class LkSheet {
       _LkSheetRoute<T>(
         title: title,
         titleOf: titleOf,
+        titleTag: titleTag,
         wrap: wrap,
         children: children,
         pinned: pinned,
@@ -166,6 +170,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
   _LkSheetRoute({
     required this.title,
     required this.titleOf,
+    required this.titleTag,
     required this.wrap,
     required this.children,
     required this.pinned,
@@ -181,6 +186,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
 
   final String title;
   final String Function(BuildContext context)? titleOf;
+  final String? titleTag;
   final Widget Function(Widget sheet)? wrap;
   final List<Widget> children;
   final List<Widget> pinned;
@@ -219,6 +225,7 @@ class _LkSheetRoute<T> extends PopupRoute<T> {
       animation: animation,
       title: title,
       titleOf: titleOf,
+      titleTag: titleTag,
       wrap: wrap,
       pinned: pinned,
       footer: footer,
@@ -238,6 +245,7 @@ class _SheetPage extends StatefulWidget {
     required this.animation,
     required this.title,
     required this.titleOf,
+    required this.titleTag,
     required this.wrap,
     required this.children,
     required this.pinned,
@@ -253,6 +261,7 @@ class _SheetPage extends StatefulWidget {
   final Animation<double> animation;
   final String title;
   final String Function(BuildContext context)? titleOf;
+  final String? titleTag;
   final Widget Function(Widget sheet)? wrap;
   final List<Widget> children;
   final List<Widget> pinned;
@@ -295,16 +304,19 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
     _dragY.addListener(() => setState(() {}));
     _scroll.addListener(_onScroll);
     widget.locked?.addListener(_lockChanged);
+    widget.animation.addStatusListener(_onTravel);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _reduceMotion = MediaQuery.disableAnimationsOf(context);
+    _feel = feedbackOf(context);
   }
 
   @override
   void dispose() {
+    widget.animation.removeStatusListener(_onTravel);
     widget.locked?.removeListener(_lockChanged);
     _dragY.dispose();
     _scroll.dispose();
@@ -314,6 +326,16 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
   void _onScroll() {
     final scrolled = _scroll.hasClients && _scroll.offset > 0;
     if (scrolled != _scrolled) setState(() => _scrolled = scrolled);
+  }
+
+  /// Feedback, looked up while the sheet is in the tree: it is still felt as the sheet leaves it.
+  void Function(FeedbackEvent event) _feel = (_) {};
+
+  /// The sheet is a real object: it lands when it has slid all the way up, and shuts when it has
+  /// slid all the way out, however it was closed.
+  void _onTravel(AnimationStatus status) {
+    if (status == AnimationStatus.completed) _feel(FeedbackEvent.sheetOpened);
+    if (status == AnimationStatus.dismissed) _feel(FeedbackEvent.sheetClosed);
   }
 
   void _close() {
@@ -505,18 +527,41 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
           spacing: LukitasTokens.space2,
           children: [
             Flexible(
-              child: Semantics(
-                header: true,
-                // Under whatever the sheet is wrapped in: its title may follow its state.
-                child: Builder(
-                  builder: (context) => BlinkLine(
-                    style: LkText.title,
-                    child: Text(
-                      widget.titleOf?.call(context) ?? widget.title,
-                      style: LkText.title.copyWith(color: colors.ink),
+              // Under whatever the sheet is wrapped in: its title may follow its state.
+              child: Builder(
+                builder: (context) {
+                  final title = Semantics(
+                    header: true,
+                    child: BlinkLine(
+                      style: LkText.title,
+                      child: Text(
+                        widget.titleOf?.call(context) ?? widget.title,
+                        style: LkText.title.copyWith(color: colors.ink),
+                      ),
                     ),
-                  ),
-                ),
+                  );
+                  final tag = widget.titleTag;
+                  if (tag == null) return title;
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final text = widget.titleOf?.call(context) ?? widget.title;
+                      final fits =
+                          _lineWidth(context, text, LkText.title) +
+                              LukitasTokens.space2 +
+                              _TitleTag.widthOf(context, tag) <=
+                          constraints.maxWidth;
+                      if (!fits) return title;
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        spacing: LukitasTokens.space2,
+                        children: [
+                          Flexible(child: title),
+                          _TitleTag(tag),
+                        ],
+                      );
+                    },
+                  );
+                },
               ),
             ),
             if (_dismissible)
@@ -785,6 +830,55 @@ class _SheetPageState extends State<_SheetPage> with SingleTickerProviderStateMi
 
 /// `.lk-sheet-footer` in a sheet with a pinned footer: full width under the scrolling body, a
 /// 2px `stroke` line above it, the keypad's and the save button's place.
+/// How wide [text] is on one line in [style], at the phone's font size.
+double _lineWidth(BuildContext context, String text, TextStyle style) {
+  final painter = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+    maxLines: 1,
+  )..layout();
+  final width = painter.width;
+  painter.dispose();
+  return width;
+}
+
+/// A sheet's title tag: the look of a plain `.lk-badge` (a pill with a thin edge, upper case), in
+/// the muted ink so it does not compete with the title.
+class _TitleTag extends StatelessWidget {
+  const _TitleTag(this.label);
+
+  final String label;
+
+  /// 7px by 2px inside a 1px edge (`.lk-badge`).
+  static const _padding = EdgeInsets.symmetric(horizontal: 7 + 1, vertical: 2 + 1);
+
+  static double widthOf(BuildContext context, String label) =>
+      _lineWidth(context, LkText.upperCase(label), LkText.badge) + _padding.horizontal + 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.lkColors;
+    final text = LkText.badge.copyWith(color: colors.inkMuted);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: LkSurface.radius(LkRadius.pill),
+        border: Border.all(color: colors.inkMuted),
+      ),
+      child: Padding(
+        padding: _padding,
+        child: Transform.translate(
+          offset: Offset(letterSpacingShift(context, text.letterSpacing!), 0),
+          child: BlinkLine(
+            style: LkText.badge,
+            child: Text(LkText.upperCase(label), style: text),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SheetFooter extends StatelessWidget {
   const _SheetFooter({
     required this.children,

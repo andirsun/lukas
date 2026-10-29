@@ -6,10 +6,12 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show SchedulerBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../add/add_sheet.dart';
 import '../capture/capture_sheet.dart';
+import '../feedback/feedback.dart';
 import '../home/home_controller.dart';
 import '../home/home_repository.dart';
 import '../home/lukitas_face.dart';
@@ -53,6 +55,18 @@ class InsightsScreen extends ConsumerStatefulWidget {
 }
 
 class _InsightsScreenState extends ConsumerState<InsightsScreen> {
+  /// Whether a wheel has been felt this frame: the donut and the trend that move together (a new
+  /// period, a new month) turn one wheel, not two at once.
+  bool _spunThisFrame = false;
+
+  /// The charts sweep into new figures: it feels like a wheel spinning down to a stop.
+  void _spin() {
+    if (_spunThisFrame) return;
+    _spunThisFrame = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) => _spunThisFrame = false);
+    ref.read(feedbackProvider)(FeedbackEvent.wheelSpun);
+  }
+
   var _started = false;
 
   InsightsController get _controller => ref.read(insightsProvider.notifier);
@@ -244,6 +258,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                               current: current,
                               currency: data.currency,
                               order: 0,
+                              onSpin: _spin,
                             ),
                             TrendChart(
                               report: state.trend.data,
@@ -253,6 +268,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
                               current: current,
                               currency: data.currency,
                               order: 1,
+                              onSpin: _spin,
                             ),
                             CostOfLiving(
                               report: state.living.data,

@@ -40,10 +40,28 @@ class HapticSpecTest {
     @Test
     fun aPrimitiveWeDoNotKnowDropsTheCompositionNotTheWaveform() {
         val spec = HapticSpec.parse(
-            args(primitives = listOf(mapOf("name" to "thud", "scale" to 1.0, "delay" to 0))),
+            args(primitives = listOf(mapOf("name" to "spin", "scale" to 1.0, "delay" to 0))),
         )!!
         assertEquals(emptyList<PrimitiveStep>(), spec.primitives)
         assertEquals(listOf(14L, 30L, 8L), spec.waveform)
+    }
+
+    @Test
+    fun readsTheDeepPrimitivesWithAClickAndATickToFallBackOn() {
+        val spec = HapticSpec.parse(
+            args(
+                primitives = listOf(
+                    mapOf("name" to "thud", "scale" to 0.7, "delay" to 0),
+                    mapOf("name" to "lowTick", "scale" to 0.35, "delay" to 50),
+                ),
+            ),
+        )!!
+        assertEquals(
+            listOf(PrimitiveStep("thud", 0.7f, 0), PrimitiveStep("lowTick", 0.35f, 50)),
+            spec.primitives,
+        )
+        assertEquals(listOf("click", "tick"), spec.primitives.map { it.fallback })
+        assertNull(PrimitiveStep("click", 1f, 0).fallback)
     }
 
     @Test

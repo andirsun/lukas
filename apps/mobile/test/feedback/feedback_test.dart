@@ -1,8 +1,10 @@
+import 'package:flutter/animation.dart' show Curves;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/feedback/feedback.dart';
+import 'package:lukitas/theme/tokens.g.dart';
 
 import 'fakes.dart';
 
@@ -46,7 +48,19 @@ void main() {
       FeedbackEvent.undo: ([8], FeedbackSound.undo),
       FeedbackEvent.thresholdCrossed: ([10], null),
       FeedbackEvent.pageChanged: ([15], null),
-      FeedbackEvent.keyPressed: ([8], null),
+      FeedbackEvent.keyPressed: ([14], null),
+      FeedbackEvent.amountCleared: ([20, 40, 10], null),
+      // The app's own (the web has no ＋ of this kind, nor sheets that weigh): they only vibrate.
+      FeedbackEvent.addPressed: ([20], null),
+      FeedbackEvent.addReleased: ([10], null),
+      FeedbackEvent.micPressed: ([12], null),
+      FeedbackEvent.micReleased: ([6], null),
+      FeedbackEvent.sheetOpened: ([18, 50, 6], null),
+      FeedbackEvent.sheetClosed: ([16], null),
+      FeedbackEvent.wheelSpun: (
+        [8, 18, 8, 20, 8, 21, 8, 22, 8, 24, 8, 25, 8, 27, 8, 30, 8, 34, 8, 39, 8, 50, 8, 114, 20],
+        null,
+      ),
     };
 
     test('each event maps to its haptic pattern and sound', () async {
@@ -64,17 +78,74 @@ void main() {
       }
     });
 
-    test('every pattern also has Android 11 primitives, each with a scale between 0 and 1', () {
+    test('every pattern also has primitives, each with a scale between 0 and 1', () {
       for (final event in FeedbackEvent.values) {
         final pattern = hapticPatterns[event]!;
         expect(pattern.primitives, isNotEmpty, reason: '$event');
         for (final step in pattern.primitives) {
-          expect(['click', 'tick'], contains(step.name), reason: '$event');
+          expect(['click', 'tick', 'thud', 'lowTick'], contains(step.name), reason: '$event');
           expect(step.scale, inInclusiveRange(0.1, 1.0), reason: '$event');
           expect(step.delayMs, greaterThanOrEqualTo(0), reason: '$event');
         }
       }
     });
+
+    test('the ＋ clicks like a real button, harder than the 🎤, going down and coming up', () {
+      double strength(FeedbackEvent event) => hapticPatterns[event]!.primitives.single.scale;
+      int length(FeedbackEvent event) => hapticPatterns[event]!.waveform.single;
+      expect(hapticPatterns[FeedbackEvent.addPressed]!.primitives.single.name, 'click');
+      expect(strength(FeedbackEvent.addPressed), greaterThan(strength(FeedbackEvent.addReleased)));
+      expect(strength(FeedbackEvent.addPressed), greaterThan(strength(FeedbackEvent.micPressed)));
+      expect(strength(FeedbackEvent.addReleased), greaterThan(strength(FeedbackEvent.micReleased)));
+      expect(length(FeedbackEvent.addPressed), greaterThan(length(FeedbackEvent.micPressed)));
+      expect(length(FeedbackEvent.addReleased), greaterThan(length(FeedbackEvent.micReleased)));
+    });
+
+    test('a sheet lands with a thud and shuts with a lighter one', () {
+      final opened = hapticPatterns[FeedbackEvent.sheetOpened]!.primitives;
+      final closed = hapticPatterns[FeedbackEvent.sheetClosed]!.primitives;
+      expect(opened.first.name, 'thud');
+      expect(closed.single.name, 'thud');
+      expect(closed.single.scale, lessThan(opened.first.scale));
+    });
+
+    test(
+      'the wheel ticks where easeOut crosses each twelfth of the sweep, and stops at its end',
+      () {
+        final waveform = hapticPatterns[FeedbackEvent.wheelSpun]!.waveform;
+        // When each vibration starts, in ms from the sweep's start.
+        final starts = <int>[];
+        var at = 0;
+        for (var i = 0; i < waveform.length; i++) {
+          if (i.isEven) starts.add(at);
+          at += waveform[i];
+        }
+        expect(starts, hasLength(13), reason: 'the start, 11 notches and the stop');
+        const sweep = 520;
+        expect(LukitasTokens.durationHop.inMilliseconds, sweep);
+        for (var k = 1; k < 12; k++) {
+          // Where the curve has covered k twelfths, found by bisection.
+          var lo = 0.0, hi = 1.0;
+          for (var i = 0; i < 40; i++) {
+            final mid = (lo + hi) / 2;
+            if (Curves.easeOut.transform(mid) < k / 12) {
+              lo = mid;
+            } else {
+              hi = mid;
+            }
+          }
+          expect(starts[k], closeTo(lo * sweep, 2), reason: 'notch $k');
+        }
+        expect(starts.last, sweep, reason: 'the stop is where the figures settle');
+        final gaps = [for (var k = 1; k < starts.length; k++) starts[k] - starts[k - 1]];
+        for (var k = 1; k < gaps.length; k++) {
+          expect(gaps[k], greaterThanOrEqualTo(gaps[k - 1]), reason: 'it only slows down');
+        }
+        final steps = hapticPatterns[FeedbackEvent.wheelSpun]!.primitives;
+        expect(steps.last.name, 'click', reason: 'it stops with a click');
+        expect(steps.take(12).every((step) => step.name == 'tick'), isTrue);
+      },
+    );
 
     test('the sound files are the web\'s, in the app\'s assets', () {
       expect(FeedbackSound.expenseSaved.asset, 'assets/sounds/expense-saved.mp3');

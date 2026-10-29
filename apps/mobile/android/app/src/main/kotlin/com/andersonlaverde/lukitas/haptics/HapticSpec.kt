@@ -1,7 +1,20 @@
 package com.andersonlaverde.lukitas.haptics
 
-/** One step of a composition: `click` or `tick` at a [scale] (0 to 1) after [delayMs] of quiet. */
-data class PrimitiveStep(val name: String, val scale: Float, val delayMs: Int)
+/**
+ * One step of a composition: `click`, `tick`, `thud` or `lowTick` at a [scale] (0 to 1) after
+ * [delayMs] of quiet.
+ */
+data class PrimitiveStep(val name: String, val scale: Float, val delayMs: Int) {
+    /**
+     * What plays in its place on a motor without it: the deep `thud` and `lowTick` (Android 12)
+     * fall back to the `click` and `tick` every motor with primitives has; those have none.
+     */
+    val fallback: String? get() = FALLBACKS[name]
+
+    private companion object {
+        val FALLBACKS = mapOf("thud" to "click", "lowTick" to "tick")
+    }
+}
 
 /**
  * What Dart asks the motor for (lib/feedback/feedback_event.dart's `HapticPattern`): the web's
@@ -18,7 +31,7 @@ data class HapticSpec(val waveform: List<Long>, val primitives: List<PrimitiveSt
     companion object {
         private const val MAX_STEPS = 32
         private const val MAX_MS = 1000L
-        private val KNOWN = setOf("click", "tick")
+        private val KNOWN = setOf("click", "tick", "thud", "lowTick")
 
         /** The spec in a method call's arguments, or null when there is nothing sound to play. */
         fun parse(arguments: Any?): HapticSpec? {

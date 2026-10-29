@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show SemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lukitas/ui/keypad.dart';
@@ -189,4 +190,38 @@ void main() {
       handle.dispose();
     },
   );
+
+  testWidgets('held down, the backspace clears the whole amount', (t) async {
+    final changes = <String>[];
+    await t.pumpWidget(uiApp(_Pad(initial: '1234,5', changes: changes)));
+    await t.longPress(find.byKey(const Key('keypad.backspace')));
+    await t.pump();
+    expect(_raw(t), '');
+    expect(changes, [''], reason: 'one change, not one per digit');
+  });
+
+  testWidgets('held down on nothing, the backspace changes nothing', (t) async {
+    final changes = <String>[];
+    await t.pumpWidget(uiApp(_Pad(changes: changes)));
+    await t.longPress(find.byKey(const Key('keypad.backspace')));
+    await t.pump();
+    expect(changes, isEmpty);
+  });
+
+  testWidgets('a digit held down still types itself once, as it always has', (t) async {
+    final changes = <String>[];
+    await t.pumpWidget(uiApp(_Pad(initial: '12', changes: changes)));
+    await t.longPress(find.byKey(const Key('keypad.5')));
+    await t.pump();
+    expect(changes, ['125']);
+  });
+
+  testWidgets('screen readers hear that holding the backspace clears everything', (t) async {
+    final handle = t.ensureSemantics();
+    await t.pumpWidget(uiApp(const _Pad(initial: '12')));
+    final node = t.getSemantics(find.bySemanticsLabel('Borrar dígito'));
+    expect(node.hint, 'Mantén presionado para borrar todo');
+    expect(node.getSemanticsData().hasAction(SemanticsAction.longPress), isTrue);
+    handle.dispose();
+  });
 }

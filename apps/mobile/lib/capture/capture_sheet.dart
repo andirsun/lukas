@@ -30,6 +30,8 @@ export 'capture_session.dart'
 Future<void> openCapture(BuildContext context, {bool listen = true}) => LkSheet.show<void>(
   context,
   title: AppLocalizations.of(context).captureTitle,
+  // Quick capture is still experimental.
+  titleTag: AppLocalizations.of(context).captureBeta,
   wrap: (sheet) => CaptureSheet(listen: listen, child: sheet),
   children: const [CaptureBody()],
   footer: const [CaptureFooter()],
