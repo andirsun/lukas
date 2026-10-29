@@ -1,0 +1,11 @@
+# Runs lukitas-deploy.service every 5 minutes. A run with nothing new to deploy is one
+# `git ls-remote` and nothing else.
+[Unit]
+Description=Lukitas: look for a new commit to deploy every 5 minutes
+
+[Timer]
+OnCalendar=*:0/5
+RandomizedDelaySec=30
+
+[Install]
+WantedBy=timers.target

@@ -38,6 +38,9 @@ jobs:
       # The R2 copy of the backups (only .age files go up, keys never on the command line), against
       # a fake rclone.
       - run: deploy/personal/test-r2.sh
+      # The server's automatic deploy (CI gate, exact commit, rollback), against a local repository
+      # and a fake GitHub API.
+      - run: deploy/personal/test-auto-deploy.sh
 
   e2e:
     runs-on: ubuntu-latest

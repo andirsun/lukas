@@ -1,0 +1,18 @@
+# Deploys main on its own when CI has passed (auto-deploy.sh), run by lukitas-deploy.timer.
+# install-auto-deploy.sh fills in the user, the home folder, bash and the repository, and installs it in
+# /etc/systemd/system. Logs: journalctl -u lukitas-deploy.service
+[Unit]
+Description=Lukitas: deploy main when CI has passed (deploy/personal/auto-deploy.sh)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=@USER@
+Environment=HOME=@HOME@
+WorkingDirectory=@REPO_DIR@/deploy/personal
+ExecStart=@BASH@ @REPO_DIR@/deploy/personal/auto-deploy.sh
+# A deploy builds the web and the images: give it time, and let the app keep the CPU first.
+TimeoutStartSec=45min
+Nice=10
