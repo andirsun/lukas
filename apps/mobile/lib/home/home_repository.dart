@@ -37,7 +37,7 @@ class TransactionsPage {
 }
 
 /// A call home made did not work. [status] is the HTTP status, or 0 when there was no answer at all
-/// (offline, a timeout, a lost connection). [code] is the API's own error code when it sent one
+/// (offline, a timeout, a lost connection, a proxy saying the server is not there). [code] is the API's own error code when it sent one
 /// (`category_not_found`, `idempotency_in_progress`).
 class HomeFailure implements Exception {
   const HomeFailure(this.status, {this.code});
@@ -54,8 +54,17 @@ class HomeFailure implements Exception {
       }
     }
     final code = body is Map ? body['code'] : null;
-    return HomeFailure(error.response?.statusCode ?? 0, code: code is String ? code : null);
+    final status = error.response?.statusCode ?? 0;
+    // The server down behind Caddy and Cloudflare (deploy/personal): the answer is the proxy's own
+    // page, never the API's problem document, and it means the same as no answer at all.
+    if (code is! String && _fromProxy(status)) return const HomeFailure(0);
+    return HomeFailure(status, code: code is String ? code : null);
   }
+
+  /// A gateway status (502, 503, 504) or one of Cloudflare's own (520 to 530): what a proxy says
+  /// when the server behind it does not answer.
+  static bool _fromProxy(int status) =>
+      status == 502 || status == 503 || status == 504 || (status >= 520 && status <= 530);
 
   final int status;
   final String? code;

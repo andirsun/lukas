@@ -91,10 +91,10 @@ void main() {
   });
 
   test('a failed export is a HomeFailure with the status, and no answer is offline', () async {
-    adapter.status = 503;
+    adapter.status = 500;
     await expectLater(
       repo.export(ExportFormat.json),
-      throwsA(isA<HomeFailure>().having((f) => f.status, 'status', 503)),
+      throwsA(isA<HomeFailure>().having((f) => f.status, 'status', 500)),
     );
     adapter.status = null;
     adapter.noAnswer = true;
