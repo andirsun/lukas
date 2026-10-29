@@ -20,12 +20,18 @@
 #
 # Optional encrypted second copy: set BACKUP_COPY_DIR (a folder, e.g. in iCloud Drive) and
 # BACKUP_AGE_RECIPIENT (an age public key, "age1...") in .env. After a good backup, the dump is
-# encrypted with `age` (brew install age) into BACKUP_COPY_DIR/<name>.age, and the same retention
+# encrypted with `age` (brew or apt install age) into BACKUP_COPY_DIR/<name>.age, and the same retention
 # applies there (tested by test-retention.sh). Without `age` the copy is skipped with a warning.
 # The dump itself is checked before it is encrypted. See README, "Backup and restore".
 #
-# Needs the stack running (Docker Desktop up). Settings: BACKUP_DIR, KEEP (default 14),
-# BACKUP_COPY_DIR, BACKUP_AGE_RECIPIENT, ENV_FILE.
+# Optional copy in Cloudflare R2: with BACKUP_R2_BUCKET (and BACKUP_R2_ENDPOINT,
+# BACKUP_R2_ACCESS_KEY_ID, BACKUP_R2_SECRET_ACCESS_KEY), the encrypted copy is also uploaded there
+# with rclone, and counts only once the bucket lists it. Only the .age copy goes up, never the dump,
+# so R2 needs the encrypted copy set up. Its 14 days are a lifecycle rule on the bucket. See README,
+# "Backups in Cloudflare R2".
+#
+# Needs the stack running. Settings: BACKUP_DIR, KEEP (default 14), BACKUP_COPY_DIR,
+# BACKUP_AGE_RECIPIENT, BACKUP_R2_*, ENV_FILE.
 set -euo pipefail
 # shellcheck source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -38,7 +44,7 @@ for arg in "$@"; do
   case "$arg" in
     --pre-update) pre_update=1 ;;
     -h | --help)
-      sed -n '2,27p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,34p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *) die "unknown option: $arg" ;;
@@ -90,6 +96,12 @@ cleanup() {
 trap cleanup EXIT
 
 command -v docker >/dev/null 2>&1 || fail "docker is not installed or not on PATH"
+# R2 set up wrong is found before the dump, not after it.
+r2_problem_now="$(r2_problem)"
+[ -z "$r2_problem_now" ] || fail "$r2_problem_now"
+if [ -n "$(cfg BACKUP_R2_BUCKET)" ] && { [ -z "$copy_dir" ] || [ -z "$age_recipient" ]; }; then
+  fail "BACKUP_R2_BUCKET needs the encrypted copy: set BACKUP_COPY_DIR and BACKUP_AGE_RECIPIENT too"
+fi
 docker info >/dev/null 2>&1 || fail "Docker is not running"
 db_running || fail "the database container is not running (is the stack up?)"
 [ "$backup_dir" != "$HOME" ] && [ "$backup_dir" != "/" ] || fail "BACKUP_DIR must be a folder of its own, not $backup_dir"
@@ -149,7 +161,7 @@ if [ -n "$copy_dir" ] || [ -n "$age_recipient" ]; then
   if [ -z "$copy_dir" ] || [ -z "$age_recipient" ]; then
     echo "WARNING: set both BACKUP_COPY_DIR and BACKUP_AGE_RECIPIENT for the encrypted copy; skipping it." >&2
   elif ! command -v age >/dev/null 2>&1; then
-    echo "WARNING: 'age' is not installed (brew install age); skipping the encrypted copy." >&2
+    echo "WARNING: 'age' is not installed (brew install age, or apt install age); skipping the encrypted copy." >&2
   else
     case "$age_recipient" in
       age1*) ;;
@@ -171,4 +183,13 @@ if [ -n "$copy_dir" ] || [ -n "$age_recipient" ]; then
     fi
     [ -z "$copy_failed" ] || fail "the backup is saved, but the encrypted copy failed: $copy_failed"
   fi
+fi
+
+# --- The encrypted copy in Cloudflare R2, off this machine. Its 14 days are the bucket's lifecycle.
+if r2_enabled; then
+  [ -f "$copy_dir/$name.age" ] ||
+    fail "the backup is saved, but there is no encrypted copy to send to R2 (is 'age' installed?)"
+  say "Uploading the encrypted copy to R2 ($(cfg BACKUP_R2_BUCKET))"
+  r2_upload "$copy_dir/$name.age" || fail "the backup is saved, but the upload to R2 failed"
+  say "In R2: $(cfg BACKUP_R2_BUCKET)/$name.age"
 fi

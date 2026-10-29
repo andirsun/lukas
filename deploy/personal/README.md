@@ -297,6 +297,58 @@ file says) would take both. So:
    ./restore.sh --drill lukitas-2026-10-21.dump     # then ./restore.sh <dump> for real
    ```
 
+### Backups in Cloudflare R2
+
+On a server, the copy off the machine goes to a Cloudflare R2 bucket (its free tier is far more
+than a few years of dumps). `backup.sh` uploads the **encrypted** copy above after each good backup,
+never the plain dump, and the run fails if the upload does not show up in the bucket. The server
+holds only the age **public** key: whoever gets into the server can write copies but cannot read
+any of them.
+
+Once, in the Cloudflare dashboard:
+
+1. **R2 > Create bucket**, e.g. `lukitas-backups`, no public access.
+2. **The bucket > Settings > Object lifecycle rules > Add rule:** delete objects 14 days after they
+   are uploaded, for the whole bucket. This is what keeps the 14-day promise in R2, even if the
+   server is gone. `backup.sh` deletes nothing there.
+3. **R2 > Manage API tokens > Create API token:** permission **Object Read & Write**, applied to
+   **that bucket only**. It shows an access key id, a secret access key and the account's S3
+   endpoint (`https://<account id>.r2.cloudflarestorage.com`). The secret is shown once.
+
+On your Mac, make the age key (as in the section above) and keep the key file in your password
+manager; only the `age1...` line goes to the server. On the server:
+
+```sh
+sudo apt install -y age rclone
+```
+
+and in `.env`:
+
+```sh
+BACKUP_COPY_DIR=~/Backups/lukitas-encrypted
+BACKUP_AGE_RECIPIENT=age1....
+BACKUP_R2_BUCKET=lukitas-backups
+BACKUP_R2_ENDPOINT=https://<account id>.r2.cloudflarestorage.com
+BACKUP_R2_ACCESS_KEY_ID=...
+BACKUP_R2_SECRET_ACCESS_KEY=...
+```
+
+Then `./backup.sh` once by hand: it ends with `In R2: lukitas-backups/lukitas-YYYY-MM-DD.dump.age`.
+The keys reach rclone through its environment, never its command line. `./test-r2.sh` checks that
+logic against a fake rclone.
+
+**Restore from R2.** It needs the age private key, which is not on the server. Either restore on
+your Mac (with `age` and `rclone` installed and the same `BACKUP_R2_*` in its `.env`), or put the
+key file on the server for the restore and delete it after:
+
+```sh
+./restore.sh --drill --from-r2 --identity=lukitas-backup.key lukitas-2026-10-21.dump.age
+./restore.sh --from-r2 --identity=lukitas-backup.key lukitas-2026-10-21.dump.age    # for real
+```
+
+`restore.sh` also takes a local `.age` file with `--identity=KEY`. Either way it decrypts into a
+private temporary folder that is removed when it ends.
+
 **Restore drill** (do it after the first backup and every month or two): restores the dump into a
 scratch database next to the real one, prints the row counts, drops it. Nothing live changes.
 
@@ -341,7 +393,10 @@ work).
    `cloudflared tunnel route dns --overwrite-dns <new tunnel> app-lukas.andersonlaverde.com`.
 5. Check `./smoke.sh` and sign in. Keep the Mac's last dump until the server has its own.
 
-Install `backup.sh` on the server with cron or a systemd timer (`install-backup.sh` is macOS only).
+On the server, `./install-backup.sh` installs the daily backup as a systemd timer at 08:00 UTC (03:00
+in Colombia; logs: `journalctl -u lukitas-backup.service`), and `./uninstall-backup.sh` removes it.
+Set up the copy in R2 (above) before real data lives there: a backup on the same disk is lost with
+it. On the Mac, `./uninstall-backup.sh` removes the launchd agent once the server has taken over.
 
 ## Files
 
@@ -355,7 +410,10 @@ Install `backup.sh` on the server with cron or a systemd timer (`install-backup.
 | `.env.example` | Every setting, documented |
 | `up.sh` `update.sh` `smoke.sh` | Start, update, check |
 | `backup.sh` `restore.sh` | Verified backups; restore and drill |
-| `install-backup.sh` `uninstall-backup.sh` `com.lukitas.backup.plist` | The 03:00 launchd agent |
+| `install-backup.sh` `uninstall-backup.sh` | The daily backup: launchd on the Mac, systemd on Linux |
+| `com.lukitas.backup.plist` | The 03:00 launchd agent (macOS) |
+| `lukitas-backup.service` `lukitas-backup.timer` | The 08:00 UTC systemd timer (Linux) |
+| `test-retention.sh` `test-r2.sh` | The 14-day retention, and the R2 upload against a fake rclone |
 
 ## How the client address gets to the API
 
