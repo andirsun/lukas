@@ -109,7 +109,9 @@ say "Checking the dump lists"
 toc="$(compose exec -T postgres pg_restore -l <"$partial")" || fail "pg_restore cannot read the dump"
 for table in $MAIN_TABLES; do
   table_name="$(printf '%s' "$table" | tr -d '"')"
-  printf '%s\n' "$toc" | grep -q "TABLE DATA public $table_name " || fail "the dump has no data section for table $table_name"
+  # A here-string, not `printf | grep -q`: grep -q stops at the first match, printf then gets
+  # SIGPIPE, and with pipefail the check fails on a table that is there (seen on Linux).
+  grep -q "TABLE DATA public $table_name " <<<"$toc" || fail "the dump has no data section for table $table_name"
 done
 
 say "Checking the dump restores (scratch database $scratch)"
