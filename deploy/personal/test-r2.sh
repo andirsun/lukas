@@ -23,6 +23,8 @@ printf 'args: %s\n' "$*" >>"$FAKE_RCLONE_LOG"
 printf 'env: %s %s %s %s %s\n' "${RCLONE_CONFIG_R2_TYPE:-}" "${RCLONE_CONFIG_R2_PROVIDER:-}" \
   "${RCLONE_CONFIG_R2_ACCESS_KEY_ID:-}" "${RCLONE_CONFIG_R2_SECRET_ACCESS_KEY:-}" \
   "${RCLONE_CONFIG_R2_ENDPOINT:-}" >>"$FAKE_RCLONE_LOG"
+printf 'opts: no_check_bucket=%s no_head=%s config=%s\n' "${RCLONE_CONFIG_R2_NO_CHECK_BUCKET:-}" \
+  "${RCLONE_CONFIG_R2_NO_HEAD:-}" "${RCLONE_CONFIG:-}" >>"$FAKE_RCLONE_LOG"
 [ "${FAKE_RCLONE_FAIL:-}" != "$1" ] || exit 1
 case "$1" in
   copyto)
@@ -91,6 +93,10 @@ check "it goes to the bucket under its own name" log_has "args: copyto $dump.age
 check "the upload is checked by listing it" log_has "args: lsf r2:lukitas-backups/lukitas-2026-10-29.dump.age"
 check "rclone gets the R2 settings in its environment" log_has "env: s3 Cloudflare key-id secret-key $endpoint"
 check "the secret is never an argument" eval '! grep "^args:" "$FAKE_RCLONE_LOG" | grep -q secret-key'
+# A token for one bucket's objects cannot check or create the bucket, and R2 answers 501 to the
+# HEAD ?versionId= rclone sends after an upload (seen with rclone 1.60): both are off.
+check "rclone does not check the bucket, nor HEAD the upload, nor read a config file" \
+  log_has "opts: no_check_bucket=true no_head=true config=/dev/null"
 
 # A failed upload is a failure.
 rm -f "$FAKE_RCLONE_STORE"/*

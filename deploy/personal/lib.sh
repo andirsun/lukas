@@ -185,10 +185,14 @@ r2_problem() {
 r2_enabled() { [ -n "$(cfg BACKUP_R2_BUCKET)" ] && [ -z "$(r2_problem)" ]; }
 
 # r2_rclone ARGS...: rclone with the R2 remote "r2:" set up in its environment, so the keys are
-# never in its arguments (anyone on the machine could read those in `ps`).
+# never in its arguments (anyone on the machine could read those in `ps`). No config file. The
+# token may only touch the bucket's objects, so rclone does not check or create the bucket; and it
+# does not HEAD an upload, since R2 answers 501 to the `?versionId=` rclone 1.60 adds (R2 checks
+# the upload's Content-MD5 itself, and r2_upload lists the object after).
 r2_rclone() {
   (
-    export RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+    export RCLONE_CONFIG=/dev/null RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+    export RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true RCLONE_CONFIG_R2_NO_HEAD=true
     RCLONE_CONFIG_R2_ENDPOINT="$(cfg BACKUP_R2_ENDPOINT)"
     RCLONE_CONFIG_R2_ACCESS_KEY_ID="$(cfg BACKUP_R2_ACCESS_KEY_ID)"
     RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$(cfg BACKUP_R2_SECRET_ACCESS_KEY)"
