@@ -35,20 +35,20 @@ function item(id: string, status: RoadmapStatus, glyph: string): RoadmapItem {
 export const ROADMAP_ITEMS: readonly RoadmapItem[] = [
   item("web_app", "done", "🌐"),
   item("demo", "done", "🧪"),
-  item("android_app", "building", "📲"),
-  item("android_widget", "building", "🎤"),
-  item("import_budge", "building", "📥"),
-  item("iphone_app", "next", "📱"),
+  item("android_app", "done", "📲"),
+  item("android_widget", "done", "🎤"),
+  item("import_budge", "done", "📥"),
+  item("offline", "building", "📴"),
+  item("iphone_app", "building", "📱"),
+  item("import_others", "building", "📂"),
   item("connect_ai", "next", "✨"),
   item("e2e_encryption", "next", "🔒"),
   item("bank_alerts", "later", "🏦"),
-  item("import_others", "later", "📂"),
-  item("offline", "later", "📴"),
   item("no_central_server", "later", "🔗"),
 ];
 
 /** The three items the landing shows in "what's next", in order. */
-export const LANDING_ROADMAP_IDS = ["android_app", "android_widget", "iphone_app"] as const;
+export const LANDING_ROADMAP_IDS = ["offline", "iphone_app", "connect_ai"] as const;
 
 export interface RoadmapColumn {
   status: RoadmapStatus;
