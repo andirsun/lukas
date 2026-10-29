@@ -215,6 +215,29 @@ after the migration but a failed deploy leaves the old API running against the n
 back to the code you had: `git checkout <old commit>`, `./update.sh --no-pull`; to go back to the
 data you had, restore the backup `update.sh` made.
 
+### Automatic deploy (on a server)
+
+On the server, `./install-auto-deploy.sh` (once, needs sudo and `sudo apt install jq`) installs a
+systemd timer that runs `auto-deploy.sh` every 5 minutes. The server asks; GitHub holds no key to
+it and nothing new is open in the firewall.
+
+- When `PERSONAL_BRANCH` has a new commit, it waits until that commit's required CI checks have
+  passed (`DEPLOY_REQUIRED_CHECKS` in `.env`, default `check e2e`; the mobile jobs and the landing
+  do not count). It asks GitHub's public API, so it needs no token.
+- Then it checks out **that** commit (not a newer one merged meanwhile) and runs
+  `update.sh --no-pull` (backup, rebuild, restart) and `smoke.sh`.
+- If either fails, it goes back to the commit before and rebuilds it. A commit whose CI, deploy or
+  smoke test failed is never tried again; to retry one, delete its line from
+  `~/.local/state/lukitas/failed-commits`.
+- A rewritten branch (force-pushed) is refused: it logs an error every run until a person looks.
+- The same rule as above holds: a migration runs before the new API starts, so going back to the
+  old code leaves the new schema. Keep migrations backward compatible; the pre-update backup is
+  there if not.
+
+There is no email yet, so a failed deploy only shows in `journalctl -u lukitas-deploy.service`
+(the app keeps running the version before). `./install-auto-deploy.sh --remove` turns it off.
+`./test-auto-deploy.sh` checks all of this against a local repository and a fake GitHub API.
+
 ## Backup and restore
 
 `backup.sh` writes `~/Backups/lukitas/lukitas-YYYY-MM-DD.dump` (`BACKUP_DIR` in `.env` changes the
@@ -414,6 +437,7 @@ it. On the Mac, `./uninstall-backup.sh` removes the launchd agent once the serve
 | `com.lukitas.backup.plist` | The 03:00 launchd agent (macOS) |
 | `lukitas-backup.service` `lukitas-backup.timer` | The 08:00 UTC systemd timer (Linux) |
 | `test-retention.sh` `test-r2.sh` | The 14-day retention, and the R2 upload against a fake rclone |
+| `auto-deploy.sh` `install-auto-deploy.sh` `lukitas-deploy.service` `lukitas-deploy.timer` `test-auto-deploy.sh` | The server's automatic deploy of `main` once CI passed, and its test |
 
 ## How the client address gets to the API
 
