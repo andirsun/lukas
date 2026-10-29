@@ -3341,5 +3341,40 @@
   "settingsAccountDeleteExpired": "Tu sesión había vencido, así que tu cuenta NO se eliminó. Entra de nuevo y vuelve a intentarlo.",
   "@settingsAccountDeleteExpired": {
     "description": "Settings: deleting failed because the session had expired; the account still exists and the phone signed out."
+  },
+  "savedOffline": "Sin conexión. {count, plural, =1{Lo subimos} other{Los subimos}} cuando vuelva la red.",
+  "@savedOffline": {
+    "description": "Add sheet and quick capture: a save with no network waits on the phone and goes up later.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unsentUploaded": "Ya {count, plural, =1{subimos el movimiento} other{subimos los {count} movimientos}} que anotaste sin conexión.",
+  "@unsentUploaded": {
+    "description": "Home: the movements saved with no network reached the server.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unsentRefused": "No pudimos guardar «{name}». Anótalo otra vez.",
+  "@unsentRefused": {
+    "description": "Home: the server refused a movement saved with no network; it was dropped.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unsentRowTap": "Aún no está en el servidor. Lo subimos cuando vuelva la red.",
+  "@unsentRowTap": {
+    "description": "Home: a tap on a row saved with no network and not uploaded yet."
+  },
+  "unsentLabel": "Sin subir",
+  "@unsentLabel": {
+    "description": "Home: read out on a row not uploaded yet (the cloud with a line through it)."
   }
 }

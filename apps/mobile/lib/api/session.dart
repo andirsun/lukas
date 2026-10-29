@@ -6,6 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../home/home_cache.dart';
 import '../home/widget_sync.dart';
+import '../offline/pending_saves.dart';
 import 'auth_api.dart';
 import 'client.dart';
 import 'device.dart';
@@ -410,12 +411,14 @@ class SessionController extends Notifier<SessionState> {
 
   /// The account was deleted on the server (or the server says the session is gone, which comes to
   /// the same for this phone): its session ends here without asking the server to end it. The home
-  /// cache goes first and is waited for, then the widget says "Abre Lukitas para empezar" and is
-  /// redrawn, and the token goes last: a process that dies in between still finds the session,
-  /// is told by the server it is gone, and puts the rest right at the next start.
+  /// cache and the saves waiting for the network go first and are waited for, then the widget says
+  /// "Abre Lukitas para empezar" and is redrawn, and the token goes last: a process that dies in
+  /// between still finds the session, is told by the server it is gone, and puts the rest right at
+  /// the next start.
   Future<void> accountDeleted() async {
     await ready;
     await clearHomeCache(ref.read(homeCacheStoreProvider));
+    await clearPendingSaves(ref.read(pendingSavesStoreProvider));
     await ref.read(widgetSyncProvider).signedOut().timeout(widgetWait, onTimeout: () {});
     await _store.clear();
     state = SessionState.signedOut;
@@ -430,9 +433,11 @@ class SessionController extends Notifier<SessionState> {
   /// session is forgotten: if the process dies in between, the session is still there and the
   /// next start puts things right, while the other order would leave the figure on the home
   /// screen with nobody signed in. Waited for at most [widgetWait]: signing out never hangs on
-  /// the widget's storage. The home cache is not waited for.
+  /// the widget's storage. The home cache is not waited for, nor are the saves still waiting for the
+  /// network (lib/offline/pending_saves.dart), which go with it.
   Future<void> _forgetWidget() async {
     unawaited(clearHomeCache(ref.read(homeCacheStoreProvider)));
+    unawaited(clearPendingSaves(ref.read(pendingSavesStoreProvider)));
     await ref.read(widgetSyncProvider).signedOut().timeout(widgetWait, onTimeout: () {});
   }
 }

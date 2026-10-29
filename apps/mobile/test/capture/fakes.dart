@@ -5,7 +5,7 @@ import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/capture/capture_repository.dart';
 import 'package:lukitas/capture/engine/speech_engine.dart';
 import 'package:lukitas/capture/models_download.dart';
-import 'package:lukitas/capture/parser/parse.dart' show Draft, Kind;
+import 'package:lukitas/capture/parser/parse.dart' show Draft;
 import 'package:lukitas/home/home_repository.dart';
 
 import '../home/fakes.dart';
@@ -117,22 +117,29 @@ class FakeCaptureRepository implements CaptureRepository {
   final failures = <String, Object>{};
 
   @override
-  Future<List<Transaction>> saveBatch(List<Draft> drafts, {required String idempotencyKey}) async {
-    calls.add('save $idempotencyKey ${drafts.map((d) => '${d.name}:${d.amount}').join(',')}');
+  Future<List<Transaction>> saveBatch(List<Draft> drafts, {required String idempotencyKey}) =>
+      createBatch(captureInputs(drafts), idempotencyKey: idempotencyKey);
+
+  @override
+  Future<List<Transaction>> createBatch(
+    List<CreateTransaction> items, {
+    required String idempotencyKey,
+  }) async {
+    calls.add('save $idempotencyKey ${items.map((t) => '${t.name}:${t.amount.abs()}').join(',')}');
     keys.add(idempotencyKey);
     final failure = failures.remove('save');
     if (failure != null) throw failure;
     final saved = _byKey[idempotencyKey] ??= [
-      for (final d in drafts)
+      for (final t in items)
         Transaction(
           (b) => b
             ..id = 'batch-${++_next}'
-            ..name = d.name
-            ..amount = d.kind == Kind.expense ? -d.amount : d.amount
+            ..name = t.name
+            ..amount = t.amount
             ..currency = server.currency
-            ..date = d.date
+            ..date = t.date
             ..status = TransactionStatusEnum.paid
-            ..categoryId = d.categoryId
+            ..categoryId = t.categoryId
             ..source_ = TransactionSource_Enum.app
             ..createdAt = '2026-10-22T10:00:00.000Z'
             ..updatedAt = '2026-10-22T10:00:00.000Z',

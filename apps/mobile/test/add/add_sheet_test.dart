@@ -352,30 +352,80 @@ void main() {
   });
 
   group('a failed save', () {
-    testWidgets('keeps the input and Reintentar resends with the same Idempotency-Key', (
+    testWidgets('a server error keeps the input and Reintentar resends the same key', (
       tester,
     ) async {
       final env = await pump(tester);
       await openSheet(tester);
       await tapKeys(tester, '25000');
-      env.add.loseNextAnswer = true;
+      env.add.failures['create'] = const HomeFailure(503);
       await tester.tap(find.byKey(const Key('add.save')));
       await tester.pumpAndSettle();
 
-      // The sheet stays, with what was typed, and says why; the server already has the movement.
+      // The sheet stays, with what was typed, and says why.
       expect(find.byKey(const Key('add.sheet')), findsOneWidget);
       expect(amountShown(tester), contains(r'$25.000'));
-      expect(find.text('Sin conexión. Revisa tu internet e inténtalo de nuevo.'), findsOneWidget);
-      expect(env.server.items.length, 2);
+      expect(
+        find.text('Tuvimos un problema de nuestro lado. Inténtalo de nuevo en un momento.'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byKey(const Key('add.retry')));
       await tester.pumpAndSettle();
       expect(env.add.keys.length, 2);
       expect(env.add.keys[0], env.add.keys[1]);
-      // One row, not two.
       expect(env.server.items.where((t) => t.name == 'Supermercado').length, 1);
       expect(find.byKey(const Key('add.sheet')), findsNothing);
       expect(find.text(r'Gasto en Supermercado: $25.000 (25 lukas)'), findsOneWidget);
+      await letTimersEnd(tester);
+    });
+
+    testWidgets('no answer: the movement waits on the phone, then goes up with the same key', (
+      tester,
+    ) async {
+      final env = await pump(tester);
+      await openSheet(tester);
+      await tapKeys(tester, '25000');
+      // The server saves it, but the answer never comes back.
+      env.add.loseNextAnswer = true;
+      await tester.tap(find.byKey(const Key('add.save')));
+      await tester.pumpAndSettle();
+
+      // The sheet closes and says it goes up later; home shows the row with the cloud.
+      expect(find.byKey(const Key('add.sheet')), findsNothing);
+      expect(find.text('Sin conexión. Lo subimos cuando vuelva la red.'), findsOneWidget);
+      expect(find.byKey(const Key('row.unsent')), findsOneWidget);
+      expect(find.text('Supermercado'), findsWidgets);
+
+      // A few seconds later the queue sends it again, with the same key: one row, not two.
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+      expect(env.add.keys.length, 2);
+      expect(env.add.keys[0], env.add.keys[1]);
+      expect(env.server.items.where((t) => t.amount == -2500000).length, 1);
+      expect(find.byKey(const Key('row.unsent')), findsNothing);
+      expect(find.text('Ya subimos el movimiento que anotaste sin conexión.'), findsOneWidget);
+      await letTimersEnd(tester);
+    });
+
+    testWidgets('a tap on a row not uploaded yet says so, and opens nothing', (tester) async {
+      final env = await pump(tester);
+      await openSheet(tester);
+      await tapKeys(tester, '25000');
+      env.add.failures['create'] = const HomeFailure(0);
+      // Every retry finds no network either.
+      env.add.hold = Completer<void>();
+      await tester.tap(find.byKey(const Key('add.save')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('row.unsent')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Aún no está en el servidor. Lo subimos cuando vuelva la red.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('add.sheet')), findsNothing);
+      env.add.hold!.complete();
       await letTimersEnd(tester);
     });
 
@@ -863,7 +913,8 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.digit9, character: '9');
       env.add.hold!.complete();
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('add.retry')));
+      // The save waits on the phone as it was sent, and the queue sends that again.
+      await tester.pump(const Duration(seconds: 6));
       await tester.pumpAndSettle();
       expect(env.add.keys, hasLength(2));
       expect(env.add.keys[0], env.add.keys[1]);

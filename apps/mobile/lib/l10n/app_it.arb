@@ -686,5 +686,10 @@
   "settingsFeedbackNoAppBody": "Scrivici a {email}.",
   "settingsFeedbackCopy": "Copia indirizzo",
   "settingsFeedbackCopied": "Abbiamo copiato {email}.",
-  "settingsAccountDeleteExpired": "La tua sessione era scaduta, quindi il tuo account NON è stato eliminato. Entra di nuovo e riprova."
+  "settingsAccountDeleteExpired": "La tua sessione era scaduta, quindi il tuo account NON è stato eliminato. Entra di nuovo e riprova.",
+  "savedOffline": "Nessuna connessione. {count, plural, =1{Lo carichiamo} other{Li carichiamo}} quando torna la rete.",
+  "unsentUploaded": "Abbiamo caricato {count, plural, =1{il movimento} other{i {count} movimenti}} annotati offline.",
+  "unsentRefused": "Non siamo riusciti a salvare «{name}». Annotalo di nuovo.",
+  "unsentRowTap": "Non è ancora sul server. Lo carichiamo quando torna la rete.",
+  "unsentLabel": "Non caricato"
 }

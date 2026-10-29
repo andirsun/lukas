@@ -232,14 +232,16 @@ void main() {
     await _letTimersEnd(tester);
   });
 
-  testWidgets('the batch save retried after a lost response leaves exactly 2 rows', (tester) async {
+  testWidgets('a server error keeps the sheet, and Reintentar resends with the same key', (
+    tester,
+  ) async {
     final env = await _pump(tester);
     await _open(tester);
     await _pickCategory(tester, 0, 'cat-food');
-    env.capture.loseNextAnswer = true;
+    env.capture.failures['save'] = const HomeFailure(503);
     await tester.tap(find.byKey(const Key('capture.save')));
     await tester.pumpAndSettle();
-    // The answer was lost: the sheet stays, with Reintentar.
+    // The server failed: the sheet stays, with Reintentar.
     expect(find.byKey(const Key('capture.sheet')), findsOneWidget);
     await tester.tap(find.byKey(const Key('capture.retry')));
     await tester.pumpAndSettle();
@@ -248,6 +250,34 @@ void main() {
     expect(env.capture.keys[0], env.capture.keys[1], reason: 'Reintentar reuses the key');
     expect(env.server.items.where((t) => t.id.startsWith('batch-')), hasLength(2));
     expect(find.byKey(const Key('capture.sheet')), findsNothing);
+    await _letTimersEnd(tester);
+  });
+
+  testWidgets('a lost answer: the batch waits on the phone and goes up later, exactly 2 rows', (
+    tester,
+  ) async {
+    final env = await _pump(tester);
+    await _open(tester);
+    await _pickCategory(tester, 0, 'cat-food');
+    env.capture.loseNextAnswer = true;
+    await tester.tap(find.byKey(const Key('capture.save')));
+    await tester.pumpAndSettle();
+
+    // The sheet closes and says the rows go up when the network is back; home shows them,
+    // marked as not uploaded yet.
+    expect(find.byKey(const Key('capture.sheet')), findsNothing);
+    expect(find.text('Sin conexión. Los subimos cuando vuelva la red.'), findsOneWidget);
+    expect(find.byKey(const Key('row.unsent')), findsNWidgets(2));
+
+    // The queue tries again a few seconds later, with the same key: the server answers with the
+    // rows it already has.
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pumpAndSettle();
+    expect(env.capture.keys, hasLength(2));
+    expect(env.capture.keys[0], env.capture.keys[1], reason: 'the retry reuses the key');
+    expect(env.server.items.where((t) => t.id.startsWith('batch-')), hasLength(2));
+    expect(find.byKey(const Key('row.unsent')), findsNothing);
+    expect(find.text('Almuerzo'), findsOneWidget);
     await _letTimersEnd(tester);
   });
 
@@ -538,13 +568,13 @@ void main() {
     expect(find.text('TRY AGAIN'), findsOneWidget);
   });
 
-  testWidgets('after a lost answer, a change that changes nothing keeps the key: 2 rows', (
+  testWidgets('after a failed save, a change that changes nothing keeps the key: 2 rows', (
     tester,
   ) async {
     final env = await _pump(tester);
     await _open(tester);
     await _pickCategory(tester, 0, 'cat-food');
-    env.capture.loseNextAnswer = true;
+    env.capture.failures['save'] = const HomeFailure(503);
     await tester.tap(find.byKey(const Key('capture.save')));
     await tester.pumpAndSettle();
     // The same category picked again: the batch is what it was.
@@ -563,7 +593,7 @@ void main() {
     final env = await _pump(tester);
     await _open(tester);
     await _pickCategory(tester, 0, 'cat-food');
-    env.capture.loseNextAnswer = true;
+    env.capture.failures['save'] = const HomeFailure(503);
     await tester.tap(find.byKey(const Key('capture.save')));
     await tester.pumpAndSettle();
     // B: another category, saved and refused; then A again.

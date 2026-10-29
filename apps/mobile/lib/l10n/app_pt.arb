@@ -686,5 +686,10 @@
   "settingsFeedbackNoAppBody": "Escreve-nos para {email}.",
   "settingsFeedbackCopy": "Copiar endereço",
   "settingsFeedbackCopied": "Copiámos {email}.",
-  "settingsAccountDeleteExpired": "A tua sessão tinha expirado, por isso a tua conta NÃO foi eliminada. Entra de novo e tenta outra vez."
+  "settingsAccountDeleteExpired": "A tua sessão tinha expirado, por isso a tua conta NÃO foi eliminada. Entra de novo e tenta outra vez.",
+  "savedOffline": "Sem ligação. {count, plural, =0{Enviamo-los} =1{Enviamo-lo} other{Enviamo-los}} quando a rede voltar.",
+  "unsentUploaded": "Enviámos {count, plural, =0{os {count} movimentos} =1{o movimento} other{os {count} movimentos}} que registaste sem ligação.",
+  "unsentRefused": "Não conseguimos guardar «{name}». Regista-o outra vez.",
+  "unsentRowTap": "Ainda não está no servidor. Enviamo-lo quando a rede voltar.",
+  "unsentLabel": "Por enviar"
 }

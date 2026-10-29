@@ -33,6 +33,10 @@ class SecureHomeCacheStore implements HomeCacheStore {
   Future<void> clear() => _storage.delete(key: key);
 }
 
+/// What binds a document kept on the phone to the session that wrote it: a hash of the token,
+/// never the token.
+String sessionOwnerOf(String token) => sha256.convert(utf8.encode(token)).toString();
+
 final homeCacheStoreProvider = Provider<HomeCacheStore>((ref) => const SecureHomeCacheStore());
 
 /// Forgets the cache, when the session ends: it holds a person's figures, which the next person on
@@ -94,13 +98,10 @@ class HomeCache {
   /// The session's token; null when signed out (nothing is read or written then).
   final String? token;
 
-  /// What binds the document to its session: a hash of the token, never the token.
-  static String _ownerOf(String token) => sha256.convert(utf8.encode(token)).toString();
-
   Future<CachedHome?> read() async {
     final token = this.token;
     if (token == null) return null;
-    final owner = _ownerOf(token);
+    final owner = sessionOwnerOf(token);
     try {
       final raw = await store.read();
       if (raw == null) return null;
@@ -129,7 +130,7 @@ class HomeCache {
   Future<void> write(CachedHome home) async {
     final token = this.token;
     if (token == null) return;
-    final owner = _ownerOf(token);
+    final owner = sessionOwnerOf(token);
     try {
       await store.write(
         jsonEncode({

@@ -17,6 +17,13 @@ abstract interface class CaptureRepository {
   /// answer gets the first answer back instead of a second set of rows.
   Future<List<Transaction>> saveBatch(List<Draft> drafts, {required String idempotencyKey});
 
+  /// Saves [items] in one batch, as [saveBatch] does: a batch kept for when the network is back
+  /// (lib/offline/pending_saves.dart) is sent again through here, with its own key.
+  Future<List<Transaction>> createBatch(
+    List<CreateTransaction> items, {
+    required String idempotencyKey,
+  });
+
   /// Soft-deletes the movements [ids] together (`POST /v1/transactions/batch-delete`): one
   /// Deshacer for the whole batch.
   Future<void> undoBatch(List<String> ids);
@@ -33,20 +40,15 @@ class ApiCaptureRepository implements CaptureRepository {
     if (drafts.isEmpty || drafts.any((d) => d.categoryId == null)) {
       throw ArgumentError.value(drafts, 'drafts', 'every draft needs a category');
     }
-    final batch = CreateTransactionsBatch(
-      (b) => b.items = ListBuilder([
-        for (final draft in drafts)
-          CreateTransaction(
-            (t) => t
-              ..name = draft.name
-              ..amount = draft.kind == Kind.expense ? -draft.amount : draft.amount
-              ..categoryId = draft.categoryId
-              ..date = draft.date
-              ..status = CreateTransactionStatusEnum.paid
-              ..source_ = CreateTransactionSource_Enum.app,
-          ),
-      ]),
-    );
+    return createBatch(captureInputs(drafts), idempotencyKey: idempotencyKey);
+  }
+
+  @override
+  Future<List<Transaction>> createBatch(
+    List<CreateTransaction> items, {
+    required String idempotencyKey,
+  }) async {
+    final batch = CreateTransactionsBatch((b) => b.items = ListBuilder(items));
     try {
       final data = (await _api.createTransactionsBatch(
         idempotencyKey: idempotencyKey,
@@ -70,6 +72,21 @@ class ApiCaptureRepository implements CaptureRepository {
     }
   }
 }
+
+/// What a batch of [drafts] sends: one paid movement each, from the app. Every draft needs a
+/// category.
+List<CreateTransaction> captureInputs(List<Draft> drafts) => [
+  for (final draft in drafts)
+    CreateTransaction(
+      (t) => t
+        ..name = draft.name
+        ..amount = draft.kind == Kind.expense ? -draft.amount : draft.amount
+        ..categoryId = draft.categoryId
+        ..date = draft.date
+        ..status = CreateTransactionStatusEnum.paid
+        ..source_ = CreateTransactionSource_Enum.app,
+    ),
+];
 
 /// The capture repository for the signed-in session (rebuilt when the token changes).
 final captureRepositoryProvider = Provider<CaptureRepository>(
