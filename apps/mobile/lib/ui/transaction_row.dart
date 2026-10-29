@@ -33,6 +33,7 @@ class TransactionRow extends StatefulWidget {
     required this.onOpen,
     this.onPay,
     this.paidHere = false,
+    this.unsent = false,
   });
 
   /// The transaction's name; blank shows the category name instead.
@@ -60,6 +61,9 @@ class TransactionRow extends StatefulWidget {
   /// paid, so the change is seen and announced where it happened.
   final bool paidHere;
 
+  /// Saved with no network and not on the server yet: a cloud with a line through it says so.
+  final bool unsent;
+
   @override
   State<TransactionRow> createState() => _TransactionRowState();
 }
@@ -80,6 +84,7 @@ class _TransactionRowState extends State<TransactionRow> {
       :onOpen,
       :onPay,
       :paidHere,
+      :unsent,
     ) = widget;
     final l10n = AppLocalizations.of(context);
     final lk = context.lk;
@@ -117,7 +122,9 @@ class _TransactionRowState extends State<TransactionRow> {
         order: const NumericFocusOrder(0),
         child: Pressable(
           onPressed: onOpen,
-          label: '$title $money $categoryName',
+          label: unsent
+              ? '$title $money $categoryName ${l10n.unsentLabel}'
+              : '$title $money $categoryName',
           hint: SwipeHint.maybeOf(context),
           keepChildSemantics: true,
           builder: (context, state) {
@@ -217,6 +224,13 @@ class _TransactionRowState extends State<TransactionRow> {
                                   ),
                                 ),
                                 ?badge,
+                                if (unsent)
+                                  Icon(
+                                    Icons.cloud_off_rounded,
+                                    key: const Key('row.unsent'),
+                                    size: 14,
+                                    color: colors.inkMuted,
+                                  ),
                               ],
                             ),
                           ],

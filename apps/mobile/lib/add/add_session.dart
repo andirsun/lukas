@@ -9,6 +9,7 @@ import '../home/home_controller.dart';
 import '../home/home_repository.dart';
 import '../home/saved_feedback.dart';
 import '../l10n/app_localizations.dart';
+import '../offline/pending_saves.dart';
 import '../ui/amount_field.dart';
 import '../ui/name_field.dart';
 import '../ui/toast.dart';
@@ -268,6 +269,18 @@ class AddSheetState extends ConsumerState<AddSheet> {
       if (answer.unauthorized) {
         unawaited(ref.read(sessionProvider.notifier).signOut(discardGuest: true));
         if (mounted) navigator.pop();
+        return;
+      }
+      // No answer at all: the new movement waits on the phone, with its key, and goes up when the
+      // network is back. Its row shows on home meanwhile, marked as not uploaded yet.
+      if (answer.offline && editing == null) {
+        unawaited(
+          container
+              .read(pendingSavesProvider.notifier)
+              .add(PendingSave(key: key!, items: [input!], batch: false)),
+        );
+        if (mounted) navigator.pop();
+        toasts.say(words.savedOffline(1));
         return;
       }
       if (mounted) {

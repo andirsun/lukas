@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/gen/lukitas_api.dart';
 import '../api/session.dart';
 import '../capture/parser/dates.dart';
+import '../offline/pending_saves.dart';
 import '../settings/locale_resolution.dart';
 import 'home_cache.dart';
 import 'home_repository.dart';
@@ -362,6 +363,11 @@ class HomeController extends Notifier<HomeState> {
           quietKey: state.quietKey,
         ),
       );
+      // The network is there: whatever was saved without it goes up now (the queue is there
+      // whenever home is on screen).
+      if (ref.exists(pendingSavesProvider)) {
+        unawaited(ref.read(pendingSavesProvider.notifier).send());
+      }
       if (_isCurrent(target)) {
         unawaited(_writeSnapshot(summary, data.currency, data.timezone));
         unawaited(_persist());

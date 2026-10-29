@@ -66,9 +66,16 @@ class _LoseFirstAnswer implements CaptureRepository {
   var _lost = false;
 
   @override
-  Future<List<Transaction>> saveBatch(List<Draft> drafts, {required String idempotencyKey}) async {
+  Future<List<Transaction>> saveBatch(List<Draft> drafts, {required String idempotencyKey}) =>
+      createBatch(captureInputs(drafts), idempotencyKey: idempotencyKey);
+
+  @override
+  Future<List<Transaction>> createBatch(
+    List<CreateTransaction> items, {
+    required String idempotencyKey,
+  }) async {
     keys.add(idempotencyKey);
-    final saved = await _real.saveBatch(drafts, idempotencyKey: idempotencyKey);
+    final saved = await _real.createBatch(items, idempotencyKey: idempotencyKey);
     if (!_lost) {
       _lost = true;
       throw const HomeFailure(0);
@@ -229,12 +236,16 @@ void main() {
     final (token, categoryId) = await _captureTwo(tester);
 
     await _tap(tester, 'capture.save');
-    // The server has the rows, the app heard nothing: it offers Reintentar.
-    await _tap(tester, 'capture.retry');
+    // The server has the rows, the app heard nothing: the batch waits on the phone, the sheet
+    // closes, and the queue sends it again a few seconds later.
     await _pumpUntilGone(tester, find.byKey(const Key('capture.sheet')));
+    final end = DateTime.now().add(const Duration(seconds: 30));
+    while (losing!.keys.length < 2 && DateTime.now().isBefore(end)) {
+      await tester.pump(const Duration(milliseconds: 500));
+    }
 
     expect(losing!.keys, hasLength(2));
-    expect(losing!.keys[0], losing!.keys[1], reason: 'Reintentar sends the same Idempotency-Key');
+    expect(losing!.keys[0], losing!.keys[1], reason: 'the retry sends the same Idempotency-Key');
     final rows = await _rows(token, categoryId);
     expect(rows, hasLength(2), reason: 'the retry replays the first answer, it saves nothing new');
   });

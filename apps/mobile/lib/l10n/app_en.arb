@@ -1881,5 +1881,10 @@
   "settingsFeedbackNoAppBody": "Write to us at {email}.",
   "settingsFeedbackCopy": "Copy address",
   "settingsFeedbackCopied": "We copied {email}.",
-  "settingsAccountDeleteExpired": "Your session had expired, so your account was NOT deleted. Sign in again and try again."
+  "settingsAccountDeleteExpired": "Your session had expired, so your account was NOT deleted. Sign in again and try again.",
+  "savedOffline": "No connection. We'll upload {count, plural, =1{it} other{them}} when you're back online.",
+  "unsentUploaded": "Uploaded {count, plural, =1{the movement} other{the {count} movements}} you added offline.",
+  "unsentRefused": "We couldn't save “{name}”. Please add it again.",
+  "unsentRowTap": "Not on the server yet. We'll upload it when you're back online.",
+  "unsentLabel": "Not uploaded"
 }

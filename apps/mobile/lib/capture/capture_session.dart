@@ -14,6 +14,7 @@ import '../home/home_repository.dart';
 import '../home/saved_feedback.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
+import '../offline/pending_saves.dart';
 import '../ui/toast.dart';
 import 'capture_language.dart';
 import 'capture_note.dart';
@@ -479,6 +480,18 @@ class CaptureSheetState extends ConsumerState<CaptureSheet>
       if (error.unauthorized) {
         unawaited(ref.read(sessionProvider.notifier).signOut(discardGuest: true));
         if (mounted) navigator.pop();
+        return;
+      }
+      // No answer at all: the batch waits on the phone, with its key, and goes up when the network
+      // is back. Its rows show on home meanwhile, marked as not uploaded yet.
+      if (error.offline) {
+        unawaited(
+          container
+              .read(pendingSavesProvider.notifier)
+              .add(PendingSave(key: key, items: captureInputs(drafts), batch: true)),
+        );
+        if (mounted) navigator.pop();
+        toasts.say(l10n.savedOffline(drafts.length));
         return;
       }
       _set(() {

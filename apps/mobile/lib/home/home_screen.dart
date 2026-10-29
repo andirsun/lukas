@@ -14,6 +14,7 @@ import '../capture/capture_sheet.dart';
 import '../feedback/feedback.dart';
 import '../l10n/app_localizations.dart';
 import '../money/format.dart';
+import '../offline/pending_saves.dart';
 import '../theme/surfaces.dart';
 import '../theme/text_styles.dart';
 import '../theme/theme.dart';
@@ -371,6 +372,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     ref.listen(homeViewRequestProvider, (_, next) {
       if (next != null) scheduleMicrotask(() => _takeRequest(next));
     });
+    ref.listen(pendingSavesProvider.select((s) => s.notice), (_, next) {
+      if (next != null) _onPendingNotice(next);
+    });
     final home = ref.watch(homeProvider);
     final colors = Theme.of(context).extension<LukitasTheme>()!.colors;
     final l10n = AppLocalizations.of(context);
@@ -417,7 +421,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final current = today.substring(0, 7);
     final shown = home.shown;
     final lukitas = shown == null ? null : _lukitas(l10n, home, shown, today);
-    final entries = shown == null ? const <_Entry>[] : _entries(home, shown, l10n, today);
+    final entries = shown == null ? const <_Entry>[] : _entries(home, shown, ref.watch(pendingSavesProvider.select((s) => s.saves)), l10n, today);
     final colors = context.lkColors;
 
     return LayoutBuilder(
@@ -626,10 +630,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   /// The movements list as widgets in order: each day's heading and rows, then "Ver más
   /// movimientos" (or the empty state).
-  List<_Entry> _entries(HomeState home, HomeData data, AppLocalizations l10n, String today) {
+  List<_Entry> _entries(
+    HomeState home,
+    HomeData data,
+    List<PendingSave> unsent,
+    AppLocalizations l10n,
+    String today,
+  ) {
     final locale = l10n.localeName;
     final colors = context.lkColors;
-    if (data.items.isEmpty) {
+    final items = withUnsent(data, unsent);
+    if (items.isEmpty) {
       return [
         _Entry(
           'empty',
@@ -652,7 +663,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       ];
     }
     final entries = <_Entry>[];
-    for (final group in groupByDay(data.items, today)) {
+    for (final group in groupByDay(items, today)) {
       final day = formatDay(group.date, locale);
       final label = switch (group.when) {
         DayWhen.today => l10n.homeDayToday(day),
@@ -705,7 +716,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     }
   }
 
+  /// What home says about the saves that waited for the network: they are up, or one was refused.
+  void _onPendingNotice(PendingNotice notice) {
+    final toasts = ToastHost.of(context);
+    final l10n = AppLocalizations.of(context);
+    final refused = notice.refused;
+    if (refused != null) {
+      final name = refused.name.trim().isNotEmpty
+          ? refused.name.trim()
+          : ref.read(homeProvider).data?.categories[refused.categoryId]?.name ?? '';
+      toasts.say(l10n.unsentRefused(name), error: true);
+    } else if (notice.sent > 0) {
+      toasts.say(l10n.unsentUploaded(notice.sent));
+    }
+  }
+
   Widget _row(HomeState home, HomeData data, Transaction tx, AppLocalizations l10n) {
+    // Not on the server yet: nothing to delete, edit or pay there. A tap says why.
+    if (isUnsent(tx)) {
+      return Padding(
+        key: ValueKey(tx.id),
+        padding: const EdgeInsets.only(bottom: LukitasTokens.space2),
+        child: _txRow(
+          data,
+          tx,
+          false,
+          (_) => ToastHost.of(context).say(l10n.unsentRowTap),
+          null,
+          unsent: true,
+        ),
+      );
+    }
     final pending = tx.status == TransactionStatusEnum.pending;
     final onEdit = widget.onEdit ?? (Transaction tx) => unawaited(openEditSheet(context, tx));
     return SwipeRow(
@@ -734,8 +775,9 @@ Widget _txRow(
   Transaction tx,
   bool paidHere,
   void Function(Transaction) onEdit,
-  Future<void> Function() onPay,
-) {
+  Future<void> Function()? onPay, {
+  bool unsent = false,
+}) {
   final category = data.categories[tx.categoryId];
   return TransactionRow(
     name: tx.name,
@@ -751,6 +793,7 @@ Widget _txRow(
     paidHere: paidHere,
     onOpen: () => onEdit(tx),
     onPay: onPay,
+    unsent: unsent,
   );
 }
 
@@ -821,4 +864,22 @@ class _LoadingView extends StatelessWidget {
       ),
     );
   }
+}
+
+/// The movements of [data] with the rows of the saves still waiting for the network that belong to
+/// its month, newest first.
+List<Transaction> withUnsent(HomeData data, List<PendingSave> unsent) {
+  final rows = [
+    for (final save in unsent)
+      for (final row in save.rows(data.currency))
+        if (row.date.startsWith(data.month)) row,
+  ];
+  if (rows.isEmpty) return data.items;
+  // Within a day, what waits comes first: it was saved last.
+  return [...data.items, ...rows]..sort((a, b) {
+    final byDate = b.date.compareTo(a.date);
+    if (byDate != 0) return byDate;
+    final waiting = (isUnsent(a) ? 0 : 1) - (isUnsent(b) ? 0 : 1);
+    return waiting != 0 ? waiting : b.id.compareTo(a.id);
+  });
 }

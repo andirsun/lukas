@@ -5,6 +5,7 @@ import 'package:lukitas/api/gen/lukitas_api.dart';
 import 'package:lukitas/home/home_cache.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
+import 'package:lukitas/offline/pending_saves.dart';
 
 import 'fixtures.dart';
 
@@ -231,4 +232,18 @@ class FakeCacheStore implements HomeCacheStore {
     if (failure != null) throw failure!;
     value = null;
   }
+}
+
+/// The queue of saves waiting for the network, kept in memory: one JSON string.
+class FakePendingSavesStore implements PendingSavesStore {
+  String? value;
+
+  @override
+  Future<String?> read() async => value;
+
+  @override
+  Future<void> write(String json) async => value = json;
+
+  @override
+  Future<void> clear() async => value = null;
 }

@@ -12,6 +12,7 @@ import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/home_screen.dart';
 import 'package:lukitas/app.dart' show withAppHosts;
 import 'package:lukitas/l10n/app_localizations.dart';
+import 'package:lukitas/offline/pending_saves.dart';
 import 'package:lukitas/theme/theme.dart';
 
 import '../settings/fakes.dart' show FakeFlagStore;
@@ -50,6 +51,7 @@ Future<HomeHarness> pumpHome(
   bool withEdit = false,
   bool settle = true,
   FakeCacheStore? cacheStore,
+  FakePendingSavesStore? pendingStore,
   String? token = 't1',
   DateTime? now,
   DateTime Function()? clock,
@@ -73,6 +75,8 @@ Future<HomeHarness> pumpHome(
       homeRepositoryProvider.overrideWithValue(repo),
       if (addRepo != null) addRepositoryProvider.overrideWithValue(addRepo),
       homeCacheProvider.overrideWithValue(HomeCache(cacheStore ?? FakeCacheStore(), token: token)),
+      pendingSavesStoreProvider.overrideWithValue(pendingStore ?? FakePendingSavesStore()),
+      pendingSavesTokenProvider.overrideWithValue(token),
       clockProvider.overrideWithValue(clock ?? () => now ?? testNow),
       lukasVariantProvider.overrideWithValue(() => 1),
       widgetSnapshotWriterProvider.overrideWithValue(
