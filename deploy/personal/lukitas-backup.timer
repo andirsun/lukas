@@ -1,0 +1,11 @@
+# Runs lukitas-backup.service every day at 08:00 UTC (03:00 in Colombia), and at boot if a run was
+# missed while the server was off (Persistent).
+[Unit]
+Description=Lukitas daily database backup at 08:00 UTC
+
+[Timer]
+OnCalendar=*-*-* 08:00:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

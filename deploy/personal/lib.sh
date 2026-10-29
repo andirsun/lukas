@@ -163,3 +163,62 @@ apply_retention() {
   prune_newest "$dir" "$DAILY_DUMP$suffix\$" "$keep"
   prune_newest "$dir" "$PREUPDATE_DUMP$suffix\$" "$keep_preupdate"
 }
+
+# --- The copy of the backups in Cloudflare R2 (backup.sh uploads, restore.sh --from-r2 downloads).
+# Only encrypted copies (.age) ever go up; the 14-day limit there is a lifecycle rule on the bucket
+# (README, "Backups in Cloudflare R2"), so it holds even when this machine is gone.
+
+# r2_problem: why the R2 settings cannot work, or nothing. A bucket asks for all of them: half a
+# setup is an error, not a quiet skip.
+r2_problem() {
+  [ -n "$(cfg BACKUP_R2_BUCKET)" ] || return 0
+  local key
+  for key in BACKUP_R2_ENDPOINT BACKUP_R2_ACCESS_KEY_ID BACKUP_R2_SECRET_ACCESS_KEY; do
+    [ -n "$(cfg "$key")" ] || {
+      printf 'BACKUP_R2_BUCKET is set but %s is empty' "$key"
+      return 0
+    }
+  done
+  command -v rclone >/dev/null 2>&1 || printf "'rclone' is not installed (apt install rclone)"
+}
+
+r2_enabled() { [ -n "$(cfg BACKUP_R2_BUCKET)" ] && [ -z "$(r2_problem)" ]; }
+
+# r2_rclone ARGS...: rclone with the R2 remote "r2:" set up in its environment, so the keys are
+# never in its arguments (anyone on the machine could read those in `ps`). No config file. The
+# token may only touch the bucket's objects, so rclone does not check or create the bucket; and it
+# does not HEAD an upload, since R2 answers 501 to the `?versionId=` rclone 1.60 adds (R2 checks
+# the upload's Content-MD5 itself, and r2_upload lists the object after).
+r2_rclone() {
+  (
+    export RCLONE_CONFIG=/dev/null RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+    export RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true RCLONE_CONFIG_R2_NO_HEAD=true
+    RCLONE_CONFIG_R2_ENDPOINT="$(cfg BACKUP_R2_ENDPOINT)"
+    RCLONE_CONFIG_R2_ACCESS_KEY_ID="$(cfg BACKUP_R2_ACCESS_KEY_ID)"
+    RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$(cfg BACKUP_R2_SECRET_ACCESS_KEY)"
+    export RCLONE_CONFIG_R2_ENDPOINT RCLONE_CONFIG_R2_ACCESS_KEY_ID RCLONE_CONFIG_R2_SECRET_ACCESS_KEY
+    rclone "$@"
+  )
+}
+
+# r2_upload FILE: puts an encrypted copy in the bucket under its own name. It counts only once the
+# bucket lists it.
+r2_upload() {
+  local file="$1" name="${1##*/}" bucket
+  bucket="$(cfg BACKUP_R2_BUCKET)"
+  case "$name" in
+    *.age) ;;
+    *)
+      printf 'refusing to upload %s: only encrypted copies (.age) go to R2\n' "$name" >&2
+      return 1
+      ;;
+  esac
+  r2_rclone copyto "$file" "r2:$bucket/$name" || return 1
+  [ "$(r2_rclone lsf "r2:$bucket/$name")" = "$name" ] || {
+    printf 'R2 does not list %s after the upload\n' "$name" >&2
+    return 1
+  }
+}
+
+# r2_download NAME DEST: the object NAME from the bucket into DEST.
+r2_download() { r2_rclone copyto "r2:$(cfg BACKUP_R2_BUCKET)/$1" "$2"; }

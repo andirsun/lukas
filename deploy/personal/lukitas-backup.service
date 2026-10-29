@@ -1,0 +1,13 @@
+# The daily backup on a Linux server, as a systemd service run by lukitas-backup.timer.
+# install-backup.sh fills in @USER@ and @REPO_DIR@ and installs it in /etc/systemd/system.
+# Logs: journalctl -u lukitas-backup.service
+[Unit]
+Description=Lukitas daily database backup (deploy/personal/backup.sh)
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=@USER@
+WorkingDirectory=@REPO_DIR@/deploy/personal
+ExecStart=@BASH@ @REPO_DIR@/deploy/personal/backup.sh

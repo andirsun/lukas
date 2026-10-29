@@ -17,7 +17,16 @@
 # the dump, not in the live database) and how to delete each one again. Do it: the app promised
 # them their data was gone.
 #
-# Options: --keep (drill: keep the scratch database), --yes. Settings: ENV_FILE.
+# An encrypted copy works too, local or in R2: it is decrypted into a private temporary folder
+# (removed on exit) with the age private key, which never lives on the server:
+#
+#   ./restore.sh --identity=KEY FILE.dump.age          a local encrypted copy
+#   ./restore.sh --from-r2 --identity=KEY NAME.dump.age   downloaded from BACKUP_R2_BUCKET first
+#
+# KEY is the age private key file (else BACKUP_AGE_IDENTITY from the environment or .env).
+#
+# Options: --keep (drill: keep the scratch database), --yes, --from-r2, --identity=FILE.
+# Settings: ENV_FILE, BACKUP_AGE_IDENTITY, BACKUP_R2_*.
 set -euo pipefail
 # shellcheck source=lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -25,21 +34,58 @@ set -euo pipefail
 drill=0
 keep=0
 yes=0
+from_r2=0
+identity=""
 file=""
 for arg in "$@"; do
   case "$arg" in
     --drill) drill=1 ;;
     --keep) keep=1 ;;
     --yes) yes=1 ;;
+    --from-r2) from_r2=1 ;;
+    --identity=*) identity="${arg#--identity=}" ;;
     -h | --help)
-      sed -n '2,20p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+      sed -n '2,29p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     -*) die "unknown option: $arg" ;;
     *) [ -z "$file" ] || die "one dump at a time"; file="$arg" ;;
   esac
 done
-[ -n "$file" ] || die "usage: restore.sh [--drill] [--yes] DUMP_FILE"
+[ -n "$file" ] || die "usage: restore.sh [--drill] [--yes] [--from-r2] [--identity=KEY] DUMP_FILE"
+
+# An encrypted copy (local, or fetched from R2) becomes a plain dump in a private temporary folder.
+fetched=""
+trap '[ -z "$fetched" ] || rm -rf "$fetched"' EXIT
+if [ "$from_r2" = 1 ]; then
+  problem="$(r2_problem)"
+  [ -z "$problem" ] || die "$problem"
+  [ -n "$(cfg BACKUP_R2_BUCKET)" ] || die "--from-r2 needs BACKUP_R2_BUCKET (and the rest of BACKUP_R2_*) in $ENV_FILE"
+  case "$file" in */*) die "--from-r2 takes the object's name (lukitas-YYYY-MM-DD.dump.age), not a path" ;; esac
+fi
+case "$file" in
+  *.age)
+    command -v age >/dev/null 2>&1 || die "'age' is not installed (brew install age, or apt install age)"
+    identity="${identity:-$(cfg BACKUP_AGE_IDENTITY)}"
+    case "$identity" in "~"*) identity="$HOME${identity#\~}" ;; esac
+    [ -n "$identity" ] || die "an encrypted copy needs the age private key: --identity=FILE (or BACKUP_AGE_IDENTITY)"
+    [ -f "$identity" ] || die "no such key file: $identity"
+    fetched="$(mktemp -d)"
+    chmod 700 "$fetched"
+    encrypted="$file"
+    if [ "$from_r2" = 1 ]; then
+      say "Downloading $file from R2 ($(cfg BACKUP_R2_BUCKET))"
+      encrypted="$fetched/$file"
+      r2_download "$file" "$encrypted" || die "could not download $file from R2"
+    fi
+    [ -f "$encrypted" ] || die "no such file: $encrypted"
+    say "Decrypting ${encrypted##*/}"
+    plain="$fetched/$(basename "${file%.age}")"
+    age -d -i "$identity" -o "$plain" "$encrypted" || die "age could not decrypt ${encrypted##*/} with $identity"
+    file="$plain"
+    ;;
+  *) [ "$from_r2" = 0 ] || die "R2 holds only encrypted copies: the name ends in .age" ;;
+esac
 [ -f "$file" ] || die "no such file: $file"
 
 need_env_file
@@ -62,7 +108,7 @@ keep_scratch=$keep
 drop_scratch() {
   psql_db postgres -qc "drop database if exists $scratch with (force)" >/dev/null 2>&1 || true
 }
-trap '[ "$keep_scratch" = 1 ] || drop_scratch' EXIT
+trap '[ "$keep_scratch" = 1 ] || drop_scratch; [ -z "$fetched" ] || rm -rf "$fetched"' EXIT
 
 say "Restoring into $scratch"
 psql_db postgres -qc "create database $scratch" >/dev/null
