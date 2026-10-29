@@ -131,6 +131,8 @@ Each stage gets its own spec → plan → implementation.
 5. **Advanced gamification:** streaks, achievements, rewards.
 6. **Automatic capture:** bank alerts and wallet payments become transactions without typing. It comes after Stage 4; its order relative to Stage 5 will be decided later. See Automatic capture below.
 
+Support contributions ("Apoya a Lukitas") are not a stage: they are planned for later, through Slinqer S.A.S. and Wompi, in `docs/superpowers/specs/2026-10-29-support-contributions-design.md`.
+
 The public roadmap page (`/roadmap`) and the landing's "Lo que viene" section show these stages to visitors, with statuses and no dates (Stage 2 web spec §2.8).
 
 #### Quick capture (founder request, 2026-10-21)
