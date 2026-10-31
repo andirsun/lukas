@@ -1,5 +1,5 @@
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
-import { createLocalJWKSet } from "jose";
+import { createLocalJWKSet, type JSONWebKeySet } from "jose";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { createTestApp, type TestApp } from "../../api/test/harness.ts";
 import { apiLukitas } from "../src/api-lukitas.ts";
@@ -16,7 +16,7 @@ beforeAll(async () => {
   const MCP_URL = t.config.MCP_URL ?? "";
   const fetchApi = (async (input: string | URL | Request, init?: RequestInit) =>
     t.app.request(input instanceof Request ? input : String(input), init)) as typeof fetch;
-  const jwks = await (await t.app.request("/auth/jwks")).json();
+  const jwks = (await (await t.app.request("/auth/jwks")).json()) as JSONWebKeySet;
   const config = {
     MCP_URL,
     AUTH_ISSUER: `${t.config.API_URL}/auth`,
