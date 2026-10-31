@@ -28,6 +28,9 @@ jobs:
       # `pnpm --filter @lukas/web api:types` (with the API running) or add --file, and commit it.
       - run: pnpm --filter @lukas/web api:types --file
       - run: git diff --exit-code apps/web/app/api/schema.d.ts
+      # The MCP server's copy of the same types: `pnpm --filter @lukas/mcp api:types`.
+      - run: pnpm --filter @lukas/mcp api:types
+      - run: git diff --exit-code apps/mcp/src/api/schema.d.ts
       - run: pnpm typecheck
       # Unit, API integration and Storybook tests. Integration tests start Postgres with
       # testcontainers (Docker is available on the runner); the Storybook stories run after them in

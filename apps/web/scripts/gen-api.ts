@@ -6,6 +6,9 @@
  *                                                   server and no database (what CI does)
  *   pnpm --filter @lukas/web api:types --url <url>  fetches it from another address
  *
+ * With `--types <absolute path>`, it writes the types there instead (the MCP server's copy,
+ * `pnpm --filter @lukas/mcp api:types`).
+ *
  * With `--document <absolute path>`, it writes the OpenAPI document itself there as JSON instead of
  * the types (the Android app's client generator, apps/mobile/scripts/gen-api.sh, reads it).
  *
@@ -103,6 +106,9 @@ if (documentFlag >= 0) {
   // A request field with a default is optional to send. The named request schemas live in
   // `components`, where openapi-typescript would otherwise make such fields required.
   const ast = await openapiTS(document, { defaultNonNullable: false });
-  writeFileSync(OUTPUT, HEADER + astToString(ast));
-  console.log(`Wrote ${OUTPUT}`);
+  const typesFlag = args.indexOf("--types");
+  const output = typesFlag >= 0 ? args[typesFlag + 1] : OUTPUT;
+  if (!output) throw new Error("--types needs the path to write the types to");
+  writeFileSync(output, HEADER + astToString(ast));
+  console.log(`Wrote ${output}`);
 }
