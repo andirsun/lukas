@@ -95,7 +95,7 @@
     "meta": {
       "title": "Lukitas · O teu dinheiro, finalmente claro",
       "description": "Lukitas é o teu orçamento, e vais gostar de cuidar dele: regista uma despesa em segundos e vê para onde vai o teu dinheiro. Grátis para sempre, de código aberto e sem palavras-passe.",
-      "image_alt": "Lukitas, uma moeda de ouro sorridente, acena junto ao título: O teu dinheiro, finalmente claro. Em cima, à mão: Grátis, e vai ser sempre!"
+      "image_alt": "Lukitas, uma moeda de ouro sorridente, acena junto ao título: O teu dinheiro, finalmente claro."
     },
     "nav": {
       "label": "Principal",
@@ -107,7 +107,6 @@
       "sign_in_soon": "Em breve"
     },
     "hero": {
-      "annotation": "Grátis, e vai ser sempre!",
       "headline": "O teu <mark>dinheiro</mark>, finalmente claro.",
       "description": "<lead>Lukitas é o teu orçamento, e vais gostar de cuidar dele.</lead> Regista uma despesa em segundos e vê para onde vai cada cêntimo.",
       "cta": "Começa agora",

@@ -60,11 +60,7 @@ try {
     );
     await page.evaluate(async () => {
       await document.fonts.ready;
-      await Promise.all(
-        ["700 74px Fredoka", "800 22px Nunito", "700 44px Caveat"].map((f) =>
-          document.fonts.load(f),
-        ),
-      );
+      await Promise.all(["700 74px Fredoka", "800 22px Nunito"].map((f) => document.fonts.load(f)));
     });
     const out = fileURLToPath(new URL(`../../public/og-${locale}.png`, import.meta.url));
     await page.screenshot({ path: out, clip: { x: 0, y: 0, width: 1200, height: 630 } });

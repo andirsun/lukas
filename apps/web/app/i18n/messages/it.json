@@ -95,7 +95,7 @@
     "meta": {
       "title": "Lukitas · I tuoi soldi, finalmente chiari",
       "description": "Lukitas è il tuo budget, e ti farà piacere prendertene cura: annota una spesa in pochi secondi e guarda dove vanno i tuoi soldi. Gratis per sempre, open source e senza password.",
-      "image_alt": "Lukitas, una moneta d'oro sorridente, saluta accanto al titolo: I tuoi soldi, finalmente chiari. In alto, a mano: Gratis, e lo sarà sempre!"
+      "image_alt": "Lukitas, una moneta d'oro sorridente, saluta accanto al titolo: I tuoi soldi, finalmente chiari."
     },
     "nav": {
       "label": "Principale",
@@ -107,7 +107,6 @@
       "sign_in_soon": "Presto"
     },
     "hero": {
-      "annotation": "Gratis, e lo sarà sempre!",
       "headline": "I tuoi <mark>soldi</mark>, finalmente chiari.",
       "description": "<lead>Lukitas è il tuo budget, e ti farà piacere prendertene cura.</lead> Annota una spesa in pochi secondi e guarda dove va ogni centesimo.",
       "cta": "Inizia ora",
