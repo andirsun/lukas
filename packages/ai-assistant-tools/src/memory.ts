@@ -37,6 +37,10 @@ interface Seed {
 
 const notFound = (what: string) => new ToolError("not_found", `${what} not found`);
 
+/** A patch without its undefined fields: as JSON drops them on the way to the API. */
+const defined = <T extends object>(patch: T): Partial<T> =>
+  Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)) as Partial<T>;
+
 function tooMany(count: number): ToolError {
   return new ToolError(
     "validation_failed",
@@ -244,7 +248,7 @@ export class MemoryLukitas implements Lukitas {
     const row = this.rows.find((r) => r.tx.id === id && !r.deleted);
     if (!row) throw notFound("Transaction");
     if (patch.categoryId) this.activeCategory(patch.categoryId);
-    row.tx = { ...row.tx, ...patch, updatedAt: this.stamp() };
+    row.tx = { ...row.tx, ...defined(patch), updatedAt: this.stamp() };
     return { ...row.tx };
   }
 
@@ -301,7 +305,7 @@ export class MemoryLukitas implements Lukitas {
   async updateCategory(id: string, input: UpdateCategory): Promise<CategoryDto> {
     const c = this.category(id);
     if (input.name !== undefined) this.checkNameFree(input.name, id);
-    Object.assign(c, input);
+    Object.assign(c, defined(input));
     return this.toCategoryDto(c);
   }
 
@@ -326,7 +330,7 @@ export class MemoryLukitas implements Lukitas {
     const r = this.recurrences.find((x) => x.id === id);
     if (!r) throw notFound("Recurrence");
     if (input.categoryId) this.activeCategory(input.categoryId);
-    Object.assign(r, input);
+    Object.assign(r, defined(input));
     return { ...r };
   }
 
