@@ -1,5 +1,5 @@
 // Self-hosted fonts (no third-party requests), only the weights the design system uses.
-// Caveat (`hand`) is for the landing's handwritten annotation only: declaring it here costs a few
+// Caveat (`hand`) is for the share image's handwritten note (scripts/og) only: declaring it here costs a few
 // @font-face rules, and the browser only downloads it on a page that uses it.
 import "@fontsource/caveat/600.css";
 import "@fontsource/caveat/700.css";

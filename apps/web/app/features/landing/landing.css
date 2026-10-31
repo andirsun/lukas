@@ -158,6 +158,51 @@
   .lk-landing-nav-section {
     display: none;
   }
+  /* The language switch: the code on a button the size of the day/night one, and under it the
+     languages, the active one marked like the footer's (a filled pill). */
+  .lk-landing-lang {
+    position: relative;
+  }
+  .lk-landing-lang-button {
+    padding-inline: 0;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+  }
+  .lk-landing-lang-menu {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    z-index: 30;
+    min-width: 11rem;
+    padding: var(--space-2);
+  }
+  .lk-landing-lang-menu ul {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .lk-landing-lang-option {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-inline: var(--space-3);
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .lk-landing-lang-option:hover,
+  .lk-landing-lang-option[aria-current="true"] {
+    background: var(--surface-sunken);
+  }
+  .lk-landing-lang-option:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
 
   /* Hero */
   .lk-landing-hero {
@@ -195,25 +240,6 @@
   .lk-landing-mascot > * {
     position: relative;
   }
-  /*
-   * A handwritten note above the headline (`hand`, landing only), tilted like a scribble, on a
-   * translucent candy highlighter stroke. The text is `ink`: at least 6:1 on the stroke in both
-   * themes. It opens the hero text; the tilt drops its left end by about a third of its height,
-   * so the headline keeps an extra gap below it.
-   */
-  .lk-landing-annotation {
-    justify-self: center;
-    margin-top: var(--space-2);
-    padding: 0.04em 0.45em 0.1em;
-    border-radius: 0.25em 0.7em 0.3em 0.8em / 0.7em 0.3em 0.8em 0.35em;
-    background: color-mix(in srgb, var(--candy) 32%, transparent);
-    font-family: var(--font-hand);
-    font-weight: 700;
-    font-size: 26px;
-    line-height: 1.1;
-    color: var(--ink);
-    transform: rotate(-4deg);
-  }
   .lk-landing-headline {
     font-family: var(--font-display);
     font-weight: 700;
@@ -239,6 +265,55 @@
     color: var(--on-gold);
     text-shadow: none;
     transform: rotate(-2deg);
+  }
+  /*
+   * The Spanish headline's turning words (`MoneyHeadline`): each piece that changes rolls the old
+   * text up and out while the new one rises in, and eases its width so the words around it slide
+   * along. On the marker the roll stays inside the gold.
+   */
+  .lk-swap {
+    --lk-swap-time: 420ms;
+    position: relative;
+    display: inline-block;
+    white-space: nowrap;
+    transition: width var(--lk-swap-time) cubic-bezier(0.3, 0.7, 0.2, 1);
+  }
+  .lk-swap > * {
+    display: inline-block;
+  }
+  /* A word and its turning ending ("clar" + "as") never break apart. */
+  .lk-swap-word {
+    white-space: nowrap;
+  }
+  .lk-swap-in {
+    animation: lk-swap-in var(--lk-swap-time) cubic-bezier(0.3, 0.7, 0.2, 1) both;
+  }
+  .lk-swap-out {
+    position: absolute;
+    top: 0;
+    left: 0;
+    animation: lk-swap-out var(--lk-swap-time) cubic-bezier(0.5, 0, 0.7, 0.4) both;
+  }
+  .lk-landing-marker .lk-swap {
+    clip-path: inset(-0.04em -0.2em);
+  }
+  @keyframes lk-swap-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.7em);
+    }
+  }
+  @keyframes lk-swap-out {
+    to {
+      opacity: 0;
+      transform: translateY(-0.7em);
+    }
+  }
+  /* On the marker after the word, small: the flag of where the word is said. */
+  .lk-landing-flag {
+    margin-inline-start: 0.16em;
+    font-size: 0.65em;
+    vertical-align: 0.12em;
   }
   .lk-landing-description {
     max-width: 34rem;
@@ -735,12 +810,6 @@
       order: 0;
       width: min(400px, 100%);
       justify-self: center;
-    }
-    /* A scribble over the headline's first words, not a centered label. */
-    .lk-landing-annotation {
-      justify-self: start;
-      margin-inline-start: 0.6em;
-      font-size: 32px;
     }
     .lk-landing-headline {
       margin-top: var(--space-3);

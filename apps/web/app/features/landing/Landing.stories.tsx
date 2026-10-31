@@ -8,6 +8,7 @@ import { Hero } from "./Hero.tsx";
 import { HowItWorks } from "./HowItWorks.tsx";
 import { Landing } from "./Landing.tsx";
 import { OpenSource } from "./OpenSource.tsx";
+import { SiteHeader } from "./SiteHeader.tsx";
 import { UseItYourWay } from "./UseItYourWay.tsx";
 
 const meta = {
@@ -32,7 +33,7 @@ type Story = StoryObj<typeof meta>;
 export const Page: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByRole("heading", { level: 1 })).toHaveTextContent(
+    await expect(canvas.getByRole("heading", { level: 1 })).toHaveAccessibleName(
       "Tus lukas, por fin claras.",
     );
     const ctas = canvas.getAllByRole("link", { name: "Empieza ahora" });
@@ -65,7 +66,8 @@ export const PageDayEnglish: Story = {
 };
 
 /**
- * Hero: the handwritten promise, the headline with "lukas" on the gold marker, one primary action
+ * Hero: no handwritten note any more, the headline with "lukas" on the gold marker (taking turns with
+ * what money is called elsewhere, each with its flag), one primary action
  * on its edge with the perks (open source links to GitHub), Lukas waving.
  */
 export const HeroSection: Story = {
@@ -73,10 +75,11 @@ export const HeroSection: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvasElement.querySelectorAll("s")).toHaveLength(0);
-    await expect(canvas.getByText("¡Gratis, y siempre lo será!")).toBeVisible();
+    await expect(canvas.queryByText("¡Gratis, y siempre lo será!")).toBeNull();
     const headline = canvas.getByRole("heading", { level: 1 });
-    await expect(headline).toHaveTextContent("Tus lukas, por fin claras.");
+    await expect(headline).toHaveAccessibleName("Tus lukas, por fin claras.");
     await expect(headline.querySelector(".lk-landing-marker")).toHaveTextContent("lukas");
+    await expect(headline.querySelector(".lk-landing-flag")).toHaveTextContent("🇨🇴");
     await expect(
       canvas.getByRole("link", { name: "Código abierto (se abre en una pestaña nueva)" }),
     ).toHaveAttribute("href", "https://github.com/slinqer/lukitas");
@@ -101,7 +104,6 @@ export const HeroWithDemoDayEnglish: Story = {
   globals: { theme: "day", locale: "en" },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.getByText("Free, and it always will be!")).toBeVisible();
     const demo = canvas.getByRole("link", { name: "Try it without an account" });
     await expect(demo).toHaveAttribute("href", "/demo?lang=en");
     await expect(demo).toHaveClass("lk-btn-secondary");
@@ -186,6 +188,29 @@ export const FaqSection: Story = {
     await expect(canvasElement.querySelector("#privacy")).not.toBeNull();
     await userEvent.tab();
     await expectFocusRing(summaries[1] as HTMLElement);
+  },
+};
+
+/** Header: the language switch open, the current language marked, each option the same page. */
+export const HeaderLanguageMenu: Story = {
+  render: () => <SiteHeader page="landing" />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole("button", { name: "ES, Idioma: Español" });
+    await expect(button).toHaveTextContent("ES");
+    await expectTarget(button);
+    await userEvent.click(button);
+    await expect(button).toHaveAttribute("aria-expanded", "true");
+    await expect(canvas.getByRole("link", { name: "Español" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    const english = canvas.getByRole("link", { name: "English" });
+    await expect(english).toHaveAttribute("href", "/en");
+    await expect(english).toHaveAttribute("hreflang", "en");
+    for (const option of ["Español", "English", "Italiano", "Português"]) {
+      await expectTarget(canvas.getByRole("link", { name: option }));
+    }
   },
 };
 

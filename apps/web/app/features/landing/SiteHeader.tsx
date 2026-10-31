@@ -5,12 +5,13 @@ import { COMING_SOON } from "../../site/config.ts";
 import { LANDING_PATH, ROADMAP_PATH, type SitePage } from "../../site/paths.ts";
 import { PressLink } from "../../ui/PressLink.tsx";
 import { ThemeToggle } from "../../ui/ThemeToggle.tsx";
+import { LanguageMenu } from "./LanguageMenu.tsx";
 import { appLinkProps } from "./links.ts";
 import { NewTabHint } from "./NewTabHint.tsx";
 
 /**
  * The header of the landing and the roadmap: the wordmark (home), the section links (desktop
- * only: the phone header has no room), the way in and the day/night switch. On the landing the
+ * only: the phone header has no room), the way in, the language switch and the day/night switch. On the landing the
  * section links are anchors on the page; on the roadmap they lead back to the landing's sections.
  */
 export function SiteHeader({ page }: { page: SitePage }) {
@@ -43,6 +44,7 @@ export function SiteHeader({ page }: { page: SitePage }) {
             {t(COMING_SOON ? "sign_in_soon" : "sign_in")}
             <NewTabHint target={app.target} />
           </PressLink>
+          <LanguageMenu page={page} />
           <ThemeToggle />
         </nav>
       </div>
