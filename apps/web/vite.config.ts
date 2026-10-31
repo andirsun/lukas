@@ -32,6 +32,21 @@ export default defineConfig({
       // API serves its routes under API_URL's path (/api). X-Forwarded-* carry the browser's host
       // and client IP to the API.
       "/api": { target: "http://localhost:3000", changeOrigin: false, xfwd: true },
+      // RFC 8414: assistants look for the authorization server's metadata at the well-known path
+      // followed by the issuer's path (/api/auth). The API serves it under /api, as Caddy rewrites.
+      "/.well-known/oauth-authorization-server/api/auth": {
+        target: "http://localhost:3000",
+        changeOrigin: false,
+        xfwd: true,
+        rewrite: () => "/api/.well-known/oauth-authorization-server/auth",
+      },
+      // The MCP server (`pnpm --filter @lukas/mcp dev`) on this same origin, as Caddy serves it.
+      "/mcp": { target: "http://localhost:3001", changeOrigin: false, xfwd: true },
+      "/.well-known/oauth-protected-resource": {
+        target: "http://localhost:3001",
+        changeOrigin: false,
+        xfwd: true,
+      },
     },
   },
 });
