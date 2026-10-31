@@ -34,6 +34,7 @@ import '../ui/press_link.dart';
 import '../ui/sheet.dart';
 import '../ui/toast.dart';
 import '../ui/web_text_field.dart';
+import 'assistants_section.dart';
 import 'delete_account.dart';
 import 'export_settings.dart';
 import 'feedback.dart';
@@ -61,9 +62,9 @@ final settingsEmailProvider = FutureProvider.autoDispose<String?>((ref) async {
   return email == null || email.isEmpty ? null : email;
 });
 
-/// Settings (spec section 6.1.6): language, theme, sound, time zone and currency, the passkeys, the
-/// import, vibration, the two local notices, hiding the amount in the widget, the voice models, the
-/// server, About, "Más en la web" and sign out.
+/// Settings (spec section 6.1.6): language, theme, sound, time zone and currency, the passkeys,
+/// "Conecta tu asistente", the import, vibration, the two local notices, hiding the amount in the
+/// widget, the voice models, the server, About, "Más en la web" and sign out.
 /// A guest also finds "Guarda tu progreso" at the top, and is warned before anything that would
 /// leave their account behind (signing out, changing server).
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -300,6 +301,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           timeZone: profile?.timezone ?? ref.watch(deviceHintsProvider).timezone,
           guest: guest && !webOnly,
         ),
+        // "Conecta tu asistente" (spec §6.2): the web has it too, but its story is not in the parity
+        // pairs yet, so the web-only pictures leave it out.
+        if (!webOnly)
+          AssistantsSection(
+            timeZone: profile?.timezone ?? ref.watch(deviceHintsProvider).timezone,
+            guest: guest,
+          ),
         // The web's "Tus datos" (Settings.tsx): the import links to its page; the export joins it.
         SettingsSection(
           key: const Key('settings.card.data'),

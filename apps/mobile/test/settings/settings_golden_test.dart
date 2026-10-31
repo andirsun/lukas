@@ -16,6 +16,7 @@ import 'package:lukitas/entry/guest_dialogs.dart';
 import 'package:lukitas/feedback/stored_flag.dart';
 import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/l10n/app_localizations.dart';
+import 'package:lukitas/settings/assistants_repository.dart';
 import 'package:lukitas/settings/settings_screen.dart';
 import 'package:lukitas/settings/server_status.dart';
 
@@ -36,7 +37,7 @@ import 'harness.dart' show DeletableModelStore;
 /// `flutter test --update-goldens test/settings/settings_golden_test.dart`.
 
 /// The whole page, taller than a phone, so one picture shows every card.
-const _page = Size(412, 3400);
+const _page = Size(412, 4000);
 
 List<Override> _overrides({required bool guest}) {
   final token = guest ? 'guest-token-0' : 'email-token-0';
@@ -52,6 +53,7 @@ List<Override> _overrides({required bool guest}) {
     homeRepositoryProvider.overrideWithValue(FakeHomeRepository()),
     flagStoreProvider.overrideWith((ref, key) => FakeFlagStore()),
     modelStoreProvider.overrideWithValue(DeletableModelStore()),
+    assistantsRepositoryProvider.overrideWithValue(FakeAssistantsRepository()),
   ];
 }
 

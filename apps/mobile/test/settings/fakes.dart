@@ -1,5 +1,6 @@
 import 'package:lukitas/feedback/stored_flag.dart';
 import 'package:lukitas/home/home_repository.dart';
+import 'package:lukitas/settings/assistants_repository.dart';
 import 'package:lukitas/welcome/onboarding_repository.dart';
 import 'package:lukitas/settings/settings_store.dart';
 
@@ -92,4 +93,42 @@ class FakeProfileServer implements OnboardingRepository {
   @override
   dynamic noSuchMethod(Invocation invocation) =>
       throw UnimplementedError('Settings never calls ${invocation.memberName}');
+}
+
+/// The connected assistants on the server, in memory: [revoke] takes one out, and fails when told to.
+class FakeAssistantsRepository implements AssistantsRepository {
+  FakeAssistantsRepository([List<ConnectedAssistant>? items]) : items = items ?? [];
+
+  final List<ConnectedAssistant> items;
+
+  /// Every client id asked to be revoked, in order (failed tries too).
+  final revokes = <String>[];
+
+  /// How many times the list was read.
+  int lists = 0;
+
+  /// [list] throws this.
+  Object? listFailure;
+
+  /// The next [revoke] throws this (then cleared).
+  Object? revokeFailure;
+
+  @override
+  Future<List<ConnectedAssistant>> list() async {
+    lists++;
+    final failure = listFailure;
+    if (failure != null) throw failure;
+    return List.of(items);
+  }
+
+  @override
+  Future<void> revoke(String clientId) async {
+    revokes.add(clientId);
+    final failure = revokeFailure;
+    if (failure != null) {
+      revokeFailure = null;
+      throw failure;
+    }
+    items.removeWhere((a) => a.clientId == clientId);
+  }
 }

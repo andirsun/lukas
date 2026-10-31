@@ -13,6 +13,7 @@ import 'package:lukitas/home/home_repository.dart';
 import 'package:lukitas/home/widget_snapshot.dart';
 import 'package:lukitas/recurring/recurring_repository.dart';
 import 'package:lukitas/router.dart';
+import 'package:lukitas/settings/assistants_repository.dart';
 import 'package:lukitas/settings/server_status.dart';
 import 'package:lukitas/settings/settings_store.dart';
 import 'package:lukitas/settings/url_opener.dart';
@@ -133,6 +134,7 @@ Future<SettingsEnv> pumpSettingsApp(
     ),
     widgetStoreProvider.overrideWithValue(FakeWidgetStore()),
     homeCacheStoreProvider.overrideWithValue(FakeCacheStore()),
+    assistantsRepositoryProvider.overrideWithValue(FakeAssistantsRepository()),
     widgetSnapshotWriterProvider.overrideWithValue(
       (summary, {required currency, required locale, required timezone}) async {},
     ),
