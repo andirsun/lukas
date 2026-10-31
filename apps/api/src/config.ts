@@ -29,6 +29,14 @@ const configSchema = z
     BETTER_AUTH_SECRET: z.string().min(32),
     API_URL: z.string().url(),
     WEB_URL: z.string().url(),
+    /**
+     * The MCP server's public URL (`https://…/mcp`): the resource its access tokens are issued
+     * for (RFC 8707), and the audience the API checks on them. Blank or unset: no MCP, and the
+     * API accepts no OAuth access token.
+     */
+    MCP_URL: z
+      .preprocess((v) => (v === "" ? undefined : v), z.string().url().optional())
+      .optional(),
     MAIL_FROM: z.string().min(3),
     RESEND_API_KEY: z.string().optional(),
     SMTP_URL: z.string().optional(),

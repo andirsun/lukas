@@ -14,6 +14,8 @@ import 'package:built_value/iso_8601_date_time_serializer.dart';
 import 'package:lukitas/api/gen/src/date_serializer.dart';
 import 'package:lukitas/api/gen/src/model/date.dart';
 
+import 'package:lukitas/api/gen/src/model/assistant.dart';
+import 'package:lukitas/api/gen/src/model/assistant_list.dart';
 import 'package:lukitas/api/gen/src/model/category.dart';
 import 'package:lukitas/api/gen/src/model/category_report.dart';
 import 'package:lukitas/api/gen/src/model/category_report_items_inner.dart';
@@ -55,6 +57,8 @@ import 'package:lukitas/api/gen/src/model/update_transaction.dart';
 part 'serializers.g.dart';
 
 @SerializersFor([
+  Assistant,
+  AssistantList,
   Category,
   CategoryReport,
   CategoryReportItemsInner,
@@ -142,6 +146,10 @@ Serializers serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, [FullType(ImportStatsRejectedInner)]),
             () => ListBuilder<ImportStatsRejectedInner>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, [FullType(Assistant)]),
+            () => ListBuilder<Assistant>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, [FullType(ImportStatsAverageMonthlySpendingInner)]),

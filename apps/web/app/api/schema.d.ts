@@ -68,6 +68,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/me/assistants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listAssistants"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/assistants/{clientId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** @description Deletes the consent and the refresh tokens: the assistant cannot get a new access token, so it loses access within 15 minutes at most. */
+        delete: operations["revokeAssistant"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/categories": {
         parameters: {
             query?: never;
@@ -398,6 +431,19 @@ export interface components {
         ClaimEmailVerify: {
             email: string;
             code: string;
+        };
+        AssistantList: {
+            items: components["schemas"]["Assistant"][];
+        };
+        Assistant: {
+            clientId: string;
+            name: string;
+            icon: string | null;
+            uri: string | null;
+            domain: string | null;
+            scopes: string[];
+            connectedAt: string;
+            lastUsedAt: string | null;
         };
         Category: {
             /** Format: uuid */
@@ -859,6 +905,55 @@ export interface operations {
             };
         };
     };
+    listAssistants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Connected assistants, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantList"];
+                };
+            };
+        };
+    };
+    revokeAssistant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Problem */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
     listCategories: {
         parameters: {
             query?: {
@@ -1024,6 +1119,9 @@ export interface operations {
         parameters: {
             query?: {
                 month?: string;
+                from?: string;
+                to?: string;
+                q?: string;
                 category?: string;
                 status?: "paid" | "pending";
                 cursor?: string;

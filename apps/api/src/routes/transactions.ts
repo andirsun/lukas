@@ -2,14 +2,29 @@ import { createRoute, z } from "@hono/zod-openapi";
 import {
   firstDay,
   isIsoDate,
+  isoDateSchema,
   lastDay,
   monthOf,
   monthSchema,
   type CreateTransaction as NewTransaction,
 } from "@lukas/core";
 import { recurrences, type Tx, transactions, withUser } from "@lukas/db";
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lte, type SQL, sql } from "@lukas/db/orm";
+import {
+  and,
+  type Column,
+  desc,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  or,
+  type SQL,
+  sql,
+} from "@lukas/db/orm";
 import type { AppDeps } from "../deps.ts";
+import type { Grant } from "../env.ts";
 import { idempotent } from "../http/idempotency.ts";
 import { jsonBody, jsonResponse, problems } from "../http/openapi.ts";
 import { ApiError } from "../http/problem.ts";
@@ -32,13 +47,23 @@ import {
 } from "../services/transactions.ts";
 
 const idParam = z.object({ id: z.uuid() });
-const listQuery = z.object({
-  month: monthSchema.optional(),
-  category: z.uuid().optional(),
-  status: z.enum(["paid", "pending"]).optional(),
-  cursor: z.string().optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-});
+const listQuery = z
+  .object({
+    month: monthSchema.optional(),
+    /** First and last day to include (YYYY-MM-DD), each optional; with `month`, both narrow it. */
+    from: isoDateSchema.optional(),
+    to: isoDateSchema.optional(),
+    /** Text the name or the note contains, ignoring case. */
+    q: z.string().trim().min(1).max(100).optional(),
+    category: z.uuid().optional(),
+    status: z.enum(["paid", "pending"]).optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: "from must not be after to",
+    path: ["from"],
+  });
 
 const suggestionsQuery = z.object({
   q: z.string().trim().max(100).optional(),
@@ -51,6 +76,14 @@ const TransactionPage = z
   .object({ items: z.array(Transaction), nextCursor: z.string().nullable() })
   .openapi("TransactionPage");
 const TransactionList = z.object({ items: z.array(Transaction) }).openapi("TransactionList");
+
+/** Accented letters the text search folds, and what they fold to (Spanish, Italian, Portuguese). */
+const ACCENTED = "áàâãäéèêëíìîïóòôõöúùûüñç";
+const PLAIN = "aaaaaeeeeiiiiooooouuuunc";
+/** Lower case without accents, so "almuerzo" finds "Almuérzo". */
+const foldText = (text: string) =>
+  [...text.toLowerCase()].map((ch) => PLAIN[ACCENTED.indexOf(ch)] ?? ch).join("");
+const foldColumn = (column: Column) => sql`translate(lower(${column}), ${ACCENTED}, ${PLAIN})`;
 
 const encodeCursor = (row: TransactionRow) =>
   Buffer.from(`${row.date}|${row.id}`).toString("base64url");
@@ -96,6 +129,17 @@ export function transactionRoutes(deps: AppDeps) {
           gte(transactions.date, firstDay(q.month)),
           lte(transactions.date, lastDay(q.month)),
         );
+      if (q.from) filters.push(gte(transactions.date, q.from));
+      if (q.to) filters.push(lte(transactions.date, q.to));
+      if (q.q) {
+        const pattern = `%${foldText(q.q).replace(/[\\%_]/g, (ch) => `\\${ch}`)}%`;
+        filters.push(
+          or(
+            sql`${foldColumn(transactions.name)} like ${pattern}`,
+            sql`${foldColumn(transactions.note)} like ${pattern}`,
+          ),
+        );
+      }
       if (q.category) filters.push(eq(transactions.categoryId, q.category));
       if (q.status) filters.push(eq(transactions.status, q.status));
       if (q.cursor) {
@@ -197,7 +241,16 @@ export function transactionRoutes(deps: AppDeps) {
    * with `repeat` first makes its recurrence and is saved as that rule's occurrence for its month,
    * so materializing the month finds it there and adds no pending twin; later months get theirs.
    */
-  async function insertTransactions(tx: Tx, userId: string, inputs: NewTransaction[]) {
+  /**
+   * Under an assistant's OAuth token the API sets `source = mcp` itself, whatever the body says,
+   * so the person can always tell what an assistant saved.
+   */
+  async function insertTransactions(
+    tx: Tx,
+    userId: string,
+    inputs: NewTransaction[],
+    grant: Grant,
+  ) {
     for (const categoryId of new Set(inputs.map((i) => i.categoryId))) {
       await requireActiveCategory(tx, categoryId);
     }
@@ -206,7 +259,13 @@ export function transactionRoutes(deps: AppDeps) {
     const account = await defaultAccount(tx, { lock: true });
     const values = [];
     for (const { repeat, ...i } of inputs) {
-      const row = { ...i, userId, accountId: account.id, currency: account.currency };
+      const row = {
+        ...i,
+        ...(grant.kind === "oauth" ? { source: "mcp" as const } : {}),
+        userId,
+        accountId: account.id,
+        currency: account.currency,
+      };
       if (!repeat) {
         values.push(row);
         continue;
@@ -252,7 +311,7 @@ export function transactionRoutes(deps: AppDeps) {
       const input = c.req.valid("json");
       const userId = c.get("userId");
       const [row] = await withUser(deps.db, userId, (tx) =>
-        insertTransactions(tx, userId, [input]),
+        insertTransactions(tx, userId, [input], c.get("grant")),
       );
       return c.json(toTransactionDto(row as TransactionRow), 201);
     },
@@ -277,7 +336,9 @@ export function transactionRoutes(deps: AppDeps) {
     async (c) => {
       const { items } = c.req.valid("json");
       const userId = c.get("userId");
-      const rows = await withUser(deps.db, userId, (tx) => insertTransactions(tx, userId, items));
+      const rows = await withUser(deps.db, userId, (tx) =>
+        insertTransactions(tx, userId, items, c.get("grant")),
+      );
       return c.json({ items: rows.map(toTransactionDto) }, 201);
     },
   );

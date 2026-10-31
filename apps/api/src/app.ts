@@ -6,7 +6,9 @@ import { apiPathPrefix } from "./config.ts";
 import type { AppDeps } from "./deps.ts";
 import type { AppEnv } from "./env.ts";
 import { notFound, onError, validationHook } from "./http/problem.ts";
+import { assistantScopes } from "./http/scopes.ts";
 import { requireUser } from "./http/session.ts";
+import { assistantRoutes } from "./routes/assistants.ts";
 import { categoryRoutes } from "./routes/categories.ts";
 import { importRoutes } from "./routes/imports.ts";
 import { meRoutes } from "./routes/me.ts";
@@ -52,12 +54,16 @@ export function createApp(deps: AppDeps) {
     }),
   );
   app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
-  app.get("/.well-known/oauth-authorization-server", (c) =>
-    oauthProviderAuthServerMetadata(auth)(c.req.raw),
-  );
+  // RFC 8414 puts an issuer's metadata at the well-known path followed by the issuer's path
+  // (`/auth`, under API_URL), which is where MCP clients look for it; the bare path stays too.
+  const authServerMetadata = oauthProviderAuthServerMetadata(auth);
+  app.get("/.well-known/oauth-authorization-server", (c) => authServerMetadata(c.req.raw));
+  app.get("/.well-known/oauth-authorization-server/auth", (c) => authServerMetadata(c.req.raw));
 
-  app.use("/v1/*", requireUser(auth));
+  app.use("/v1/*", requireUser(auth, deps.config));
+  app.use("/v1/*", assistantScopes());
   app.route("/", meRoutes(deps));
+  app.route("/", assistantRoutes(deps));
   app.route("/", categoryRoutes(deps));
   app.route("/", transactionRoutes(deps));
   app.route("/", recurrenceRoutes(deps));

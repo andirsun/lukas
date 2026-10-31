@@ -1,3 +1,5 @@
+import { createHash, randomBytes } from "node:crypto";
+import type { ClientMetadataResourceFetch } from "@better-auth/oauth-provider";
 import { categories, createDb, type Db, user } from "@lukas/db";
 import { eq } from "@lukas/db/orm";
 import { startTestDatabase } from "@lukas/db/testing";
@@ -17,7 +19,17 @@ export const TEST_CONFIG = {
   CLIENT_IP_HEADER: "x-forwarded-for",
   GUEST_SIGNUP: true,
   TRUSTED_PROXIES: ["10.0.0.0/8"],
+  MCP_URL: "http://localhost:3001/mcp",
 };
+
+/** Where Claude sends people back after consent; the test clients use it too. */
+export const ASSISTANT_REDIRECT = "https://claude.ai/api/mcp/auth_callback";
+
+export interface AssistantTokens {
+  accessToken: string;
+  refreshToken: string;
+  clientId: string;
+}
 
 export function codeFrom(subject: string): string {
   const match = /(\d{6})$/.exec(subject);
@@ -28,7 +40,10 @@ export function codeFrom(subject: string): string {
 /** A fresh database + app per test file. Requests go through `app.request` (no network). */
 export async function createTestApp(
   overrides: Partial<Config> = {},
-  { now }: { now?: () => Date } = {},
+  {
+    now,
+    fetchClientMetadata,
+  }: { now?: () => Date; fetchClientMetadata?: ClientMetadataResourceFetch } = {},
 ) {
   const database = await startTestDatabase();
   const app$ = createDb(database.appUrl);
@@ -40,7 +55,7 @@ export async function createTestApp(
     DATABASE_ADMIN_URL: database.adminUrl,
     ...overrides,
   };
-  const app = createApp({ config, db: app$.db, mailer, now });
+  const app = createApp({ config, db: app$.db, mailer, now, fetchClientMetadata });
 
   // Distinct fake client IPs (behind a trusted 10.x proxy) keep the per-IP auth rate limit out of
   // unrelated tests.
@@ -96,8 +111,101 @@ export async function createTestApp(
     return { userId: json.user.id, headers: { authorization: `Bearer ${token}` } };
   }
 
+  /** Registers an assistant by Dynamic Client Registration; returns its client_id. */
+  async function registerAssistant(name = "Claude"): Promise<string> {
+    const res = await request("POST", "/auth/oauth2/register", {
+      body: {
+        client_name: name,
+        client_uri: "https://claude.ai",
+        redirect_uris: [ASSISTANT_REDIRECT],
+        token_endpoint_auth_method: "none",
+        grant_types: ["authorization_code", "refresh_token"],
+        response_types: ["code"],
+      },
+    });
+    if (res.status !== 201) throw new Error(`register failed: ${res.status} ${await res.text()}`);
+    return ((await res.json()) as { client_id: string }).client_id;
+  }
+
+  /** POSTs a form to the token endpoint, as OAuth clients do. */
+  async function tokenRequest(form: Record<string, string>): Promise<Response> {
+    return app.request("/auth/oauth2/token", {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "x-forwarded-for": nextIp(),
+      },
+      body: new URLSearchParams(form).toString(),
+    });
+  }
+
+  /**
+   * Runs the whole authorization code flow with PKCE for `email`, as Claude would: authorize
+   * (signed in), consent, then the code for tokens, for `resource` (the MCP by default).
+   */
+  async function authorize(
+    email: string,
+    {
+      scope = "finance:read finance:write offline_access",
+      resource = config.MCP_URL,
+      clientId,
+      headers,
+    }: {
+      scope?: string;
+      resource?: string;
+      clientId?: string;
+      headers?: { authorization: string };
+    } = {},
+  ): Promise<AssistantTokens> {
+    const client = clientId ?? (await registerAssistant());
+    const session = headers ?? (await signIn(email)).headers;
+    const verifier = randomBytes(32).toString("base64url");
+    const query = new URLSearchParams({
+      response_type: "code",
+      client_id: client,
+      redirect_uri: ASSISTANT_REDIRECT,
+      scope,
+      state: "state",
+      code_challenge: createHash("sha256").update(verifier).digest("base64url"),
+      code_challenge_method: "S256",
+      ...(resource ? { resource } : {}),
+    });
+    const auth = await request("GET", `/auth/oauth2/authorize?${query}`, { headers: session });
+    const consentUrl = auth.headers.get("location") ?? "";
+    if (!consentUrl.startsWith(`${config.WEB_URL}/oauth/consent`)) {
+      throw new Error(`authorize did not ask for consent: ${auth.status} ${consentUrl}`);
+    }
+    const consent = await request("POST", "/auth/oauth2/consent", {
+      headers: session,
+      body: { accept: true, oauth_query: new URL(consentUrl).search.slice(1) },
+    });
+    if (consent.status !== 200) {
+      throw new Error(`consent failed: ${consent.status} ${await consent.text()}`);
+    }
+    const back = new URL(((await consent.json()) as { url: string }).url);
+    const res = await tokenRequest({
+      grant_type: "authorization_code",
+      code: back.searchParams.get("code") ?? "",
+      redirect_uri: ASSISTANT_REDIRECT,
+      client_id: client,
+      code_verifier: verifier,
+      ...(resource ? { resource } : {}),
+    });
+    if (res.status !== 200) throw new Error(`token failed: ${res.status} ${await res.text()}`);
+    const tokens = (await res.json()) as { access_token: string; refresh_token: string };
+    return {
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token,
+      clientId: client,
+    };
+  }
+
   return {
     app,
+    config,
+    registerAssistant,
+    tokenRequest,
+    authorize,
     db: app$.db as Db,
     admin: admin.db as Db,
     mailer,

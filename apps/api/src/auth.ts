@@ -1,4 +1,6 @@
 import { createHash, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+import { cimd } from "@better-auth/cimd";
+import { fetchClientMetadataResource } from "@better-auth/cimd/node";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import { passkey } from "@better-auth/passkey";
 import { defaultCurrencyFor, isValidTimeZone, SUGGESTED_CATEGORIES } from "@lukas/core";
@@ -22,6 +24,8 @@ import { claimEmail, signInEmail } from "./emails/sign-in.ts";
 import { stampGuestActivity } from "./services/guest-cleanup.ts";
 
 export const OAUTH_SCOPES = ["finance:read", "finance:write", "offline_access"] as const;
+/** An assistant's access token lives 15 minutes; revoking it leaves at most that much access. */
+export const ACCESS_TOKEN_TTL_SECONDS = 900;
 export const CODE_TTL_SECONDS = 600;
 /** Wrong tries a code survives: the third wrong one uses it up. */
 export const CODE_ATTEMPTS = 3;
@@ -381,6 +385,20 @@ export function createAuth(deps: AppDeps) {
         }
       }),
       after: createAuthMiddleware(async (ctx) => {
+        // A guest cannot connect an assistant (main spec, Guest mode): the consent screen offers to
+        // save their progress instead. Checked after the endpoint, the only point where a bearer
+        // session is resolved; the code it minted is never handed out, and the API would refuse a
+        // guest's token anyway (http/session.ts).
+        if (ctx.path === "/oauth2/consent") {
+          const user = ctx.context.session?.user as { isAnonymous?: boolean } | undefined;
+          if (user?.isAnonymous) {
+            throw new APIError("FORBIDDEN", {
+              code: "guest_cannot_authorize",
+              message: "Save your progress before connecting an assistant",
+            });
+          }
+          return;
+        }
         if (ctx.path !== "/passkey/generate-register-options") return;
         const returned = ctx.context.returned;
         if (!returned || typeof returned !== "object" || !("pubKeyCredParams" in returned)) return;
@@ -510,10 +528,25 @@ export function createAuth(deps: AppDeps) {
         scopes: [...OAUTH_SCOPES],
         loginPage: `${config.WEB_URL}/auth/sign-in`,
         consentPage: `${config.WEB_URL}/oauth/consent`,
+        // Dynamic Client Registration is deprecated by MCP 2026-07-28 in favor of Client ID
+        // Metadata Documents (the cimd plugin below), and stays on for clients that still use it.
         allowDynamicClientRegistration: true,
         allowUnauthenticatedClientRegistration: true,
-        clientRegistrationDefaultScopes: ["finance:read", "finance:write"],
+        clientRegistrationDefaultScopes: [...OAUTH_SCOPES],
         clientRegistrationRequirePKCE: true,
+        accessTokenExpiresIn: ACCESS_TOKEN_TTL_SECONDS,
+        // Refresh tokens last until the person revokes the assistant (~10 years).
+        refreshTokenExpiresIn: 10 * 365 * 24 * 60 * 60,
+        ...(config.MCP_URL
+          ? {
+              resources: [{ identifier: config.MCP_URL, name: "Lukitas MCP" }],
+              clientRegistrationDefaultResources: [config.MCP_URL],
+            }
+          : {}),
+      }),
+      cimd({
+        fetchClientMetadataResource: deps.fetchClientMetadata ?? fetchClientMetadataResource,
+        metadataProfile: "mcp-2026-07-28",
       }),
     ],
   });
