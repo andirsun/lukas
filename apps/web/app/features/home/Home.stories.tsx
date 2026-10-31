@@ -1,3 +1,4 @@
+import { lastDay, monthOf } from "@lukas/core";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, fn, screen, userEvent, waitFor, within } from "storybook/test";
 import {
@@ -8,7 +9,7 @@ import {
   expectTarget,
   fingerDrag,
 } from "../../../.storybook/story-utils.ts";
-import { HomeStage } from "./story-harness.tsx";
+import { HomeStage, STORY_TODAY } from "./story-harness.tsx";
 
 /**
  * Home (spec §2.5) and the add/edit sheet (§2.6) against a fake API: this month's budgets and
@@ -135,8 +136,14 @@ export const Budgets: Story = {
     await expectTarget(panel.getByRole("button", { name: "Nueva categoría" }));
     await expect(panel.queryByRole("button", { name: /^Archivadas/ })).toBeNull();
     await expect(panel.queryByRole("button", { name: /^Salario/ })).toBeNull();
-    // Lukitas talks about the month (the worst category first).
-    await expect(canvas.getByText(/Supermercado/, { selector: ".lk-bubble" })).toBeVisible();
+    // Lukitas talks about the month: the worst category first, except on its last day, when he
+    // talks about what is left (core's lukasMessage).
+    const lastDayOfMonth = STORY_TODAY === lastDay(monthOf(STORY_TODAY));
+    await expect(
+      canvas.getByText(lastDayOfMonth ? new RegExp(eur("501,13")) : /Supermercado/, {
+        selector: ".lk-bubble",
+      }),
+    ).toBeVisible();
     await expectTarget(canvas.getByRole("button", { name: "Agregar" }));
     await expectTarget(canvas.getByRole("button", { name: "Tu cuenta" }));
   },
