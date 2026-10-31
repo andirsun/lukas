@@ -1,0 +1,132 @@
+[
+  {
+    "phrase": "anota 18 lukas almuerzo",
+    "tool": "add_transactions",
+    "input": {
+      "items": [{ "name": "Almuerzo", "amount": 18000, "kind": "expense", "category": "Comida" }]
+    }
+  },
+  {
+    "phrase": "me pagaron la quincena, 2 millones",
+    "tool": "add_transactions",
+    "input": {
+      "items": [{ "name": "Quincena", "amount": 2000000, "kind": "income", "category": "Salario" }]
+    }
+  },
+  {
+    "phrase": "ayer gasté 35 lukas en mercado y 12 en taxi",
+    "tool": "add_transactions",
+    "input": {
+      "items": [
+        {
+          "name": "Mercado",
+          "amount": 35000,
+          "kind": "expense",
+          "category": "Supermercado",
+          "date": "2026-10-30"
+        },
+        {
+          "name": "Taxi",
+          "amount": 12000,
+          "kind": "expense",
+          "category": "Transporte",
+          "date": "2026-10-30"
+        }
+      ]
+    }
+  },
+  {
+    "phrase": "una luka de propina",
+    "tool": "add_transactions",
+    "input": {
+      "items": [{ "name": "Propina", "amount": 1000, "kind": "expense", "category": "Restaurante" }]
+    }
+  },
+  {
+    "phrase": "¿cómo voy este mes?",
+    "tool": "get_month_overview",
+    "input": {}
+  },
+  {
+    "phrase": "¿cómo me fue en septiembre?",
+    "tool": "get_month_overview",
+    "input": { "month": "2026-09" }
+  },
+  {
+    "phrase": "¿en qué se me fue la plata este mes?",
+    "tool": "spending_by_category",
+    "input": { "from": "2026-10", "to": "2026-10", "kind": "expense" }
+  },
+  {
+    "phrase": "¿cómo han ido mis gastos los últimos 6 meses?",
+    "tool": "spending_trend",
+    "input": { "from": "2026-05", "to": "2026-10" }
+  },
+  {
+    "phrase": "muéstrame lo del taxi de ayer",
+    "tool": "list_transactions",
+    "input": { "from": "2026-10-30", "to": "2026-10-30", "text": "taxi" }
+  },
+  {
+    "phrase": "¿qué tengo pendiente por pagar?",
+    "tool": "list_transactions",
+    "input": { "status": "pending" }
+  },
+  {
+    "phrase": "borra lo del taxi de ayer",
+    "tool": "delete_transactions",
+    "input": { "ids": ["00000000-0000-4000-8000-000000000001"] }
+  },
+  {
+    "phrase": "no, el almuerzo fue de 20 lukas",
+    "tool": "update_transaction",
+    "input": { "id": "00000000-0000-4000-8000-000000000002", "amount": 20000 }
+  },
+  {
+    "phrase": "ya pagué el arriendo",
+    "tool": "update_transaction",
+    "input": { "id": "00000000-0000-4000-8000-000000000003", "status": "paid" }
+  },
+  {
+    "phrase": "deshaz lo que borraste",
+    "tool": "restore_transactions",
+    "input": { "ids": ["00000000-0000-4000-8000-000000000001"] }
+  },
+  {
+    "phrase": "ponle 400 lukas de presupuesto a comida desde noviembre",
+    "tool": "set_budget",
+    "input": { "category": "Comida", "amount": 400000, "effectiveFrom": "2026-11" }
+  },
+  {
+    "phrase": "crea una categoría Mascotas para gastos",
+    "tool": "create_category",
+    "input": { "name": "Mascotas", "kind": "expense" }
+  },
+  {
+    "phrase": "archiva la categoría Viajes",
+    "tool": "update_category",
+    "input": { "category": "Viajes", "archived": true }
+  },
+  {
+    "phrase": "¿qué pagos fijos tengo?",
+    "tool": "list_recurring",
+    "input": {}
+  },
+  {
+    "phrase": "pago Netflix cada mes el 5, 45 lukas",
+    "tool": "manage_recurring",
+    "input": {
+      "action": "create",
+      "name": "Netflix",
+      "amount": 45000,
+      "kind": "expense",
+      "category": "Suscripciones",
+      "dayOfMonth": 5
+    }
+  },
+  {
+    "phrase": "ya cancelé Netflix",
+    "tool": "manage_recurring",
+    "input": { "action": "stop", "id": "00000000-0000-4000-8000-000000000004" }
+  }
+]
