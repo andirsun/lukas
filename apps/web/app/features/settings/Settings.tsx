@@ -5,6 +5,7 @@ import { useMe } from "../../api/queries.ts";
 import { PageHeader } from "../../ui/PageHeader.tsx";
 import { PressButton } from "../../ui/PressButton.tsx";
 import { PressLink } from "../../ui/PressLink.tsx";
+import { AssistantsSection, type CopyText } from "../assistants/AssistantsSection.tsx";
 import { ManageFrame } from "../categories/CategoryDetail.tsx";
 import { useAppPath } from "../home/app-path.ts";
 import { liveSignOut, type SignOutRequest } from "../home/use-sign-out.ts";
@@ -26,19 +27,24 @@ export interface SettingsProps {
   signOut?: SignOutRequest;
   /** Where downloads go; the browser's by default. */
   save?: SaveFile;
+  /** Copies the assistants' address; the browser's clipboard by default. */
+  copy?: CopyText;
 }
 
 /**
  * Settings (`/app/settings`, spec §2.7): language, theme and sound; time zone, and the currency
- * while it can still change; passkeys; import from Budge and the export; comments and ideas (an
+ * while it can still change; passkeys; import from Budge and the export; "Conecta tu asistente"
+ * (the MCP's address, and the assistants let in); comments and ideas (an
  * email to the founder); and deleting the account. Reached from the avatar menu (phones) and the sidebar (wide screens). In the demo
  * (`/demo/settings`, spec §2.6b) passkeys, import, export and deleting the account are off, each
- * with a note: there is no account behind them.
+ * with a note: there is no account behind them. "Conecta tu asistente" keeps its address and
+ * steps there, and lists nothing.
  */
 export function Settings({
   passkeys = livePasskeys,
   signOut = liveSignOut,
   save = saveToDisk,
+  copy,
 }: SettingsProps) {
   const t = useTranslations("settings");
   const tManage = useTranslations("manage");
@@ -101,6 +107,7 @@ export function Settings({
           </div>
           {demo && <DemoOffNote id={dataOffId} />}
         </SettingsSection>
+        <AssistantsSection timeZone={me.timezone} off={demo} {...(copy ? { copy } : {})} />
         <FeedbackSection />
         <DeleteAccount
           email={me.email}

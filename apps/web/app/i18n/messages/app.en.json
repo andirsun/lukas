@@ -192,7 +192,9 @@
     "not_a_guest": "Your account already has an email.",
     "passkey_failed": "We couldn't sign you in with your fingerprint. Try again or use your email.",
     "too_many_sign_in_attempts": "Too many tries in a row. Wait a few seconds and try again.",
-    "import_currency_changed": "Your account's currency changed after the file was read. Upload it again."
+    "import_currency_changed": "Your account's currency changed after the file was read. Upload it again.",
+    "guest_cannot_authorize": "Save your progress with your email before connecting an assistant.",
+    "insufficient_scope": "This assistant isn't allowed to do that."
   },
   "sign_in": {
     "meta_title": "Sign in · Lukitas",
@@ -635,7 +637,65 @@
       "deleting": "Deleting…"
     },
     "demo_off": "Not available in the demo. Create your account to use it.",
-    "demo_viewing": "You're viewing Valentina's demo."
+    "demo_viewing": "You're viewing Valentina's demo.",
+    "assistants": {
+      "title": "Connect your assistant",
+      "lead": "Talk to Lukitas from Claude or ChatGPT: log spending and ask how you're doing without opening the app.",
+      "url_label": "The Lukitas address for assistants",
+      "copy": "Copy",
+      "copy_label": "Copy the address",
+      "copied": "Done: we copied the address.",
+      "copy_failed": "We couldn't copy it. Select it and copy it yourself.",
+      "claude_title": "In Claude",
+      "claude_steps": "Open Settings → Connectors → Add custom connector, paste the address and sign in with your Lukitas account.",
+      "chatgpt_title": "In ChatGPT",
+      "chatgpt_steps": "Turn on Developer mode in Settings → Apps → Advanced settings, create an app with the address and sign in with your Lukitas account. It depends on your ChatGPT plan.",
+      "examples_title": "Try asking",
+      "example_add": "add 18 for lunch",
+      "example_month": "how am I doing this month?",
+      "connected_title": "Your assistants",
+      "empty": "You haven't connected any assistant yet.",
+      "list_failed": "We couldn't load your assistants. Try again in a moment.",
+      "from": "From {domain}",
+      "connected_at": "Connected on {date}",
+      "last_used": "Last used: {date}",
+      "never_used": "Not used yet",
+      "revoke": "Revoke",
+      "revoke_label": "Revoke {name}",
+      "revoke_title": "Revoke {name}?",
+      "revoke_body": "Within a few minutes it will stop seeing and logging in your account. You can connect it again any time.",
+      "revoke_confirm": "Yes, revoke",
+      "revoked": "Done: {name} no longer has access.",
+      "revoke_failed": "We couldn't revoke it. Try again."
+    }
+  },
+  "consent": {
+    "meta_title": "Connect an assistant · Lukitas",
+    "title": "{name} wants to access your finances",
+    "logo_alt": "{name} logo",
+    "from": "From {domain}",
+    "domain_hint": "Check that this is your assistant's site. If you don't recognize it, cancel.",
+    "no_domain": "We don't know which site it comes from. Only connect it if you added it yourself.",
+    "permissions_title": "It will be able to:",
+    "permissions": {
+      "read": "See your entries and reports",
+      "write": "Add, change and delete entries, budgets and categories",
+      "offline": "Stay connected until you disconnect it"
+    },
+    "revoke_hint": "You can disconnect it any time in Settings.",
+    "allow": "Allow",
+    "allowing": "Connecting…",
+    "cancel": "Cancel",
+    "loading": "Loading the assistant…",
+    "failed": "We couldn't finish connecting. Try again.",
+    "guest": {
+      "title": "Save your progress",
+      "body": "To connect an assistant, first save your progress with your email: in the Lukitas app, tap “Save your progress”. Then connect it again from your assistant."
+    },
+    "expired": {
+      "title": "This link no longer works",
+      "body": "Too much time went by, or the link changed. Go back to your assistant and start connecting Lukitas again."
+    }
   },
   "demo": {
     "meta_title": "Demo · Lukitas",

@@ -192,7 +192,9 @@
     "not_a_guest": "Il tuo account ha già un'email.",
     "passkey_failed": "Non siamo riusciti a farti entrare con l'impronta. Riprova o usa la tua email.",
     "too_many_sign_in_attempts": "Troppi tentativi di fila. Aspetta qualche secondo e riprova.",
-    "import_currency_changed": "La valuta del tuo account è cambiata dopo la lettura del file. Caricalo di nuovo."
+    "import_currency_changed": "La valuta del tuo account è cambiata dopo la lettura del file. Caricalo di nuovo.",
+    "guest_cannot_authorize": "Salva i tuoi progressi con la tua email prima di collegare un assistente.",
+    "insufficient_scope": "Questo assistente non ha il permesso di farlo."
   },
   "sign_in": {
     "meta_title": "Accedi · Lukitas",
@@ -635,7 +637,65 @@
       "deleting": "Eliminazione…"
     },
     "demo_off": "Nella demo questo non è disponibile. Crea il tuo account per usarlo.",
-    "demo_viewing": "Stai guardando la demo di Valentina."
+    "demo_viewing": "Stai guardando la demo di Valentina.",
+    "assistants": {
+      "title": "Collega il tuo assistente",
+      "lead": "Parla con Lukitas da Claude o ChatGPT: segna le spese e chiedi come stai andando senza aprire l'app.",
+      "url_label": "L'indirizzo di Lukitas per gli assistenti",
+      "copy": "Copia",
+      "copy_label": "Copia l'indirizzo",
+      "copied": "Fatto: abbiamo copiato l'indirizzo.",
+      "copy_failed": "Non siamo riusciti a copiarlo. Selezionalo e copialo tu.",
+      "claude_title": "In Claude",
+      "claude_steps": "Apri Settings → Connectors → Add custom connector, incolla l'indirizzo ed entra con il tuo account Lukitas.",
+      "chatgpt_title": "In ChatGPT",
+      "chatgpt_steps": "Attiva Developer mode in Settings → Apps → Advanced settings, crea un'app con l'indirizzo ed entra con il tuo account Lukitas. Dipende dal tuo piano di ChatGPT.",
+      "examples_title": "Prova a chiedere",
+      "example_add": "segna 18 per il pranzo",
+      "example_month": "come sto andando questo mese?",
+      "connected_title": "I tuoi assistenti",
+      "empty": "Non hai ancora collegato nessun assistente.",
+      "list_failed": "Non siamo riusciti a caricare i tuoi assistenti. Riprova tra un momento.",
+      "from": "Da {domain}",
+      "connected_at": "Collegato il {date}",
+      "last_used": "Ultimo uso: {date}",
+      "never_used": "Non ancora usato",
+      "revoke": "Revoca",
+      "revoke_label": "Revoca {name}",
+      "revoke_title": "Revocare {name}?",
+      "revoke_body": "Entro pochi minuti smetterà di vedere e segnare nel tuo account. Puoi ricollegarlo quando vuoi.",
+      "revoke_confirm": "Sì, revoca",
+      "revoked": "Fatto: {name} non ha più accesso.",
+      "revoke_failed": "Non siamo riusciti a revocarlo. Riprova."
+    }
+  },
+  "consent": {
+    "meta_title": "Collega un assistente · Lukitas",
+    "title": "{name} vuole accedere alle tue finanze",
+    "logo_alt": "Logo di {name}",
+    "from": "Da {domain}",
+    "domain_hint": "Controlla che sia il sito del tuo assistente. Se non lo riconosci, annulla.",
+    "no_domain": "Non sappiamo da quale sito arriva. Collegalo solo se l'hai aggiunto tu.",
+    "permissions_title": "Potrà:",
+    "permissions": {
+      "read": "Vedere i tuoi movimenti e i tuoi report",
+      "write": "Segnare, modificare e cancellare movimenti, budget e categorie",
+      "offline": "Restare collegato finché non lo scolleghi"
+    },
+    "revoke_hint": "Puoi scollegarlo quando vuoi nelle Impostazioni.",
+    "allow": "Consenti",
+    "allowing": "Collegamento…",
+    "cancel": "Annulla",
+    "loading": "Caricamento dell'assistente…",
+    "failed": "Non siamo riusciti a completare il collegamento. Riprova.",
+    "guest": {
+      "title": "Salva i tuoi progressi",
+      "body": "Per collegare un assistente, prima salva i tuoi progressi con la tua email: nell'app di Lukitas, tocca «Salva i tuoi progressi». Poi collegalo di nuovo dal tuo assistente."
+    },
+    "expired": {
+      "title": "Questo link non funziona più",
+      "body": "È passato troppo tempo o il link è cambiato. Torna al tuo assistente e ricomincia a collegare Lukitas."
+    }
   },
   "demo": {
     "meta_title": "Demo · Lukitas",

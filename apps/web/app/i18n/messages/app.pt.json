@@ -192,7 +192,9 @@
     "not_a_guest": "A tua conta já tem email.",
     "passkey_failed": "Não conseguimos fazer-te entrar com a impressão digital. Tenta outra vez ou usa o teu email.",
     "too_many_sign_in_attempts": "Demasiadas tentativas seguidas. Espera uns segundos e tenta outra vez.",
-    "import_currency_changed": "A moeda da tua conta mudou depois de lermos o ficheiro. Carrega-o outra vez."
+    "import_currency_changed": "A moeda da tua conta mudou depois de lermos o ficheiro. Carrega-o outra vez.",
+    "guest_cannot_authorize": "Guarda o teu progresso com o teu email antes de ligar um assistente.",
+    "insufficient_scope": "Este assistente não tem permissão para fazer isso."
   },
   "sign_in": {
     "meta_title": "Entrar · Lukitas",
@@ -635,7 +637,65 @@
       "deleting": "A eliminar…"
     },
     "demo_off": "Na demo isto não está disponível. Cria a tua conta para o usares.",
-    "demo_viewing": "Estás a ver a demo da Valentina."
+    "demo_viewing": "Estás a ver a demo da Valentina.",
+    "assistants": {
+      "title": "Liga o teu assistente",
+      "lead": "Fala com o Lukitas a partir do Claude ou do ChatGPT: anota despesas e pergunta como vais sem abrir a app.",
+      "url_label": "O endereço do Lukitas para assistentes",
+      "copy": "Copiar",
+      "copy_label": "Copiar o endereço",
+      "copied": "Feito: copiámos o endereço.",
+      "copy_failed": "Não conseguimos copiá-lo. Seleciona-o e copia-o tu.",
+      "claude_title": "No Claude",
+      "claude_steps": "Abre Settings → Connectors → Add custom connector, cola o endereço e entra com a tua conta Lukitas.",
+      "chatgpt_title": "No ChatGPT",
+      "chatgpt_steps": "Ativa o Developer mode em Settings → Apps → Advanced settings, cria uma app com o endereço e entra com a tua conta Lukitas. Depende do teu plano do ChatGPT.",
+      "examples_title": "Experimenta pedir",
+      "example_add": "anota 18 no almoço",
+      "example_month": "como vou este mês?",
+      "connected_title": "Os teus assistentes",
+      "empty": "Ainda não ligaste nenhum assistente.",
+      "list_failed": "Não conseguimos carregar os teus assistentes. Tenta de novo daqui a um momento.",
+      "from": "De {domain}",
+      "connected_at": "Ligado em {date}",
+      "last_used": "Último uso: {date}",
+      "never_used": "Ainda sem uso",
+      "revoke": "Revogar",
+      "revoke_label": "Revogar {name}",
+      "revoke_title": "Revogar {name}?",
+      "revoke_body": "Dentro de poucos minutos deixa de ver e anotar na tua conta. Podes voltar a ligá-lo quando quiseres.",
+      "revoke_confirm": "Sim, revogar",
+      "revoked": "Feito: {name} já não tem acesso.",
+      "revoke_failed": "Não conseguimos revogá-lo. Tenta de novo."
+    }
+  },
+  "consent": {
+    "meta_title": "Ligar um assistente · Lukitas",
+    "title": "{name} quer aceder às tuas finanças",
+    "logo_alt": "Logótipo de {name}",
+    "from": "De {domain}",
+    "domain_hint": "Confirma que é o site do teu assistente. Se não o reconheces, cancela.",
+    "no_domain": "Não sabemos de que site vem. Liga-o só se fores tu a adicioná-lo.",
+    "permissions_title": "Vai poder:",
+    "permissions": {
+      "read": "Ver os teus movimentos e relatórios",
+      "write": "Anotar, alterar e apagar movimentos, orçamentos e categorias",
+      "offline": "Continuar ligado até o desligares"
+    },
+    "revoke_hint": "Podes desligá-lo quando quiseres nas Definições.",
+    "allow": "Permitir",
+    "allowing": "A ligar…",
+    "cancel": "Cancelar",
+    "loading": "A carregar o assistente…",
+    "failed": "Não conseguimos concluir a ligação. Tenta de novo.",
+    "guest": {
+      "title": "Guarda o teu progresso",
+      "body": "Para ligar um assistente, guarda primeiro o teu progresso com o teu email: na app do Lukitas, toca em «Guarda o teu progresso». Depois volta a ligá-lo a partir do teu assistente."
+    },
+    "expired": {
+      "title": "Esta ligação já não funciona",
+      "body": "Passou demasiado tempo ou a ligação mudou. Volta ao teu assistente e começa a ligar o Lukitas outra vez."
+    }
   },
   "demo": {
     "meta_title": "Demo · Lukitas",
