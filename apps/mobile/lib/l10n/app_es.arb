@@ -3376,5 +3376,130 @@
   "unsentLabel": "Sin subir",
   "@unsentLabel": {
     "description": "Home: read out on a row not uploaded yet (the cloud with a line through it)."
+  },
+  "settingsAssistantsTitle": "Conecta tu asistente",
+  "@settingsAssistantsTitle": {
+    "description": "Settings: the card for connecting an AI assistant through the MCP."
+  },
+  "settingsAssistantsLead": "Usa Lukitas desde Claude o ChatGPT: anota tus movimientos y pregunta cómo vas, conversando.",
+  "@settingsAssistantsLead": {
+    "description": "Settings: what connecting an assistant is for."
+  },
+  "settingsAssistantsUrl": "La dirección del conector",
+  "@settingsAssistantsUrl": {
+    "description": "Settings: the label over the MCP's address."
+  },
+  "settingsAssistantsUrlHint": "Es la misma para todos: al conectar, entras con tu cuenta.",
+  "@settingsAssistantsUrlHint": {
+    "description": "Settings: the MCP's address is the same for everyone."
+  },
+  "settingsAssistantsCopy": "Copiar",
+  "@settingsAssistantsCopy": {
+    "description": "Settings: the button that copies the MCP's address."
+  },
+  "settingsAssistantsCopyLabel": "Copiar la dirección del conector",
+  "@settingsAssistantsCopyLabel": {
+    "description": "Settings: the copy button for screen readers."
+  },
+  "settingsAssistantsCopied": "Copiamos la dirección.",
+  "@settingsAssistantsCopied": {
+    "description": "Settings: the MCP's address was copied."
+  },
+  "settingsAssistantsClaude": "En Claude: Ajustes → Conectores → Añadir conector personalizado, y pega la dirección.",
+  "@settingsAssistantsClaude": {
+    "description": "Settings: where Claude's custom connectors are. The menu names are Claude's own."
+  },
+  "settingsAssistantsChatGpt": "En ChatGPT: Ajustes → Conectores, si tu plan lo permite; crea uno con esta dirección.",
+  "@settingsAssistantsChatGpt": {
+    "description": "Settings: ChatGPT's connectors, which depend on the person's plan."
+  },
+  "settingsAssistantsExamples": "Luego pídele, por ejemplo:",
+  "@settingsAssistantsExamples": {
+    "description": "Settings: over two example requests for a connected assistant."
+  },
+  "settingsAssistantsExampleAdd": "«anota 18 lukas en almuerzo»",
+  "@settingsAssistantsExampleAdd": {
+    "description": "Settings: an example request that logs an expense (lukas: thousands of pesos)."
+  },
+  "settingsAssistantsExampleAsk": "«¿cómo voy este mes?»",
+  "@settingsAssistantsExampleAsk": {
+    "description": "Settings: an example request that asks about the month."
+  },
+  "settingsAssistantsConnected": "Asistentes conectados",
+  "@settingsAssistantsConnected": {
+    "description": "Settings: the heading over the connected assistants."
+  },
+  "settingsAssistantsEmpty": "Aún no conectas ningún asistente.",
+  "@settingsAssistantsEmpty": {
+    "description": "Settings: no assistant connected yet."
+  },
+  "settingsAssistantsListFailed": "No pudimos cargar tus asistentes. Inténtalo de nuevo en un momento.",
+  "@settingsAssistantsListFailed": {
+    "description": "Settings: the connected assistants could not be read."
+  },
+  "settingsAssistantsGuest": "Primero guarda tu progreso con un correo; después podrás conectar un asistente.",
+  "@settingsAssistantsGuest": {
+    "description": "Settings: a guest cannot connect an assistant."
+  },
+  "settingsAssistantsConnectedOn": "Conectado el {date}",
+  "@settingsAssistantsConnectedOn": {
+    "description": "Settings: when an assistant was connected.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAssistantsLastUsed": "Último uso el {date}",
+  "@settingsAssistantsLastUsed": {
+    "description": "Settings: when an assistant last used the connection.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAssistantsNeverUsed": "Aún sin usar",
+  "@settingsAssistantsNeverUsed": {
+    "description": "Settings: an assistant that has not used the connection yet."
+  },
+  "settingsAssistantsRevoke": "Revocar",
+  "@settingsAssistantsRevoke": {
+    "description": "Settings: the button that revokes an assistant's access."
+  },
+  "settingsAssistantsRevokeLabel": "Revocar {name}",
+  "@settingsAssistantsRevokeLabel": {
+    "description": "Settings: an assistant's revoke button for screen readers.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAssistantsRevokeTitle": "¿Revocar {name}?",
+  "@settingsAssistantsRevokeTitle": {
+    "description": "Settings: the question before revoking an assistant.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAssistantsRevokeBody": "En unos minutos dejará de ver y anotar en tus cuentas. Puedes conectarlo otra vez cuando quieras.",
+  "@settingsAssistantsRevokeBody": {
+    "description": "Settings: what revoking an assistant means (its token lasts up to 15 minutes)."
+  },
+  "settingsAssistantsRevokeConfirm": "Sí, revocar",
+  "@settingsAssistantsRevokeConfirm": {
+    "description": "Settings: confirms revoking an assistant."
+  },
+  "settingsAssistantsRevoked": "Revocamos {name}.",
+  "@settingsAssistantsRevoked": {
+    "description": "Settings: an assistant was revoked.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }
