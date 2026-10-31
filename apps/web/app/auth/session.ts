@@ -9,6 +9,8 @@ export interface SessionUser {
   email: string;
   /** When they finished onboarding; null until then. */
   onboardingCompletedAt: string | Date | null;
+  /** A guest (Better Auth's anonymous plugin): no email yet. Missing on older sessions. */
+  isAnonymous?: boolean | null;
 }
 
 /** Who the demo is "signed in" as. */

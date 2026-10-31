@@ -20,6 +20,7 @@ import { AppMessages } from "../../i18n/AppMessages.tsx";
 import type { Locale } from "../../i18n/format.ts";
 import { IntlProvider, useLocale } from "../../i18n/IntlProvider.tsx";
 import { ToastProvider } from "../../ui/Toast.tsx";
+import type { Assistant } from "../assistants/queries.ts";
 import { CategoriesRedirect } from "../categories/CategoriesRedirect.tsx";
 import { CategoryDetail } from "../categories/CategoryDetail.tsx";
 import { Insights } from "../insights/Insights.tsx";
@@ -312,6 +313,10 @@ export interface HomeApiOptions {
   failExport?: boolean;
   /** Deleting the account answers 503. */
   failDelete?: boolean;
+  /** The assistants connected to the account (`GET /v1/me/assistants`); none by default. */
+  assistants?: Assistant[];
+  /** Revoking an assistant answers 503. */
+  failRevoke?: boolean;
 }
 
 /** One budget amount, from its month on (until a later one), as the API keeps them. */
@@ -371,7 +376,10 @@ function homeFetch({
   currencyLocked = false,
   failExport = false,
   failDelete = false,
+  assistants: initialAssistants = [],
+  failRevoke = false,
 }: HomeApiOptions): typeof fetch {
+  let assistants = [...initialAssistants];
   let categories: FakeCategory[] =
     data === "no-categories"
       ? []
@@ -471,6 +479,17 @@ function homeFetch({
       return new Response(null, { status: 204 });
     }
     if (path === "/api/v1/me") return Response.json(profile);
+    if (path === "/api/v1/me/assistants") return Response.json({ items: assistants });
+    const oneAssistant = /^\/api\/v1\/me\/assistants\/(.+)$/.exec(path);
+    if (oneAssistant && request.method === "DELETE") {
+      if (failRevoke) return Response.json({ code: "internal_error" }, { status: 503 });
+      const clientId = decodeURIComponent(oneAssistant[1] as string);
+      if (!assistants.some((a) => a.clientId === clientId)) {
+        return Response.json({ code: "not_found" }, { status: 404 });
+      }
+      assistants = assistants.filter((a) => a.clientId !== clientId);
+      return new Response(null, { status: 204 });
+    }
     if (path === "/api/v1/me/export") {
       if (failExport) return Response.json({ code: "internal_error" }, { status: 503 });
       const csv = url.searchParams.get("format") === "csv";
@@ -762,6 +781,8 @@ export interface HomeStageProps extends HomeApiOptions {
   passkeys?: PasskeysApi;
   /** Receives settings' downloads instead of the browser. */
   onSave?(filename: string, blob: Blob): void;
+  /** Receives what settings copies (the assistants' address) instead of the clipboard. */
+  onCopy?(text: string): Promise<void>;
 }
 
 /**
@@ -776,6 +797,7 @@ export function HomeStage({
   path = "/app",
   passkeys: passkeysProp,
   onSave = () => {},
+  onCopy = async () => {},
   ...api
 }: HomeStageProps) {
   // The toolbar's language, held here so settings can switch it (the toolbar's provider can't).
@@ -814,6 +836,7 @@ export function HomeStage({
                       passkeys={passkeys}
                       signOut={signOut}
                       save={(blob, filename) => onSave(filename, blob)}
+                      copy={onCopy}
                     />,
                   )}
                 />
