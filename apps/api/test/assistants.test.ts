@@ -70,4 +70,12 @@ describe("connected assistants", () => {
     });
     expect(refresh.status).toBe(200);
   });
+
+  test("a client_id that is a URL (CIMD) reaches the route, encoded", async () => {
+    const { headers } = await t.signIn("cimd-revoke@lukas.test");
+    const id = encodeURIComponent("https://claude.ai/oauth/mcp-oauth-client-metadata");
+    const res = await t.request("DELETE", `/v1/me/assistants/${id}`, { headers });
+    expect(res.status).toBe(404);
+    expect(((await res.json()) as { detail?: string }).detail).toBe("Assistant not found");
+  });
 });

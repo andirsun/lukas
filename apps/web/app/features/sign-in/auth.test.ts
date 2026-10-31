@@ -80,6 +80,11 @@ describe("destinationAfterSignIn", () => {
     expect(destinationAfterSignIn({}, null)).toBe("/welcome");
   });
 
+  it("sends anyone to an assistant's consent first, onboarded or not", () => {
+    const consent = "/oauth/consent?client_id=abc&sig=xyz";
+    expect(destinationAfterSignIn({ onboardingCompletedAt: null }, consent)).toBe(consent);
+  });
+
   it("sends an onboarded user to a same-origin next, or to /app", () => {
     const user = { onboardingCompletedAt: "2026-10-01T10:00:00.000Z" };
     expect(destinationAfterSignIn(user, "/app/insights")).toBe("/app/insights");

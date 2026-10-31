@@ -199,3 +199,31 @@ describe("authorization server", () => {
     }
   });
 });
+
+describe("signing in on the way", () => {
+  test("a signed-out person goes to the consent screen, which signs them in, then consents", async () => {
+    const clientId = await t.registerAssistant();
+    const q = new URLSearchParams({
+      response_type: "code",
+      client_id: clientId,
+      redirect_uri: "https://claude.ai/api/mcp/auth_callback",
+      scope: "finance:read",
+      state: "s",
+      code_challenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+      code_challenge_method: "S256",
+      resource: t.config.MCP_URL ?? "",
+    });
+    const auth = await t.request("GET", `/auth/oauth2/authorize?${q}`);
+    const login = new URL(auth.headers.get("location") ?? "");
+    // The web's consent route asks for a session first and comes back with the query intact.
+    expect(`${login.origin}${login.pathname}`).toBe(`${t.config.WEB_URL}/oauth/consent`);
+    const { headers } = await t.signIn("onthe@lukas.test");
+    const consent = await t.request("POST", "/auth/oauth2/consent", {
+      headers,
+      body: { accept: true, oauth_query: login.search.slice(1) },
+    });
+    expect(consent.status).toBe(200);
+    const back = new URL(((await consent.json()) as { url: string }).url);
+    expect(back.searchParams.get("code")).toBeTruthy();
+  });
+});

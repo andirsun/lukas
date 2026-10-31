@@ -526,7 +526,9 @@ export function createAuth(deps: AppDeps) {
       jwt(),
       oauthProvider({
         scopes: [...OAUTH_SCOPES],
-        loginPage: `${config.WEB_URL}/auth/sign-in`,
+        // The consent screen signs a signed-out person in first (it sends them to /sign-in and back
+        // with the same signed query), so both pages are the same.
+        loginPage: `${config.WEB_URL}/oauth/consent`,
         consentPage: `${config.WEB_URL}/oauth/consent`,
         // Dynamic Client Registration is deprecated by MCP 2026-07-28 in favor of Client ID
         // Metadata Documents (the cimd plugin below), and stays on for clients that still use it.
