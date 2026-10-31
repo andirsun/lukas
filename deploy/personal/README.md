@@ -26,9 +26,14 @@ with `docker compose up` in the root (ports 5433, 3000, 5173, 8025, 1026), so bo
   buttons come back here to `/sign-in` and `/demo`. The web build gets the same value
   (`VITE_LANDING_URL`), so the sign-in screen's logo and the end of "delete my account" leave
   for the landing too.
-- **Not everything is public.** Caddy answers 404 for `/api/auth/oauth2/*` (OAuth client
-  registration and flows, for MCP clients that this install does not use yet) and for
-  `/api/openapi.json`. Re-enable OAuth when the MCP stage needs it (Caddyfile, `@notPublic`).
+- **Assistants connect at `/mcp`.** Claude or ChatGPT add `https://<host>/mcp` as a connector,
+  sign in with OAuth (`/api/auth/oauth2/*`, open for them) and act with the person's consent.
+  The `mcp` service calls the API with each assistant's own token; it holds no secret.
+  Caddy routes `/mcp`, `/.well-known/oauth-protected-resource*` and the OAuth server's
+  metadata (`/.well-known/oauth-authorization-server/api/auth`). The person sees and revokes
+  assistants in Ajustes → Conecta tu asistente.
+- **Not everything is public.** Caddy answers 404 for `/api/openapi.json`, which is for
+  developers.
 - **No open ports.** Postgres and the API publish nothing. Caddy publishes `127.0.0.1:8088` for
   checking on this Mac. The tunnel is outbound only.
 - **Mail** goes out as `hola@andersonlaverde.com` through Proton Bridge on the host.

@@ -4,6 +4,8 @@
 # the right --env-file. See README.md.
 #
 #   Cloudflare ──tunnel──> cloudflared ──> web (Caddy) ──/api/*──> api ──> postgres
+#                                           │                      ▲
+#                                           ├──/mcp────────> mcp ──┘ (with the assistant's token)
 #                                           └─ static app and landing
 #
 # Only web publishes a port, on 127.0.0.1, for checking from this machine. Postgres and the API are
@@ -68,6 +70,8 @@ services:
       # every route under /api. The passkey rpID is this hostname: keep it if you move the install.
       API_URL: https://${PUBLIC_HOSTNAME:-app-lukas.andersonlaverde.com}/api
       WEB_URL: https://${PUBLIC_HOSTNAME:-app-lukas.andersonlaverde.com}
+      # The MCP's public URL: the audience of assistants' access tokens.
+      MCP_URL: https://${PUBLIC_HOSTNAME:-app-lukas.andersonlaverde.com}/mcp
       MAIL_FROM: ${MAIL_FROM:-Lukitas <hola@andersonlaverde.com>}
       # Exactly one of these two (the API refuses to start otherwise): Proton Bridge on this Mac,
       # or Resend on a server.
@@ -100,6 +104,32 @@ services:
       retries: 6
       start_period: 15s
 
+  # The MCP server: assistants' tools over the API, with each assistant's own access token. It
+  # holds no state and no secret; the API checks every token again.
+  mcp:
+    build:
+      context: ../..
+      dockerfile: apps/mcp/Dockerfile.prod
+      args:
+        LUKITAS_VERSION: ${LUKITAS_VERSION:-}
+    image: lukitas-mcp:personal
+    restart: unless-stopped
+    logging: *logging
+    environment:
+      MCP_URL: https://${PUBLIC_HOSTNAME:-app-lukas.andersonlaverde.com}/mcp
+      AUTH_ISSUER: https://${PUBLIC_HOSTNAME:-app-lukas.andersonlaverde.com}/api/auth
+      MCP_API_URL: http://api:3000/api
+      MCP_PORT: "3001"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3001/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 10s
+
   # Caddy with the static app baked in (up.sh builds it into apps/web/build-personal first), and
   # /api/* sent to the API. A new build is a new image, so an update replaces the container.
   web:
@@ -122,6 +152,8 @@ services:
         ipv4_address: ${NETWORK_PREFIX:-172.28.77}.10
     depends_on:
       api:
+        condition: service_healthy
+      mcp:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:80/sign-in"]
