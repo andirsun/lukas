@@ -25,8 +25,11 @@ import { useSecondsUntil } from "./use-seconds-until.ts";
 
 const CODE = new RegExp(`^\\d{${CODE_LENGTH}}$`);
 
-/** The path of this page; the address bar is only cleaned on it (not in a story's iframe). */
-const VERIFY_PATH = "/auth/verify";
+/**
+ * The paths of this page (the sign-in link, and the one for an assistant's consent, which the
+ * Android app does not open); the address bar is only cleaned on them (not in a story's iframe).
+ */
+const VERIFY_PATHS = new Set(["/auth/verify", "/oauth/verify"]);
 
 type Status =
   | { kind: "confirm" }
@@ -100,8 +103,9 @@ export function Verify({
 
   // The code is in state now: take it (and the address) out of the address bar and history.
   useEffect(() => {
-    if (window.location.pathname !== VERIFY_PATH) return;
-    window.history.replaceState(window.history.state, "", `${VERIFY_PATH}?lang=${link.lang}`);
+    const path = window.location.pathname;
+    if (!VERIFY_PATHS.has(path)) return;
+    window.history.replaceState(window.history.state, "", `${path}?lang=${link.lang}`);
   }, [link.lang]);
 
   async function signIn() {

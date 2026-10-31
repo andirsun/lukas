@@ -9,10 +9,12 @@ import { ApiError } from "./problem.ts";
 const TTL_MS = 24 * 60 * 60 * 1000;
 /** Status stored while the first request with a key is still running. */
 const IN_PROGRESS = 0;
+/** Marks a replayed response, so a client can tell "saved now" from "already saved". */
+export const REPLAYED_HEADER = "Idempotent-Replayed";
 
 /**
  * Honors `Idempotency-Key` on authenticated POSTs: a retry with the same key and body replays the
- * stored 2xx response; the same key with a different body is rejected. The key is reserved before
+ * stored 2xx response (with `Idempotent-Replayed: true`); the same key with a different body is rejected. The key is reserved before
  * the handler runs, so concurrent retries get 409 instead of running twice. Failed requests
  * release their key. Keys live for 24 hours.
  *
@@ -72,7 +74,9 @@ export function idempotent(db: Db, { required = false }: { required?: boolean } 
           "The first request with this key is still running",
         );
       }
-      return c.json(existing.body, existing.status as ContentfulStatusCode);
+      return c.json(existing.body, existing.status as ContentfulStatusCode, {
+        [REPLAYED_HEADER]: "true",
+      });
     }
 
     let stored = false;

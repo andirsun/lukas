@@ -30,6 +30,11 @@ export default [
           // After an email sign-in: "¿Entrar con tu huella la próxima vez?", once per user per device.
           route("passkey-offer", "routes/passkey-offer.tsx"),
           route("welcome/:step?", "routes/welcome.tsx"),
+          // An assistant (Claude, ChatGPT) asks to connect: Better Auth's consentPage (spec §6.1).
+          route("oauth/consent", "routes/oauth.consent.tsx"),
+          // The sign-in link for that consent: the same page as /auth/verify, on a path the Android
+          // app does not claim, so the link stays in the browser the assistant opened.
+          route("oauth/verify", "routes/auth.verify.tsx", { id: "oauth-verify" }),
           // The signed-in app: its shell (bottom bar or sidebar, the add sheet) and home.
           route("app", "routes/app.tsx", [
             index("routes/app._index.tsx"),

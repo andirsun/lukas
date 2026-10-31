@@ -41,6 +41,9 @@ test("the same key and body replays the first response without running the handl
   expect(calls - before).toBe(1);
   expect(second.status).toBe(201);
   expect(await second.json()).toEqual(await first.json());
+  // A client can tell the replay from the first save (the MCP says "ya estaba guardado").
+  expect(first.headers.get("idempotent-replayed")).toBeNull();
+  expect(second.headers.get("idempotent-replayed")).toBe("true");
 });
 
 test("reusing a key with a different body is rejected", async () => {

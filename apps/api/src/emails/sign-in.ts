@@ -120,6 +120,46 @@ const CLAIM_COPY = {
   },
 } satisfies Record<Locale, Copy>;
 
+/**
+ * Signing in to let an assistant in (spec §6.1): the person is in the assistant's own browser
+ * window, often on a phone where the link would open the Lukitas app or another browser. So the
+ * code comes first, to be typed there; the button is for a computer, where it opens the same browser.
+ */
+const ASSISTANT_COPY = {
+  es: {
+    ...COPY.es,
+    subject: (code: string) => `Tu código para conectar tu asistente: ${code}`,
+    preheader: (code: string) => `Tu código para conectar tu asistente a Lukitas: ${code}`,
+    heading: "Tu código para conectar tu asistente",
+    lead: "Escríbelo en la ventana de tu asistente. En un computador también puedes tocar el botón.",
+    button: "CONTINUAR EN EL NAVEGADOR",
+  },
+  en: {
+    ...COPY.en,
+    subject: (code: string) => `Your code to connect your assistant: ${code}`,
+    preheader: (code: string) => `Your code to connect your assistant to Lukitas: ${code}`,
+    heading: "Your code to connect your assistant",
+    lead: "Type it into your assistant's window. On a computer you can also tap the button.",
+    button: "CONTINUE IN THE BROWSER",
+  },
+  it: {
+    ...COPY.it,
+    subject: (code: string) => `Il tuo codice per collegare il tuo assistente: ${code}`,
+    preheader: (code: string) => `Il tuo codice per collegare il tuo assistente a Lukitas: ${code}`,
+    heading: "Il tuo codice per collegare il tuo assistente",
+    lead: "Scrivilo nella finestra del tuo assistente. Da un computer puoi anche toccare il pulsante.",
+    button: "CONTINUA NEL BROWSER",
+  },
+  pt: {
+    ...COPY.pt,
+    subject: (code: string) => `O teu código para ligares o teu assistente: ${code}`,
+    preheader: (code: string) => `O teu código para ligares o teu assistente a Lukitas: ${code}`,
+    heading: "O teu código para ligares o teu assistente",
+    lead: "Escreve-o na janela do teu assistente. Num computador também podes tocar no botão.",
+    button: "CONTINUAR NO NAVEGADOR",
+  },
+} satisfies Record<Locale, Copy>;
+
 /** The day palette of docs/design/system/project/tokens.json. Dark backgrounds break in many clients. */
 const C = {
   bg: "#f7f4ff",
@@ -168,6 +208,16 @@ export function signInEmail(
   },
 ): Omit<Mail, "to"> {
   return codeEmail(COPY[input.locale], input);
+}
+
+/** Signing in on an assistant's consent screen: the code first, the link for a computer. */
+export function assistantEmail(
+  input: CodeEmailInput & {
+    /** The link to `/oauth/verify`, with `lang` and the consent `next` on it. */
+    link: string;
+  },
+): Omit<Mail, "to"> {
+  return codeEmail(ASSISTANT_COPY[input.locale], input);
 }
 
 /** The code a guest types to save their progress with this email (spec §4.2): code only. */

@@ -6,7 +6,12 @@ import { queryKeys } from "../../api/queries.ts";
 import type { paths } from "../../api/schema";
 import { isLocale, type Locale } from "../../i18n/format.ts";
 import { useLocale } from "../../i18n/IntlProvider.tsx";
-import { type AuthUser, destinationAfterSignIn, type SignInAuth } from "./auth.ts";
+import {
+  type AuthUser,
+  destinationAfterSignIn,
+  isAssistantConsent,
+  type SignInAuth,
+} from "./auth.ts";
 
 type Profile = paths["/v1/me"]["get"]["responses"][200]["content"]["application/json"];
 
@@ -57,9 +62,12 @@ export function useFinishSignIn(auth: Pick<SignInAuth, "shouldOfferPasskey">) {
       }
       if (isLocale(profile?.locale)) setLocale(profile.locale);
       const destination = destinationAfterSignIn(profile ?? user, next);
-      // Asking is a nicety too: a failure just means no offer.
+      // Asking is a nicety too: a failure just means no offer. Not on the way to an assistant's
+      // consent, whose link expires in minutes; the offer comes at the next sign-in.
       const offer =
-        method === "email" && (await auth.shouldOfferPasskey(user.id).catch(() => false));
+        method === "email" &&
+        !isAssistantConsent(destination) &&
+        (await auth.shouldOfferPasskey(user.id).catch(() => false));
       if (offer) {
         const search = new URLSearchParams({ next: destination });
         navigate({ pathname: PASSKEY_OFFER_PATH, search: `?${search}` }, { replace: true });

@@ -74,7 +74,7 @@ compose up -d --wait postgres
 say "Applying migrations (creates the lukas_app role the first time)"
 compose run --rm migrate
 
-services="api web"
+services="api mcp web"
 [ "$with_tunnel" = 1 ] && services="$services cloudflared"
 say "Starting: $services"
 # shellcheck disable=SC2086

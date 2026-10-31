@@ -12,6 +12,8 @@ export 'package:lukitas/api/gen/src/model/date.dart';
 
 export 'package:lukitas/api/gen/src/api/default_api.dart';
 
+export 'package:lukitas/api/gen/src/model/assistant.dart';
+export 'package:lukitas/api/gen/src/model/assistant_list.dart';
 export 'package:lukitas/api/gen/src/model/category.dart';
 export 'package:lukitas/api/gen/src/model/category_report.dart';
 export 'package:lukitas/api/gen/src/model/category_report_items_inner.dart';

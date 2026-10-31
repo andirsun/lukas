@@ -8,6 +8,8 @@ part of 'serializers.dart';
 
 Serializers _$serializers =
     (Serializers().toBuilder()
+          ..add(Assistant.serializer)
+          ..add(AssistantList.serializer)
           ..add(Category.serializer)
           ..add(CategoryKindEnum.serializer)
           ..add(CategoryReport.serializer)
@@ -64,6 +66,10 @@ Serializers _$serializers =
           ..add(UpdateTransaction.serializer)
           ..add(UpdateTransactionStatusEnum.serializer)
           ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(Assistant)]),
+            () => ListBuilder<Assistant>(),
+          )
+          ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(CategoryReportItemsInner)]),
             () => ListBuilder<CategoryReportItemsInner>(),
           )
@@ -78,6 +84,10 @@ Serializers _$serializers =
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(ProblemErrorsInner)]),
             () => ListBuilder<ProblemErrorsInner>(),
+          )
+          ..addBuilderFactory(
+            const FullType(BuiltList, const [const FullType(String)]),
+            () => ListBuilder<String>(),
           )
           ..addBuilderFactory(
             const FullType(BuiltList, const [const FullType(String)]),

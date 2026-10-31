@@ -62,6 +62,29 @@ describe("transactions", () => {
     expect((await page("?status=pending")).items.map((i) => i.name)).toEqual(["concert"]);
   });
 
+  test("list filters by a date range and by text, ignoring case and accents", async () => {
+    const { headers } = await t.signIn("search@lukas.test");
+    const comida = await category(headers, "Comida");
+    const add = (name: string, date: string, note?: string) =>
+      create({ name, amount: -1000, date, categoryId: comida, ...(note ? { note } : {}) }, headers);
+    await add("Almuérzo corrientazo", "2026-09-30");
+    await add("Almuerzo", "2026-10-01");
+    await add("Taxi", "2026-10-15", "volviendo del ALMUERZO");
+    await add("Mercado 50%", "2026-10-31");
+    const names = async (query: string) => (await page(query, headers)).items.map((i) => i.name);
+    expect(await names("?from=2026-10-01&to=2026-10-15")).toEqual(["Taxi", "Almuerzo"]);
+    expect(await names("?from=2026-10-15")).toEqual(["Mercado 50%", "Taxi"]);
+    expect(await names("?q=almuerzo")).toEqual(["Taxi", "Almuerzo", "Almuérzo corrientazo"]);
+    expect(await names("?q=ALMUÉR&to=2026-09-30")).toEqual(["Almuérzo corrientazo"]);
+    // `%` and `_` are text, not wildcards.
+    expect(await names("?q=50%25")).toEqual(["Mercado 50%"]);
+    expect(await names("?q=_")).toEqual([]);
+    const backwards = await t.request("GET", "/v1/transactions?from=2026-10-02&to=2026-10-01", {
+      headers,
+    });
+    expect(backwards.status).toBe(422);
+  });
+
   test("edit, delete and restore", async () => {
     let res = await t.request("PATCH", `/v1/transactions/${cinema.id}`, {
       headers: a,

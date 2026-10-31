@@ -145,12 +145,22 @@ export function verifyErrorKey(error: AuthFailure): AuthErrorKey {
   return RETRYABLE_ERRORS.has(key) ? key : "errors.invalid_or_expired_code";
 }
 
-/** Where to go once signed in: onboarding first, then `next` (same-origin only) or the app. */
+/** Whether `destination` is an assistant's consent screen, which should not be kept waiting. */
+export const isAssistantConsent = (destination: string) =>
+  destination.startsWith("/oauth/consent?");
+
+/**
+ * Where to go once signed in: onboarding first, then `next` (same-origin only) or the app. An
+ * assistant's consent screen goes before onboarding.
+ */
 export function destinationAfterSignIn(
   user: { onboardingCompletedAt?: string | Date | null | undefined },
   next: string | null,
 ): string {
-  return user.onboardingCompletedAt == null ? "/welcome" : safeNext(next);
+  const destination = safeNext(next);
+  // An assistant's consent link expires in minutes: it comes before onboarding, which waits.
+  if (isAssistantConsent(destination)) return destination;
+  return user.onboardingCompletedAt == null ? "/welcome" : destination;
 }
 
 /** `?lang=` as set by the landing's call to action: only a language the app speaks. */

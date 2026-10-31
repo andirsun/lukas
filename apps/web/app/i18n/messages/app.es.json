@@ -192,7 +192,9 @@
     "not_a_guest": "Tu cuenta ya tiene correo.",
     "passkey_failed": "No pudimos hacerte entrar con tu huella. Inténtalo otra vez o usa tu correo.",
     "too_many_sign_in_attempts": "Demasiados intentos seguidos. Espera unos segundos e inténtalo otra vez.",
-    "import_currency_changed": "La moneda de tu cuenta cambió después de leer el archivo. Súbelo otra vez."
+    "import_currency_changed": "La moneda de tu cuenta cambió después de leer el archivo. Súbelo otra vez.",
+    "guest_cannot_authorize": "Guarda tu progreso con tu correo antes de conectar un asistente.",
+    "insufficient_scope": "Este asistente no tiene permiso para hacer eso."
   },
   "sign_in": {
     "meta_title": "Entrar · Lukitas",
@@ -635,7 +637,65 @@
       "deleting": "Eliminando…"
     },
     "demo_off": "En el demo esto no está disponible. Crea tu cuenta para usarlo.",
-    "demo_viewing": "Estás viendo el demo de Valentina."
+    "demo_viewing": "Estás viendo el demo de Valentina.",
+    "assistants": {
+      "title": "Conecta tu asistente",
+      "lead": "Habla con Lukitas desde Claude o ChatGPT: anota gastos y pregunta cómo vas sin abrir la app.",
+      "url_label": "La dirección de Lukitas para asistentes",
+      "copy": "Copiar",
+      "copy_label": "Copiar la dirección",
+      "copied": "Listo: copiamos la dirección.",
+      "copy_failed": "No pudimos copiarla. Selecciónala y cópiala tú.",
+      "claude_title": "En Claude",
+      "claude_steps": "Abre Settings → Connectors → Add custom connector, pega la dirección y entra con tu cuenta de Lukitas.",
+      "chatgpt_title": "En ChatGPT",
+      "chatgpt_steps": "Activa Developer mode en Settings → Apps → Advanced settings, crea una app con la dirección y entra con tu cuenta de Lukitas. Depende de tu plan de ChatGPT.",
+      "examples_title": "Prueba a pedirle",
+      "example_add": "anota 18 lukas en almuerzo",
+      "example_month": "¿cómo voy este mes?",
+      "connected_title": "Tus asistentes",
+      "empty": "Aún no conectas ningún asistente.",
+      "list_failed": "No pudimos cargar tus asistentes. Inténtalo de nuevo en un momento.",
+      "from": "Desde {domain}",
+      "connected_at": "Conectado el {date}",
+      "last_used": "Último uso: {date}",
+      "never_used": "Aún sin usar",
+      "revoke": "Revocar",
+      "revoke_label": "Revocar {name}",
+      "revoke_title": "¿Revocar {name}?",
+      "revoke_body": "En unos minutos dejará de ver y anotar en tu cuenta. Puedes volver a conectarlo cuando quieras.",
+      "revoke_confirm": "Sí, revocar",
+      "revoked": "Listo: {name} ya no tiene acceso.",
+      "revoke_failed": "No pudimos revocarlo. Inténtalo otra vez."
+    }
+  },
+  "consent": {
+    "meta_title": "Conectar un asistente · Lukitas",
+    "title": "{name} quiere acceder a tus finanzas",
+    "logo_alt": "Logo de {name}",
+    "from": "Desde {domain}",
+    "domain_hint": "Revisa que sea el sitio de tu asistente. Si no lo reconoces, cancela.",
+    "no_domain": "No sabemos de qué sitio viene. Conéctalo solo si tú lo agregaste.",
+    "permissions_title": "Podrá:",
+    "permissions": {
+      "read": "Ver tus movimientos y reportes",
+      "write": "Anotar, cambiar y borrar movimientos, presupuestos y categorías",
+      "offline": "Seguir conectado hasta que lo desconectes"
+    },
+    "revoke_hint": "Puedes desconectarlo cuando quieras en Ajustes.",
+    "allow": "Permitir",
+    "allowing": "Conectando…",
+    "cancel": "Cancelar",
+    "loading": "Cargando el asistente…",
+    "failed": "No pudimos completar la conexión. Inténtalo de nuevo.",
+    "guest": {
+      "title": "Guarda tu progreso",
+      "body": "Para conectar un asistente, primero guarda tu progreso con tu correo: en la app de Lukitas, toca «Guarda tu progreso». Luego vuelve a conectarlo desde tu asistente."
+    },
+    "expired": {
+      "title": "Este enlace ya no sirve",
+      "body": "Pasó mucho tiempo o el enlace cambió. Vuelve a tu asistente y empieza a conectar Lukitas otra vez."
+    }
   },
   "demo": {
     "meta_title": "Demo · Lukitas",

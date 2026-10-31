@@ -35,12 +35,31 @@
 		-Server
 	}
 
+	# --- MCP: assistants (Claude, ChatGPT) reach the person's Lukitas here, with an OAuth token. --
+	# The protected resource metadata (RFC 9728) tells them where to get one: the API's OAuth server.
+	@mcp path /mcp /mcp/* /.well-known/oauth-protected-resource /.well-known/oauth-protected-resource/*
+	handle @mcp {
+		header ?Cache-Control "no-store"
+		@viaCloudflare header Cf-Connecting-Ip *
+		reverse_proxy @viaCloudflare mcp:3001 {
+			header_up X-Forwarded-For {http.request.header.Cf-Connecting-Ip}
+		}
+		reverse_proxy mcp:3001
+	}
+
+	# The OAuth server's metadata where RFC 8414 puts it for the issuer https://<host>/api/auth:
+	# the well-known path followed by the issuer's path. The API serves it under /api.
+	handle /.well-known/oauth-authorization-server/api/auth {
+		header ?Cache-Control "no-cache"
+		rewrite * /api/.well-known/oauth-authorization-server/auth
+		reverse_proxy api:3000
+	}
+
 	# --- API: the path is forwarded as is (the API serves everything under /api). ---------------
 	handle /api/* {
-		# Not served on the internet. OAuth (dynamic client registration and the flows after it) is for
-		# MCP clients, which this install does not use yet; re-enable it with the MCP stage. The API
-		# schema is for developers. Both answer 404 here, before the API sees the request.
-		@notPublic path /api/auth/oauth2 /api/auth/oauth2/* /api/openapi.json
+		# Not served on the internet: the API schema is for developers. It answers 404 here, before the
+		# API sees the request. (OAuth, /api/auth/oauth2/*, is open: assistants use it.)
+		@notPublic path /api/openapi.json
 		respond @notPublic 404
 
 		# Never cached, unless the API says otherwise.

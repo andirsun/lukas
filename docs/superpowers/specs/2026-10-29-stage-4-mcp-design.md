@@ -161,8 +161,8 @@ Each in the four languages of the app, chosen by the person's locale.
 - **Guests:** an anonymous account cannot authorize an assistant (main spec, Guest mode). The
   consent screen offers "Guarda tu progreso" instead.
 - **Client registration:**
-  - Upgrade `better-auth` and `@better-auth/oauth-provider` from 1.7.11 to the version of
-    `@better-auth/cimd` (1.7.14 today), and add the CIMD plugin. The metadata then advertises
+  - Add the CIMD plugin, `@better-auth/cimd` 1.7.11: the installed Better Auth's own version, so
+    no upgrade is needed (built 2026-10-31). The metadata then advertises
     `client_id_metadata_document_supported`.
   - CIMD's fetch of a client's document must resolve DNS once, refuse special-use and private
     addresses, pin the connection, and refuse redirects (the plugin's contract).

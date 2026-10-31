@@ -50,6 +50,17 @@ describe("requireSession", () => {
     });
   });
 
+  it("brings a visitor back to the consent screen with its whole signed query", async () => {
+    const consent =
+      "/oauth/consent?client_id=https%3A%2F%2Fclaude.ai%2Fmeta&scope=finance%3Aread" +
+      "&redirect_uri=https%3A%2F%2Fclaude.ai%2Fcb&state=s&exp=1&sig=a%2Bb";
+    const { requireSession } = guards(null);
+    const redirect = await redirectOf(() => requireSession(consent));
+    expect(redirect?.status).toBe(302);
+    const next = new URL(redirect?.location ?? "", "http://x").searchParams.get("next");
+    expect(next).toBe(consent);
+  });
+
   it("returns the user when signed in", async () => {
     const { requireSession } = guards(user(null));
     expect(await requireSession("/app")).toMatchObject({ id: "u1" });

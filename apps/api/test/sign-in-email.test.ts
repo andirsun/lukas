@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { claimEmail, signInEmail } from "../src/emails/sign-in.ts";
+import { assistantEmail, claimEmail, signInEmail } from "../src/emails/sign-in.ts";
 
 const WEB_URL = "https://lukitas.example";
 const link = `${WEB_URL}/auth/verify?email=a%40lukas.test&code=123456&lang=es&next=%2Fapp%2Finsights`;
@@ -275,5 +275,31 @@ describe("claim email (a guest saves their progress)", () => {
     expect(html).toContain("#f7f4ff");
     expect(html).toContain('role="presentation"');
     expect(html).not.toMatch(/<script/i);
+  });
+});
+
+describe("assistant sign-in email", () => {
+  const consent = `${WEB_URL}/oauth/verify?email=a%40lukas.test&code=123456&lang=es&next=%2Foauth%2Fconsent%3Fx%3D1`;
+  const assistant = { ...input, link: consent };
+
+  test("the code comes first, for the assistant's window; the button is the computer's way", () => {
+    const mail = assistantEmail({ ...assistant, locale: "es" });
+    expect(mail.subject).toBe("Tu código para conectar tu asistente: 123456");
+    const text = visibleText(mail.html);
+    expect(text).toContain("Tu código para conectar tu asistente");
+    expect(text).toContain(
+      "Escríbelo en la ventana de tu asistente. En un computador también puedes tocar el botón.",
+    );
+    expect(text).toContain("CONTINUAR EN EL NAVEGADOR");
+    expect(mail.html).toContain(consent.replaceAll("&", "&amp;"));
+  });
+
+  test("in every language, with the code and the link in the text part", () => {
+    for (const locale of ["es", "en", "it", "pt"] as const) {
+      const mail = assistantEmail({ ...assistant, locale });
+      expect(mail.subject).toContain("123456");
+      expect(mail.text).toContain(consent);
+      expect(mail.html).toContain(`lang="${locale}"`);
+    }
   });
 });
