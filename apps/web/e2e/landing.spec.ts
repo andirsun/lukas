@@ -15,7 +15,7 @@ const LOCALES = [
     locale: "es",
     path: "/",
     headline: "Tus lukas, por fin claras.",
-    highlight: "lukas",
+    highlight: "lukas🇨🇴",
     annotation: "¡Gratis, y siempre lo será!",
     lead: "Lukitas es tu presupuesto, y te va a dar gusto cuidarlo.",
     description: "Anota un gasto en segundos y mira en qué se va cada luka.",
@@ -340,9 +340,8 @@ function contrast(a: Rgba, b: Rgba): number {
 
 /**
  * Contrast in the hero, which axe can't measure there (the page background is a gradient, so it
- * reports the hero's text as "incomplete"): the highlighted word is dark ink on solid gold, and
- * the handwritten note is ink on a translucent stroke, checked over both ends of the gradient
- * (`bg-glow` and `bg`). AA for normal text in both cases.
+ * reports the hero's text as "incomplete"): the highlighted word is dark ink on solid gold, AA
+ * for normal text.
  */
 async function expectHeroContrast(page: Page) {
   const colors = await page.locator("#hero").evaluate((hero) => {
@@ -360,20 +359,11 @@ async function expectHeroContrast(page: Page) {
     };
     return {
       marker: read("h1 .lk-landing-marker"),
-      note: read(".lk-landing-annotation"),
-      page: [token("--bg"), token("--bg-glow")],
     };
   });
   const marker = parseColor(colors.marker.background);
   expect(marker.alpha).toBe(1);
   expect(contrast(parseColor(colors.marker.color), marker)).toBeGreaterThanOrEqual(4.5);
-
-  const stroke = parseColor(colors.note.background);
-  expect(stroke.alpha).toBeGreaterThan(0);
-  for (const page of colors.page) {
-    const background = over(stroke, parseColor(page));
-    expect(contrast(parseColor(colors.note.color), background)).toBeGreaterThanOrEqual(4.5);
-  }
 }
 
 /** A text in the hero, as `expectHeroTextContrast` measures it. */
@@ -518,7 +508,9 @@ async function expectHeaderFits(
   const logo = header.locator(".lk-logo");
   const nav = header.getByRole("navigation");
   const link = nav.getByRole("link", { name: cta });
-  const toggle = nav.getByRole("button");
+  // The day/night switch, last in the row (after the language switch).
+  const toggle = nav.getByRole("button").last();
+  await expect(nav.getByRole("button", { name: /:/ })).toBeVisible();
   await expect(logo).toBeVisible();
   await expect(link).toBeVisible();
   await expect(toggle).toBeVisible();
@@ -553,16 +545,19 @@ for (const l of LOCALES) {
     test("the prerendered HTML carries the copy, without JavaScript", async ({ page, request }) => {
       // React escapes apostrophes in text ("you'll" → "you&#x27;ll").
       const html = (await (await request.get(l.path)).text()).replaceAll("&#x27;", "'");
-      expect(html).toContain(l.annotation);
       expect(html).toContain(l.lead);
       expect(html).toContain(`<html lang="${l.locale}"`);
 
       await page.goto(l.path);
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(l.headline);
+      // In Spanish the words on show take turns; the message itself is the screen-reader text.
+      const headline = page.getByRole("heading", { level: 1 });
+      await expect(l.locale === "es" ? headline.locator(".sr-only") : headline).toHaveText(
+        l.headline,
+      );
       await expect(page).toHaveTitle(new RegExp(l.titlePart));
     });
 
-    test("the hero is simple: no crossed-out questions, the note comes first", async ({
+    test("the hero is simple: no crossed-out questions, the headline comes first", async ({
       page,
       request,
     }) => {
@@ -572,34 +567,21 @@ for (const l of LOCALES) {
       await page.goto(l.path);
       const hero = page.locator("#hero");
       await expect(hero.locator("s")).toHaveCount(0);
-      // Annotation → headline → description → actions.
+      // Nor is there a handwritten note above the headline any more.
+      await expect(hero).not.toContainText(l.annotation);
+      // Headline → description → actions.
       expect(
         await hero
           .locator(".lk-landing-hero-text > *")
-          .evaluateAll((nodes) => nodes.map((node) => node.className)),
-      ).toEqual([
-        "lk-landing-annotation",
-        "lk-landing-headline",
-        "lk-landing-description",
-        "lk-landing-cta",
-      ]);
+          .evaluateAll((nodes) => nodes.map((node) => node.classList[0])),
+      ).toEqual(["lk-landing-headline", "lk-landing-description", "lk-landing-cta"]);
     });
 
-    test("the hero: a handwritten note, the highlighted word, the lead and the perks", async ({
-      page,
-    }) => {
+    test("the hero: the highlighted word, the lead and the perks", async ({ page }) => {
       await page.goto(l.path);
       const hero = page.locator("#hero");
       const headline = hero.getByRole("heading", { level: 1 });
       await expect(headline.locator(".lk-landing-marker")).toHaveText(l.highlight);
-
-      // Real text in the handwritten face, above the headline.
-      const note = hero.getByText(l.annotation, { exact: true });
-      await expect(note).toBeVisible();
-      await expect(note).toHaveCSS("font-family", /Caveat/);
-      const noteBox = await note.boundingBox();
-      const headlineBox = await headline.boundingBox();
-      expect((noteBox?.y ?? 0) + (noteBox?.height ?? 0) / 2).toBeLessThan(headlineBox?.y ?? 0);
 
       const description = hero.locator(".lk-landing-description");
       await expect(description).toHaveText(`${l.lead} ${l.description}`);
@@ -970,6 +952,57 @@ for (const l of LOCALES) {
 test.describe("landing with JavaScript", () => {
   test.use({ javaScriptEnabled: true });
 
+  test("the header's language switch opens the same page in another language", async ({ page }) => {
+    await page.goto("/");
+    const header = page.getByRole("banner");
+    const button = header.getByRole("button", { name: "ES, Idioma: Español", exact: true });
+    await expect(button).toHaveText("ES");
+    await expect(button).toHaveAttribute("aria-expanded", "false");
+
+    // Escape closes it and gives focus back to the button.
+    await button.click();
+    await expect(button).toHaveAttribute("aria-expanded", "true");
+    const options = header.getByRole("link", { name: /^(Español|English|Italiano|Português)$/ });
+    await expect(options).toHaveCount(4);
+    await expect(header.getByRole("link", { name: "Español" })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    await page.keyboard.press("Escape");
+    await expect(button).toHaveAttribute("aria-expanded", "false");
+    await expect(button).toBeFocused();
+    await expect(options).toHaveCount(0);
+
+    await button.click();
+    await header.getByRole("link", { name: "English" }).click();
+    await expect(page).toHaveURL(/\/en$/);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    const english = header.getByRole("button", { name: "EN, Language: English", exact: true });
+    await expect(english).toHaveText("EN");
+    await expect(english).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("the Spanish marker takes turns with what money is called elsewhere", async ({ page }) => {
+    await page.goto("/");
+    const headline = page.getByRole("heading", { level: 1 });
+    const marker = headline.locator(".lk-landing-marker");
+    await expect(marker).toHaveText("lukas🇨🇴");
+    await expect(headline.locator(".lk-landing-flag")).toHaveText("🇨🇴");
+
+    await expect(marker).toHaveText("lana🇲🇽", { timeout: 5000 });
+    await expect(headline.locator(".lk-landing-flag")).toHaveText("🇲🇽");
+    await expect(headline.locator("[aria-hidden='true']")).toHaveText("Tu lana🇲🇽, por fin clara.");
+    // Assistive technology and search engines keep the message as it is.
+    await expect(headline).toHaveAccessibleName("Tus lukas, por fin claras.");
+  });
+
+  test("the Spanish marker holds still under reduced motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await page.waitForTimeout(3500);
+    await expect(page.locator("h1 .lk-landing-marker")).toHaveText("lukas🇨🇴");
+  });
+
   test("hydrates cleanly and keeps the page when switching language", async ({ page }) => {
     const errors: string[] = [];
     page.on("console", (message) => {
@@ -979,7 +1012,9 @@ test.describe("landing with JavaScript", () => {
 
     await page.goto("/");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tus lukas, por fin claras.");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(
+      "Tus lukas, por fin claras.",
+    );
 
     await page.getByRole("contentinfo").getByRole("link", { name: "English" }).click();
     await expect(page).toHaveURL(/\/en$/);
@@ -1029,7 +1064,9 @@ test.describe("landing with JavaScript", () => {
 
     await footer.getByRole("link", { name: "Español" }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tus lukas, por fin claras.");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName(
+      "Tus lukas, por fin claras.",
+    );
     expect(errors).toEqual([]);
   });
 

@@ -1,9 +1,10 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, Ref } from "react";
 import { cx } from "./cx.ts";
 
 export type PressButtonProps = {
   variant?: "primary" | "secondary" | "ghost";
   size?: "md" | "sm";
+  ref?: Ref<HTMLButtonElement>;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 /**

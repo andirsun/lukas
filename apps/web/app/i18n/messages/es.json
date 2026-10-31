@@ -95,7 +95,7 @@
     "meta": {
       "title": "Lukitas · Tus lukas, por fin claras",
       "description": "Lukitas es tu presupuesto, y te va a dar gusto cuidarlo: anota un gasto en segundos y mira en qué se va tu plata. Gratis para siempre, de código abierto y sin contraseñas.",
-      "image_alt": "Lukitas, una moneda de oro sonriente, saluda junto al título: Tus lukas, por fin claras. Arriba, a mano: ¡Gratis, y siempre lo será!"
+      "image_alt": "Lukitas, una moneda de oro sonriente, saluda junto al título: Tus lukas, por fin claras."
     },
     "nav": {
       "label": "Principal",
@@ -107,7 +107,6 @@
       "sign_in_soon": "Muy pronto"
     },
     "hero": {
-      "annotation": "¡Gratis, y siempre lo será!",
       "headline": "Tus <mark>lukas</mark>, por fin claras.",
       "description": "<lead>Lukitas es tu presupuesto, y te va a dar gusto cuidarlo.</lead> Anota un gasto en segundos y mira en qué se va cada luka.",
       "cta": "Empieza ahora",

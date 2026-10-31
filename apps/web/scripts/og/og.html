@@ -22,11 +22,6 @@
         src: url("../../node_modules/@fontsource/fredoka/files/fredoka-latin-700-normal.woff2") format("woff2");
       }
       @font-face {
-        font-family: "Caveat";
-        font-weight: 700;
-        src: url("../../node_modules/@fontsource/caveat/files/caveat-latin-700-normal.woff2") format("woff2");
-      }
-      @font-face {
         font-family: "Nunito";
         font-weight: 800;
         src: url("../../node_modules/@fontsource/nunito/files/nunito-latin-800-normal.woff2") format("woff2");
@@ -60,26 +55,13 @@
         color: transparent;
       }
       .headline {
-        margin: 22px 0 0;
+        margin: 44px 0 0;
         font-family: var(--font-display);
         font-weight: 700;
         font-size: 74px;
         line-height: 1.04;
         color: var(--good);
         text-shadow: 0 0 26px color-mix(in srgb, var(--good) 30%, transparent);
-      }
-      /* The handwritten promise, as on the landing: hand face, tilted, on a candy stroke. */
-      .annotation {
-        display: inline-block;
-        margin: 52px 0 0 18px;
-        padding: 1px 16px 5px;
-        border-radius: 0.25em 0.7em 0.3em 0.8em / 0.7em 0.3em 0.8em 0.35em;
-        background: color-mix(in srgb, var(--candy) 32%, transparent);
-        font-family: var(--font-hand);
-        font-weight: 700;
-        font-size: 44px;
-        line-height: 1.1;
-        transform: rotate(-4deg);
       }
       /* The highlighted word: dark ink on the gold marker blob. */
       .rich-mark {
@@ -129,7 +111,6 @@
     <div class="card">
       <div>
         <div class="logo">Lukitas</div>
-        <div class="annotation" data-copy="hero.annotation"></div>
         <div class="headline" data-copy="hero.headline"></div>
         <div class="perks" data-copy="hero.perks"></div>
       </div>

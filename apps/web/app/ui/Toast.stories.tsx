@@ -63,6 +63,8 @@ export const WithUndo: Story = {
     await userEvent.click(within(canvasElement).getByRole("button", { name: "Guardar" }));
     const status = await screen.findByRole("status");
     await waitFor(() => expect(status).toHaveTextContent("Supermercado · −6,08 €"));
+    // Measured once it has settled: mid-entrance its box can come out a hair under 44px.
+    await entered(status);
     const undo = within(status).getByRole("button", { name: "Deshacer" });
     await expect(undo.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
     await userEvent.click(undo);

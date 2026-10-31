@@ -95,7 +95,7 @@
     "meta": {
       "title": "Lukitas · Your money, finally clear",
       "description": "Lukitas is your budget, and you'll actually enjoy looking after it: log an expense in seconds and see where your money goes. Free forever, open source, no passwords.",
-      "image_alt": "Lukitas, a smiling gold coin, waves next to the title: Your money, finally clear. Handwritten above it: Free, and it always will be!"
+      "image_alt": "Lukitas, a smiling gold coin, waves next to the title: Your money, finally clear."
     },
     "nav": {
       "label": "Main",
@@ -107,7 +107,6 @@
       "sign_in_soon": "Coming soon"
     },
     "hero": {
-      "annotation": "Free, and it always will be!",
       "headline": "Your <mark>money</mark>, finally clear.",
       "description": "<lead>Lukitas is your budget, and you'll actually enjoy looking after it.</lead> Log an expense in seconds and see where every buck goes.",
       "cta": "Get started",

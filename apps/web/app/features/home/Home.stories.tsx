@@ -335,6 +335,11 @@ export const UndoDeletes: Story = {
       ),
     );
     await waitFor(() => expect(region).toHaveTextContent(eur("501,13")));
+    // The saved toast fades out: let it go, so the accessibility check after the story does not
+    // measure its buttons half transparent.
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Ponerle nombre" })).toBeNull(),
+    );
   },
 };
 

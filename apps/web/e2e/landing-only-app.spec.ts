@@ -102,7 +102,9 @@ for (const l of LOCALES) {
       const link = nav.getByRole("link", { name: l.navCta, exact: true });
       await expectAppLink(link, l.locale);
       await expect(link).toHaveClass(/lk-btn-secondary/);
-      await expect(nav.getByRole("button")).toBeVisible();
+      // The language switch, then the day/night switch.
+      await expect(nav.getByRole("button")).toHaveCount(2);
+      await expect(nav.getByRole("button").last()).toBeVisible();
     });
 
     test("the web card is a link to the app, not a badge; the other cards stay soon", async ({
@@ -176,7 +178,8 @@ for (const l of LOCALES) {
           const header = page.getByRole("banner");
           const logo = header.locator(".lk-logo");
           const link = header.getByRole("navigation").getByRole("link", { name: l.navCta });
-          const toggle = header.getByRole("navigation").getByRole("button");
+          // The day/night switch, last in the row (after the language switch).
+          const toggle = header.getByRole("navigation").getByRole("button").last();
           const [logoBox, linkBox, toggleBox] = [
             await logo.boundingBox(),
             await link.boundingBox(),
