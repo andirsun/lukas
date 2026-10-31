@@ -142,7 +142,9 @@ async function expectHeaderFits(
   const logo = header.locator(".lk-logo");
   const nav = header.getByRole("navigation");
   const link = nav.getByRole("link", { name: cta });
-  const toggle = nav.getByRole("button");
+  // The day/night switch, last in the row (after the language switch).
+  const toggle = nav.getByRole("button").last();
+  await expect(nav.getByRole("button", { name: /:/ })).toBeVisible();
   await expect(logo).toBeVisible();
   await expect(link).toBeVisible();
   await expect(toggle).toBeVisible();
