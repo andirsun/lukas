@@ -211,6 +211,21 @@ describe("email code + magic link", () => {
     }
   });
 
+  test("the magic link brings an assistant's long consent URL back", async () => {
+    // A signed authorization request: state, PKCE challenge, resource and signature run past 700.
+    const consent = `/oauth/consent?state=${"s".repeat(256)}&code_challenge=${"c".repeat(128)}&sig=${"g".repeat(400)}`;
+    await sendCode("next-consent@lukas.test", { "x-lukas-next": consent });
+    const link = /http\S+/.exec(t.mailer.lastTo("next-consent@lukas.test")?.text ?? "")?.[0] ?? "";
+    expect(new URL(link).searchParams.get("next")).toBe(consent);
+    // A path the Android app does not open: the code must reach the assistant's own browser window.
+    expect(new URL(link).pathname).toBe("/oauth/verify");
+    expect(t.mailer.lastTo("next-consent@lukas.test")?.subject).toMatch(/asistente|assistant/);
+    await sendCode("next-huge@lukas.test", { "x-lukas-next": `/app?q=${"x".repeat(5000)}` });
+    const huge = /http\S+/.exec(t.mailer.lastTo("next-huge@lukas.test")?.text ?? "")?.[0] ?? "";
+    expect(new URL(huge).searchParams.has("next")).toBe(false);
+    expect(new URL(huge).pathname).toBe("/auth/verify");
+  });
+
   test("the link carries from=app only when the app started the sign-in", async () => {
     await sendCode("from-app@lukas.test", { "x-lukas-client": "android" });
     const app = /http\S+/.exec(t.mailer.lastTo("from-app@lukas.test")?.text ?? "")?.[0] ?? "";

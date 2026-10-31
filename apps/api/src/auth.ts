@@ -20,7 +20,7 @@ import { createAuthMiddleware } from "better-auth/api";
 import { anonymous, bearer, emailOTP, jwt } from "better-auth/plugins";
 import { apiPathPrefix, type Config } from "./config.ts";
 import type { AppDeps } from "./deps.ts";
-import { claimEmail, signInEmail } from "./emails/sign-in.ts";
+import { assistantEmail, claimEmail, signInEmail } from "./emails/sign-in.ts";
 import { stampGuestActivity } from "./services/guest-cleanup.ts";
 
 export const OAUTH_SCOPES = ["finance:read", "finance:write", "offline_access"] as const;
@@ -294,12 +294,16 @@ async function localeFor(deps: AppDeps, email: string, headers: Headers | undefi
   );
 }
 
+/** Where Better Auth sends a signed-out person who an assistant asked to connect. */
+const ASSISTANT_CONSENT_PREFIX = "/oauth/consent?";
+
 /**
  * `next` for the magic link: a same-origin path only (one leading slash, no backslash, no
  * whitespace, no encoded slash in the path). The web screens it again with `safeNext` on arrival.
+ * Long enough for an assistant's signed consent request (about 700 characters), which must survive.
  */
 export function linkNext(value: string | null | undefined): string | null {
-  if (!value || value.length > 512) return null;
+  if (!value || value.length > 4096) return null;
   if (!/^\/(?![/\\])/.test(value) || /[\\\s]/.test(value)) return null;
   if (/%(?:2f|5c)/i.test(value.split(/[?#]/, 1)[0] ?? "")) return null;
   return value;
@@ -499,8 +503,11 @@ export function createAuth(deps: AppDeps) {
           if (headers?.get(CLIENT_HEADER)?.trim().toLowerCase() === CLIENT_ANDROID) {
             params.set("from", "app");
           }
-          const link = `${config.WEB_URL}/auth/verify?${params}`;
-          const mail = signInEmail({
+          // Signing in for an assistant: a path the Android app does not claim (its App Link is
+          // /auth/verify), so the link never takes the code away from the assistant's window.
+          const forAssistant = next?.startsWith(ASSISTANT_CONSENT_PREFIX) ?? false;
+          const link = `${config.WEB_URL}/${forAssistant ? "oauth" : "auth"}/verify?${params}`;
+          const mail = (forAssistant ? assistantEmail : signInEmail)({
             code: otp,
             link,
             locale,
